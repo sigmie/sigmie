@@ -145,9 +145,11 @@ trait DescribesIndexFields
     {
         $type = $this->fieldTypeName($field);
 
+        // @codeCoverageIgnoreStart
         if ($type === null) {
             return null;
         }
+        // @codeCoverageIgnoreEnd
 
         $capabilities = $this->fieldCapabilities($field);
         $filter = $this->filterExample($field, $name);

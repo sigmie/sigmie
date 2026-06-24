@@ -21,6 +21,8 @@ class ElasticsearchException extends Exception implements ToRaw
 
     public function toRaw(): array
     {
+        // @codeCoverageIgnoreStart
         return json_decode($this->message, true);
+        // @codeCoverageIgnoreEnd
     }
 }

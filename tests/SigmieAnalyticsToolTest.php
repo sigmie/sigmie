@@ -48,6 +48,10 @@ class SigmieAnalyticsToolTest extends TestCase
                 $props->number('amount');
                 $props->category('product');
                 $props->category('channel');
+                $props->object('meta', function (NewProperties $properties): void {
+                    $properties->date('observed_at');
+                    $properties->number('score');
+                });
 
                 return $props;
             }
@@ -92,7 +96,9 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertStringContainsString('breakdown', $description);
         $this->assertStringContainsString('cumulative', $description);
         $this->assertStringContainsString('created_at', $description);
+        $this->assertStringContainsString('meta.observed_at', $description);
         $this->assertStringContainsString('amount', $description);
+        $this->assertStringContainsString('meta.score', $description);
         $this->assertStringContainsString('median', $description);
         $this->assertStringContainsString('include_hits', $description);
         $this->assertStringContainsString('hit_filters', $description);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Generator;
+use InvalidArgumentException;
 use Http\Promise\Promise;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
@@ -164,6 +165,13 @@ class SearchTest extends TestCase
         $reranked = $response->rerank('test-rerank', ['title']);
         $rerankedWithApi = $response->rerank($this->rerankApi, ['title'], query: 'Alpha', topK: 1);
         $scores = $this->rerankApi->rerank(['Alpha Search Manual', 'Beta Archive'], 'Alpha');
+        $this->rerankApi->reset();
+        $matchAllResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->size(1)
+            ->get();
+        $matchAllReranked = $matchAllResponse->rerank($this->rerankApi, ['title'], topK: 1);
 
         $this->assertSame('alpha', $response->json('hits')[0]['_id']);
         $this->assertSame('alpha', $hits[0]->_id);
@@ -179,8 +187,48 @@ class SearchTest extends TestCase
         $this->assertSame([], $response->autocompletion());
         $this->assertInstanceOf(RerankedHit::class, $rerankedWithApi[0]);
         $this->assertSame([0, 1], array_column($scores, 'index'));
-        $this->rerankApi->assertRerankWasCalledWith('Alpha', 1);
-        $this->rerankApi->assertRerankWasCalledWithDocumentCount(1);
+        $this->assertInstanceOf(Hit::class, $matchAllReranked[0]);
+        $this->assertContains($matchAllReranked[0]->_id, ['alpha', 'beta']);
+        $this->rerankApi->assertRerankWasCalled(0);
+    }
+
+    /**
+     * @test
+     */
+    public function search_response_rerank_validation_is_backed_by_elasticsearch_results(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Validation Manual'], _id: 'matching'),
+            ]);
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Validation')
+            ->get();
+
+        $hits = $response->hits();
+
+        $this->assertSame(['matching'], array_map(fn (Hit $hit): string => $hit->_id, $hits));
+        $this->assertSame(0, $this->rerankApi->rerank(['Validation Manual'], 'Validation')[0]['index']);
+        $this->assertSame('matching', $response->rerank($this->rerankApi, ['title'], topK: 1)[0]->_id);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Registered API "invalid-rerank" is not a RerankApi.');
+
+        $response->apis(['invalid-rerank' => (object) []])
+            ->rerank('invalid-rerank', ['title']);
     }
 
     /**

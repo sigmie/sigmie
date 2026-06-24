@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Countable;
 use DateTime;
 use InvalidArgumentException;
+use Sigmie\Base\ElasticsearchException;
 use IteratorAggregate;
 use Sigmie\Document\Contracts\CollectionHook;
 use Sigmie\Document\Document;
@@ -731,6 +732,47 @@ class AliveCollectionTest extends TestCase
         $this->assertArrayNotHasKey('foo', $all['89']->_source);
         $this->assertArrayNotHasKey('foo', $all['2']->_source);
         $this->assertArrayHasKey('baz', $all['2']->_source);
+    }
+
+    /**
+     * @test
+     */
+    public function except_take_uses_elasticsearch_source_excludes(): void
+    {
+        $indexName = uniqid();
+
+        $this->sigmie->newIndex($indexName)->create();
+
+        $this->sigmie->collect($indexName, true)
+            ->merge([
+                new Document(['title' => 'Source Exclude', 'secret' => 'hidden'], 'matching'),
+            ]);
+
+        $docs = $this->sigmie->collect($indexName, true)
+            ->except(['secret'])
+            ->take(1);
+
+        $this->assertCount(1, $docs);
+        $this->assertSame('Source Exclude', $docs[0]->_source['title']);
+        $this->assertArrayNotHasKey('secret', $docs[0]->_source);
+    }
+
+    /**
+     * @test
+     */
+    public function duplicate_single_create_throws_elasticsearch_exception(): void
+    {
+        $indexName = uniqid();
+
+        $this->sigmie->newIndex($indexName)->create();
+
+        $index = $this->sigmie->collect($indexName, true);
+
+        $index->add(new Document(['title' => 'Original'], 'duplicate'));
+
+        $this->expectException(ElasticsearchException::class);
+
+        $index->add(new Document(['title' => 'Duplicate'], 'duplicate'));
     }
 
     /**

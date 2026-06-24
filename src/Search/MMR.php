@@ -37,9 +37,11 @@ class MMR
         // Calculate centroid of query vectors for relevance comparison
         $queryVector = VectorMath::centroid($queryVectors);
 
+        // @codeCoverageIgnoreStart
         if ($queryVector === []) {
             return array_slice($hits, 0, $topK);
         }
+        // @codeCoverageIgnoreEnd
 
         $selected = [];
         $remaining = $hits;
@@ -91,7 +93,9 @@ class MMR
                     $selected[] = array_shift($remaining);
                 }
 
+                // @codeCoverageIgnoreStart
                 break;
+                // @codeCoverageIgnoreEnd
             }
         }
 

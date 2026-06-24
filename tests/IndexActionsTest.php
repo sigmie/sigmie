@@ -14,6 +14,7 @@ use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Base\Drivers\Elasticsearch;
 use Sigmie\Document\Document;
 use Sigmie\Index\Actions as IndexActions;
+use Sigmie\Index\Alias\MultipleIndicesForAlias;
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Index;
 use Sigmie\Index\ListedIndex;
@@ -95,6 +96,35 @@ class IndexActionsTest extends TestCase
         $this->createIndex($indexName, $index->settings, $index->mappings);
 
         $this->assertIndexExists($indexName);
+    }
+
+    /**
+     * @test
+     */
+    public function alias_create_exists_delete_and_multi_index_errors_hit_elasticsearch(): void
+    {
+        $firstIndex = uniqid();
+        $secondIndex = uniqid();
+        $alias = 'alias_'.uniqid();
+
+        $this->createIndex($firstIndex, new Settings, new Mappings);
+        $this->createIndex($secondIndex, new Settings, new Mappings);
+
+        $this->assertFalse($this->aliasExists($alias));
+
+        $this->createAlias($firstIndex, $alias);
+
+        $this->assertTrue($this->aliasExists($alias));
+        $this->assertTrue($this->deleteAlias($firstIndex, $alias));
+        $this->assertFalse($this->aliasExists($alias));
+
+        $this->createAlias($firstIndex, $alias);
+        $this->createAlias($secondIndex, $alias);
+
+        $this->expectException(MultipleIndicesForAlias::class);
+        $this->expectExceptionMessage(sprintf('Multiple indices found for alias %s.', $alias));
+
+        $this->getIndex($alias);
     }
 
     /**

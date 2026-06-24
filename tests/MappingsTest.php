@@ -27,6 +27,9 @@ use Sigmie\Mappings\NewSemanticField;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\BaseVector;
+use Sigmie\Mappings\Types\Boolean as BooleanField;
+use Sigmie\Mappings\Types\Category;
+use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\FlatObject;
 use Sigmie\Mappings\Types\Keyword;
@@ -2693,6 +2696,8 @@ class MappingsTest extends TestCase
                 'filter' => ['lowercase'],
             ],
         ], $normalizer->toRaw());
+        $this->assertCount(1, $normalizer->filters());
+        $this->assertCount(1, $normalizer->charFilters());
 
         $this->expectException(Exception::class);
         $this->expectExceptionMessage("Normalizer filter 'missing_filter' doesn't exists.");
@@ -2705,6 +2710,106 @@ class MappingsTest extends TestCase
         ], [], [
             'lowercase' => new Lowercase,
         ]);
+    }
+
+    /**
+     * @test
+     */
+    public function normalizer_from_raw_failure_path_is_backed_by_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Normalizer raw coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Normalizer raw')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage("Normalizer of type 'missing' doesn't exists.");
+
+        Normalizer::fromRaw([
+            'broken' => [
+                'type' => 'missing',
+            ],
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function mapping_type_helper_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Mapping helper coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Mapping helper')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $flatObject = new FlatObject('metadata');
+        $boolean = new BooleanField('published');
+        $category = new Category('category');
+        $combo = new Combo('searchable', ['title', 'body']);
+        $nested = new Nested('items');
+        $object = new Object_('profile');
+        $range = new Range('price', 'integer_range');
+        $text = new Text('body');
+
+        $this->assertSame([false, 'The field metadata mapped as flat_object must be an object or array'], $flatObject->validate('metadata', 'invalid'));
+        $this->assertSame([true, ''], $flatObject->validate('metadata', ['valid' => true]));
+        $this->assertCount(1, $boolean->queries('published'));
+        $this->assertSame([false, 'The field published mapped as boolean must be a boolean'], $boolean->validate('published', 'true'));
+        $this->assertTrue($category->isAutocompletable());
+        $this->assertCount(3, $category->queries('docs'));
+        $this->assertSame(['title', 'body'], $combo->sourceFields());
+        $this->assertSame([], $combo->queries('anything'));
+        $this->assertFalse($combo->isFacetable());
+        $this->assertFalse($combo->isFilterable());
+        $this->assertSame([], $combo->toRaw());
+        $this->assertSame([], $nested->queries('anything'));
+        $this->assertSame([false, 'Nested field items must be an object.'], $nested->validate('items', 'invalid'));
+        $this->assertTrue($nested->hasFields());
+        $this->assertSame([], $object->queries('anything'));
+        $this->assertSame([false, 'Object field profile must be an object.'], $object->validate('profile', 'invalid'));
+        $this->assertTrue($object->hasFields());
+        $this->assertFalse($range->isFacetable());
+        $this->assertNull($range->facets([]));
+        $this->assertSame([false, "The field price mapped as integer_range must be an array with 'gte', 'gt', 'lte', or 'lt' keys"], $range->validate('price', 'invalid'));
+        $this->assertSame([false, 'The field price mapped as integer_range must contain at least one of: gte, gt, lte, lt'], $range->validate('price', ['between' => 10]));
+        $this->assertSame([true, ''], $range->validate('price', ['gte' => 10]));
+        $this->assertSame('body', $text->name());
+        $this->assertFalse($text->isFacetable());
+        $this->assertSame($text, $text->description('Visible body text'));
+        $this->assertSame('Visible body text', $text->getDescription());
+        $this->assertSame($boolean->toRaw(), $boolean());
     }
 
     /**
@@ -2783,6 +2888,7 @@ class MappingsTest extends TestCase
         $assert->assertIndexHasMappings();
         $assert->assertIndexHasNotPipeline();
         $assert->assertAnalyzerHasNotFilter('default', 'missing_filter');
+        $assert->assertAnalyzerNotExists('missing_analyzer');
         $assert->assertCharFilterNotExists($actualName, 'missing_char_filter');
         $assert->assertFilterNotExists('missing_filter');
         $assert->assertTokenizerNotExists('missing_tokenizer');

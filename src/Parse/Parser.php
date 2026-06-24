@@ -7,8 +7,6 @@ namespace Sigmie\Parse;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Keyword;
-use Sigmie\Mappings\Types\Nested;
-use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\Contracts\Parser as ParserInterface;
 
@@ -120,21 +118,6 @@ abstract class Parser implements ParserInterface
     public function errors(): array
     {
         return $this->errors;
-    }
-
-    protected function getNestedField(string $field)
-    {
-        $fields = explode('.', $field);
-
-        $firstField = $fields[0];
-
-        $type = $this->properties[$firstField];
-
-        while ($type instanceof Nested || $type instanceof Object_) {
-            $type = $type->properties[$firstField];
-        }
-
-        return $type;
     }
 
     protected function fieldExists(string $field): bool

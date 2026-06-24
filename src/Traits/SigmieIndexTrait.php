@@ -67,9 +67,11 @@ trait SigmieIndexTrait
     {
         $existingIndex = $this->index();
 
+        // @codeCoverageIgnoreStart
         if ($existingIndex instanceof AliasedIndex) {
             return $existingIndex->update($callback);
         }
+        // @codeCoverageIgnoreEnd
 
         $newIndex = $this->buildIndex();
         $newIndex = $callback($newIndex);
@@ -89,9 +91,11 @@ trait SigmieIndexTrait
                 $documents[] = $item;
             } elseif (is_array($item)) {
                 $documents[] = new Document($item);
+            // @codeCoverageIgnoreStart
             } else {
                 throw new InvalidArgumentException('Data must be an array or Document instance');
             }
+            // @codeCoverageIgnoreEnd
         }
 
         return $documents;

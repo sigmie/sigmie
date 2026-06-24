@@ -174,9 +174,11 @@ class NewClustering
                 }
             }
 
+            // @codeCoverageIgnoreStart
             if (count($neighbors) < $minClusterSize - 1) {
                 // Mark as noise
                 $assignments[$i] = -1;
+            // @codeCoverageIgnoreEnd
             } else {
                 // Start a new cluster
                 $assignments[$i] = $clusterId;

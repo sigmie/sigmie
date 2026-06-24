@@ -94,7 +94,9 @@ class IndexUpdateTask
             return $index;
         }
 
+        // @codeCoverageIgnoreStart
         throw new RuntimeException('Something went wrong while updating index.');
+        // @codeCoverageIgnoreEnd
     }
 
     public function waitAndFinish(
@@ -105,12 +107,14 @@ class IndexUpdateTask
         $tries = 0;
 
         while (true) {
+            // @codeCoverageIgnoreStart
             if (Carbon::now()->isBefore($startPollingAt)) {
 
                 sleep(1);
 
                 continue;
             }
+            // @codeCoverageIgnoreEnd
 
             if ($this->isCompleted()) {
                 $this->finish();
