@@ -117,6 +117,7 @@ class NewMultiSearch
         if ($response->failed()) {
             throw new ElasticsearchException($response->json(), $response->code());
         }
+
         // @codeCoverageIgnoreEnd
 
         $this->responseCode = $response->code();

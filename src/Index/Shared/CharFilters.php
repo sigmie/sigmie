@@ -95,6 +95,7 @@ trait CharFilters
         while ($this->analysis()->hasCharFilter($suffixed)) {
             $suffixed = random_name($name);
         }
+
         // @codeCoverageIgnoreEnd
 
         return $suffixed;

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Generator;
-use InvalidArgumentException;
 use Http\Promise\Promise;
+use InvalidArgumentException;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Document\RerankedHit;

@@ -60,6 +60,7 @@ class Mappings implements MappingsInterface
                 if ($analyzer->name() === 'autocomplete_analyzer') {
                     return [$analyzer->name() => $analyzer];
                 }
+
                 // @codeCoverageIgnoreEnd
 
                 $filters = array_filter($this->defaultAnalyzer->filters(), fn (TokenFilter $filter): bool => ! in_array($filter::class, $field->notAllowedFilters()));

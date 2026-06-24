@@ -178,7 +178,7 @@ class NewClustering
             if (count($neighbors) < $minClusterSize - 1) {
                 // Mark as noise
                 $assignments[$i] = -1;
-            // @codeCoverageIgnoreEnd
+                // @codeCoverageIgnoreEnd
             } else {
                 // Start a new cluster
                 $assignments[$i] = $clusterId;

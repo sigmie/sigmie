@@ -315,21 +315,24 @@ class Sigmie
                     if ($listedIndex->name === $indexName || in_array($indexName, $listedIndex->aliases)) {
                         try {
                             $this->deleteIndex($listedIndex->name);
-                        // @codeCoverageIgnoreStart
+                            // @codeCoverageIgnoreStart
                         } catch (ElasticsearchException $e) {
                             if ($e->json('type') !== 'index_not_found_exception') {
                                 throw $e;
                             }
                         }
+
                         // @codeCoverageIgnoreEnd
                     }
                 }
-            // @codeCoverageIgnoreStart
+
+                // @codeCoverageIgnoreStart
             } catch (ElasticsearchException $e) {
                 if ($e->json('type') !== 'index_not_found_exception') {
                     throw $e;
                 }
             }
+
             // @codeCoverageIgnoreEnd
         }
 

@@ -15,6 +15,14 @@ use Http\Promise\Promise;
 use LogicException;
 use PHPUnit\Framework\AssertionFailedError;
 use ReflectionProperty;
+use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\AI\Rerankers\NoopReranker;
+use Sigmie\Analytics\Enums\Metric as AnalyticsMetric;
+use Sigmie\Analytics\Enums\Period;
+use Sigmie\Analytics\Widgets\Breakdown;
+use Sigmie\Analytics\Widgets\GroupedMetrics;
+use Sigmie\Analytics\Widgets\HistogramMetric;
+use Sigmie\Analytics\Widgets\KpiDelta;
 use Sigmie\Base\APIs\Explain;
 use Sigmie\Base\APIs\Stats;
 use Sigmie\Base\APIs\Update as UpdateApi;
@@ -28,14 +36,6 @@ use Sigmie\Base\Http\ElasticsearchResponse as HttpElasticsearchResponse;
 use Sigmie\Base\Http\PointInTimeRequests;
 use Sigmie\Base\Http\Responses\Bulk as BulkResponse;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
-use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\AI\Rerankers\NoopReranker;
-use Sigmie\Analytics\Enums\Metric as AnalyticsMetric;
-use Sigmie\Analytics\Enums\Period;
-use Sigmie\Analytics\Widgets\Breakdown;
-use Sigmie\Analytics\Widgets\GroupedMetrics;
-use Sigmie\Analytics\Widgets\HistogramMetric;
-use Sigmie\Analytics\Widgets\KpiDelta;
 use Sigmie\Classification\ClassificationResult;
 use Sigmie\Classification\NewClassification;
 use Sigmie\Clustering\NewClustering;
@@ -56,8 +56,8 @@ use Sigmie\Index\Analysis\TokenFilter\Shingle;
 use Sigmie\Index\Analysis\TokenFilter\Stopwords as StopwordsTokenFilter;
 use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
 use Sigmie\Index\Analysis\TokenFilter\TokenLimit;
-use Sigmie\Index\Analysis\TokenFilter\Truncate;
 use Sigmie\Index\Analysis\TokenFilter\Trim;
+use Sigmie\Index\Analysis\TokenFilter\Truncate;
 use Sigmie\Index\Analysis\TokenFilter\Unique;
 use Sigmie\Index\Analysis\TokenFilter\Uppercase;
 use Sigmie\Index\Analysis\Tokenizers\NonLetter;
@@ -66,8 +66,8 @@ use Sigmie\Index\Contracts\Analysis as AnalysisContract;
 use Sigmie\Index\Mappings as IndexMappings;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Index\NewIndex;
-use Sigmie\Index\Shared\Tokenizer as TokenizerTrait;
 use Sigmie\Index\Settings;
+use Sigmie\Index\Shared\Tokenizer as TokenizerTrait;
 use Sigmie\Languages\English\Filter\LightStemmer as EnglishLightStemmer;
 use Sigmie\Languages\English\Filter\LovinsStemmer as EnglishLovinsStemmer;
 use Sigmie\Languages\English\Filter\MinimalStemmer as EnglishMinimalStemmer;
@@ -75,6 +75,7 @@ use Sigmie\Languages\English\Filter\Porter2Stemmer as EnglishPorter2Stemmer;
 use Sigmie\Languages\English\Filter\PossessiveStemmer as EnglishPossessiveStemmer;
 use Sigmie\Languages\English\Filter\Stemmer as EnglishStemmer;
 use Sigmie\Languages\English\Filter\Stopwords as EnglishStopwords;
+use Sigmie\Languages\German\Filter\GermanNormalization;
 use Sigmie\Languages\German\Filter\LightStemmer as GermanLightStemmer;
 use Sigmie\Languages\German\Filter\MinimalStemmer as GermanMinimalStemmer;
 use Sigmie\Languages\German\Filter\Normalize as GermanNormalize;
@@ -93,8 +94,8 @@ use Sigmie\Mappings\Traits\HasFacets;
 use Sigmie\Mappings\Traits\HasQueries;
 use Sigmie\Mappings\Types\Address;
 use Sigmie\Mappings\Types\BaseVector;
-use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
+use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Date as DateField;
 use Sigmie\Mappings\Types\DateTime as DateTimeField;
 use Sigmie\Mappings\Types\DenseVector;
@@ -135,20 +136,20 @@ use Sigmie\Query\Aggs;
 use Sigmie\Query\BooleanQueryBuilder;
 use Sigmie\Query\FunctionScore;
 use Sigmie\Query\NewQuery;
-use Sigmie\Query\Queries\Text\MatchBoolPrefix;
 use Sigmie\Query\Queries\MatchAll;
+use Sigmie\Query\Queries\Text\MatchBoolPrefix;
 use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
-use Sigmie\Query\SuggestionTypeBuilder;
 use Sigmie\Query\Suggest;
+use Sigmie\Query\SuggestionTypeBuilder;
 use Sigmie\Rerank\BaseReranker;
-use Sigmie\Search\MMR;
 use Sigmie\Search\ExistingScript;
+use Sigmie\Search\Formatters\AbstractFormatter;
+use Sigmie\Search\Formatters\RerankedSearchResponse;
+use Sigmie\Search\MMR;
 use Sigmie\Search\PitSortPlanner;
 use Sigmie\Search\PointInTimeIterator;
 use Sigmie\Search\RawQuery;
 use Sigmie\Search\RRF;
-use Sigmie\Search\Formatters\AbstractFormatter;
-use Sigmie\Search\Formatters\RerankedSearchResponse;
 use Sigmie\Search\Vector;
 use Sigmie\Search\VectorPool;
 use Sigmie\Semantic\Providers\AbstractAIProvider;
@@ -158,7 +159,6 @@ use Sigmie\Shared\UsesApis;
 use Sigmie\Sigmie;
 use Sigmie\Support\VectorMath;
 use Sigmie\Testing\TestCase;
-use Sigmie\Languages\German\Filter\GermanNormalization;
 
 use function Sigmie\Functions\name_configs;
 
@@ -1256,7 +1256,7 @@ class UtilityCoverageTest extends TestCase
                 return true;
             }
 
-            public function aggregation(Aggs $aggs, string $param): void
+            public function aggregation(Aggs $aggs, string $param): never
             {
                 throw new ParseException('Broken facet aggregation');
             }
@@ -1350,6 +1350,7 @@ class UtilityCoverageTest extends TestCase
         $semantic->semantic('test-embeddings', dimensions: 128);
         $semantic->meta(['role' => 'primary']);
         $semantic->analyze(new NewAnalyzer(new Analysis, 'noop_analyzer'));
+
         $baseVector = new BaseVector('manual_vector', 5);
         $vectorProperty = new ReflectionProperty($semantic, 'vectors');
         $vectorProperty->setValue($semantic, [$baseVector]);

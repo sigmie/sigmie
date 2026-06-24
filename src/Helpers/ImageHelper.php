@@ -214,6 +214,7 @@ class ImageHelper
         if ($content === false) {
             throw new Exception('Failed to read file: '.$path);
         }
+
         // @codeCoverageIgnoreEnd
 
         // Verify it's actually an image
@@ -244,6 +245,7 @@ class ImageHelper
             $resizedContent = self::resizeImage($imageContent, 128);
             $base64 = self::toBase64($resizedContent);
         }
+
         // @codeCoverageIgnoreEnd
 
         return $base64;

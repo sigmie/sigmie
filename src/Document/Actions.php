@@ -48,6 +48,7 @@ trait Actions
         if ($response->json('errors')) {
             throw new ElasticsearchException($response->json('items.1.create.error'), $response->code());
         }
+
         // @codeCoverageIgnoreEnd
 
         return $document;
@@ -96,6 +97,7 @@ trait Actions
             if ($response['status'] >= 400) {
                 throw new ElasticsearchException($response['error'], $response['status']);
             }
+
             // @codeCoverageIgnoreEnd
 
             if (! isset($doc->_id)) {
@@ -163,6 +165,7 @@ trait Actions
         if ($this->except) {
             $query['_source_excludes'] = implode('', $this->except);
         }
+
         // @codeCoverageIgnoreEnd
 
         $response = $this->mgetAPICall($indexName, $payload, $query);

@@ -740,7 +740,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
                     // @codeCoverageIgnoreStart
                     if ($this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch) {
                         $semanticQueries[] = $query;
-                    // @codeCoverageIgnoreEnd
+                        // @codeCoverageIgnoreEnd
                     } else {
                         $knnQueries[] = $raw['knn'];
                     }
@@ -831,7 +831,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
                     // @codeCoverageIgnoreStart
                     if ($this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch) {
                         $semanticQueries[] = $query;
-                    // @codeCoverageIgnoreEnd
+                        // @codeCoverageIgnoreEnd
                     } else {
                         $knnQueries[] = $raw['knn'];
                     }

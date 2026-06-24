@@ -114,6 +114,7 @@ class IndexUpdateTask
 
                 continue;
             }
+
             // @codeCoverageIgnoreEnd
 
             if ($this->isCompleted()) {

@@ -148,6 +148,7 @@ class Breakdown extends Widget
         if ($left === $right) {
             return ((string) $a['key']) <=> ((string) $b['key']);
         }
+
         // @codeCoverageIgnoreEnd
 
         return $this->direction === 'asc'

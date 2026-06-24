@@ -90,7 +90,7 @@ class AliasedIndex extends Index
         // @codeCoverageIgnoreStart
         if ($oldAlias === $newAlias) {
             $this->switchAlias($newAlias, $this->name, $newIndex->name);
-        // @codeCoverageIgnoreEnd
+            // @codeCoverageIgnoreEnd
         } else {
             $this->createAlias($newIndex->name, $newAlias);
         }

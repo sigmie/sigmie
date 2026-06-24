@@ -37,6 +37,7 @@ class PitSortPlanner
         if ($sort === []) {
             return true;
         }
+
         // @codeCoverageIgnoreEnd
 
         if ($sort === ['_score'] || $sort === ['_doc']) {
@@ -53,6 +54,7 @@ class PitSortPlanner
         if ($only === '_score' || $only === '_doc') {
             return true;
         }
+
         // @codeCoverageIgnoreEnd
 
         return is_array($only) && (isset($only['_score']) || isset($only['_doc']));

@@ -491,6 +491,7 @@ class FilterParser extends Parser
         if (is_null($realFieldName)) {
             return null;
         }
+
         // @codeCoverageIgnoreEnd
 
         return $this->prepareQuery($field, new GeoDistance($this->fieldName($realFieldName), $distance, $latitude, $longitude));
@@ -510,6 +511,7 @@ class FilterParser extends Parser
         if (is_null($realFieldName)) {
             return null;
         }
+
         // @codeCoverageIgnoreEnd
 
         return $this->prepareQuery(
@@ -573,6 +575,7 @@ class FilterParser extends Parser
         if (is_null($field)) {
             return null;
         }
+
         // @codeCoverageIgnoreEnd
 
         return $this->prepareQuery($field, new Term($this->fieldName($field), true));

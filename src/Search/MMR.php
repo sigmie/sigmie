@@ -41,6 +41,7 @@ class MMR
         if ($queryVector === []) {
             return array_slice($hits, 0, $topK);
         }
+
         // @codeCoverageIgnoreEnd
 
         $selected = [];

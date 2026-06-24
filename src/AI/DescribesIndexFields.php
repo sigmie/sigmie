@@ -149,6 +149,7 @@ trait DescribesIndexFields
         if ($type === null) {
             return null;
         }
+
         // @codeCoverageIgnoreEnd
 
         $capabilities = $this->fieldCapabilities($field);
