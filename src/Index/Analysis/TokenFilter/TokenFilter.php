@@ -18,6 +18,8 @@ abstract class TokenFilter implements TokenFilterInterface
         'decimal_digit' => DecimalDigit::class,
         'ascii_folding' => AsciiFolding::class,
         'limit' => TokenLimit::class,
+        'ngram' => Ngram::class,
+        'shingle' => Shingle::class,
     ];
 
     public function __construct(

@@ -250,6 +250,36 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
+    public function english_lovins_stemmer_analyzes_with_elasticsearch(): void
+    {
+        $alias = uniqid();
+
+        /** @var EnglishBuilder */
+        $englishBuilder = $this->sigmie->newIndex($alias)
+            ->language(new English);
+
+        $englishBuilder
+            ->englishLovinsStemmer('english_stemmer_lovins')
+            ->create();
+
+        $tokens = $this->sigmie
+            ->index($alias)
+            ->analyze('running relational', 'default');
+
+        $this->assertSame([], $tokens);
+
+        $this->assertIndex($alias, function (Assert $index): void {
+            $index->assertAnalyzerHasFilter('default', 'english_stemmer_lovins');
+            $index->assertFilterEquals('english_stemmer_lovins', [
+                'type' => 'stemmer',
+                'language' => 'lovins',
+            ]);
+        });
+    }
+
+    /**
+     * @test
+     */
     public function unique_filter(): void
     {
         $alias = uniqid();
@@ -871,6 +901,49 @@ class IndexBuilderTest extends TestCase
             ->analyze('abcd', 'default');
 
         $this->assertSame(['ab', 'bc', 'cd'], $tokens);
+    }
+
+    /**
+     * @test
+     */
+    public function name_field_ngram_filter_is_restored_from_elasticsearch_settings(): void
+    {
+        $alias = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->name('name');
+
+        $this->sigmie->newIndex($alias)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($alias, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['name' => 'Nico Orfanos'], _id: 'nico'),
+                new Document(['name' => 'Other Person'], _id: 'other'),
+            ]);
+
+        $response = $this->sigmie->newSearch($alias)
+            ->properties($blueprint)
+            ->queryString('Nico')
+            ->fields(['name'])
+            ->get();
+
+        $filters = $this->sigmie->index($alias)
+            ->settings
+            ->analysis()
+            ->toRaw()['filter'];
+
+        $ngramFilters = array_values(array_filter(
+            $filters,
+            fn (array $filter): bool => ($filter['type'] ?? null) === 'ngram'
+        ));
+
+        $this->assertSame('nico', $response->json('hits')[0]['_id']);
+        $this->assertSame('4', $ngramFilters[0]['min_gram']);
+        $this->assertSame('5', $ngramFilters[0]['max_gram']);
+        $this->assertFalse($ngramFilters[0]['preserve_original']);
     }
 
     /**

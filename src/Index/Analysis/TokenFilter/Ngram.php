@@ -34,7 +34,7 @@ class Ngram extends TokenFilter
             $name,
             $configs['min_gram'],
             $configs['max_gram'],
-            $configs['preserve_original'] ?? false
+            filter_var($configs['preserve_original'] ?? false, FILTER_VALIDATE_BOOLEAN)
         );
     }
 
