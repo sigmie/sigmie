@@ -13,6 +13,7 @@ use Sigmie\Query\BooleanQueryBuilder;
 use Sigmie\Query\NewQuery;
 use Sigmie\Query\Queries\Compound\Boolean as QueriesCompoundBoolean;
 use Sigmie\Query\Queries\Term\Term;
+use Sigmie\Query\Queries\Text\MatchPhrase;
 use Sigmie\Query\Search;
 use Sigmie\Testing\TestCase;
 
@@ -516,6 +517,33 @@ class QueryTest extends TestCase
         $this->assertSame(['published-book', 'published-music'], $this->idsFromHits($postFilterStringResponse->json('hits.hits')));
         $this->assertEquals(0, $matchNoneResponse->json('hits.total.value'));
         $this->assertSame(['draft-book', 'published-book'], $this->idsFromHits($multiMatchResponse->json('hits.hits')));
+    }
+
+    /**
+     * @test
+     */
+    public function match_phrase_query_returns_exact_phrase_elasticsearch_hit(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->merge([
+                new Document(['title' => 'quick brown fox'], _id: 'exact-phrase'),
+                new Document(['title' => 'quick agile brown fox'], _id: 'split-phrase'),
+            ]);
+
+        $response = $this->sigmie->newQuery($indexName)
+            ->query(new MatchPhrase('title', 'quick brown'))
+            ->get();
+
+        $this->assertSame(['exact-phrase'], $this->idsFromHits($response->json('hits.hits')));
     }
 
     /**

@@ -10,8 +10,11 @@ use Countable;
 use DateTime;
 use InvalidArgumentException;
 use IteratorAggregate;
+use Sigmie\Document\Contracts\CollectionHook;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Properties;
+use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
 class AliveCollectionTest extends TestCase
@@ -141,6 +144,28 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
+    public function remove_accepts_multiple_ids_and_deletes_them_from_elasticsearch(): void
+    {
+        $indexName = uniqid();
+        $index = $this->sigmie->collect($indexName, true);
+
+        $index->merge([
+            new Document(['foo' => 'bar'], 'first'),
+            new Document(['foo' => 'baz'], 'second'),
+            new Document(['foo' => 'qux'], 'third'),
+        ]);
+
+        $this->assertTrue($index->remove(['first', 'third']));
+
+        $this->assertNull($index->get('first'));
+        $this->assertSame('baz', $index->get('second')->foo);
+        $this->assertNull($index->get('third'));
+        $this->assertCount(1, $index);
+    }
+
+    /**
+     * @test
+     */
     public function add_or_update(): void
     {
         $indexName = uniqid();
@@ -184,6 +209,136 @@ class AliveCollectionTest extends TestCase
         $this->assertSame('generated', $createdFromElasticsearch->foo);
         $this->assertSame('notes', $createdFromElasticsearch->category);
         $this->assertCount(2, $index);
+    }
+
+    /**
+     * @test
+     */
+    public function hooks_process_added_and_merged_documents_before_elasticsearch_write(): void
+    {
+        $indexName = uniqid();
+        $hook = new class implements CollectionHook
+        {
+            public int $beforeBatches = 0;
+
+            public int $afterBatches = 0;
+
+            public function shouldRun(Properties $properties): bool
+            {
+                return true;
+            }
+
+            public function beforeBatch(string $indexName, Sigmie $sigmie, Properties $properties, array $apis): void
+            {
+                $this->beforeBatches++;
+            }
+
+            public function processBatch(array $documents, Properties $properties, array $apis): array
+            {
+                return array_map(function (Document $document): Document {
+                    $document->hooked = true;
+
+                    return $document;
+                }, $documents);
+            }
+
+            public function afterBatch(array $documents, string $indexName, Sigmie $sigmie, Properties $properties, array $apis): void
+            {
+                $this->afterBatches++;
+            }
+        };
+
+        $index = $this->sigmie->collect($indexName, true)->hooks([$hook]);
+
+        $index->add(new Document(['title' => 'Single'], 'single'));
+        $index->merge([new Document(['title' => 'Batch'], 'batch')]);
+
+        $single = $index->get('single');
+        $batch = $index->get('batch');
+
+        $this->assertTrue($single->hooked);
+        $this->assertTrue($batch->hooked);
+        $this->assertSame(2, $hook->beforeBatches);
+        $this->assertSame(2, $hook->afterBatches);
+    }
+
+    /**
+     * @test
+     */
+    public function without_hooks_writes_original_document_to_elasticsearch(): void
+    {
+        $indexName = uniqid();
+        $hook = new class implements CollectionHook
+        {
+            public function shouldRun(Properties $properties): bool
+            {
+                return true;
+            }
+
+            public function beforeBatch(string $indexName, Sigmie $sigmie, Properties $properties, array $apis): void {}
+
+            public function processBatch(array $documents, Properties $properties, array $apis): array
+            {
+                return array_map(function (Document $document): Document {
+                    $document->hooked = true;
+
+                    return $document;
+                }, $documents);
+            }
+
+            public function afterBatch(array $documents, string $indexName, Sigmie $sigmie, Properties $properties, array $apis): void {}
+        };
+
+        $index = $this->sigmie->collect($indexName, true)
+            ->hooks([$hook])
+            ->withoutHooks();
+
+        $index->add(new Document(['title' => 'Original'], 'original'));
+
+        $stored = $index->get('original');
+
+        $this->assertSame('Original', $stored->title);
+        $this->assertArrayNotHasKey('hooked', $stored->_source);
+    }
+
+    /**
+     * @test
+     */
+    public function collection_helpers_update_visible_elasticsearch_documents(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title')->semantic(dimensions: 384, api: 'test-embeddings');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName)
+            ->properties($blueprint)
+            ->populateEmbeddings(false);
+
+        $index->add(new Document(['title' => 'Manual refresh'], 'manual-refresh'));
+        $index->refresh();
+
+        $stored = $index->get('manual-refresh');
+
+        $this->assertSame('Manual refresh', $stored->title);
+        $this->assertArrayNotHasKey('_embeddings', $stored->_source);
+
+        $index['array-access'] = new Document(['title' => 'Array access'], 'array-access');
+        $index->refresh();
+
+        $documents = $index->toArray();
+
+        $this->assertArrayHasKey('array-access', $documents);
+        $this->assertSame('Array access', $documents['array-access']->title);
+
+        unset($index['array-access']);
+        $index->refresh();
+
+        $this->assertNull($index->get('array-access'));
     }
 
     /**
