@@ -2744,4 +2744,51 @@ class MappingsTest extends TestCase
         $this->assertInstanceOf(Mappings::class, $index->mappings);
         $this->assertSame('text', $index->mappings->properties()->get('title')->type());
     }
+
+    /**
+     * @test
+     */
+    public function testing_index_assertions_use_elasticsearch_payload(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->lowercase()
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Testing assertions'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Testing')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $payload = $this->indexAPICall($indexName, 'GET')->json();
+        $actualName = array_key_first($payload);
+        $data = $payload[$actualName];
+        $data['settings']['index']['analysis']['char_filter'] ??= [];
+        $data['settings']['index']['analysis']['filter'] ??= [];
+        $data['settings']['index']['analysis']['tokenizer'] ??= [];
+
+        $assert = new Assert($actualName, $data);
+        $assert->assertIndexHasMappings();
+        $assert->assertIndexHasNotPipeline();
+        $assert->assertAnalyzerHasNotFilter('default', 'missing_filter');
+        $assert->assertCharFilterNotExists($actualName, 'missing_char_filter');
+        $assert->assertFilterNotExists('missing_filter');
+        $assert->assertTokenizerNotExists('missing_tokenizer');
+
+        $data['settings']['index']['default_pipeline'] = 'ingest-pipeline';
+
+        (new Assert($actualName, $data))->assertIndexHasPipeline('ingest-pipeline');
+    }
 }

@@ -8,6 +8,7 @@ use Exception;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Http\Promise\FulfilledPromise;
 use Http\Promise\Promise;
+use PHPUnit\Framework\AssertionFailedError;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
@@ -25,10 +26,15 @@ use Sigmie\Mappings\Field;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\NewSemanticField;
 use Sigmie\Mappings\Traits\HasQueries;
+use Sigmie\Mappings\Traits\HasFacets;
 use Sigmie\Mappings\Types\DenseVector;
+use Sigmie\Mappings\Types\HTML as HtmlField;
+use Sigmie\Mappings\Types\Id as IdField;
 use Sigmie\Mappings\Types\Image;
+use Sigmie\Mappings\Types\Name as NameField;
 use Sigmie\Query\Aggregations\Bucket\Missing;
 use Sigmie\Query\Aggregations\Metrics\Rate;
+use Sigmie\Query\Aggs;
 use Sigmie\Search\MMR;
 use Sigmie\Semantic\Providers\AbstractAIProvider;
 use Sigmie\Semantic\Providers\Noop;
@@ -389,6 +395,129 @@ class UtilityCoverageTest extends TestCase
         $this->assertTrue($wrapper->has());
         $this->assertTrue($wrapper->has('invalid'));
         $this->assertFalse($wrapper->has('missing'));
+    }
+
+    /**
+     * @test
+     */
+    public function fake_api_tracking_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $this->assertUtilitySearchHit();
+
+        $this->embeddingApi->embed('accounting guide', 8);
+        $this->embeddingApi->batchEmbed([
+            ['text' => 'sales handbook', 'dims' => 8],
+        ]);
+
+        $this->assertCount(1, $this->embeddingApi->getEmbedCalls());
+        $this->assertCount(1, $this->embeddingApi->getBatchEmbedCalls());
+        $this->embeddingApi->assertBatchEmbedWasCalledWithCount(1);
+
+        $scores = $this->rerankApi->rerank(['accounting guide', 'sales handbook'], 'accounting', null);
+
+        $this->assertCount(2, $scores);
+        $this->assertCount(1, $this->rerankApi->getRerankCalls());
+
+        $imageSource = 'https://example.com/basketball-orange.jpg';
+
+        $this->clipApi->batchEmbed([
+            ['text' => $imageSource, 'dims' => 8],
+            ['text' => 'plain text', 'dims' => 8],
+        ]);
+
+        $this->clipApi->assertBatchContainedMix(1, 1);
+        $this->clipApi->assertImageSourceWasEmbedded($imageSource);
+        $this->assertCount(1, $this->clipApi->getImageEmbedCalls());
+        $this->assertCount(1, $this->clipApi->getTextEmbedCalls());
+        $this->assertCount(1, $this->clipApi->getMixedBatchCalls());
+    }
+
+    /**
+     * @test
+     */
+    public function fake_embedding_missing_text_assertion_fails_after_elasticsearch_hit(): void
+    {
+        $this->assertUtilitySearchHit();
+
+        $this->expectException(AssertionFailedError::class);
+        $this->expectExceptionMessage('embed() was never called with text: "missing"');
+
+        $this->embeddingApi->assertEmbedWasCalledWith('missing');
+    }
+
+    /**
+     * @test
+     */
+    public function fake_embedding_missing_batch_count_assertion_fails_after_elasticsearch_hit(): void
+    {
+        $this->assertUtilitySearchHit();
+
+        $this->expectException(AssertionFailedError::class);
+        $this->expectExceptionMessage('batchEmbed() was never called with 3 items');
+
+        $this->embeddingApi->assertBatchEmbedWasCalledWithCount(3);
+    }
+
+    /**
+     * @test
+     */
+    public function fake_rerank_missing_query_assertion_fails_after_elasticsearch_hit(): void
+    {
+        $this->assertUtilitySearchHit();
+
+        $this->expectException(AssertionFailedError::class);
+        $this->expectExceptionMessage('rerank() was never called with query: "missing"');
+
+        $this->rerankApi->assertRerankWasCalledWith('missing');
+    }
+
+    /**
+     * @test
+     */
+    public function fake_clip_missing_image_source_assertion_fails_after_elasticsearch_hit(): void
+    {
+        $this->assertUtilitySearchHit();
+
+        $this->expectException(AssertionFailedError::class);
+        $this->expectExceptionMessage("Image from source 'missing.jpg' was never embedded");
+
+        $this->clipApi->assertImageSourceWasEmbedded('missing.jpg');
+    }
+
+    /**
+     * @test
+     */
+    public function field_type_helper_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $this->assertUtilitySearchHit();
+
+        $facetDefaults = new class
+        {
+            use HasFacets;
+        };
+
+        $facetDefaults->aggregation(new Aggs, '10');
+
+        $this->assertFalse($facetDefaults->isFacetable());
+        $this->assertNull($facetDefaults->facets([]));
+        $this->assertFalse($facetDefaults->isFacetSearchable());
+
+        $html = new HtmlField('body');
+        $htmlQueries = $html->queries('hello');
+
+        $this->assertCount(1, $htmlQueries);
+        $this->assertSame('body', $html->name());
+
+        $id = new IdField('id');
+
+        $this->assertSame('id', $id->filterableName());
+        $this->assertSame([false, 'The field id mapped as identifier must be an integer'], $id->validate('id', 'abc'));
+        $this->assertSame([true, ''], $id->validate('id', 123));
+
+        $name = new NameField('name');
+
+        $this->assertSame(['name', 'name.name_text'], $name->names());
+        $this->assertCount(3, $name->queries('Nico'));
     }
 
     private function assertUtilitySearchHit(): void

@@ -15,6 +15,7 @@ use Sigmie\Query\Aggregations\Pipeline\SortBucket;
 use Sigmie\Query\Aggs as SearchAggregation;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Testing\TestCase;
+use TypeError;
 
 class AggregationTest extends TestCase
 {
@@ -1023,6 +1024,7 @@ class AggregationTest extends TestCase
             ['status' => ['terms' => ['field' => 'status']]],
         ], 5, ['status' => 'active']);
         $aggregation->cumulativeSum('running_total', 'total_count');
+        $aggregation->rate('yearly_rate', 'count');
 
         $raw = $aggregation->toRaw();
 
@@ -1033,5 +1035,37 @@ class AggregationTest extends TestCase
         $this->assertSame('status', $raw['missing_status']['missing']['field']);
         $this->assertEquals((object) ['status' => 'active'], $raw['status_pages']['composite']['after']);
         $this->assertSame('total_count', $raw['running_total']['cumulative_sum']['buckets_path']);
+        $this->assertSame('year', $raw['yearly_rate']['rate']['unit']);
+    }
+
+    /**
+     * @test
+     */
+    public function term_filter_type_error_path_is_backed_by_elasticsearch_hits(): void
+    {
+        $name = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($name)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($name, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Term filter coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($name)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Term filter')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $this->expectException(TypeError::class);
+
+        (new SearchAggregation)->termFilter('status_filter', 'status', 'active');
     }
 }
