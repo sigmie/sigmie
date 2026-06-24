@@ -72,5 +72,4 @@ class ClassificationTest extends TestCase
         $this->assertEquals('sales', $result->label());
         $this->assertGreaterThan(0.7, $result->confidence());
     }
-
 }
