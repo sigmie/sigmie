@@ -572,6 +572,64 @@ class SemanticTest extends TestCase
     /**
      * @test
      */
+    public function boost_value_scales_script_score_vectors(): void
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties;
+        $props->number('boost')->float();
+        $props->text('title')
+            ->newSemantic(function ($semantic): void {
+                $semantic->accuracy(7, 384)
+                    ->api('test-embeddings')
+                    ->euclideanSimilarity()
+                    ->boostedBy('boost')
+                    ->normalizeVector(false);
+            });
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($props)
+            ->merge([
+                new Document([
+                    'title' => 'Test document',
+                    'boost' => 1.0,
+                ], _id: 'regular-boost'),
+                new Document([
+                    'title' => 'Test document',
+                    'boost' => 2.0,
+                ], _id: 'scaled-boost'),
+            ]);
+
+        $docs = $this->sigmie->collect($indexName, true)->take(2);
+
+        $embeddings1 = $docs[0]->_source['_embeddings'];
+        $embeddings2 = $docs[1]->_source['_embeddings'];
+        $vectorFieldName = array_keys($embeddings1['title'])[0];
+        $vector1 = $embeddings1['title'][$vectorFieldName][0]['vector'];
+        $vector2 = $embeddings2['title'][$vectorFieldName][0]['vector'];
+
+        for ($i = 0; $i < min(5, count($vector1)); $i++) {
+            $ratio = $vector2[$i] / $vector1[$i];
+            $this->assertEqualsWithDelta(2.0, $ratio, 0.001, 'Script-score vector values should be scaled by boost factor');
+        }
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->disableKeywordSearch()
+            ->queryString('Test document')
+            ->size(2)
+            ->hits();
+
+        $this->assertSame(['regular-boost', 'scaled-boost'], array_map(fn ($hit): string => $hit->_id, $hits));
+    }
+
+    /**
+     * @test
+     */
     public function exception_when_boost_field_missing(): void
     {
         $this->expectException(Exception::class);
