@@ -260,6 +260,26 @@ class Sigmie
         return new static(new HttpConnection($client, new Elasticsearch, serverless: true));
     }
 
+    public static function createWithApiKey(
+        array|string $hosts,
+        string $apiKey,
+        SearchEngineType $engine = SearchEngineType::Elasticsearch,
+        array $config = []
+    ): static {
+        $hosts = is_string($hosts) ? explode(',', $hosts) : $hosts;
+
+        $client = JSONClient::createWithHeaders($hosts, [
+            'Authorization' => 'ApiKey '.$apiKey,
+        ], $config);
+
+        $driver = match ($engine) {
+            SearchEngineType::Elasticsearch => new Elasticsearch,
+            SearchEngineType::OpenSearch => new Opensearch,
+        };
+
+        return new static(new HttpConnection($client, $driver));
+    }
+
     public static function create(
         array|string $hosts,
         SearchEngineType $engine = SearchEngineType::Elasticsearch,

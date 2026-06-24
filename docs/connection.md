@@ -56,6 +56,19 @@ curl -X POST "localhost:9200/_security/api_key" \
   -d '{"name": "my-api-key", "expiration": "90d"}'
 ```
 
+Use `createWithApiKey()` when the cluster exposes a normal Elasticsearch endpoint, including hosted Elastic Cloud deployments where you already have the endpoint URL:
+
+```php
+use Sigmie\Sigmie;
+
+$sigmie = Sigmie::createWithApiKey(
+    hosts: ['https://my-deployment.es.us-east-1.aws.elastic.cloud'],
+    apiKey: 'your-api-key'
+);
+```
+
+This connection is not marked as serverless, so index settings like `number_of_replicas` are still sent when you create indices.
+
 Base64-encode `id:api_key` and pass it as the Authorization header:
 
 ```php

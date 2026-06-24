@@ -30,6 +30,7 @@ use Sigmie\Languages\German\German;
 use Sigmie\Languages\Greek\Builder as GreekBuilder;
 use Sigmie\Languages\Greek\Greek;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Sigmie;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
 
@@ -1144,6 +1145,27 @@ class IndexBuilderTest extends TestCase
         $raw = $settings->toRaw();
         $this->assertArrayNotHasKey('number_of_shards', $raw);
         $this->assertArrayNotHasKey('number_of_replicas', $raw);
+    }
+
+    /**
+     * @test
+     */
+    public function api_key_connection_keeps_index_shard_replica_settings(): void
+    {
+        $sigmie = Sigmie::createWithApiKey(
+            'https://my-deployment.es.us-east-1.aws.elastic.cloud',
+            'my-api-key'
+        );
+
+        $settings = $sigmie->newIndex(uniqid())
+            ->shards(1)
+            ->replicas(0)
+            ->make()
+            ->settings
+            ->toRaw();
+
+        $this->assertSame(1, $settings['number_of_shards']);
+        $this->assertSame(0, $settings['number_of_replicas']);
     }
 
     /**
