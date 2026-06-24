@@ -16,6 +16,7 @@ use Sigmie\Mappings\NewSemanticField;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\FlatObject;
+use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Object_;
@@ -720,6 +721,90 @@ class MappingsTest extends TestCase
             $index->assertPropertyHasMeta('tags', 'type', 'tags');
             $index->assertPropertyHasMeta('price', 'type', 'price');
         });
+    }
+
+    /**
+     * @test
+     */
+    public function macro_field_searches_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        NewProperties::macro('sku', function (string $name): Keyword {
+            return $this->keyword($name);
+        });
+
+        $blueprint = new NewProperties;
+        $blueprint->sku('sku');
+        $blueprint->name('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['sku' => 'A-1', 'name' => 'Alpha'], _id: 'alpha'),
+                new Document(['sku' => 'B-2', 'name' => 'Beta'], _id: 'beta'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['name'])
+            ->filters("sku:'A-1'")
+            ->queryString('')
+            ->hits();
+
+        $this->assertSame(['alpha'], array_map(fn ($hit): string => $hit->_id, $hits));
+    }
+
+    /**
+     * @test
+     */
+    public function helper_fields_search_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->add(new Keyword('sku'));
+        $blueprint->searchAsYouType('headline');
+        $blueprint->long('stock');
+        $blueprint->double('rating');
+        $blueprint->scaledFloat('score');
+        $blueprint->object('metadata');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'sku' => 'A-1',
+                    'headline' => 'Quick brown fox',
+                    'stock' => 12,
+                    'rating' => 4.8,
+                    'score' => 9.5,
+                ], _id: 'alpha'),
+                new Document([
+                    'sku' => 'B-2',
+                    'headline' => 'Slow red fox',
+                    'stock' => 3,
+                    'rating' => 3.5,
+                    'score' => 4.5,
+                ], _id: 'beta'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['headline'])
+            ->filters("sku:'A-1' AND score>'9'")
+            ->queryString('')
+            ->hits();
+
+        $this->assertSame(['alpha'], array_map(fn ($hit): string => $hit->_id, $hits));
     }
 
     /**
