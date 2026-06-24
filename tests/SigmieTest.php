@@ -55,7 +55,21 @@ class SigmieTest extends TestCase
     {
         $indexName = uniqid();
 
-        $sigmie = Sigmie::create('http://localhost:9200', SearchEngineType::Elasticsearch);
+        $engine = getenv('SEARCH_ENGINE') === 'opensearch'
+            ? SearchEngineType::OpenSearch
+            : SearchEngineType::Elasticsearch;
+        $host = $engine === SearchEngineType::OpenSearch ? 'https://localhost:9200' : 'http://localhost:9200';
+        $config = $engine === SearchEngineType::OpenSearch
+            ? [
+                'auth' => [
+                    getenv('OPENSEARCH_USER') ?: 'admin',
+                    getenv('OPENSEARCH_PASSWORD') ?: 'MyStrongPass123!@#',
+                ],
+                'verify' => false,
+            ]
+            : [];
+
+        $sigmie = Sigmie::create($host, $engine, $config);
 
         $this->assertTrue($sigmie->isConnected());
         $this->assertFalse($sigmie->isServerless());

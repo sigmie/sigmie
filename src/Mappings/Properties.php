@@ -305,6 +305,22 @@ class Properties extends Type implements ArrayAccess, FieldContainer
                     return $driver->vectorField($value)->toRaw();
                 }
 
+                if ($value instanceof DenseVector && $driver instanceof SearchEngine) {
+                    $vector = new BaseVector(
+                        name: $value->name,
+                        dims: $value->dims(),
+                        index: $value->isIndexed(),
+                        similarity: $value->similarity(),
+                        indexType: $value->indexType(),
+                        m: $value->m(),
+                        efConstruction: $value->efConstruction(),
+                    );
+
+                    $vector->setPath($value->fullPath());
+
+                    return $driver->vectorField($vector)->toRaw();
+                }
+
                 if (($value instanceof Nested || $value instanceof Object_) && $driver instanceof SearchEngine) {
                     return $value->toRaw($driver);
                 }

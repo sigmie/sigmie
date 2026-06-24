@@ -254,26 +254,44 @@ class IndexBuilderTest extends TestCase
     {
         $alias = uniqid();
 
-        /** @var EnglishBuilder */
-        $englishBuilder = $this->sigmie->newIndex($alias)
-            ->language(new English);
+        $this->forOpenSearch(function () use ($alias): void {
+            /** @var EnglishBuilder */
+            $englishBuilder = $this->sigmie->newIndex($alias)
+                ->language(new English);
 
-        $englishBuilder
-            ->englishLovinsStemmer('english_stemmer_lovins')
-            ->create();
+            $englishBuilder
+                ->englishStemmer('english_stemmer')
+                ->create();
 
-        $tokens = $this->sigmie
-            ->index($alias)
-            ->analyze('running relational', 'default');
+            $tokens = $this->sigmie
+                ->index($alias)
+                ->analyze('running relational', 'default');
 
-        $this->assertSame([], $tokens);
+            $this->assertSame(['run', 'relat'], $tokens);
+        });
 
-        $this->assertIndex($alias, function (Assert $index): void {
-            $index->assertAnalyzerHasFilter('default', 'english_stemmer_lovins');
-            $index->assertFilterEquals('english_stemmer_lovins', [
-                'type' => 'stemmer',
-                'language' => 'lovins',
-            ]);
+        $this->forElasticsearch(function () use ($alias): void {
+            /** @var EnglishBuilder */
+            $englishBuilder = $this->sigmie->newIndex($alias)
+                ->language(new English);
+
+            $englishBuilder
+                ->englishLovinsStemmer('english_stemmer_lovins')
+                ->create();
+
+            $tokens = $this->sigmie
+                ->index($alias)
+                ->analyze('running relational', 'default');
+
+            $this->assertSame([], $tokens);
+
+            $this->assertIndex($alias, function (Assert $index): void {
+                $index->assertAnalyzerHasFilter('default', 'english_stemmer_lovins');
+                $index->assertFilterEquals('english_stemmer_lovins', [
+                    'type' => 'stemmer',
+                    'language' => 'lovins',
+                ]);
+            });
         });
     }
 

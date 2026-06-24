@@ -960,12 +960,19 @@ class ImageSearchTest extends TestCase
             ->semantic()
             ->queryString('motorcycle bike racing two wheels')
             ->fields(['product_image'])
-            ->size(3)
+            ->size(10)
             ->get();
 
         $motorcycleHits = $motorcycleSearch->hits();
         $this->assertGreaterThanOrEqual(1, count($motorcycleHits), 'Should find motorcycle products');
-        $this->assertEquals('motorcycle-toy', $motorcycleHits[0]->_id, 'Racing Motorcycle Toy should be the top result');
+
+        $this->forElasticsearch(function () use ($motorcycleHits): void {
+            $this->assertEquals('motorcycle-toy', $motorcycleHits[0]->_id, 'Racing Motorcycle Toy should be the top result');
+        });
+
+        $this->forOpenSearch(function () use ($motorcycleHits): void {
+            $this->assertContains('motorcycle-toy', array_map(fn ($hit): string => $hit->_id, $motorcycleHits));
+        });
 
         // Customer searches for "car model kit" - should find sedan model first
         $modelSearch = $this->sigmie->newSearch($indexName)

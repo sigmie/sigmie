@@ -7,7 +7,6 @@ namespace Sigmie;
 use DateTimeInterface;
 use Elastic\Transport\TransportBuilder;
 use GuzzleHttp\Client as GuzzleHttpClient;
-use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\AI\Contracts\RerankApi;
@@ -43,6 +42,7 @@ use Sigmie\Search\NewMultiSearch;
 use Sigmie\Search\NewRecommendations;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewTemplate;
+use Throwable;
 
 class Sigmie
 {
@@ -225,11 +225,10 @@ class Sigmie
     {
         try {
             $request = new ElasticsearchRequest('GET', new Uri);
-
             $res = ($this->elasticsearchConnection)($request);
 
             return ! $res->failed();
-        } catch (ConnectException) {
+        } catch (Throwable) {
             return false;
         }
     }

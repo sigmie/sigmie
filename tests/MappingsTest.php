@@ -6,6 +6,7 @@ namespace Sigmie\Tests;
 
 use DateTime;
 use Sigmie\Document\Document;
+use Sigmie\Enums\SearchEngineType;
 use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
@@ -830,14 +831,26 @@ class MappingsTest extends TestCase
                 new Document(['sku' => 'B-2', 'embedding' => [0.0, 1.0, 0.0]], _id: 'beta'),
             ]);
 
-        $response = $this->sigmie->rawQuery($indexName, [
-            'knn' => [
-                'field' => 'embedding',
-                'query_vector' => [1.0, 0.0, 0.0],
-                'k' => 1,
-                'num_candidates' => 10,
+        $response = $this->sigmie->rawQuery($indexName, match ($this->elasticsearchConnection->driver()->engine()) {
+            SearchEngineType::Elasticsearch => [
+                'knn' => [
+                    'field' => 'embedding',
+                    'query_vector' => [1.0, 0.0, 0.0],
+                    'k' => 1,
+                    'num_candidates' => 10,
+                ],
             ],
-        ]);
+            SearchEngineType::OpenSearch => [
+                'query' => [
+                    'knn' => [
+                        'embedding' => [
+                            'vector' => [1.0, 0.0, 0.0],
+                            'k' => 1,
+                        ],
+                    ],
+                ],
+            ],
+        });
 
         $this->assertSame('alpha', $response->json('hits.hits.0._id'));
     }
@@ -890,14 +903,26 @@ class MappingsTest extends TestCase
                 new Document(['sku' => 'B-2', 'embedding' => [-1.0]], _id: 'beta'),
             ]);
 
-        $response = $this->sigmie->rawQuery($indexName, [
-            'knn' => [
-                'field' => 'embedding',
-                'query_vector' => [1.0],
-                'k' => 1,
-                'num_candidates' => 10,
+        $response = $this->sigmie->rawQuery($indexName, match ($this->elasticsearchConnection->driver()->engine()) {
+            SearchEngineType::Elasticsearch => [
+                'knn' => [
+                    'field' => 'embedding',
+                    'query_vector' => [1.0],
+                    'k' => 1,
+                    'num_candidates' => 10,
+                ],
             ],
-        ]);
+            SearchEngineType::OpenSearch => [
+                'query' => [
+                    'knn' => [
+                        'embedding' => [
+                            'vector' => [1.0],
+                            'k' => 1,
+                        ],
+                    ],
+                ],
+            ],
+        });
 
         $this->assertSame('alpha', $response->json('hits.hits.0._id'));
     }
@@ -1027,9 +1052,16 @@ class MappingsTest extends TestCase
         $this->indexAPICall($indexName, 'PUT', [
             'settings' => [
                 'analysis' => [
+                    'char_filter' => [
+                        'dash_to_space' => [
+                            'type' => 'mapping',
+                            'mappings' => ['-=> '],
+                        ],
+                    ],
                     'normalizer' => [
                         'folded_keyword' => [
                             'type' => 'custom',
+                            'char_filter' => ['dash_to_space'],
                             'filter' => ['lowercase', 'asciifolding'],
                         ],
                         'upper_keyword' => [
@@ -1072,6 +1104,7 @@ class MappingsTest extends TestCase
         $this->assertSame('normalized', $folded->json('hits.hits.0._id'));
         $this->assertSame('normalized', $upper->json('hits.hits.0._id'));
         $this->assertSame('normalized', $digits->json('hits.hits.0._id'));
+        $this->assertSame(['dash_to_space'], $normalizers['folded_keyword']['char_filter']);
         $this->assertSame(['lowercase', 'asciifolding'], $normalizers['folded_keyword']['filter']);
         $this->assertSame(['uppercase'], $normalizers['upper_keyword']['filter']);
         $this->assertSame(['decimal_digit'], $normalizers['digit_keyword']['filter']);

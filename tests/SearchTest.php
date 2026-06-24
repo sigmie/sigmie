@@ -160,6 +160,7 @@ class SearchTest extends TestCase
         $hits = $response->hits();
         $reranked = $response->rerank('test-rerank', ['title']);
         $rerankedWithApi = $response->rerank($this->rerankApi, ['title'], query: 'Alpha', topK: 1);
+        $scores = $this->rerankApi->rerank(['Alpha Search Manual', 'Beta Archive'], 'Alpha');
 
         $this->assertSame('alpha', $response->json('hits')[0]['_id']);
         $this->assertSame('alpha', $hits[0]->_id);
@@ -174,6 +175,7 @@ class SearchTest extends TestCase
         $this->assertSame('alpha', $reranked[0]->_id);
         $this->assertSame([], $response->autocompletion());
         $this->assertInstanceOf(RerankedHit::class, $rerankedWithApi[0]);
+        $this->assertSame([0, 1], array_column($scores, 'index'));
         $this->rerankApi->assertRerankWasCalledWith('Alpha', 1);
         $this->rerankApi->assertRerankWasCalledWithDocumentCount(1);
     }

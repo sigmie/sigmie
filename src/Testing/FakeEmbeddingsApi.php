@@ -192,12 +192,6 @@ class FakeEmbeddingsApi implements EmbeddingsApi
 
         $magnitude = sqrt(array_sum(array_map(fn (float $value): float => $value * $value, $vector)));
 
-        if ($magnitude === 0.0) {
-            $vector[0] = 1.0;
-
-            return $vector;
-        }
-
         return array_map(fn (float $value): float => $value / $magnitude, $vector);
     }
 

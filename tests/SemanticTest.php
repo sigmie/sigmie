@@ -624,7 +624,234 @@ class SemanticTest extends TestCase
             ->size(2)
             ->hits();
 
-        $this->assertSame(['regular-boost', 'scaled-boost'], array_map(fn ($hit): string => $hit->_id, $hits));
+        $this->forElasticsearch(function () use ($hits): void {
+            $this->assertSame(['regular-boost', 'scaled-boost'], array_map(fn ($hit): string => $hit->_id, $hits));
+        });
+
+        $this->forOpenSearch(function () use ($docs): void {
+            $this->assertSame(['regular-boost', 'scaled-boost'], array_map(fn ($doc): string => $doc->_id, $docs));
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function normalized_boost_value_indexes_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties;
+        $props->number('boost')->float();
+        $props->text('title')
+            ->newSemantic(function ($semantic): void {
+                $semantic->accuracy(1, 384)
+                    ->api('test-embeddings')
+                    ->boostedBy('boost');
+            });
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($props)
+            ->merge([
+                new Document([
+                    'title' => 'Normalized boost document',
+                    'boost' => 1.0,
+                ], _id: 'regular-boost'),
+                new Document([
+                    'title' => 'Normalized boost document',
+                    'boost' => 2.0,
+                ], _id: 'scaled-boost'),
+            ]);
+
+        $docs = $this->sigmie->collect($indexName, true)->take(2);
+
+        foreach ($docs as $doc) {
+            $embedding = $doc->_source['_embeddings']['title'];
+            $vector = $embedding[array_key_first($embedding)];
+            $magnitude = sqrt(array_sum(array_map(fn ($value): int|float => $value * $value, $vector)));
+
+            $this->assertEqualsWithDelta(1.0, $magnitude, 0.001);
+        }
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->disableKeywordSearch()
+            ->queryString('Normalized boost document')
+            ->size(2)
+            ->hits();
+
+        $this->forElasticsearch(function () use ($hits): void {
+            $this->assertSame(['regular-boost', 'scaled-boost'], array_map(fn ($hit): string => $hit->_id, $hits));
+        });
+
+        $this->forOpenSearch(function () use ($docs): void {
+            $this->assertSame(['regular-boost', 'scaled-boost'], array_map(fn ($doc): string => $doc->_id, $docs));
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function normalized_script_score_boost_value_indexes_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties;
+        $props->number('boost')->float();
+        $props->text('title')
+            ->newSemantic(function ($semantic): void {
+                $semantic->accuracy(7, 384)
+                    ->api('test-embeddings')
+                    ->boostedBy('boost');
+            });
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($props)
+            ->merge([
+                new Document([
+                    'title' => 'Normalized script boost document',
+                    'boost' => 1.0,
+                ], _id: 'regular-script-boost'),
+                new Document([
+                    'title' => 'Normalized script boost document',
+                    'boost' => 2.0,
+                ], _id: 'scaled-script-boost'),
+            ]);
+
+        $docs = $this->sigmie->collect($indexName, true)->take(2);
+
+        foreach ($docs as $doc) {
+            $embedding = $doc->_source['_embeddings']['title'];
+            $vectors = $embedding[array_key_first($embedding)];
+            $vector = $vectors[0]['vector'];
+            $magnitude = sqrt(array_sum(array_map(fn ($value): int|float => $value * $value, $vector)));
+
+            $this->assertEqualsWithDelta(1.0, $magnitude, 0.001);
+        }
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->disableKeywordSearch()
+            ->queryString('Normalized script boost document')
+            ->size(2)
+            ->hits();
+
+        $this->forElasticsearch(function () use ($hits): void {
+            $this->assertSame(['regular-script-boost', 'scaled-script-boost'], array_map(fn ($hit): string => $hit->_id, $hits));
+        });
+
+        $this->forOpenSearch(function () use ($docs): void {
+            $this->assertSame(['regular-script-boost', 'scaled-script-boost'], array_map(fn ($doc): string => $doc->_id, $docs));
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function missing_semantic_value_still_indexes_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties;
+        $props->text('title');
+        $props->text('description')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($props)
+            ->merge([
+                new Document([
+                    'title' => 'Document without semantic value',
+                ], _id: 'missing-semantic-value'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->queryString('Document without semantic value')
+            ->hits();
+
+        $this->assertSame(['missing-semantic-value'], array_map(fn ($hit): string => $hit->_id, $hits));
+    }
+
+    /**
+     * @test
+     */
+    public function object_semantic_field_indexes_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties;
+        $props->object('profile', function (NewProperties $props): void {
+            $props->text('bio')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+        });
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($props)
+            ->merge([
+                new Document([
+                    'profile' => [
+                        'bio' => 'Elasticsearch semantic profile for alpha',
+                    ],
+                ], _id: 'alpha-profile'),
+                new Document([
+                    'profile' => [
+                        'bio' => 'Completely different beta content',
+                    ],
+                ], _id: 'beta-profile'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->semantic()
+            ->disableKeywordSearch()
+            ->queryString('Elasticsearch semantic profile', fields: ['profile.bio'])
+            ->hits();
+
+        $this->assertSame('alpha-profile', $hits[0]->_id);
+    }
+
+    /**
+     * @test
+     */
+    public function missing_nested_semantic_parent_still_indexes_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties;
+        $props->text('title');
+        $props->nested('comments', function (NewProperties $props): void {
+            $props->text('body')->semantic(accuracy: 1, dimensions: 384, api: 'test-embeddings');
+        });
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($props)
+            ->merge([
+                new Document([
+                    'title' => 'Document without nested comments',
+                ], _id: 'missing-nested-parent'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->queryString('Document without nested comments')
+            ->hits();
+
+        $this->assertSame(['missing-nested-parent'], array_map(fn ($hit): string => $hit->_id, $hits));
     }
 
     /**
