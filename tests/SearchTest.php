@@ -1405,6 +1405,51 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function semantic_search_scoped_to_non_vector_field_returns_sorted_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title')->keyword()->makeSortable();
+        $blueprint->text('description')->semantic(dimensions: 384, api: 'test-embeddings');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document([
+                    'title' => 'Beta',
+                    'description' => 'Second document',
+                ], _id: 'beta'),
+                new Document([
+                    'title' => 'Alpha',
+                    'description' => 'First document',
+                ], _id: 'alpha'),
+            ]);
+
+        $hits = $this->sigmie
+            ->newSearch($indexName)
+            ->properties($blueprint)
+            ->semantic()
+            ->queryString('Alpha', fields: ['title'])
+            ->sort('title:asc')
+            ->size(2)
+            ->get()
+            ->json('hits');
+
+        $this->assertSame(['alpha'], array_map(
+            fn (array $hit): string => $hit['_id'],
+            $hits
+        ));
+    }
+
+    /**
+     * @test
+     */
     public function boost_field_search_test(): void
     {
         $indexName = uniqid();
