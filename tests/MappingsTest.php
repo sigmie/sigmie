@@ -11,10 +11,12 @@ use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Mappings;
 use Sigmie\Index\NewAnalyzer;
+use Sigmie\Mappings\Contracts\Type as TypeContract;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\NewSemanticField;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\PropertiesFieldNotFound;
+use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\FlatObject;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Nested;
@@ -25,6 +27,7 @@ use Sigmie\Mappings\Types\Text;
 use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
+use Sigmie\Semantic\Contracts\AIProvider;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
 
@@ -831,6 +834,66 @@ class MappingsTest extends TestCase
             'knn' => [
                 'field' => 'embedding',
                 'query_vector' => [1.0, 0.0, 0.0],
+                'k' => 1,
+                'num_candidates' => 10,
+            ],
+        ]);
+
+        $this->assertSame('alpha', $response->json('hits.hits.0._id'));
+    }
+
+    /**
+     * @test
+     */
+    public function embeddings_provider_field_searches_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('sku');
+        $blueprint->embeddings(new class implements AIProvider
+        {
+            public function embed(string $text, Text $originalType): array
+            {
+                return [];
+            }
+
+            public function batchEmbed(array $payload): array
+            {
+                return [];
+            }
+
+            public function type(Text $originalType): TypeContract
+            {
+                return new DenseVector($originalType->originalName(), dims: 1);
+            }
+
+            public function queries(array|string $text, Text $originalType): array
+            {
+                return [];
+            }
+
+            public function rerank(array $documents, string $queryString): array
+            {
+                return [];
+            }
+        }, 'embedding');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['sku' => 'A-1', 'embedding' => [1.0]], _id: 'alpha'),
+                new Document(['sku' => 'B-2', 'embedding' => [-1.0]], _id: 'beta'),
+            ]);
+
+        $response = $this->sigmie->rawQuery($indexName, [
+            'knn' => [
+                'field' => 'embedding',
+                'query_vector' => [1.0],
                 'k' => 1,
                 'num_candidates' => 10,
             ],

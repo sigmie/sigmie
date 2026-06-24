@@ -132,7 +132,7 @@ class NewProperties
 
     public function embeddings(AIProvider $provider, string $name): void
     {
-        $this->fields->add($provider->type($name));
+        $this->fields->add($provider->type((new Text($name))->unstructuredText()));
     }
 
     public function text(string $name): Text
