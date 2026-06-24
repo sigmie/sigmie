@@ -730,9 +730,7 @@ class MappingsTest extends TestCase
     {
         $indexName = uniqid();
 
-        NewProperties::macro('sku', function (string $name): Keyword {
-            return $this->keyword($name);
-        });
+        NewProperties::macro('sku', fn (string $name): Keyword => $this->keyword($name));
 
         $blueprint = new NewProperties;
         $blueprint->sku('sku');
