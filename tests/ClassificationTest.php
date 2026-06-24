@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use InvalidArgumentException;
 use Sigmie\Clustering\ClusteringResult;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
@@ -214,5 +215,42 @@ class ClassificationTest extends TestCase
                 'text' => 'The Lion King',
             ],
         ], $noiseResult->noise());
+    }
+
+    /**
+     * @test
+     */
+    public function clustering_unsupported_algorithm_path_is_backed_by_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Clustering coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Clustering')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unsupported algorithm: unsupported');
+
+        $this->sigmie->newClustering($this->embeddingApi)
+            ->texts(['first', 'second'])
+            ->clusters(1)
+            ->maxIterations(1)
+            ->algorithm('unsupported')
+            ->fit();
     }
 }

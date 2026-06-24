@@ -9,13 +9,19 @@ use GuzzleHttp\Psr7\Response as PsrResponse;
 use Http\Promise\FulfilledPromise;
 use Http\Promise\Promise;
 use PHPUnit\Framework\AssertionFailedError;
+use Sigmie\Base\APIs\Explain;
+use Sigmie\Base\APIs\Stats;
+use Sigmie\Base\APIs\Update as UpdateApi;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Base\Drivers\Opensearch;
+use Sigmie\Base\ElasticsearchException;
+use Sigmie\Base\Http\ElasticsearchResponse as HttpElasticsearchResponse;
 use Sigmie\Base\Http\PointInTimeRequests;
 use Sigmie\Document\Document;
+use Sigmie\Document\Hit;
 use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Index\Analysis\SimpleAnalyzer;
 use Sigmie\Index\Analysis\TokenFilter\LanguageStemmer;
@@ -36,6 +42,9 @@ use Sigmie\Query\Aggregations\Bucket\Missing;
 use Sigmie\Query\Aggregations\Metrics\Rate;
 use Sigmie\Query\Aggs;
 use Sigmie\Search\MMR;
+use Sigmie\Search\PitSortPlanner;
+use Sigmie\Search\PointInTimeIterator;
+use Sigmie\Search\RawQuery;
 use Sigmie\Semantic\Providers\AbstractAIProvider;
 use Sigmie\Semantic\Providers\Noop;
 use Sigmie\Shared\UsesApis;
@@ -518,6 +527,153 @@ class UtilityCoverageTest extends TestCase
 
         $this->assertSame(['name', 'name.name_text'], $name->names());
         $this->assertCount(3, $name->queries('Nico'));
+    }
+
+    /**
+     * @test
+     */
+    public function raw_query_and_point_in_time_helpers_are_backed_by_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Raw query coverage'], _id: 'matching'),
+            ]);
+
+        $rawQuery = (new RawQuery($this->elasticsearchConnection, $indexName, [
+            'query' => ['match_all' => (object) []],
+            'size' => 1,
+        ]))->chunk(1);
+
+        $ids = [];
+        $rawQuery->each(function (Hit $hit) use (&$ids): void {
+            $ids[] = $hit->_id;
+        });
+
+        $this->assertSame(['matching'], $ids);
+        $this->assertEquals([
+            ['index' => $indexName],
+            ['query' => ['match_all' => (object) []], 'size' => 1],
+        ], $rawQuery->toMultiSearch());
+        $this->assertSame(1, $rawQuery->multisearchResCount());
+        $this->assertSame(['ok' => true], $rawQuery->formatResponses(['ok' => true]));
+
+        $this->assertSame([['_shard_doc' => 'asc']], PitSortPlanner::plan([], false));
+        $this->assertSame([['_id' => 'asc']], PitSortPlanner::plan(['_score'], true));
+        $this->assertSame(['name'], PitSortPlanner::plan(['name'], false, hasCollapse: true));
+        $this->assertSame([['rank' => ['order' => 'asc']], ['_shard_doc' => 'asc']], PitSortPlanner::plan([['rank' => ['order' => 'asc']]], false));
+        $this->assertSame([['rank' => ['order' => 'asc']], ['_id' => 'asc']], PitSortPlanner::plan([['rank' => ['order' => 'asc']], ['_id' => 'asc']], true));
+
+        $openSearchPit = HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, [], '{"pit_id":"open-pit"}'));
+        $elasticPit = HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, [], '{"id":"elastic-pit"}'));
+        $nestedPit = HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, [], '{"pit":{"id":"nested-pit"}}'));
+        $emptyPit = HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, [], '{}'));
+
+        $this->assertSame('open-pit', PointInTimeIterator::pitIdFromOpenResponse($openSearchPit, true));
+        $this->assertSame('elastic-pit', PointInTimeIterator::pitIdFromOpenResponse($elasticPit, false));
+        $this->assertSame('nested-pit', PointInTimeIterator::updatedPitIdFromSearchResponse($nestedPit));
+        $this->assertNull(PointInTimeIterator::updatedPitIdFromSearchResponse($emptyPit));
+    }
+
+    /**
+     * @test
+     */
+    public function explain_and_stats_api_wrappers_use_elasticsearch(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'API wrapper coverage'], _id: 'matching'));
+
+        $wrapper = new class($this->elasticsearchConnection)
+        {
+            use Explain;
+            use Stats;
+
+            public function __construct(ElasticsearchConnection $connection)
+            {
+                $this->setElasticsearchConnection($connection);
+            }
+
+            public function explain(string $index, array $query, string $id): ElasticsearchResponse
+            {
+                return $this->explainAPICall($index, $query, $id);
+            }
+
+            public function stats(string $index): ElasticsearchResponse
+            {
+                return $this->statsAPICall($index);
+            }
+        };
+
+        $explain = $wrapper->explain($indexName, ['match_all' => (object) []], 'matching');
+        $stats = $wrapper->stats($indexName);
+
+        $this->assertTrue($explain->json('matched'));
+        $this->assertStringStartsWith($indexName, (string) array_key_first($stats->json('indices')));
+    }
+
+    /**
+     * @test
+     */
+    public function update_api_wrapper_error_path_is_backed_by_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'API update coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('update')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $wrapper = new class($this->elasticsearchConnection)
+        {
+            use UpdateApi;
+
+            public function __construct(ElasticsearchConnection $connection)
+            {
+                $this->setElasticsearchConnection($connection);
+            }
+
+            public function update(string $index, string $id, array $data): ElasticsearchResponse
+            {
+                return $this->updateAPICall($index, $id, $data);
+            }
+        };
+
+        $this->expectException(ElasticsearchException::class);
+
+        $wrapper->update($indexName, 'matching', ['doc' => ['title' => 'Updated']]);
     }
 
     private function assertUtilitySearchHit(): void
