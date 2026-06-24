@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Exception;
-use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Mappings\NewProperties;
@@ -180,32 +179,37 @@ class QueryTest extends TestCase
     /**
      * @test
      */
-    public function valid_search(): void
+    public function boolean_query_builder_clauses_return_expected_elasticsearch_documents(): void
     {
         $name = uniqid();
 
-        $this->sigmie->newIndex($name)->create();
+        $blueprint = new NewProperties;
+        $blueprint->keyword('status');
+        $blueprint->keyword('sku');
+        $blueprint->number('stock')->integer();
+        $blueprint->text('title');
 
-        $res = $this->sigmie->newQuery($name)->bool(function (QueriesCompoundBoolean $boolean): void {
-            $boolean->filter->matchAll();
-            $boolean->filter->matchNone();
-            $boolean->filter->fuzzy('bar', 'baz');
-            $boolean->filter()->multiMatch(['foo', 'bar'], 'baz');
+        $this->sigmie->newIndex($name)
+            ->properties($blueprint)
+            ->create();
 
-            $boolean->must->term('foo', 'bar');
-            $boolean->must->exists('bar');
-            $boolean->must->terms('foo', ['bar', 'baz']);
+        $this->sigmie->collect($name, refresh: true)->merge([
+            new Document(['status' => 'published', 'sku' => 'book-001', 'stock' => 5, 'title' => 'Laravel Search'], _id: 'laravel-search'),
+            new Document(['status' => 'published', 'sku' => 'book-002', 'stock' => 0, 'title' => 'Elastic Guide'], _id: 'out-of-stock'),
+            new Document(['status' => 'draft', 'sku' => 'draft-001', 'stock' => 8, 'title' => 'Draft Search'], _id: 'draft-search'),
+            new Document(['status' => 'published', 'sku' => 'video-001', 'stock' => 4, 'title' => 'Search Video'], _id: 'search-video'),
+        ]);
 
-            $boolean->mustNot->wildcard('foo', '**/*');
-            $boolean->mustNot->ids(['unqie']);
-
-            $boolean->should->bool(fn (QueriesCompoundBoolean $boolean): BooleanQueryBuilder => $boolean->must->match('foo', 'bar'));
+        $response = $this->sigmie->newQuery($name)->bool(function (QueriesCompoundBoolean $boolean): void {
+            $boolean->filter->term('status', 'published');
+            $boolean->filter->range('stock', ['>' => 0]);
+            $boolean->must->regex('sku', 'book-00[0-9]');
+            $boolean->must->match('title', 'Search');
+            $boolean->mustNot->wildcard('sku', 'video-*');
         })
-            ->from(0)
-            ->size(2)
-            ->response();
+            ->get();
 
-        $this->assertInstanceOf(SearchResponse::class, $res);
+        $this->assertSame(['laravel-search'], $this->idsFromHits($response->json('hits.hits')));
     }
 
     /**

@@ -147,6 +147,48 @@ class RerankerTest extends TestCase
     /**
      * @test
      */
+    public function new_rerank_accepts_raw_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->text('description');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Laravel', 'description' => 'PHP web framework'], _id: 'laravel'),
+                new Document(['title' => 'Django', 'description' => 'Python web framework'], _id: 'django'),
+            ]);
+
+        $rawHits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('framework')
+            ->fields(['description'])
+            ->size(2)
+            ->get()
+            ->json('hits');
+
+        $reranked = (new NewRerank($this->rerankApi))
+            ->fields(['title', 'description'])
+            ->query('Laravel framework')
+            ->topK(1)
+            ->rerank($rawHits);
+
+        $this->assertCount(1, $reranked);
+        $this->assertInstanceOf(RerankedHit::class, $reranked[0]);
+        $this->assertSame('laravel', $reranked[0]->_id);
+        $this->rerankApi->assertRerankWasCalledWith('Laravel framework', 1);
+    }
+
+    /**
+     * @test
+     */
     public function semantic_reranker_leaves_empty_elasticsearch_results_untouched(): void
     {
         $indexName = uniqid();
