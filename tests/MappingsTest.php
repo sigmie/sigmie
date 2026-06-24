@@ -823,10 +823,78 @@ class MappingsTest extends TestCase
 
         $this->assertSame(['books-title-case', 'books-upper-case'], $ids);
 
-        $this->assertArrayHasKey(
-            'category_field_normalizer',
-            $this->sigmie->index($indexName)->raw['settings']['index']['analysis']['normalizer']
-        );
+        $normalizers = $this->sigmie->index($indexName)
+            ->settings
+            ->analysis()
+            ->toRaw()['normalizer'];
+
+        $this->assertSame([
+            'category_field_normalizer' => [
+                'type' => 'custom',
+                'char_filter' => [],
+                'filter' => ['lowercase'],
+            ],
+        ], $normalizers);
+    }
+
+    /**
+     * @test
+     */
+    public function builtin_normalizer_filters_are_restored_from_elasticsearch_settings(): void
+    {
+        $indexName = uniqid();
+
+        $this->indexAPICall($indexName, 'PUT', [
+            'settings' => [
+                'analysis' => [
+                    'normalizer' => [
+                        'folded_keyword' => [
+                            'type' => 'custom',
+                            'filter' => ['lowercase', 'asciifolding'],
+                        ],
+                        'upper_keyword' => [
+                            'type' => 'custom',
+                            'filter' => ['uppercase'],
+                        ],
+                        'digit_keyword' => [
+                            'type' => 'custom',
+                            'filter' => ['decimal_digit'],
+                        ],
+                    ],
+                ],
+            ],
+            'mappings' => [
+                'properties' => [
+                    'folded' => ['type' => 'keyword', 'normalizer' => 'folded_keyword'],
+                    'upper' => ['type' => 'keyword', 'normalizer' => 'upper_keyword'],
+                    'digits' => ['type' => 'keyword', 'normalizer' => 'digit_keyword'],
+                ],
+            ],
+        ]);
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document([
+                'folded' => "Caf\u{00E9}",
+                'upper' => 'books',
+                'digits' => "\u{0661}\u{0662}\u{0663}",
+            ], _id: 'normalized'),
+        ]);
+
+        $folded = $this->sigmie->newQuery($indexName)->term('folded', 'cafe')->get();
+        $upper = $this->sigmie->newQuery($indexName)->term('upper', 'BOOKS')->get();
+        $digits = $this->sigmie->newQuery($indexName)->term('digits', '123')->get();
+
+        $normalizers = $this->sigmie->index($indexName)
+            ->settings
+            ->analysis()
+            ->toRaw()['normalizer'];
+
+        $this->assertSame('normalized', $folded->json('hits.hits.0._id'));
+        $this->assertSame('normalized', $upper->json('hits.hits.0._id'));
+        $this->assertSame('normalized', $digits->json('hits.hits.0._id'));
+        $this->assertSame(['lowercase', 'asciifolding'], $normalizers['folded_keyword']['filter']);
+        $this->assertSame(['uppercase'], $normalizers['upper_keyword']['filter']);
+        $this->assertSame(['decimal_digit'], $normalizers['digit_keyword']['filter']);
     }
 
     /**

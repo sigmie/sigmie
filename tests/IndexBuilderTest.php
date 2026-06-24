@@ -776,6 +776,39 @@ class IndexBuilderTest extends TestCase
     /**
      * @test
      */
+    public function standard_analyzer_mapping_returns_elasticsearch_hits(): void
+    {
+        $alias = uniqid();
+
+        $this->indexAPICall($alias, 'PUT', [
+            'mappings' => [
+                'properties' => [
+                    'title' => [
+                        'type' => 'text',
+                        'analyzer' => 'standard',
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->sigmie->collect($alias, refresh: true)->merge([
+            new Document(['title' => 'Sigmie Search'], _id: 'matching'),
+            new Document(['title' => 'Other Engine'], _id: 'other'),
+        ]);
+
+        $index = $this->sigmie->index($alias);
+
+        $response = $this->sigmie->newQuery($alias)
+            ->match('title', 'sigmie')
+            ->get();
+
+        $this->assertSame(['matching'], array_map(fn (array $hit): string => $hit['_id'], $response->json('hits.hits')));
+        $this->assertSame(['title'], $index->mappings->fieldNames());
+    }
+
+    /**
+     * @test
+     */
     public function simple_pattern_tokenizer_analyzes_matching_tokens(): void
     {
         $alias = uniqid();
@@ -799,6 +832,27 @@ class IndexBuilderTest extends TestCase
 
         $this->assertSame(['ABC', 'DEF'], $tokens);
         $this->assertSame(['ABC', 'DEF'], $unflaggedTokens);
+    }
+
+    /**
+     * @test
+     */
+    public function simple_pattern_split_tokenizer_splits_text_with_elasticsearch(): void
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->tokenizeOnSimplePattern('_', 'underscore_split_tokenizer')
+            ->create();
+
+        $tokens = $this->sigmie
+            ->index($alias)
+            ->analyze('alpha_beta_gamma', 'default');
+
+        $analysis = $this->sigmie->index($alias)->settings->analysis();
+
+        $this->assertSame(['alpha', 'beta', 'gamma'], $tokens);
+        $this->assertTrue($analysis->hasTokenizer('underscore_split_tokenizer'));
     }
 
     /**

@@ -187,7 +187,17 @@ class Analysis implements AnalysisInterface
             );
         }
 
-        return new static($analyzers);
+        $normalizers = [];
+
+        foreach ($raw['normalizer'] ?? [] as $name => $normalizer) {
+            $normalizers[$name] = Normalizer::create(
+                [$name => $normalizer],
+                $charFilters,
+                $filters
+            );
+        }
+
+        return new static($analyzers, $normalizers);
     }
 
     public function toRaw(): array

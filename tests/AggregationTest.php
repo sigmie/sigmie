@@ -9,7 +9,9 @@ use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Query\Aggregations\Bucket\RareTerms;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
+use Sigmie\Query\Aggregations\Pipeline\SortBucket;
 use Sigmie\Query\Aggs as SearchAggregation;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Testing\TestCase;
@@ -537,6 +539,89 @@ class AggregationTest extends TestCase
         $value = $res->aggregation('genders.buckets');
 
         $this->assertCount(4, $value);
+    }
+
+    /**
+     * @test
+     */
+    public function rare_terms_aggregation_returns_rare_elasticsearch_buckets(): void
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->mapping(function (NewProperties $blueprint): void {
+            $blueprint->keyword('type');
+        })->create();
+
+        $collection = $this->sigmie->collect($name, refresh: true);
+
+        $collection->merge([
+            new Document(['type' => 'common']),
+            new Document(['type' => 'common']),
+            new Document(['type' => 'rare']),
+            new Document(['name' => 'missing type']),
+        ]);
+
+        $res = $this->sigmie->newQuery($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation): void {
+                $rareTerms = (new RareTerms('rare_types', 'type'))
+                    ->missing('N/A');
+                $rareTerms->size(10);
+
+                $aggregation->add($rareTerms);
+            })
+            ->get();
+
+        $buckets = $res->aggregation('rare_types.buckets');
+        $bucketCounts = [];
+
+        foreach ($buckets as $bucket) {
+            $bucketCounts[$bucket['key']] = $bucket['doc_count'];
+        }
+
+        ksort($bucketCounts);
+
+        $this->assertSame([
+            'N/A' => 1,
+            'rare' => 1,
+        ], $bucketCounts);
+    }
+
+    /**
+     * @test
+     */
+    public function bucket_sort_pipeline_orders_elasticsearch_buckets_by_metric(): void
+    {
+        $name = uniqid();
+
+        $this->sigmie->newIndex($name)->mapping(function (NewProperties $blueprint): void {
+            $blueprint->keyword('product');
+            $blueprint->number('amount');
+        })->create();
+
+        $this->sigmie->collect($name, refresh: true)->merge([
+            new Document(['product' => 'alpha', 'amount' => 10]),
+            new Document(['product' => 'alpha', 'amount' => 5]),
+            new Document(['product' => 'beta', 'amount' => 30]),
+        ]);
+
+        $res = $this->sigmie->newQuery($name)
+            ->matchAll()
+            ->aggregate(function (SearchAggregation $aggregation): void {
+                $aggregation->terms('products', 'product')
+                    ->aggregate(function (SearchAggregation $aggregation): void {
+                        $aggregation->sum('revenue', 'amount');
+                        $aggregation->add(new SortBucket('sort_by_revenue', 'revenue', 'desc'));
+                    });
+            })
+            ->get();
+
+        $buckets = $res->aggregation('products.buckets');
+
+        $this->assertSame('beta', $buckets[0]['key']);
+        $this->assertEquals(30, $buckets[0]['revenue']['value']);
+        $this->assertSame('alpha', $buckets[1]['key']);
+        $this->assertEquals(15, $buckets[1]['revenue']['value']);
     }
 
     /**

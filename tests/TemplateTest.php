@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\Base\APIs\SearchTemplate as SearchTemplateAPI;
+use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Base\Http\Responses\Search;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\TestCase;
@@ -99,6 +102,57 @@ class TemplateTest extends TestCase
 
         $this->assertEquals(0, $response->total());
         $this->assertSame([], $response->hits());
+    }
+
+    /**
+     * @test
+     */
+    public function search_template_api_call_returns_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+        $templateId = uniqid('api_template_');
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Search Template Guide'], _id: 'matching'),
+                new Document(['title' => 'Other Topic'], _id: 'missing'),
+            ]);
+
+        $this->sigmie->newTemplate($templateId)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->autocomplete(false)
+            ->get()
+            ->save();
+
+        $runner = new class($this->elasticsearchConnection)
+        {
+            use SearchTemplateAPI;
+
+            public function __construct(ElasticsearchConnection $connection)
+            {
+                $this->setElasticsearchConnection($connection);
+            }
+
+            public function run(string $index, string $name, array $params): Search
+            {
+                return $this->templateAPICall($index, $name, $params);
+            }
+        };
+
+        $response = $runner->run($indexName, $templateId, [
+            'query_string' => 'Template',
+        ]);
+
+        $this->assertSame('matching', $response->json('hits.hits.0._id'));
     }
 
     /**

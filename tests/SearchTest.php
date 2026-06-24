@@ -8,6 +8,7 @@ use Generator;
 use Http\Promise\Promise;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
+use Sigmie\Document\RerankedHit;
 use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
@@ -123,6 +124,58 @@ class SearchTest extends TestCase
         sort($suggestions);
 
         $this->assertSame(['Star Trek', 'Star Wars', 'Stargate'], $suggestions);
+    }
+
+    /**
+     * @test
+     */
+    public function search_response_helpers_reflect_elasticsearch_results(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->keyword('category');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['title' => 'Alpha Search Manual', 'category' => 'docs'], _id: 'alpha'),
+                new Document(['title' => 'Beta Archive', 'category' => 'archive'], _id: 'beta'),
+            ]);
+
+        $response = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Alpha')
+            ->fields(['title'])
+            ->facets('category')
+            ->size(1)
+            ->get();
+
+        $format = $response->format();
+        $hits = $response->hits();
+        $reranked = $response->rerank('test-rerank', ['title']);
+        $rerankedWithApi = $response->rerank($this->rerankApi, ['title'], query: 'Alpha', topK: 1);
+
+        $this->assertSame('alpha', $response->json('hits')[0]['_id']);
+        $this->assertSame('alpha', $hits[0]->_id);
+        $this->assertInstanceOf(Hit::class, $hits[0]);
+        $this->assertEquals(1, $response->total());
+        $this->assertSame(['Alpha'], $format['query_strings']);
+        $this->assertSame('category', $format['facets_string']);
+        $this->assertSame(1, $format['page']);
+        $this->assertSame(1, $format['per_page']);
+        $this->assertNotNull($response->getContext());
+        $this->assertInstanceOf(RerankedHit::class, $reranked[0]);
+        $this->assertSame('alpha', $reranked[0]->_id);
+        $this->assertSame([], $response->autocompletion());
+        $this->assertInstanceOf(RerankedHit::class, $rerankedWithApi[0]);
+        $this->rerankApi->assertRerankWasCalledWith('Alpha', 1);
+        $this->rerankApi->assertRerankWasCalledWithDocumentCount(1);
     }
 
     /**

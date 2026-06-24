@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Sigmie\Index\Analysis\Normalizer;
 
 use Exception;
+use Sigmie\Index\Analysis\NormalizerFilter\AsciiFolding;
+use Sigmie\Index\Analysis\NormalizerFilter\DecimalDigit;
+use Sigmie\Index\Analysis\NormalizerFilter\Lowercase;
+use Sigmie\Index\Analysis\NormalizerFilter\Uppercase;
 use Sigmie\Index\Contracts\CharFilter;
 use Sigmie\Index\Contracts\Normalizer as NormalizerInterface;
 use Sigmie\Index\Contracts\NormalizerFilter;
@@ -40,13 +44,19 @@ class Normalizer implements NormalizerInterface
 
         [$name, $config] = name_configs($raw);
 
-        foreach ($config['filter'] as $filterName) {
-            $normalizerFilters[$filterName] = $filters[$filterName];
+        foreach ($config['filter'] ?? [] as $filterName) {
+            $normalizerFilters[$filterName] = match ($filterName) {
+                'asciifolding' => new AsciiFolding,
+                'decimal_digit' => new DecimalDigit,
+                'lowercase' => new Lowercase,
+                'uppercase' => new Uppercase,
+                default => $filters[$filterName] ?? throw new Exception(sprintf("Normalizer filter '%s' doesn't exists.", $filterName)),
+            };
         }
 
-        foreach ($config['char_filter'] as $filterName) {
+        foreach ($config['char_filter'] ?? [] as $filterName) {
             $normalizerCharFilters[$filterName] = match ($filterName) {
-                default => $charFilters[$filterName]
+                default => $charFilters[$filterName] ?? throw new Exception(sprintf("Normalizer char filter '%s' doesn't exists.", $filterName)),
             };
         }
 
