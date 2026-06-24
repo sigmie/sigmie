@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Mappings\Contracts\FieldContainer;
 use Sigmie\Mappings\Contracts\PropertiesField;
 use Sigmie\Mappings\NewProperties;
@@ -30,11 +31,11 @@ class Object_ extends Type implements FieldContainer, PropertiesField
         return [];
     }
 
-    public function toRaw(): array
+    public function toRaw(?SearchEngine $driver = null): array
     {
         $raw = parent::toRaw();
 
-        $raw[$this->name]['properties'] = (object) $this->properties->toRaw();
+        $raw[$this->name]['properties'] = (object) $this->properties->toRaw($driver);
 
         return $raw;
     }

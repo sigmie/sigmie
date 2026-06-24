@@ -76,7 +76,7 @@ class Mappings implements MappingsInterface
         $embeddingsRaw = (new Embeddings($this->properties, $driver))->toRaw();
 
         $properties = [
-            ...$this->properties->toRaw(),
+            ...$this->properties->toRaw($driver),
             ...$embeddingsRaw,
         ];
 

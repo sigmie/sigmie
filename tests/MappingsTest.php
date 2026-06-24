@@ -808,6 +808,40 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
+    public function vector_field_searches_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('sku');
+        $blueprint->vector('embedding', dims: 3);
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['sku' => 'A-1', 'embedding' => [1.0, 0.0, 0.0]], _id: 'alpha'),
+                new Document(['sku' => 'B-2', 'embedding' => [0.0, 1.0, 0.0]], _id: 'beta'),
+            ]);
+
+        $response = $this->sigmie->rawQuery($indexName, [
+            'knn' => [
+                'field' => 'embedding',
+                'query_vector' => [1.0, 0.0, 0.0],
+                'k' => 1,
+                'num_candidates' => 10,
+            ],
+        ]);
+
+        $this->assertSame('alpha', $response->json('hits.hits.0._id'));
+    }
+
+    /**
+     * @test
+     */
     public function case_sensitive_keyword_mapping(): void
     {
         $indexName = uniqid();
