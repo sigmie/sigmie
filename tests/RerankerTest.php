@@ -10,6 +10,7 @@ use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use ReflectionObject;
 use Sigmie\AI\APIs\CohereRerankApi;
+use Sigmie\AI\APIs\InfinityRerankApi;
 use Sigmie\AI\APIs\VoyageRerankApi;
 use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Document\Document;
@@ -362,10 +363,12 @@ class RerankerTest extends TestCase
     private function realRerankApis(): array
     {
         $cohere = new CohereRerankApi('test-key');
+        $infinity = new InfinityRerankApi;
         $voyage = new VoyageRerankApi('test-key');
 
         return [
             'cohere' => $this->withMockRerankClient($cohere, 'cohere'),
+            'infinity' => $this->withMockRerankClient($infinity, 'infinity'),
             'voyage' => $this->withMockRerankClient($voyage, 'voyage'),
         ];
     }

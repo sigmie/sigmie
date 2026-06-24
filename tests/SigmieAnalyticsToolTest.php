@@ -76,6 +76,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $tools = $index->tools();
 
         $this->assertInstanceOf(SigmieAnalyticsTool::class, $tools[5]);
+        $this->assertSame('analytics', $tools[5]->name());
     }
 
     /**
@@ -206,6 +207,27 @@ class SigmieAnalyticsToolTest extends TestCase
     /**
      * @test
      */
+    public function result_runs_a_fixed_interval_trend_widget(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'trend',
+            'date_field' => 'created_at',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'interval' => '12h',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('trend', $result['type']);
+        $this->assertEquals(150.0, $result['series'][0]['value']);
+    }
+
+    /**
+     * @test
+     */
     public function result_runs_a_breakdown_widget(): void
     {
         $index = $this->createSalesIndex();
@@ -330,6 +352,60 @@ class SigmieAnalyticsToolTest extends TestCase
     /**
      * @test
      */
+    public function result_runs_percentiles_with_default_and_custom_percents(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $default = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'percentiles',
+            'date_field' => 'created_at',
+            'field' => 'amount',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('percentiles', $default['type']);
+        $this->assertArrayHasKey('50', $default['percentiles']);
+        $this->assertArrayHasKey('99', $default['percentiles']);
+
+        $custom = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'percentiles',
+            'date_field' => 'created_at',
+            'field' => 'amount',
+            'percents' => '25, 90, 100, 0',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame([25, 90], array_keys($custom['percentiles']));
+    }
+
+    /**
+     * @test
+     */
+    public function result_runs_a_count_heatmap_when_metric_is_omitted(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'heatmap',
+            'date_field' => 'created_at',
+            'row_field' => 'product',
+            'col_field' => 'channel',
+            'limit' => 5,
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('heatmap', $result['type']);
+        $this->assertSame('count', $result['metric']);
+        $this->assertSame('A', $result['rows'][0]['key']);
+        $this->assertEquals(3, $result['rows'][0]['count']);
+    }
+
+    /**
+     * @test
+     */
     public function result_runs_a_stats_widget(): void
     {
         $index = $this->createSalesIndex();
@@ -368,6 +444,27 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertSame('table', $result['type']);
         $this->assertCount(2, $result['rows']);
         $this->assertEquals(200, $result['rows'][0]['document']['amount']);
+    }
+
+    /**
+     * @test
+     */
+    public function result_runs_a_table_widget_with_full_documents_when_fields_are_omitted(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'table',
+            'date_field' => 'created_at',
+            'limit' => 1,
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('table', $result['type']);
+        $this->assertCount(1, $result['rows']);
+        $this->assertArrayHasKey('amount', $result['rows'][0]['document']);
+        $this->assertArrayHasKey('channel', $result['rows'][0]['document']);
     }
 
     /**
@@ -498,5 +595,95 @@ class SigmieAnalyticsToolTest extends TestCase
 
         $this->assertArrayHasKey('error', $decoded);
         $this->assertStringContainsString('since_forever', $decoded['error']);
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider invalidAnalyticsWidgetArguments
+     */
+    public function invalid_widget_arguments_return_a_correctable_error(array $arguments, string $expectedError): void
+    {
+        $index = $this->createSalesIndex();
+
+        $json = (new SigmieAnalyticsTool($index))->handle(new Request([
+            'date_field' => 'created_at',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+            ...$arguments,
+        ]));
+
+        $decoded = json_decode($json, true);
+
+        $this->assertArrayHasKey('error', $decoded);
+        $this->assertStringContainsString($expectedError, $decoded['error']);
+    }
+
+    public static function invalidAnalyticsWidgetArguments(): array
+    {
+        return [
+            'funnel missing steps' => [
+                ['widget' => 'funnel'],
+                'requires steps',
+            ],
+            'funnel malformed steps' => [
+                ['widget' => 'funnel', 'steps' => 'not-json'],
+                'funnel steps must be a JSON array',
+            ],
+            'funnel step missing filter' => [
+                ['widget' => 'funnel', 'steps' => '[{"label":"all"}]'],
+                'Each funnel step needs',
+            ],
+            'breakdown malformed aliases' => [
+                [
+                    'widget' => 'breakdown',
+                    'group_by' => 'product',
+                    'metric' => 'sum',
+                    'field' => 'amount',
+                    'bucket_aliases' => 'not-json',
+                ],
+                'bucket_aliases must be a JSON array',
+            ],
+            'breakdown non-object alias' => [
+                [
+                    'widget' => 'breakdown',
+                    'group_by' => 'product',
+                    'metric' => 'sum',
+                    'field' => 'amount',
+                    'bucket_aliases' => '["Combined"]',
+                ],
+                'Each bucket_aliases item must be an object',
+            ],
+            'breakdown alias missing values' => [
+                [
+                    'widget' => 'breakdown',
+                    'group_by' => 'product',
+                    'metric' => 'sum',
+                    'field' => 'amount',
+                    'bucket_aliases' => '[{"label":"Combined"}]',
+                ],
+                'needs a non-empty label and values array',
+            ],
+            'grouped metrics missing metrics' => [
+                ['widget' => 'grouped_metrics', 'group_by' => 'product'],
+                'requires metrics',
+            ],
+            'grouped metrics malformed metrics' => [
+                ['widget' => 'grouped_metrics', 'group_by' => 'product', 'metrics' => 'not-json'],
+                'grouped_metrics metrics must be a JSON array',
+            ],
+            'grouped metrics non-object metric' => [
+                ['widget' => 'grouped_metrics', 'group_by' => 'product', 'metrics' => '["count"]'],
+                'Each grouped_metrics metric must be an object',
+            ],
+            'grouped metrics invalid metric' => [
+                ['widget' => 'grouped_metrics', 'group_by' => 'product', 'metrics' => '[{"key":"","metric":"count"}]'],
+                'needs a key and valid metric',
+            ],
+            'grouped metrics missing field' => [
+                ['widget' => 'grouped_metrics', 'group_by' => 'product', 'metrics' => '[{"key":"avg_amount","metric":"avg"}]'],
+                'non-count grouped_metrics metric needs a field',
+            ],
+        ];
     }
 }
