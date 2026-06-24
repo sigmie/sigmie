@@ -146,6 +146,7 @@ class RecommendationsTest extends TestCase
             // NOT ENABLED MMR
             // ->mmr(0.1)
             ->topK(2)
+            ->filter("price<'1000'")
             ->seedIds(['wireless-earbuds'])
             ->field(
                 fieldName: 'category',
@@ -164,5 +165,7 @@ class RecommendationsTest extends TestCase
         foreach ($ids as $id) {
             $this->assertStringStartsWith('wireless-earbuds', $id);
         }
+
+        $this->assertSame(['wireless-earbuds-2', 'wireless-earbuds-3'], $ids);
     }
 }
