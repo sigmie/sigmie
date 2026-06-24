@@ -374,6 +374,39 @@ class AliveCollectionTest extends TestCase
     /**
      * @test
      */
+    public function add_merge_and_empty_merge_id_paths_use_elasticsearch(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $collection = $this->sigmie->collect($indexName, true)
+            ->properties($blueprint);
+
+        $created = $collection->add(new Document(['title' => 'Assigned add id']));
+
+        $this->assertNotEmpty($created->_id);
+        $this->assertStringStartsWith($indexName, $created->_index);
+        $this->assertSame('Assigned add id', $collection->get($created->_id)->_source['title']);
+
+        $merged = new Document(['title' => 'Assigned merge id']);
+
+        $this->assertSame($collection, $collection->merge([$merged]));
+        $this->assertNotEmpty($merged->_id);
+        $this->assertStringStartsWith($indexName, $merged->_index);
+        $this->assertSame('Assigned merge id', $collection->get($merged->_id)->_source['title']);
+        $this->assertSame($collection, $collection->merge([]));
+        $this->assertSame(2, $collection->count());
+    }
+
+    /**
+     * @test
+     */
     public function offset_unset(): void
     {
         $indexName = uniqid();

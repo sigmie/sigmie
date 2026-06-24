@@ -2137,4 +2137,115 @@ class SearchTest extends TestCase
             ->properties($blueprint)
             ->facets('category', "nonexistent:'x'", throwOnError: true);
     }
+
+    /**
+     * @test
+     */
+    public function new_search_without_properties_guard_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'New search guard coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('guard')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $search = new class($this->elasticsearchConnection) extends NewSearch
+        {
+            public function hasSemanticFieldCoverage(): bool
+            {
+                return $this->hasSemanticFields();
+            }
+
+            public function populateVectorPoolCoverage(): void
+            {
+                $this->populateVectorPool();
+            }
+
+            public function vectorFieldsCoverage(): Collection
+            {
+                return $this->getVectorFields();
+            }
+
+            public function requiredApisCoverage(): array
+            {
+                return $this->getRequiredEmbeddingApis();
+            }
+        };
+
+        $this->assertFalse($search->hasSemanticFieldCoverage());
+        $this->assertSame([], $search->vectorFieldsCoverage()->toArray());
+        $this->assertSame([], $search->requiredApisCoverage());
+
+        $searchWithRequiredApis = new class($this->elasticsearchConnection) extends NewSearch
+        {
+            public function populateVectorPoolCoverage(): void
+            {
+                $this->populateVectorPool();
+            }
+
+            protected function getRequiredEmbeddingApis(): array
+            {
+                return ['missing-api'];
+            }
+        };
+
+        $searchWithRequiredApis->populateVectorPoolCoverage();
+    }
+
+    /**
+     * @test
+     */
+    public function hit_serialization_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Hit serialization'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('serialization')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $hit = new Hit(['title' => 'Hit serialization'], 'matching', 1.5, $indexName);
+        $reranked = new RerankedHit($hit, 0.9);
+
+        $this->assertSame([
+            '_id' => 'matching',
+            '_score' => 1.5,
+            '_source' => ['title' => 'Hit serialization'],
+        ], $hit->toArray());
+        $this->assertSame([
+            '_id' => 'matching',
+            '_score' => 1.5,
+            '_source' => ['title' => 'Hit serialization'],
+            '_rerank_score' => 0.9,
+        ], $reranked->toArray());
+    }
 }

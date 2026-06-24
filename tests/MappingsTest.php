@@ -18,6 +18,7 @@ use Sigmie\Index\Analysis\Normalizer\Normalizer;
 use Sigmie\Index\Analysis\NormalizerFilter\Lowercase;
 use Sigmie\Index\Analysis\NormalizerFilter\Uppercase;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Index\Index as RawIndex;
 use Sigmie\Index\Mappings;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\Contracts\Type as TypeContract;
@@ -2704,5 +2705,43 @@ class MappingsTest extends TestCase
         ], [], [
             'lowercase' => new Lowercase,
         ]);
+    }
+
+    /**
+     * @test
+     */
+    public function raw_index_is_restored_from_elasticsearch_payload(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Raw index coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Raw index')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $payload = $this->indexAPICall($indexName, 'GET')->json();
+        $actualName = array_key_first($payload);
+        $index = RawIndex::fromRaw($actualName, [
+            'index' => $payload[$actualName]['settings']['index'],
+            'mappings' => $payload[$actualName]['mappings'],
+        ]);
+
+        $this->assertSame($actualName, $index->name);
+        $this->assertInstanceOf(Mappings::class, $index->mappings);
+        $this->assertSame('text', $index->mappings->properties()->get('title')->type());
     }
 }

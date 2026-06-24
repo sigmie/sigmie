@@ -12,6 +12,7 @@ use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\ParseException;
 use Sigmie\Parse\Parser;
+use Sigmie\Parse\RangeOperatorParser;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\MatchNone;
 use Sigmie\Testing\TestCase;
@@ -290,5 +291,56 @@ class ParserCoverageTest extends TestCase
                 'field' => 'title',
             ],
         ], $parser->errors());
+    }
+
+    /**
+     * @test
+     */
+    public function range_operator_parser_collects_errors_after_elasticsearch_hit(): void
+    {
+        $this->assertParserCoverageSearchHit();
+
+        $parser = new RangeOperatorParser(false);
+
+        $this->assertSame('gt', $parser->parse('>'));
+        $this->assertNull($parser->parse('!='));
+        $this->assertSame(['Range operator `!=` could not be parsed.'], $parser->errors());
+    }
+
+    /**
+     * @test
+     */
+    public function range_operator_parser_throws_after_elasticsearch_hit(): void
+    {
+        $this->assertParserCoverageSearchHit();
+
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage('Range operator `!=` could not be parsed.');
+
+        (new RangeOperatorParser)->parse('!=');
+    }
+
+    private function assertParserCoverageSearchHit(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Parser coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Parser')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
     }
 }

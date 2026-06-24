@@ -7,9 +7,13 @@ namespace Sigmie\Tests;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use GuzzleHttp\Psr7\Uri;
 use Psr\Http\Message\ResponseInterface;
+use Sigmie\Base\Http\ElasticsearchRequest;
+use Sigmie\Base\Http\ElasticsearchResponse;
+use Sigmie\Document\Document;
 use Sigmie\Http\JSONRequest;
 use Sigmie\Http\JSONResponse;
 use Sigmie\Http\NdJSONRequest;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
@@ -106,5 +110,59 @@ class HttpTest extends TestCase
 
         $this->assertContains('application/x-ndjson', $req->getHeader('Content-type'));
         $this->assertEquals("{\"foo\":\"bar\"}\n{\"foo\":\"baz\"}\n", (string) $req->getBody());
+    }
+
+    /**
+     * @test
+     */
+    public function elasticsearch_response_failure_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Response coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Response')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $request = new ElasticsearchRequest('POST', new Uri('/_search'), ['query' => ['match_all' => (object) []]]);
+
+        $invalidJson = new class(502) extends ElasticsearchResponse
+        {
+            public function json(null|int|string $key = null): int|bool|string|array|null|float
+            {
+                return null;
+            }
+
+            public function body(): string
+            {
+                return '';
+            }
+        };
+        $plainError = ElasticsearchResponse::fromPsrResponse(new PsrResponse(400, [], '{"error":"plain_error"}'));
+        $causedBy = ElasticsearchResponse::fromPsrResponse(new PsrResponse(400, [], '{"error":{"caused_by":{"type":"caused_type"}}}'));
+        $rootCause = ElasticsearchResponse::fromPsrResponse(new PsrResponse(400, [], '{"error":{"root_cause":[{"type":"root_type"}]}}'));
+        $failure = ElasticsearchResponse::fromPsrResponse(new PsrResponse(500, [], '{"failures":[{"cause":{"type":"failure_type"}}]}'));
+
+        $this->assertTrue($invalidJson->failed());
+        $this->assertTrue($plainError->failed());
+        $this->assertSame('Request failed with code 502.', $invalidJson->exception($request)->json('type'));
+        $this->assertSame('plain_error', $plainError->exception($request)->json('type'));
+        $this->assertSame('caused_type', $causedBy->exception($request)->json('type'));
+        $this->assertSame('root_type', $rootCause->exception($request)->json('type'));
+        $this->assertSame('failure_type', $failure->exception($request)->json('type'));
     }
 }

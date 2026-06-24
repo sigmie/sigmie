@@ -32,6 +32,7 @@ use Sigmie\Query\Aggregations\Metrics\Rate;
 use Sigmie\Search\MMR;
 use Sigmie\Semantic\Providers\AbstractAIProvider;
 use Sigmie\Semantic\Providers\Noop;
+use Sigmie\Shared\UsesApis;
 use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
@@ -345,6 +346,49 @@ class UtilityCoverageTest extends TestCase
         $this->expectExceptionMessage('Accuracy level must be between 1 and 7');
 
         (new NewSemanticField('title'))->accuracy(8, 128);
+    }
+
+    /**
+     * @test
+     */
+    public function api_trait_guard_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $this->assertUtilitySearchHit();
+
+        $wrapper = new class
+        {
+            use UsesApis;
+
+            public function embedding(?string $name = null): mixed
+            {
+                return $this->getApi($name);
+            }
+
+            public function rerank(?string $name = null): mixed
+            {
+                return $this->getRerankApi($name);
+            }
+
+            public function has(?string $name = null): bool
+            {
+                return $this->hasApi($name);
+            }
+        };
+
+        $this->assertSame($wrapper, $wrapper->apis([
+            'embedding' => $this->embeddingApi,
+            'rerank' => $this->rerankApi,
+            'invalid' => (object) [],
+        ]));
+        $this->assertNull($wrapper->embedding());
+        $this->assertNull($wrapper->embedding('invalid'));
+        $this->assertSame($this->embeddingApi, $wrapper->embedding('embedding'));
+        $this->assertNull($wrapper->rerank());
+        $this->assertNull($wrapper->rerank(''));
+        $this->assertSame($this->rerankApi, $wrapper->rerank('rerank'));
+        $this->assertTrue($wrapper->has());
+        $this->assertTrue($wrapper->has('invalid'));
+        $this->assertFalse($wrapper->has('missing'));
     }
 
     private function assertUtilitySearchHit(): void
