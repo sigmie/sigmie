@@ -77,6 +77,7 @@ class ImageSearchTest extends TestCase
 
         // Verify the clip API was called for image embeddings
         $this->clipApi->assertImageEmbedWasCalled(2);
+        $this->clipApi->assertImageEmbedWasCalled();
 
         // Assert it was called with both image URLs
         $this->clipApi->assertImageSourceWasEmbedded('https://github.com/sigmie/test-images/raw/refs/heads/main/pirates.jpeg');
@@ -320,6 +321,20 @@ class ImageSearchTest extends TestCase
 
         // Since we're using semantic search with text query on both image and description fields,
         // the CLIP API should be called for the query string embedding
+        $this->clipApi->assertBatchEmbedWasCalledWith('red vehicle');
+        $this->clipApi->assertTextEmbedWasCalled();
+
+        $textEmbedCalls = $this->clipApi->getTextEmbedCalls();
+        $mixedBatchCalls = $this->clipApi->getMixedBatchCalls();
+
+        $this->assertNotEmpty($textEmbedCalls);
+        $this->assertNotEmpty($mixedBatchCalls);
+        $this->clipApi->assertTextEmbedWasCalled(count($textEmbedCalls));
+        $this->clipApi->assertBatchContainedMix($mixedBatchCalls[0]['images'], $mixedBatchCalls[0]['texts']);
+
+        $this->clipApi->reset();
+        $this->clipApi->embed('red vehicle', 512);
+        $this->clipApi->assertTextEmbedWasCalled(1);
         $this->clipApi->assertBatchEmbedWasCalledWith('red vehicle');
     }
 

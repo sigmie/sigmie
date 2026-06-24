@@ -490,8 +490,20 @@ class SortParserTest extends TestCase
      */
     public function score_desc_allowed(): void
     {
+        $indexName = uniqid();
+
         $blueprint = new NewProperties;
         $blueprint->keyword('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, true)
+            ->merge([
+                new Document(['name' => 'Beta'], _id: 'beta'),
+                new Document(['name' => 'Alpha'], _id: 'alpha'),
+            ]);
 
         $props = $blueprint();
         $parser = new SortParser($props);
@@ -500,6 +512,51 @@ class SortParserTest extends TestCase
 
         $this->assertEquals([['_score' => 'desc'], ['name' => 'asc']], $sorts);
         $this->assertEmpty($parser->errors());
+
+        $res = $this->sigmie->query($indexName)
+            ->sort($sorts)
+            ->get();
+
+        $hits = $res->json('hits.hits');
+
+        $this->assertSame(['alpha', 'beta'], array_column($hits, '_id'));
+    }
+
+    /**
+     * @test
+     */
+    public function default_and_doc_sorts_return_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, true)
+            ->merge([
+                new Document(['name' => 'Alpha'], _id: 'alpha'),
+                new Document(['name' => 'Beta'], _id: 'beta'),
+            ]);
+
+        $parser = new SortParser($blueprint());
+
+        $scoreSorted = $this->sigmie->query($indexName)
+            ->sort($parser->parse(''))
+            ->get()
+            ->json('hits.hits');
+
+        $this->assertEqualsCanonicalizing(['alpha', 'beta'], array_column($scoreSorted, '_id'));
+
+        $docSorted = $this->sigmie->query($indexName)
+            ->sort($parser->parse('_doc'))
+            ->get()
+            ->json('hits.hits');
+
+        $this->assertEqualsCanonicalizing(['alpha', 'beta'], array_column($docSorted, '_id'));
     }
 
     /**
