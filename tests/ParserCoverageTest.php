@@ -8,6 +8,7 @@ use Exception;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\ParseException;
 use Sigmie\Parse\Parser;
@@ -224,5 +225,70 @@ class ParserCoverageTest extends TestCase
         $this->expectExceptionMessage('Nesting level exceeded. Max nesting level is 32.');
 
         $parser->depth(FilterParser::$maxNestingLevel + 1);
+    }
+
+    /**
+     * @test
+     */
+    public function facet_parser_validation_paths_are_backed_by_elasticsearch_results(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->category('category');
+        $blueprint->category('type');
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['category' => 'books', 'type' => 'guide', 'title' => 'Facet parser guide'], _id: 'matching'),
+                new Document(['category' => 'music', 'type' => 'reference', 'title' => 'Reference notes'], _id: 'missing'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->filters("category:'books'")
+            ->queryString('Facet')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $parser = new FacetParser($blueprint->get(), throwOnError: false);
+
+        $this->assertSame('', $parser->parseFilterString(''));
+        $this->assertSame("(category:'books' AND category:'music') AND (type:'guide')", $parser->parseFilterString("category:'books' category:'music' type:'guide'"));
+
+        $missingParser = new FacetParser($blueprint->get(), throwOnError: false);
+        $missingParser->parseFilterString("missing:'value'");
+
+        $this->assertSame([
+            [
+                'message' => "Facet field 'missing' was not found.",
+                'field' => 'missing',
+            ],
+        ], $missingParser->errors());
+
+        $parser->parseFilterString("category:'books' AND type:'guide'");
+        $parser->parseFilterString("(category:'books')");
+        $parser->parse('title');
+
+        $this->assertSame([
+            [
+                'message' => "Facet filter string cannot contain logical operators (AND, OR, AND NOT): 'category:'books' AND type:'guide''",
+            ],
+            [
+                'message' => "Facet filter string cannot contain parenthetic expressions: '(category:'books')'",
+            ],
+            [
+                'message' => "The field 'title' does not support facets.",
+                'field' => 'title',
+            ],
+        ], $parser->errors());
     }
 }

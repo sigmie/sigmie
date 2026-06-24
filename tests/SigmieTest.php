@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Exception;
+use Http\Promise\Promise;
+use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Base\Contracts\ElasticsearchRequest;
+use Sigmie\Base\Contracts\ElasticsearchResponse;
+use Sigmie\Base\Contracts\SearchEngine;
+use Sigmie\Base\Drivers\Elasticsearch;
 use Sigmie\Contracts\Package;
 use Sigmie\Document\Contracts\CollectionHook;
 use Sigmie\Document\Document;
@@ -185,5 +192,65 @@ class SigmieTest extends TestCase
         $this->assertEquals(1, $response->json('hits.total.value'));
         $this->assertSame('extended', $response->json('hits.hits.0._id'));
         $this->assertSame('registered', $response->json('hits.hits.0._source.package_marker'));
+    }
+
+    /**
+     * @test
+     */
+    public function application_api_and_failed_connection_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Facade coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Facade')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+        $this->assertSame($this->sigmie, $this->sigmie->application('coverage-app'));
+        $this->assertSame($this->sigmie, $this->sigmie->registerApi('coverage-api', $this->embeddingApi));
+        $this->assertTrue($this->sigmie->hasApi('coverage-api'));
+        $this->assertSame($this->embeddingApi, $this->sigmie->api('coverage-api'));
+
+        $serverless = Sigmie::createForServerless('http://localhost:9200', 'test-api-key');
+
+        $this->assertTrue($serverless->isServerless());
+
+        $disconnected = new Sigmie(new class implements ElasticsearchConnection
+        {
+            public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse
+            {
+                throw new Exception('Connection failed');
+            }
+
+            public function promise(ElasticsearchRequest $request): Promise
+            {
+                throw new Exception('Connection failed');
+            }
+
+            public function driver(): SearchEngine
+            {
+                return new Elasticsearch;
+            }
+
+            public function isServerless(): bool
+            {
+                return false;
+            }
+        });
+
+        $this->assertFalse($disconnected->isConnected());
     }
 }

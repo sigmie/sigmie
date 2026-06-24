@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use DateTime;
+use Exception;
 use Sigmie\Base\Drivers\Opensearch;
 use Sigmie\Document\Document;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Index\Analysis\Analyzer;
+use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
+use Sigmie\Index\Analysis\Normalizer\Normalizer;
+use Sigmie\Index\Analysis\NormalizerFilter\Lowercase;
+use Sigmie\Index\Analysis\NormalizerFilter\Uppercase;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Mappings;
 use Sigmie\Index\NewAnalyzer;
@@ -2637,5 +2642,67 @@ class MappingsTest extends TestCase
         $ipRange = $properties->get('ip_range');
         $this->assertInstanceOf(Range::class, $ipRange);
         $this->assertEquals('ip_range', $ipRange->type());
+    }
+
+    /**
+     * @test
+     */
+    public function normalizer_creation_and_failure_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Normalizer coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Normalizer')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $normalizer = Normalizer::create([
+            'folded_keyword' => [
+                'type' => 'custom',
+                'char_filter' => ['dash_to_space'],
+                'filter' => ['lowercase'],
+            ],
+        ], [
+            'dash_to_space' => new Mapping('dash_to_space', ['-' => ' ']),
+        ], []);
+
+        $normalizer->addFilters(['uppercase' => new Uppercase]);
+        $normalizer->addCharFilters(['plus_to_space' => new Mapping('plus_to_space', ['+' => ' '])]);
+        $normalizer->removeFilter('uppercase');
+        $normalizer->removeCharFilter('plus_to_space');
+
+        $this->assertSame([
+            'folded_keyword' => [
+                'type' => 'custom',
+                'char_filter' => ['dash_to_space'],
+                'filter' => ['lowercase'],
+            ],
+        ], $normalizer->toRaw());
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage("Normalizer filter 'missing_filter' doesn't exists.");
+
+        Normalizer::create([
+            'broken_keyword' => [
+                'type' => 'custom',
+                'filter' => ['missing_filter'],
+            ],
+        ], [], [
+            'lowercase' => new Lowercase,
+        ]);
     }
 }

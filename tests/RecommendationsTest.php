@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use ReflectionProperty;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\TestCase;
@@ -167,5 +168,60 @@ class RecommendationsTest extends TestCase
         }
 
         $this->assertSame(['wireless-earbuds-2', 'wireless-earbuds-3'], $ids);
+    }
+
+    /**
+     * @test
+     */
+    public function make_builds_elasticsearch_search_and_empty_recommendations_return_no_hits(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name')->semantic(accuracy: 1, dimensions: 128, api: 'test-embeddings');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie
+            ->collect($indexName, refresh: true)
+            ->properties($blueprint)
+            ->merge([
+                new Document(['name' => 'Accounting guide'], _id: 'accounting-guide'),
+                new Document(['name' => 'Sales handbook'], _id: 'sales-handbook'),
+            ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->fields(['name'])
+            ->queryString('Accounting')
+            ->hits();
+
+        $this->assertSame(['accounting-guide'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $empty = $this->sigmie->newRecommend($indexName)
+            ->properties($blueprint)
+            ->hits();
+
+        $this->assertSame([], $empty);
+
+        $recommendations = $this->sigmie->newRecommend($indexName)
+            ->properties($blueprint)
+            ->topK(1);
+
+        $fields = new ReflectionProperty($recommendations, 'fields');
+        $fields->setAccessible(true);
+        $fields->setValue($recommendations, [
+            [
+                'name' => 'name',
+                'weight' => 1.0,
+                'seed' => 'accounting',
+            ],
+        ]);
+
+        $response = $recommendations->make()->get();
+
+        $this->assertSame(0, $response->json('hits.total.value'));
     }
 }

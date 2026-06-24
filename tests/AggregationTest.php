@@ -985,4 +985,53 @@ class AggregationTest extends TestCase
 
         $this->assertEquals(233, (int) $res->aggregation('maxCount.value'));
     }
+
+    /**
+     * @test
+     */
+    public function aggregation_builder_edge_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $name = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->number('count');
+        $blueprint->keyword('status');
+
+        $this->sigmie->newIndex($name)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($name, refresh: true)
+            ->properties($blueprint)
+            ->add(new Document(['title' => 'Aggregation coverage', 'count' => 10, 'status' => 'active'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($name)
+            ->properties($blueprint)
+            ->fields(['title'])
+            ->queryString('Aggregation')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+
+        $aggregation = new SearchAggregation;
+        $aggregation->rangeFilter('filtered_count', 'count', ['>=' => 5]);
+        $aggregation->bucketSelector('count_selector', ['total' => 'total_count'], 'params.total > 0');
+        $aggregation->sort('sorted_buckets', [['total_count' => ['order' => 'desc']]], 2, 1);
+        $aggregation->missing('missing_status', 'status');
+        $aggregation->composite('status_pages', [
+            ['status' => ['terms' => ['field' => 'status']]],
+        ], 5, ['status' => 'active']);
+        $aggregation->cumulativeSum('running_total', 'total_count');
+
+        $raw = $aggregation->toRaw();
+
+        $this->assertSame(5, $raw['filtered_count']['filter']['range']['count']['gte']);
+        $this->assertSame('params.total > 0', $raw['count_selector']['bucket_selector']['script']);
+        $this->assertSame(2, $raw['sorted_buckets']['bucket_sort']['size']);
+        $this->assertSame(1, $raw['sorted_buckets']['bucket_sort']['from']);
+        $this->assertSame('status', $raw['missing_status']['missing']['field']);
+        $this->assertEquals((object) ['status' => 'active'], $raw['status_pages']['composite']['after']);
+        $this->assertSame('total_count', $raw['running_total']['cumulative_sum']['buckets_path']);
+    }
 }

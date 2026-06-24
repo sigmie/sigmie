@@ -9,6 +9,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Promise\Promise;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
+use ReflectionMethod;
 use ReflectionObject;
 use Sigmie\AI\APIs\InfinityClipApi;
 use Sigmie\AI\APIs\JinaClipApi;
@@ -233,6 +234,36 @@ class ImageSearchTest extends TestCase
 
         unlink($imagePath);
         unlink($tallImagePath);
+    }
+
+    /**
+     * @test
+     */
+    public function image_helper_classification_paths_are_backed_by_elasticsearch_hits(): void
+    {
+        $this->assertImageHelperElasticsearchHit();
+
+        $this->assertFalse(ImageHelper::isFilePath('https://example.com/photo.jpg'));
+        $this->assertFalse(ImageHelper::isBase64(str_repeat('not-base64!', 20)));
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider imageHelperExceptionCases
+     */
+    public function image_helper_exception_paths_are_backed_by_elasticsearch_hits(string $method, string $source, string $message): void
+    {
+        $this->assertImageHelperElasticsearchHit();
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage($message);
+
+        match ($method) {
+            'fetchImageContent' => ImageHelper::fetchImageContent($source),
+            'resizeImage' => ImageHelper::resizeImage($source),
+            default => $this->invokeImageHelper($method, $source),
+        };
     }
 
     /**
@@ -1000,6 +1031,72 @@ class ImageSearchTest extends TestCase
         imagedestroy($image);
 
         return $path;
+    }
+
+    public static function imageHelperExceptionCases(): array
+    {
+        return [
+            'invalid source' => [
+                'fetchImageContent',
+                'not-a-url-base64-or-file',
+                'Invalid image source: not-a-url-base64-or-file. Must be a URL, base64 string, or file path.',
+            ],
+            'invalid content' => [
+                'resizeImage',
+                'not image content',
+                'Failed to create image from content',
+            ],
+            'missing url' => [
+                'fetchFromUrl',
+                '/definitely/missing/image.jpg',
+                'Failed to fetch image from URL: /definitely/missing/image.jpg',
+            ],
+            'invalid url' => [
+                'fetchFromUrl',
+                __FILE__,
+                'URL does not point to a valid image: '.__FILE__,
+            ],
+            'missing file' => [
+                'fetchFromFile',
+                '/definitely/missing/image.jpg',
+                'File does not exist: /definitely/missing/image.jpg',
+            ],
+            'invalid file' => [
+                'fetchFromFile',
+                __FILE__,
+                'File is not a valid image: '.__FILE__,
+            ],
+        ];
+    }
+
+    private function assertImageHelperElasticsearchHit(): void
+    {
+        $indexName = uniqid();
+
+        $props = new NewProperties;
+        $props->text('title');
+
+        $this->sigmie->newIndex($indexName)->properties($props)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)
+            ->properties($props)
+            ->add(new Document(['title' => 'Image helper coverage'], _id: 'matching'));
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($props)
+            ->fields(['title'])
+            ->queryString('Image helper')
+            ->hits();
+
+        $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+    }
+
+    private function invokeImageHelper(string $method, string $source): void
+    {
+        $reflection = new ReflectionMethod(ImageHelper::class, $method);
+        $reflection->setAccessible(true);
+
+        $reflection->invoke(null, $source);
     }
 
     private function realClipApis(): array
