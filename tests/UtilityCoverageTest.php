@@ -172,7 +172,7 @@ class UtilityCoverageTest extends TestCase
         {
             public static function fromRaw(array $raw): static
             {
-                return new static;
+                return new self;
             }
 
             public function toRaw(): array
