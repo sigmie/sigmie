@@ -100,6 +100,12 @@ class NewMultiSearch
         return $raw;
     }
 
+    public function composite(string $aggregation, array $sources, int $size = 10000): CompositeMultiSearch
+    {
+        return (new CompositeMultiSearch($this->elasticsearchConnection, $aggregation, $sources, $size))
+            ->apis($this->apis);
+    }
+
     public function get(): array
     {
         $responses = $this->queryResponses();
@@ -116,36 +122,6 @@ class NewMultiSearch
         }
 
         return $results;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function getRawResponsesByName(): array
-    {
-        $responses = $this->queryResponses();
-        $namedResponses = [];
-        $responseIndex = 0;
-
-        foreach ($this->queries as $index => $query) {
-            $queryResponses = array_slice(
-                $responses,
-                $responseIndex,
-                $query->multisearchResCount(),
-            );
-            $responseIndex += $query->multisearchResCount();
-
-            $name = $this->names[$index] ?? random_name('srch');
-            if ($query->multisearchResCount() === 1) {
-                $namedResponses[$name] = $queryResponses[0] ?? [];
-
-                continue;
-            }
-
-            $namedResponses[$name] = $queryResponses;
-        }
-
-        return $namedResponses;
     }
 
     /**

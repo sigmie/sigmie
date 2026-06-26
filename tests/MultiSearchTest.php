@@ -381,36 +381,54 @@ class MultiSearchTest extends TestCase
     /**
      * @test
      */
-    public function raw_multi_search_responses_keep_names(): void
+    public function composite_multi_search_collects_named_buckets_across_after_pages(): void
     {
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
+        $blueprint->keyword('category');
         $blueprint->text('name');
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
         $this->sigmie->collect($indexName, refresh: true)->merge([
-            new Document(['name' => 'Alpha']),
-            new Document(['name' => 'Beta']),
+            new Document(['category' => 'first', 'name' => 'Alpha']),
+            new Document(['category' => 'second', 'name' => 'Beta']),
+            new Document(['category' => 'third', 'name' => 'Alpha']),
         ]);
 
-        $multi = $this->sigmie->newMultiSearch();
-        $multi->newSearch($indexName, 'named_search')
+        $all = $this->sigmie->newSearch($indexName)
             ->properties($blueprint)
-            ->queryString('Alpha');
+            ->queryString('')
+            ->size(0);
 
-        $multi->raw($indexName, [
-            'query' => ['match' => ['name' => 'Beta']],
-            'size' => 1,
-        ], 'named_raw');
+        $matching = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Alpha')
+            ->size(0);
 
-        $namedResponses = $multi->getRawResponsesByName();
+        $buckets = $this->sigmie->newMultiSearch()
+            ->composite('categories', [
+                [
+                    'category' => [
+                        'terms' => [
+                            'field' => 'category',
+                        ],
+                    ],
+                ],
+            ], 1)
+            ->search('all', $all)
+            ->search('matching', $matching)
+            ->buckets();
 
-        $this->assertArrayHasKey('named_search', $namedResponses);
-        $this->assertArrayHasKey('named_raw', $namedResponses);
-        $this->assertSame('Alpha', $namedResponses['named_search']['hits']['hits'][0]['_source']['name'] ?? null);
-        $this->assertSame('Beta', $namedResponses['named_raw']['hits']['hits'][0]['_source']['name'] ?? null);
+        $this->assertSame(['first', 'second', 'third'], array_map(
+            fn (array $bucket): string => $bucket['key']['category'],
+            $buckets['all'],
+        ));
+        $this->assertSame(['first', 'third'], array_map(
+            fn (array $bucket): string => $bucket['key']['category'],
+            $buckets['matching'],
+        ));
     }
 
     /**
