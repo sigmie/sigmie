@@ -381,6 +381,41 @@ class MultiSearchTest extends TestCase
     /**
      * @test
      */
+    public function raw_multi_search_responses_keep_names(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['name' => 'Alpha']),
+            new Document(['name' => 'Beta']),
+        ]);
+
+        $multi = $this->sigmie->newMultiSearch();
+        $multi->newSearch($indexName, 'named_search')
+            ->properties($blueprint)
+            ->queryString('Alpha');
+
+        $multi->raw($indexName, [
+            'query' => ['match' => ['name' => 'Beta']],
+            'size' => 1,
+        ], 'named_raw');
+
+        $namedResponses = $multi->getRawResponsesByName();
+
+        $this->assertArrayHasKey('named_search', $namedResponses);
+        $this->assertArrayHasKey('named_raw', $namedResponses);
+        $this->assertSame('Alpha', $namedResponses['named_search']['hits']['hits'][0]['_source']['name'] ?? null);
+        $this->assertSame('Beta', $namedResponses['named_raw']['hits']['hits'][0]['_source']['name'] ?? null);
+    }
+
+    /**
+     * @test
+     */
     public function add_methods_include_existing_searches_in_elasticsearch_multi_search(): void
     {
         $indexName = uniqid();

@@ -102,6 +102,56 @@ class NewMultiSearch
 
     public function get(): array
     {
+        $responses = $this->queryResponses();
+        $results = [];
+        $responseIndex = 0;
+
+        foreach ($this->queries as $query) {
+            $searchResponses = array_slice($responses, $responseIndex, $query->multisearchResCount());
+
+            $result = $query->formatResponses(...$searchResponses, httpCode: $this->responseCode);
+
+            $results[] = $result;
+            $responseIndex += $query->multisearchResCount();
+        }
+
+        return $results;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getRawResponsesByName(): array
+    {
+        $responses = $this->queryResponses();
+        $namedResponses = [];
+        $responseIndex = 0;
+
+        foreach ($this->queries as $index => $query) {
+            $queryResponses = array_slice(
+                $responses,
+                $responseIndex,
+                $query->multisearchResCount(),
+            );
+            $responseIndex += $query->multisearchResCount();
+
+            $name = $this->names[$index] ?? random_name('srch');
+            if ($query->multisearchResCount() === 1) {
+                $namedResponses[$name] = $queryResponses[0] ?? [];
+                continue;
+            }
+
+            $namedResponses[$name] = $queryResponses;
+        }
+
+        return $namedResponses;
+    }
+
+    /**
+     * @return list<array>
+     */
+    private function queryResponses(): array
+    {
         $body = [];
 
         foreach ($this->queries as $query) {
@@ -122,20 +172,7 @@ class NewMultiSearch
 
         $this->responseCode = $response->code();
 
-        $responses = $response->json('responses') ?? [];
-        $results = [];
-        $responseIndex = 0;
-
-        foreach ($this->queries as $query) {
-            $searchResponses = array_slice($responses, $responseIndex, $query->multisearchResCount());
-
-            $result = $query->formatResponses(...$searchResponses, httpCode: $this->responseCode);
-
-            $results[] = $result;
-            $responseIndex += $query->multisearchResCount();
-        }
-
-        return $results;
+        return $response->json('responses') ?? [];
     }
 
     public function hits(): array
