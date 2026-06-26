@@ -138,6 +138,7 @@ class NewMultiSearch
             $name = $this->names[$index] ?? random_name('srch');
             if ($query->multisearchResCount() === 1) {
                 $namedResponses[$name] = $queryResponses[0] ?? [];
+
                 continue;
             }
 
