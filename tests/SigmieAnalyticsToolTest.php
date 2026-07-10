@@ -353,6 +353,32 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertSame('A', $result['rows'][0]['key']);
         $this->assertEquals(3, $result['rows'][0]['metrics']['count']);
         $this->assertEquals(123.33333333333333, $result['rows'][0]['metrics']['avg_amount']);
+        $this->assertSame(3, $result['rows'][0]['metric_populations']['avg_amount']['value_count']);
+    }
+
+    /**
+     * @test
+     */
+    public function result_applies_bucket_aliases_to_grouped_metrics_before_aggregation(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'grouped_metrics',
+            'date_field' => 'created_at',
+            'group_by' => 'product',
+            'metrics' => '[{"key":"count","label":"Count","metric":"count"},{"key":"avg_amount","label":"Average amount","metric":"avg","field":"amount"}]',
+            'sort_metric' => 'count',
+            'bucket_aliases' => '[{"label":"Combined","values":["A","B"]}]',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertCount(1, $result['rows']);
+        $this->assertSame('Combined', $result['rows'][0]['key']);
+        $this->assertSame(5, $result['rows'][0]['count']);
+        $this->assertEquals(90.0, $result['rows'][0]['metrics']['avg_amount']);
+        $this->assertSame(5, $result['rows'][0]['metric_populations']['avg_amount']['value_count']);
     }
 
     /**

@@ -38,7 +38,7 @@ class Breakdown extends Widget
             $terms = $aggs->terms('groups', $this->groupBy)
                 ->size($this->limit)
                 ->order($this->metric->orderKey('metric'), $this->direction)
-                ->aggregate(fn (Aggs $sub) => $this->metric->apply($sub, 'metric', $this->field));
+                ->aggregate(fn (Aggs $sub) => $this->addMetric($sub));
 
             $excluded = $this->excludedAliasValues();
 
@@ -48,7 +48,7 @@ class Breakdown extends Widget
 
             foreach ($this->normalizedAliases() as $key => $alias) {
                 $aggs->filter($key, new Terms($this->groupBy, $alias['values']))
-                    ->aggregate(fn (Aggs $sub) => $this->metric->apply($sub, 'metric', $this->field));
+                    ->aggregate(fn (Aggs $sub) => $this->addMetric($sub));
             }
         })->toRaw();
     }
@@ -62,6 +62,7 @@ class Breakdown extends Widget
                 'key' => $bucket['key'],
                 'value' => $this->metric->extract($bucket['metric'] ?? []),
                 'count' => $bucket['doc_count'] ?? 0,
+                'population' => $this->metricPopulation($bucket),
             ])->toArray(),
             ...$this->aliasRows($aggregations),
         ];
@@ -78,6 +79,29 @@ class Breakdown extends Widget
         ];
     }
 
+    protected function addMetric(Aggs $aggs): void
+    {
+        $this->metric->apply($aggs, 'metric', $this->field);
+
+        if ($this->metric !== Metric::Count) {
+            $aggs->valueCount('metric_population', $this->field);
+        }
+    }
+
+    /** @return array{document_count: int, value_count: int, field: string} */
+    protected function metricPopulation(array $bucket): array
+    {
+        $documentCount = (int) ($bucket['doc_count'] ?? 0);
+
+        return [
+            'document_count' => $documentCount,
+            'value_count' => $this->metric === Metric::Count
+                ? $documentCount
+                : (int) ($bucket['metric_population']['value'] ?? 0),
+            'field' => $this->field,
+        ];
+    }
+
     /**
      * @return array<string, array{label: string, values: list<string>}>
      */
@@ -89,7 +113,7 @@ class Breakdown extends Widget
             $label = trim((string) $label);
             $values = array_values(array_filter(array_map(
                 static fn (mixed $value): string => trim((string) $value),
-                (array) $values,
+                [$label, ...(array) $values],
             ), static fn (string $value): bool => $value !== ''));
             if ($label === '') {
                 continue;
@@ -132,6 +156,7 @@ class Breakdown extends Widget
                     'key' => $alias['label'],
                     'value' => $this->metric->extract($bucket['metric'] ?? []),
                     'count' => $bucket['doc_count'] ?? 0,
+                    'population' => $this->metricPopulation($bucket),
                     'source_keys' => $alias['values'],
                 ];
             })

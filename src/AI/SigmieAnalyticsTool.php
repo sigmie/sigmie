@@ -286,7 +286,7 @@ class SigmieAnalyticsTool implements Tool
             'multi_breakdown' => $analytics->multiBreakdown('result', $this->groupByFields($request), $metric(), $field, $limit),
             'distribution' => $analytics->distribution('result', $this->required($request, 'field'), (int) ($request['bucket_size'] ?? throw new InvalidArgumentException('The distribution widget requires bucket_size.'))),
             'histogram_metric' => $analytics->histogramMetric('result', $this->required($request, 'bucket_field'), (int) ($request['bucket_size'] ?? throw new InvalidArgumentException('The histogram_metric widget requires bucket_size.')), $metric(), $this->required($request, 'field')),
-            'grouped_metrics' => $analytics->groupedMetrics('result', $groupBy(), $this->metricSpecs($request), $this->optional($request, 'sort_metric') ?? 'count', $limit, minCount: max(0, (int) ($request['min_count'] ?? 0))),
+            'grouped_metrics' => $analytics->groupedMetrics('result', $groupBy(), $this->metricSpecs($request), $this->optional($request, 'sort_metric') ?? 'count', $limit, minCount: max(0, (int) ($request['min_count'] ?? 0)), bucketAliases: $this->bucketAliases($request)),
             'percentiles' => $analytics->percentiles('result', $this->required($request, 'field'), $this->percents($request)),
             'stats' => $analytics->stats('result', $this->required($request, 'field')),
             'table' => $analytics->table('result', $this->csvList($request, 'fields'), $limit, $this->optional($request, 'sort')),
