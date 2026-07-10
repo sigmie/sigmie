@@ -154,8 +154,10 @@ class GroupedMetrics extends Widget
                 static fn (mixed $value): string => trim((string) $value),
                 [$label, ...(array) $values],
             ), static fn (string $value): bool => $value !== '')));
-
-            if ($label === '' || $values === []) {
+            if ($label === '') {
+                continue;
+            }
+            if ($values === []) {
                 continue;
             }
 
