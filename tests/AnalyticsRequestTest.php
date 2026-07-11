@@ -70,6 +70,44 @@ class AnalyticsRequestTest extends TestCase
     }
 
     /** @test */
+    public function it_canonicalizes_funnel_steps(): void
+    {
+        $request = AnalyticsRequest::fromArray([
+            'widget' => 'funnel',
+            'date_field' => 'occurred_at',
+            'steps' => [
+                ['label' => 'Visited', 'filter' => 'event:visited'],
+                ['filter' => 'event:purchased', 'label' => 'Purchased'],
+            ],
+        ]);
+
+        $this->assertSame(
+            '[{"filter":"event:visited","label":"Visited"},{"filter":"event:purchased","label":"Purchased"}]',
+            $request->toArray()['steps'],
+        );
+    }
+
+    /** @test */
+    public function it_canonicalizes_bucket_aliases(): void
+    {
+        $request = AnalyticsRequest::fromArray([
+            'widget' => 'grouped_metrics',
+            'date_field' => 'occurred_at',
+            'group_by' => 'category',
+            'metrics' => [['key' => 'count', 'metric' => 'count']],
+            'bucket_aliases' => [
+                ['values' => ['first', 2], 'label' => 'Combined'],
+                ['label' => 'Other', 'values' => [true]],
+            ],
+        ]);
+
+        $this->assertSame(
+            '[{"label":"Combined","values":["first",2]},{"label":"Other","values":[true]}]',
+            $request->toArray()['bucket_aliases'],
+        );
+    }
+
+    /** @test */
     public function it_preserves_supported_boolean_flags_and_filters_percentile_boundaries_at_execution(): void
     {
         $grouped = AnalyticsRequest::fromArray([
@@ -113,6 +151,15 @@ class AnalyticsRequestTest extends TestCase
             'date_field' => 'occurred_at',
             'metric' => 'count',
         ];
+        $funnel = [
+            'widget' => 'funnel',
+            'date_field' => 'occurred_at',
+        ];
+        $groupedMetrics = [
+            'widget' => 'grouped_metrics',
+            'date_field' => 'occurred_at',
+            'group_by' => 'category',
+        ];
 
         return [
             [[...$base, 'unknown' => 'value'], 'Unknown analytics arguments: unknown'],
@@ -120,7 +167,17 @@ class AnalyticsRequestTest extends TestCase
             [[...$base, 'limit' => 1.5], 'limit] must be an integer'],
             [[...$base, 'limit' => '1e2'], 'limit] must be an integer'],
             [[...$base, 'limit' => true], 'limit] must be an integer'],
+            [[...$base, 'filters' => ['field:value']], 'filters] must be scalar'],
             [[...$base, 'filters' => (object) ['field' => 'value']], 'filters] must be scalar'],
+            [[...$base, 'steps' => '{'], 'Analytics funnel steps must be a JSON array'],
+            [[...$base, 'metrics' => '{'], 'Analytics grouped_metrics metrics must be a JSON array'],
+            [[...$base, 'bucket_aliases' => '{'], 'Analytics bucket_aliases must be a JSON array'],
+            [[...$base, 'metrics' => '{"key":"count"}'], 'Analytics grouped_metrics metrics must be a JSON array'],
+            [[...$base, 'metrics' => [INF]], 'metrics] must contain only finite numbers'],
+            [[...$base, 'metrics' => [(object) ['key' => 'count']]], 'metrics] contains an unsupported value'],
+            [[...$base, 'fields' => ['first' => 'amount']], 'fields] must be a list'],
+            [[...$base, 'fields' => (object) ['first' => 'amount']], 'fields] must be a comma-separated list'],
+            [[...$base, 'fields' => [['amount']]], 'fields] must contain only scalar values'],
             [[...$base, 'widget' => 'unknown'], 'Unsupported analytics widget'],
             [[...$base, 'metric' => 'ratio', 'field' => 'amount'], 'Unsupported analytics metric'],
             [[...$base, 'interval' => 'fortnight'], 'Unsupported analytics interval'],
@@ -147,6 +204,13 @@ class AnalyticsRequestTest extends TestCase
                 'metric' => 'sum',
             ], 'field] is required'],
             [[
+                'widget' => 'heatmap',
+                'date_field' => 'occurred_at',
+                'row_field' => 'category',
+                'col_field' => 'subcategory',
+                'metric' => 'ratio',
+            ], 'Unsupported analytics metric'],
+            [[
                 'widget' => 'percentiles',
                 'date_field' => 'occurred_at',
                 'field' => 'amount',
@@ -157,6 +221,18 @@ class AnalyticsRequestTest extends TestCase
                 'date_field' => 'occurred_at',
                 'steps' => ['malformed'],
             ], 'funnel step must be an object'],
+            [[...$funnel, 'steps' => []], 'funnel widget requires at least one step'],
+            [[...$funnel, 'steps' => [['filter' => 'event:visited']]], 'funnel step needs a non-empty label and filter'],
+            [[...$funnel, 'steps' => [['label' => 'Visited', 'filter' => ' ']]], 'funnel step needs a non-empty label and filter'],
+            [[...$funnel, 'steps' => [
+                ['label' => 'Visited', 'filter' => 'event:visited'],
+                ['label' => 'Visited', 'filter' => 'event:returned'],
+            ]], 'Duplicate funnel step label [Visited]'],
+            [[...$funnel, 'steps' => [[
+                'label' => 'Visited',
+                'filter' => 'event:visited',
+                'unknown' => true,
+            ]]], 'Unknown funnel step keys: unknown'],
             [[
                 'widget' => 'grouped_metrics',
                 'date_field' => 'occurred_at',
@@ -169,7 +245,26 @@ class AnalyticsRequestTest extends TestCase
                 'group_by' => 'category',
                 'metrics' => [['key' => 'count', 'metric' => 'count', 'unknown' => true]],
             ], 'Unknown grouped_metrics metric keys: unknown'],
+            [[...$groupedMetrics, 'metrics' => []], 'grouped_metrics widget requires at least one metric'],
+            [[...$groupedMetrics, 'metrics' => ['count']], 'grouped_metrics metric must be an object'],
+            [[...$groupedMetrics, 'metrics' => [['key' => 'count', 'metric' => 'ratio']]], 'grouped_metrics metric needs a key and valid metric'],
+            [[...$groupedMetrics, 'metrics' => [
+                ['key' => 'count', 'metric' => 'count'],
+                ['key' => 'count', 'metric' => 'count'],
+            ]], 'Duplicate grouped_metrics metric key [count]'],
+            [[...$groupedMetrics,
+                'metrics' => [['key' => 'count', 'metric' => 'count']],
+                'sort_metric' => 'revenue',
+            ], 'Unknown grouped_metrics sort_metric [revenue]'],
             [[...$base, 'bucket_aliases' => [['label' => 'Combined', 'values' => 'one']]], 'values array'],
+            [[...$base, 'bucket_aliases' => ['malformed']], 'bucket_aliases item must be an object'],
+            [[...$base, 'bucket_aliases' => [['label' => 'Combined', 'values' => ['']]]], 'bucket_aliases value must be a non-empty scalar'],
+            [[...$base, 'bucket_aliases' => [['label' => 'Combined', 'values' => [[]]]]], 'bucket_aliases value must be a non-empty scalar'],
+            [[...$base, 'bucket_aliases' => [
+                ['label' => 'Combined', 'values' => ['one']],
+                ['label' => 'Combined', 'values' => ['two']],
+            ]], 'Duplicate bucket_aliases label [Combined]'],
+            [[...$base, 'bucket_aliases_only' => true], 'bucket_aliases_only is supported only by grouped_metrics'],
             [[
                 'widget' => 'funnel',
                 'date_field' => 'occurred_at',

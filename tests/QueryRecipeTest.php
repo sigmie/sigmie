@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use InvalidArgumentException;
+use ReflectionClass;
 use Sigmie\Analytics\AnalyticsRequest;
 use Sigmie\Analytics\QueryRecipe;
 use Sigmie\Mappings\NewProperties;
@@ -488,6 +489,60 @@ class QueryRecipeTest extends TestCase
     }
 
     /** @test */
+    public function it_rejects_invalid_raw_definition_shapes(): void
+    {
+        $template = [
+            'widget' => 'kpi',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+        ];
+        $definition = $this->definition('events', $template);
+        $invalidDefinitions = [
+            [[...$definition, 'version' => 2], 'Unsupported query recipe version'],
+            [[...$definition, 'dataset' => []], 'Query recipe dataset must be a string'],
+            [[...$definition, 'template' => 'malformed'], 'Query recipe template must be an array'],
+            [[...$definition, 'slots' => [['name' => 1]]], 'Query recipe slot name must be a string'],
+            [[...$definition, 'slots' => [['type' => 1]]], 'Query recipe slot type must be a string'],
+            [[...$definition, 'slots' => [['target' => 1]]], 'Query recipe slot target must be a string or null'],
+            [[...$definition, 'slots' => [['required' => 1]]], 'Query recipe slot required must be a boolean'],
+            [[...$definition, 'filter_templates' => [['field' => 1]]], 'Query recipe filter template field must be a string'],
+            [[...$definition, 'filter_templates' => [['operator' => 1]]], 'Query recipe filter template operator must be a string'],
+            [[...$definition, 'filter_templates' => [['slot' => 1]]], 'Query recipe filter template slot must be a string'],
+            [[...$definition, 'slots' => [['unexpected' => true]]], 'Unknown query recipe slots keys: unexpected'],
+            [[...$definition, 'filter_templates' => [['unexpected' => true]]], 'Unknown query recipe filter_templates keys: unexpected'],
+            [[...$definition, 'slots' => [[
+                'name' => 'value',
+                'target' => null,
+                'type' => 'object',
+                'default' => 'fallback',
+            ]]], 'Unsupported query recipe slot type'],
+        ];
+
+        foreach ($invalidDefinitions as [$invalidDefinition, $message]) {
+            $this->assertInvalid(
+                fn (): QueryRecipe => QueryRecipe::fromArray($invalidDefinition),
+                $message,
+            );
+        }
+    }
+
+    /** @test */
+    public function it_accepts_definitions_without_optional_lists(): void
+    {
+        $recipe = QueryRecipe::fromArray([
+            'dataset' => 'events',
+            'template' => [
+                'widget' => 'kpi',
+                'date_field' => 'occurred_at',
+                'metric' => 'count',
+            ],
+        ]);
+
+        $this->assertSame([], $recipe->toArray()['slots']);
+        $this->assertSame([], $recipe->toArray()['filter_templates']);
+    }
+
+    /** @test */
     public function it_rejects_invalid_typed_binding_values(): void
     {
         $template = [
@@ -523,6 +578,29 @@ class QueryRecipeTest extends TestCase
         $this->assertInvalid(fn (): AnalyticsRequest => $number->bind(['value' => '1e309']), 'must be finite');
         $this->assertInvalid(fn (): AnalyticsRequest => $number->bind(['value' => 11]), 'outside its allowed range');
         $this->assertInvalid(fn (): AnalyticsRequest => $string->bind(['value' => ' ']), 'cannot be empty');
+    }
+
+    /** @test */
+    public function it_rejects_non_scalar_typed_bindings(): void
+    {
+        $template = [
+            'widget' => 'kpi',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+        ];
+        $string = QueryRecipe::fromArray($this->definition('events', $template, [[
+            'name' => 'value',
+            'target' => null,
+            'type' => 'string',
+        ]]));
+        $number = QueryRecipe::fromArray($this->definition('events', $template, [[
+            'name' => 'value',
+            'target' => null,
+            'type' => 'number',
+        ]]));
+
+        $this->assertInvalid(fn (): AnalyticsRequest => $string->bind(['value' => []]), 'must be a string');
+        $this->assertInvalid(fn (): AnalyticsRequest => $number->bind(['value' => []]), 'must be numeric');
     }
 
     /** @test */
@@ -671,6 +749,45 @@ class QueryRecipeTest extends TestCase
         );
     }
 
+    /** @test */
+    public function it_rejects_invalid_grouped_metrics_and_sort_contracts_during_mapping_validation(): void
+    {
+        $index = $this->recipeIndex();
+        $groupedMetrics = [
+            'widget' => 'grouped_metrics',
+            'date_field' => 'occurred_at',
+            'group_by' => 'category',
+        ];
+        $table = [
+            'widget' => 'table',
+            'date_field' => 'occurred_at',
+            'fields' => 'category,amount',
+        ];
+
+        $this->assertInvalid(
+            fn (): QueryRecipe => $this->recipeWithRawTemplate([...$groupedMetrics, 'metrics' => 'invalid'])->validateAgainst($index),
+            'grouped metrics must be valid JSON',
+        );
+        $this->assertInvalid(
+            fn (): QueryRecipe => $this->recipeWithRawTemplate([...$groupedMetrics, 'metrics' => '[1]'])->validateAgainst($index),
+            'grouped metric must be an object',
+        );
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
+                ...$table,
+                'sort' => 'amount:desc category:asc',
+            ]))->validateAgainst($index),
+            'sort must contain exactly one field',
+        );
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
+                ...$table,
+                'sort' => 'amount:desc:extra',
+            ]))->validateAgainst($index),
+            'Unsupported query recipe sort [amount:desc:extra]',
+        );
+    }
+
     /**
      * @param  array<string, mixed>  $template
      * @param  list<array<string, mixed>>  $slots
@@ -724,6 +841,22 @@ class QueryRecipeTest extends TestCase
         $index->create();
 
         return $index;
+    }
+
+    /** @param array<string, mixed> $template */
+    private function recipeWithRawTemplate(array $template): QueryRecipe
+    {
+        $reflection = new ReflectionClass(QueryRecipe::class);
+        $recipe = $reflection->newInstanceWithoutConstructor();
+        $reflection->getProperty('definition')->setValue($recipe, [
+            'version' => 1,
+            'dataset' => 'events',
+            'template' => $template,
+            'slots' => [],
+            'filter_templates' => [],
+        ]);
+
+        return $recipe;
     }
 
     private function assertInvalid(callable $callback, string $message): void
