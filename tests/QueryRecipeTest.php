@@ -77,7 +77,7 @@ class QueryRecipeTest extends TestCase
 
         foreach ($this->widgetTemplates() as $widget => $template) {
             $recipe = QueryRecipe::fromArray($this->definition('events', $template));
-            $this->assertSame($recipe, $recipe->validateAgainst($index), "Widget {$widget} did not validate.");
+            $this->assertSame($recipe, $recipe->validateAgainst($index), sprintf('Widget %s did not validate.', $widget));
         }
     }
 

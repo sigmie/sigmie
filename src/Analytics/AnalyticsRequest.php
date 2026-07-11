@@ -123,24 +123,29 @@ class AnalyticsRequest
         $normalized = [];
 
         foreach ($request as $key => $value) {
-            if ($value === null || $value === '') {
+            if ($value === null) {
                 continue;
             }
-
+            if ($value === '') {
+                continue;
+            }
             if (in_array($key, self::INTEGER_KEYS, true)) {
-                (is_numeric($value) || is_bool($value)) || throw new InvalidArgumentException("Analytics argument [{$key}] must be an integer.");
+                if (! is_numeric($value) && ! is_bool($value)) {
+                    throw new InvalidArgumentException(sprintf('Analytics argument [%s] must be an integer.', $key));
+                }
                 $normalized[$key] = (int) $value;
 
                 continue;
             }
-
             if (is_array($value)) {
                 $normalized[$key] = json_encode($value, JSON_THROW_ON_ERROR);
 
                 continue;
             }
 
-            is_scalar($value) || throw new InvalidArgumentException("Analytics argument [{$key}] must be scalar.");
+            if (! is_scalar($value)) {
+                throw new InvalidArgumentException(sprintf('Analytics argument [%s] must be scalar.', $key));
+            }
             $normalized[$key] = trim((string) $value);
         }
 
@@ -159,8 +164,9 @@ class AnalyticsRequest
     private static function validate(array $request): void
     {
         $widget = self::required($request, 'widget');
-        in_array($widget, self::WIDGETS, true)
-            || throw new InvalidArgumentException("Unsupported analytics widget [{$widget}].");
+        if (! in_array($widget, self::WIDGETS, true)) {
+            throw new InvalidArgumentException(sprintf('Unsupported analytics widget [%s].', $widget));
+        }
 
         self::required($request, 'date_field');
         self::validateMetric($request, $widget);
@@ -191,7 +197,7 @@ class AnalyticsRequest
 
         $metric = self::required($request, 'metric');
         $resolved = Metric::tryFrom($metric)
-            ?? throw new InvalidArgumentException("Unsupported analytics metric [{$metric}].");
+            ?? throw new InvalidArgumentException(sprintf('Unsupported analytics metric [%s].', $metric));
 
         if ($resolved !== Metric::Count) {
             self::required($request, 'field');
@@ -231,8 +237,9 @@ class AnalyticsRequest
         $interval = (string) $request['interval'];
         $calendar = ['minute', 'hour', 'day', 'week', 'month', 'quarter', 'year'];
 
-        in_array($interval, $calendar, true) || preg_match('/^\d+(ms|s|m|h|d)$/', $interval) === 1
-            || throw new InvalidArgumentException("Unsupported analytics interval [{$interval}].");
+        if (! in_array($interval, $calendar, true) && preg_match('/^\d+(ms|s|m|h|d)$/', $interval) !== 1) {
+            throw new InvalidArgumentException(sprintf('Unsupported analytics interval [%s].', $interval));
+        }
     }
 
     /**
@@ -240,9 +247,8 @@ class AnalyticsRequest
      */
     private static function validateWindow(array $request): void
     {
-        if (isset($request['range'])) {
-            Period::tryFrom((string) $request['range']) instanceof Period
-                || throw new InvalidArgumentException("Unsupported analytics range [{$request['range']}].");
+        if (isset($request['range']) && ! Period::tryFrom((string) $request['range']) instanceof Period) {
+            throw new InvalidArgumentException(sprintf('Unsupported analytics range [%s].', $request['range']));
         }
 
         foreach (['from', 'to'] as $key) {
@@ -284,7 +290,7 @@ class AnalyticsRequest
     {
         $value = trim((string) ($request[$key] ?? ''));
 
-        return $value !== '' ? $value : throw new InvalidArgumentException("Analytics argument [{$key}] is required.");
+        return $value !== '' ? $value : throw new InvalidArgumentException(sprintf('Analytics argument [%s] is required.', $key));
     }
 
     /**
@@ -308,7 +314,8 @@ class AnalyticsRequest
         }
 
         $value = (int) $request[$key];
-        ($value >= $minimum && $value <= $maximum)
-            || throw new InvalidArgumentException("Analytics argument [{$key}] must be between {$minimum} and {$maximum}.");
+        if (! ($value >= $minimum && $value <= $maximum)) {
+            throw new InvalidArgumentException(sprintf('Analytics argument [%s] must be between %d and %d.', $key, $minimum, $maximum));
+        }
     }
 }

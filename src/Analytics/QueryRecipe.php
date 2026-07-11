@@ -83,18 +83,21 @@ class QueryRecipe
 
         $unknown = array_diff(array_keys($bindings), array_keys($slots));
 
-        $unknown === [] || throw new InvalidArgumentException('Unknown query recipe bindings: '.implode(', ', $unknown).'.');
+        if ($unknown !== []) {
+            throw new InvalidArgumentException('Unknown query recipe bindings: '.implode(', ', $unknown).'.');
+        }
 
         $request = (array) $this->definition['template'];
         $resolved = [];
 
         foreach ($slots as $name => $slot) {
-            $hasBinding = array_key_exists((string) $name, $bindings);
+            $hasBinding = array_key_exists($name, $bindings);
             $value = $hasBinding ? $bindings[$name] : ($slot['default'] ?? null);
 
             if ($value === null || $value === '') {
-                ($slot['required'] ?? false) !== true
-                    || throw new InvalidArgumentException("Query recipe binding [{$name}] is required.");
+                if (($slot['required'] ?? false) === true) {
+                    throw new InvalidArgumentException(sprintf('Query recipe binding [%s] is required.', $name));
+                }
 
                 continue;
             }
@@ -106,14 +109,11 @@ class QueryRecipe
             }
         }
 
-        $filters = self::boundFilters(
-            (array) ($this->definition['filter_templates'] ?? []),
-            $resolved,
-        );
+        $filters = $this->boundFilters((array) ($this->definition['filter_templates'] ?? []), $resolved);
 
         if ($filters !== '') {
             $fixed = trim((string) ($request['filters'] ?? ''));
-            $request['filters'] = $fixed !== '' ? "({$fixed}) AND ({$filters})" : $filters;
+            $request['filters'] = $fixed !== '' ? sprintf('(%s) AND (%s)', $fixed, $filters) : $filters;
         }
 
         return AnalyticsRequest::fromArray($request);
@@ -124,7 +124,7 @@ class QueryRecipe
         $fields = self::indexFields($index);
         $template = (array) $this->definition['template'];
 
-        self::requireFieldType($fields, (string) ($template['date_field'] ?? ''), ['date'], 'date_field');
+        $this->requireFieldType($fields, (string) ($template['date_field'] ?? ''), ['date'], 'date_field');
 
         foreach (['field', 'bucket_field'] as $key) {
             $field = trim((string) ($template[$key] ?? ''));
@@ -139,20 +139,20 @@ class QueryRecipe
         $field = (string) ($template['field'] ?? '');
 
         if ($widget === 'geo') {
-            self::requireFieldType($fields, $field, ['geo'], 'field');
+            $this->requireFieldType($fields, $field, ['geo'], 'field');
         } elseif ($field !== '' && ($metric !== '' && $metric !== 'count' || in_array($widget, ['distribution', 'histogram_metric', 'percentiles', 'stats'], true))) {
-            self::requireFieldType($fields, $field, ['number'], 'field');
+            $this->requireFieldType($fields, $field, ['number'], 'field');
         }
 
         if (($template['bucket_field'] ?? '') !== '') {
-            self::requireFieldType($fields, (string) $template['bucket_field'], ['number'], 'bucket_field');
+            $this->requireFieldType($fields, (string) $template['bucket_field'], ['number'], 'bucket_field');
         }
 
         foreach (['group_by', 'row_field', 'col_field', 'id_field'] as $key) {
             $field = trim((string) ($template[$key] ?? ''));
 
             if ($field !== '') {
-                self::requireFieldType($fields, $field, ['keyword', 'text'], $key);
+                $this->requireFieldType($fields, $field, ['keyword', 'text'], $key);
             }
         }
 
@@ -160,38 +160,43 @@ class QueryRecipe
             $field = trim((string) ($template[$key] ?? ''));
 
             if ($field !== '') {
-                self::requireFieldType($fields, $field, ['date'], $key);
+                $this->requireFieldType($fields, $field, ['date'], $key);
             }
         }
 
-        foreach (self::csvFields((string) ($template['group_by_fields'] ?? '')) as $field) {
-            self::requireFieldType($fields, $field, ['keyword', 'text'], 'group_by_fields');
+        foreach ($this->csvFields((string) ($template['group_by_fields'] ?? '')) as $field) {
+            $this->requireFieldType($fields, $field, ['keyword', 'text'], 'group_by_fields');
         }
 
-        foreach (self::csvFields((string) ($template['fields'] ?? '')) as $field) {
+        foreach ($this->csvFields((string) ($template['fields'] ?? '')) as $field) {
             self::requireField($fields, $field, 'fields');
         }
 
         if (($template['sort'] ?? '') !== '') {
             [$sortField, $direction] = array_pad(explode(':', (string) $template['sort'], 2), 2, 'asc');
             self::requireField($fields, trim($sortField), 'sort');
-            in_array(strtolower(trim($direction)), ['asc', 'desc'], true)
-                || throw new InvalidArgumentException("Unsupported query recipe sort direction [{$direction}].");
+            if (! in_array(strtolower(trim($direction)), ['asc', 'desc'], true)) {
+                throw new InvalidArgumentException(sprintf('Unsupported query recipe sort direction [%s].', $direction));
+            }
         }
 
         if ($widget === 'grouped_metrics') {
             $metrics = json_decode((string) ($template['metrics'] ?? ''), true);
-            is_array($metrics) || throw new InvalidArgumentException('Query recipe grouped metrics must be valid JSON.');
+            if (! is_array($metrics)) {
+                throw new InvalidArgumentException('Query recipe grouped metrics must be valid JSON.');
+            }
 
             foreach ($metrics as $groupedMetric) {
-                is_array($groupedMetric) || throw new InvalidArgumentException('Query recipe grouped metric must be an object.');
+                if (! is_array($groupedMetric)) {
+                    throw new InvalidArgumentException('Query recipe grouped metric must be an object.');
+                }
                 $groupedMetricName = (string) ($groupedMetric['metric'] ?? '');
 
                 if ($groupedMetricName === 'count') {
                     continue;
                 }
 
-                self::requireFieldType($fields, (string) ($groupedMetric['field'] ?? ''), ['number'], 'metrics.field');
+                $this->requireFieldType($fields, (string) ($groupedMetric['field'] ?? ''), ['number'], 'metrics.field');
             }
         }
 
@@ -204,12 +209,7 @@ class QueryRecipe
         foreach ((array) ($this->definition['filter_templates'] ?? []) as $filter) {
             $filterField = (string) $filter['field'];
             self::requireField($fields, $filterField, 'filter_template');
-            self::validateFilterSlotType(
-                (string) ($fields[$filterField] ?? ''),
-                (string) $filter['operator'],
-                (array) ($slots[(string) $filter['slot']] ?? []),
-                $filterField,
-            );
+            $this->validateFilterSlotType((string) ($fields[$filterField] ?? ''), (string) $filter['operator'], (array) ($slots[(string) $filter['slot']] ?? []), $filterField);
         }
 
         return $this;
@@ -311,8 +311,9 @@ class QueryRecipe
     private static function validate(array $definition): void
     {
         $dataset = (string) ($definition['dataset'] ?? '');
-        preg_match('/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/', $dataset) === 1
-            || throw new InvalidArgumentException("Invalid query recipe dataset [{$dataset}].");
+        if (preg_match('/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/', $dataset) !== 1) {
+            throw new InvalidArgumentException(sprintf('Invalid query recipe dataset [%s].', $dataset));
+        }
 
         $slots = (array) $definition['slots'];
         $names = [];
@@ -320,21 +321,26 @@ class QueryRecipe
 
         foreach ($slots as $slot) {
             $name = (string) $slot['name'];
-            preg_match('/^[a-z][a-z0-9_]*$/', $name) === 1
-                || throw new InvalidArgumentException("Invalid query recipe slot name [{$name}].");
-            in_array((string) $slot['type'], self::SLOT_TYPES, true)
-                || throw new InvalidArgumentException("Unsupported query recipe slot type [{$slot['type']}].");
+            if (preg_match('/^[a-z][a-z0-9_]*$/', $name) !== 1) {
+                throw new InvalidArgumentException(sprintf('Invalid query recipe slot name [%s].', $name));
+            }
+            if (! in_array((string) $slot['type'], self::SLOT_TYPES, true)) {
+                throw new InvalidArgumentException(sprintf('Unsupported query recipe slot type [%s].', $slot['type']));
+            }
 
             if (($slot['target'] ?? null) !== null) {
-                in_array((string) $slot['target'], self::SLOT_TARGETS, true)
-                    || throw new InvalidArgumentException("Unsupported query recipe slot target [{$slot['target']}].");
-                in_array($slot['target'], $targets, true)
-                    && throw new InvalidArgumentException("Duplicate query recipe slot target [{$slot['target']}].");
+                if (! in_array((string) $slot['target'], self::SLOT_TARGETS, true)) {
+                    throw new InvalidArgumentException(sprintf('Unsupported query recipe slot target [%s].', $slot['target']));
+                }
+                if (in_array($slot['target'], $targets, true)) {
+                    throw new InvalidArgumentException(sprintf('Duplicate query recipe slot target [%s].', $slot['target']));
+                }
                 $targets[] = $slot['target'];
             }
 
-            in_array($name, $names, true)
-                && throw new InvalidArgumentException("Duplicate query recipe slot [{$name}].");
+            if (in_array($name, $names, true)) {
+                throw new InvalidArgumentException(sprintf('Duplicate query recipe slot [%s].', $name));
+            }
             $names[] = $name;
 
             if (array_key_exists('default', $slot)) {
@@ -345,11 +351,15 @@ class QueryRecipe
         foreach ((array) $definition['filter_templates'] as $filter) {
             $field = (string) $filter['field'];
             $slot = (string) $filter['slot'];
-            $field !== '' || throw new InvalidArgumentException('Query recipe filter field is required.');
-            in_array((string) $filter['operator'], self::FILTER_OPERATORS, true)
-                || throw new InvalidArgumentException("Unsupported query recipe filter operator [{$filter['operator']}].");
-            in_array($slot, $names, true)
-                || throw new InvalidArgumentException("Query recipe filter references unknown slot [{$slot}].");
+            if ($field === '') {
+                throw new InvalidArgumentException('Query recipe filter field is required.');
+            }
+            if (! in_array((string) $filter['operator'], self::FILTER_OPERATORS, true)) {
+                throw new InvalidArgumentException(sprintf('Unsupported query recipe filter operator [%s].', $filter['operator']));
+            }
+            if (! in_array($slot, $names, true)) {
+                throw new InvalidArgumentException(sprintf('Query recipe filter references unknown slot [%s].', $slot));
+            }
         }
     }
 
@@ -371,7 +381,7 @@ class QueryRecipe
             'bucket_size' => 1,
             'precision' => 5,
             'percents' => '50',
-            default => throw new InvalidArgumentException("Unsupported query recipe slot target [{$target}]."),
+            default => throw new InvalidArgumentException(sprintf('Unsupported query recipe slot target [%s].', $target)),
         };
     }
 
@@ -383,24 +393,31 @@ class QueryRecipe
         $type = (string) $slot['type'];
 
         if (in_array($type, ['integer', 'timezone_offset'], true)) {
-            is_numeric($value) || throw new InvalidArgumentException("Query recipe binding [{$slot['name']}] must be an integer.");
+            if (! is_numeric($value)) {
+                throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be an integer.', $slot['name']));
+            }
             $value = (int) $value;
             $minimum = (int) ($slot['minimum'] ?? ($type === 'timezone_offset' ? -840 : PHP_INT_MIN));
             $maximum = (int) ($slot['maximum'] ?? ($type === 'timezone_offset' ? 840 : PHP_INT_MAX));
-            ($value >= $minimum && $value <= $maximum)
-                || throw new InvalidArgumentException("Query recipe binding [{$slot['name']}] is outside its allowed range.");
+            if (! ($value >= $minimum && $value <= $maximum)) {
+                throw new InvalidArgumentException(sprintf('Query recipe binding [%s] is outside its allowed range.', $slot['name']));
+            }
 
             return $value;
         }
 
         if ($type === 'number') {
-            is_numeric($value) || throw new InvalidArgumentException("Query recipe binding [{$slot['name']}] must be numeric.");
+            if (! is_numeric($value)) {
+                throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be numeric.', $slot['name']));
+            }
 
             return (float) $value;
         }
 
         $value = trim((string) $value);
-        $value !== '' || throw new InvalidArgumentException("Query recipe binding [{$slot['name']}] cannot be empty.");
+        if ($value === '') {
+            throw new InvalidArgumentException(sprintf('Query recipe binding [%s] cannot be empty.', $slot['name']));
+        }
 
         return $value;
     }
@@ -409,7 +426,7 @@ class QueryRecipe
      * @param  list<array<string, string>>  $templates
      * @param  array<string, int|float|string>  $bindings
      */
-    private static function boundFilters(array $templates, array $bindings): string
+    private function boundFilters(array $templates, array $bindings): string
     {
         $filters = [];
 
@@ -420,35 +437,31 @@ class QueryRecipe
                 continue;
             }
 
-            $filters[] = self::filterClause(
-                (string) $filter['field'],
-                (string) $filter['operator'],
-                $bindings[$slot],
-            );
+            $filters[] = $this->filterClause((string) $filter['field'], (string) $filter['operator'], $bindings[$slot]);
         }
 
         return implode(' AND ', $filters);
     }
 
-    private static function filterClause(string $field, string $operator, int|float|string $value): string
+    private function filterClause(string $field, string $operator, int|float|string $value): string
     {
         $value = is_int($value) || is_float($value)
             ? (string) $value
             : "'".str_replace(['\\', "'"], ['\\\\', "\\'"], $value)."'";
 
         return match ($operator) {
-            'equals' => "{$field}:{$value}",
-            'not_equals' => "NOT {$field}:{$value}",
-            'gt' => "{$field}>{$value}",
-            'gte' => "{$field}>={$value}",
-            'lt' => "{$field}<{$value}",
-            'lte' => "{$field}<={$value}",
-            default => throw new InvalidArgumentException("Unsupported query recipe filter operator [{$operator}]."),
+            'equals' => sprintf('%s:%s', $field, $value),
+            'not_equals' => sprintf('NOT %s:%s', $field, $value),
+            'gt' => sprintf('%s>%s', $field, $value),
+            'gte' => sprintf('%s>=%s', $field, $value),
+            'lt' => sprintf('%s<%s', $field, $value),
+            'lte' => sprintf('%s<=%s', $field, $value),
+            default => throw new InvalidArgumentException(sprintf('Unsupported query recipe filter operator [%s].', $operator)),
         };
     }
 
     /** @param array<string, mixed> $slot */
-    private static function validateFilterSlotType(string $fieldType, string $operator, array $slot, string $field): void
+    private function validateFilterSlotType(string $fieldType, string $operator, array $slot, string $field): void
     {
         $slotType = (string) ($slot['type'] ?? '');
         $valid = match ($fieldType) {
@@ -458,7 +471,9 @@ class QueryRecipe
             default => false,
         };
 
-        $valid || throw new InvalidArgumentException("Query recipe filter slot for [{$field}] does not match its field type or operator.");
+        if (! $valid) {
+            throw new InvalidArgumentException(sprintf('Query recipe filter slot for [%s] does not match its field type or operator.', $field));
+        }
     }
 
     /**
@@ -478,7 +493,7 @@ class QueryRecipe
         $types = [];
 
         foreach ($fields as $field) {
-            $name = $prefix !== '' ? "{$prefix}.{$field->name}" : $field->name;
+            $name = $prefix !== '' ? sprintf('%s.%s', $prefix, $field->name) : $field->name;
             $types[$name] = self::fieldType($field);
 
             if ($field instanceof FieldContainer) {
@@ -510,23 +525,25 @@ class QueryRecipe
      */
     private static function requireField(array $fields, string $field, string $argument): void
     {
-        isset($fields[$field])
-            || throw new InvalidArgumentException("Query recipe {$argument} field [{$field}] does not exist in the index.");
+        if (! isset($fields[$field])) {
+            throw new InvalidArgumentException(sprintf('Query recipe %s field [%s] does not exist in the index.', $argument, $field));
+        }
     }
 
     /**
      * @param  array<string, string>  $fields
      * @param  list<string>  $types
      */
-    private static function requireFieldType(array $fields, string $field, array $types, string $argument): void
+    private function requireFieldType(array $fields, string $field, array $types, string $argument): void
     {
         self::requireField($fields, $field, $argument);
-        in_array($fields[$field], $types, true)
-            || throw new InvalidArgumentException("Query recipe {$argument} field [{$field}] has incompatible type [{$fields[$field]}].");
+        if (! in_array($fields[$field], $types, true)) {
+            throw new InvalidArgumentException(sprintf('Query recipe %s field [%s] has incompatible type [%s].', $argument, $field, $fields[$field]));
+        }
     }
 
     /** @return list<string> */
-    private static function csvFields(string $fields): array
+    private function csvFields(string $fields): array
     {
         return array_values(array_filter(array_map(
             fn (string $field): string => trim($field),
