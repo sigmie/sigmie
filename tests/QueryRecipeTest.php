@@ -107,6 +107,24 @@ class QueryRecipeTest extends TestCase
         $recipe->validateAgainst($index);
     }
 
+    /** @test */
+    public function it_accepts_numeric_and_boolean_grouping_fields_supported_by_terms_aggregations(): void
+    {
+        $index = $this->recipeIndex();
+
+        foreach (['year', 'active'] as $groupBy) {
+            $recipe = QueryRecipe::fromArray($this->definition('events', [
+                'widget' => 'breakdown',
+                'date_field' => 'occurred_at',
+                'metric' => 'avg',
+                'field' => 'amount',
+                'group_by' => $groupBy,
+            ]));
+
+            $this->assertSame($recipe, $recipe->validateAgainst($index));
+        }
+    }
+
     /**
      * @param  array<string, mixed>  $template
      * @param  list<array<string, mixed>>  $slots
@@ -147,6 +165,8 @@ class QueryRecipeTest extends TestCase
                 $properties->keyword('category');
                 $properties->keyword('subcategory');
                 $properties->keyword('user_id');
+                $properties->integer('year');
+                $properties->bool('active');
                 $properties->geoPoint('location');
 
                 return $properties;

@@ -152,7 +152,7 @@ class QueryRecipe
             $field = trim((string) ($template[$key] ?? ''));
 
             if ($field !== '') {
-                $this->requireFieldType($fields, $field, ['keyword', 'text'], $key);
+                $this->requireFieldType($fields, $field, ['keyword', 'text', 'number', 'boolean'], $key);
             }
         }
 
