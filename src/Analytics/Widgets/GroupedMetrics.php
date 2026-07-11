@@ -31,6 +31,7 @@ class GroupedMetrics extends Widget
         protected string $direction,
         protected int $minCount = 0,
         protected array $bucketAliases = [],
+        protected bool $aliasesOnly = false,
     ) {
         parent::__construct($name, $dateField, $from, $to, $dateFormat);
     }
@@ -44,15 +45,18 @@ class GroupedMetrics extends Widget
 
             $terms->aggregate(fn (Aggs $sub) => $this->addMetrics($sub, withLimit: true));
 
-            $excluded = $this->excludedAliasValues();
+            $excluded = $this->aliasesOnly ? '.*' : $this->excludedAliasValues();
 
             if ($excluded !== []) {
                 $terms->exclude($excluded);
             }
 
             foreach ($this->normalizedAliases() as $key => $alias) {
-                $aggs->filter($key, new Terms($this->groupBy, $alias['values']))
-                    ->aggregate(fn (Aggs $sub) => $this->addMetrics($sub));
+                $filter = $aggs->filter($key, new Terms($this->groupBy, $alias['values']));
+
+                if ($this->hasAggregatedMetrics()) {
+                    $filter->aggregate(fn (Aggs $sub) => $this->addMetrics($sub));
+                }
             }
         })->toRaw();
     }
@@ -83,6 +87,7 @@ class GroupedMetrics extends Widget
             'min_count' => $this->minCount,
             'sort_metric' => $this->sortMetric,
             ...($this->bucketAliases !== [] ? ['bucket_aliases' => $this->bucketAliases] : []),
+            ...($this->aliasesOnly ? ['bucket_aliases_only' => true] : []),
         ];
     }
 
@@ -104,6 +109,17 @@ class GroupedMetrics extends Widget
         if ($withLimit) {
             $aggs->sort('limit', [[$this->sortOrderKey() => ['order' => $this->direction]]], $this->limit);
         }
+    }
+
+    protected function hasAggregatedMetrics(): bool
+    {
+        foreach ($this->metrics as $metric) {
+            if ($metric['metric'] !== Metric::Count) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

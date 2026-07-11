@@ -288,7 +288,7 @@ class Analytics implements MultiSearchable
     /**
      * @param  list<array{key: string, label?: string, metric: Metric, field?: string}>  $metrics
      */
-    public function groupedMetrics(string $as, string $groupBy, array $metrics, string $sortMetric = 'count', int $limit = 10, string $direction = 'desc', int $minCount = 0, Query|string|null $filter = null, Period|array|null $window = null, array $bucketAliases = []): static
+    public function groupedMetrics(string $as, string $groupBy, array $metrics, string $sortMetric = 'count', int $limit = 10, string $direction = 'desc', int $minCount = 0, Query|string|null $filter = null, Period|array|null $window = null, array $bucketAliases = [], bool $aliasesOnly = false): static
     {
         [$from, $to] = $this->resolveWindow($window);
         $resolvedMetrics = array_values(array_filter(array_map(
@@ -303,7 +303,7 @@ class Analytics implements MultiSearchable
         ]];
         $sortMetric = $this->groupedMetricsSortMetric($resolvedMetrics, $sortMetric);
 
-        return $this->addFiltered(new GroupedMetrics($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($groupBy), $resolvedMetrics, $sortMetric, $limit, $direction, $minCount, $bucketAliases), $filter);
+        return $this->addFiltered(new GroupedMetrics($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($groupBy), $resolvedMetrics, $sortMetric, $limit, $direction, $minCount, $bucketAliases, $aliasesOnly), $filter);
     }
 
     /**
