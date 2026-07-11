@@ -50,6 +50,25 @@ class QueryRecipeTest extends TestCase
     }
 
     /** @test */
+    public function it_promotes_result_limits_to_a_reusable_slot(): void
+    {
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'trend',
+            'date_field' => 'occurred_at',
+            'metric' => 'avg',
+            'field' => 'amount',
+            'limit' => 25,
+        ]));
+
+        $definition = $recipe->toArray();
+
+        $this->assertArrayNotHasKey('limit', $definition['template']);
+        $this->assertSame('limit', $definition['slots'][0]['target']);
+        $this->assertSame(25, $recipe->bind([])->toArray()['limit']);
+        $this->assertSame(100, $recipe->bind(['limit' => 100])->toArray()['limit']);
+    }
+
+    /** @test */
     public function it_reloads_a_recipe_with_a_slotted_required_widget_argument(): void
     {
         $recipe = QueryRecipe::fromArray($this->definition('events', [
@@ -68,6 +87,25 @@ class QueryRecipeTest extends TestCase
         $bound = QueryRecipe::fromArray($recipe->toArray())->bind(['cadence' => 'month'])->toArray();
 
         $this->assertSame('month', $bound['interval']);
+    }
+
+    /** @test */
+    public function it_uses_a_declared_slot_default_when_the_template_omits_the_target(): void
+    {
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'trend',
+            'date_field' => 'occurred_at',
+            'metric' => 'avg',
+            'field' => 'amount',
+        ], [[
+            'name' => 'cadence',
+            'target' => 'interval',
+            'type' => 'string',
+            'default' => 'day',
+            'required' => false,
+        ]]));
+
+        $this->assertSame('day', $recipe->bind([])->toArray()['interval']);
     }
 
     /** @test */
@@ -165,6 +203,233 @@ class QueryRecipeTest extends TestCase
         $recipe->bind(['period' => 'since_launch']);
     }
 
+    /** @test */
+    public function it_enforces_bindings_and_builds_typed_filter_clauses(): void
+    {
+        $definition = [
+            ...$this->definition('events', [
+                'widget' => 'kpi',
+                'date_field' => 'occurred_at',
+                'metric' => 'count',
+                'filters' => "active:'true'",
+            ], [
+                ['name' => 'category', 'target' => null, 'type' => 'string', 'required' => true],
+                ['name' => 'minimum', 'target' => null, 'type' => 'number', 'required' => false],
+            ]),
+            'filter_templates' => [
+                ['field' => 'category', 'operator' => 'equals', 'slot' => 'category'],
+                ['field' => 'amount', 'operator' => 'gte', 'slot' => 'minimum'],
+            ],
+        ];
+        $recipe = QueryRecipe::fromArray($definition);
+
+        $this->assertInvalid(fn () => $recipe->bind([]), 'binding [category] is required');
+        $this->assertInvalid(fn () => $recipe->bind(['unknown' => 1]), 'Unknown query recipe bindings');
+
+        $filters = $recipe->bind([
+            'category' => "O'Reilly\\Books",
+            'minimum' => 10.5,
+        ])->toArray()['filters'];
+
+        $this->assertSame("(active:'true') AND (amount>=10.5 AND category:'O\\'Reilly\\\\Books')", $filters);
+        $this->assertSame("(active:'true') AND (category:'Books')", $recipe->bind(['category' => 'Books'])->toArray()['filters']);
+
+        $operators = [
+            'not_equals' => 'NOT amount:10',
+            'gt' => 'amount>10',
+            'lt' => 'amount<10',
+            'lte' => 'amount<=10',
+        ];
+
+        foreach ($operators as $operator => $expected) {
+            $operatorRecipe = QueryRecipe::fromArray([
+                ...$this->definition('events', [
+                    'widget' => 'kpi',
+                    'date_field' => 'occurred_at',
+                    'metric' => 'count',
+                ], [[
+                    'name' => 'value',
+                    'target' => null,
+                    'type' => 'integer',
+                    'required' => true,
+                ]]),
+                'filter_templates' => [[
+                    'field' => 'amount',
+                    'operator' => $operator,
+                    'slot' => 'value',
+                ]],
+            ]);
+
+            $this->assertSame($expected, $operatorRecipe->bind(['value' => 10])->toArray()['filters']);
+        }
+    }
+
+    /** @test */
+    public function it_rejects_malformed_recipe_definitions(): void
+    {
+        $template = [
+            'widget' => 'kpi',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+        ];
+
+        $this->assertInvalid(
+            fn () => QueryRecipe::fromArray($this->definition('bad dataset', $template)),
+            'Invalid query recipe dataset',
+        );
+        $this->assertInvalid(
+            fn () => QueryRecipe::fromArray($this->definition('events', $template, [[
+                'name' => 'Bad-Name',
+                'target' => null,
+                'type' => 'string',
+            ]])),
+            'Invalid query recipe slot name',
+        );
+        $this->assertInvalid(
+            fn () => QueryRecipe::fromArray($this->definition('events', $template, [[
+                'name' => 'value',
+                'target' => null,
+                'type' => 'object',
+            ]])),
+            'Unsupported query recipe slot type',
+        );
+        $this->assertInvalid(
+            fn () => QueryRecipe::fromArray($this->definition('events', [...$template, 'unsupported' => 'fixed'], [[
+                'name' => 'value',
+                'target' => 'unsupported',
+                'type' => 'string',
+            ]])),
+            'Unsupported query recipe slot target',
+        );
+        $this->assertInvalid(
+            fn () => QueryRecipe::fromArray($this->definition('events', [...$template, 'interval' => 'day'], [
+                ['name' => 'first', 'target' => 'interval', 'type' => 'string'],
+                ['name' => 'second', 'target' => 'interval', 'type' => 'string'],
+            ])),
+            'Duplicate query recipe slot target',
+        );
+        $this->assertInvalid(
+            fn () => QueryRecipe::fromArray($this->definition('events', $template, [
+                ['name' => 'same', 'target' => null, 'type' => 'string'],
+                ['name' => 'same', 'target' => null, 'type' => 'string'],
+            ])),
+            'Duplicate query recipe slot',
+        );
+        $this->assertInvalid(
+            fn () => QueryRecipe::fromArray([
+                ...$this->definition('events', $template, [['name' => 'value', 'target' => null, 'type' => 'string']]),
+                'filter_templates' => [['field' => '', 'operator' => 'equals', 'slot' => 'value']],
+            ]),
+            'filter field is required',
+        );
+        $this->assertInvalid(
+            fn () => QueryRecipe::fromArray([
+                ...$this->definition('events', $template, [['name' => 'value', 'target' => null, 'type' => 'string']]),
+                'filter_templates' => [['field' => 'category', 'operator' => 'contains', 'slot' => 'value']],
+            ]),
+            'Unsupported query recipe filter operator',
+        );
+        $this->assertInvalid(
+            fn () => QueryRecipe::fromArray([
+                ...$this->definition('events', $template),
+                'filter_templates' => [['field' => 'category', 'operator' => 'equals', 'slot' => 'missing']],
+            ]),
+            'filter references unknown slot',
+        );
+    }
+
+    /** @test */
+    public function it_rejects_invalid_typed_binding_values(): void
+    {
+        $template = [
+            'widget' => 'kpi',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+        ];
+        $integer = QueryRecipe::fromArray($this->definition('events', $template, [[
+            'name' => 'value',
+            'target' => null,
+            'type' => 'integer',
+            'minimum' => 1,
+            'maximum' => 10,
+        ]]));
+        $number = QueryRecipe::fromArray($this->definition('events', $template, [[
+            'name' => 'value',
+            'target' => null,
+            'type' => 'number',
+        ]]));
+        $string = QueryRecipe::fromArray($this->definition('events', $template, [[
+            'name' => 'value',
+            'target' => null,
+            'type' => 'string',
+        ]]));
+
+        $this->assertInvalid(fn () => $integer->bind(['value' => 'many']), 'must be an integer');
+        $this->assertInvalid(fn () => $integer->bind(['value' => 11]), 'outside its allowed range');
+        $this->assertInvalid(fn () => $number->bind(['value' => 'many']), 'must be numeric');
+        $this->assertInvalid(fn () => $string->bind(['value' => ' ']), 'cannot be empty');
+    }
+
+    /** @test */
+    public function it_rejects_mapping_and_grouped_metric_contract_mismatches(): void
+    {
+        $index = $this->recipeIndex();
+        $nested = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'table',
+            'date_field' => 'occurred_at',
+            'fields' => 'meta.label,amount',
+        ]));
+
+        $this->assertSame(QueryRecipe::contractFingerprint($index), QueryRecipe::contractFingerprint($index));
+        $this->assertSame($nested, $nested->validateAgainst($index));
+
+        $this->assertInvalid(
+            fn () => QueryRecipe::fromArray($this->definition('events', [
+                'widget' => 'table',
+                'date_field' => 'occurred_at',
+                'fields' => 'category,amount',
+                'sort' => 'amount:sideways',
+            ]))->validateAgainst($index),
+            'Unsupported query recipe sort direction',
+        );
+        $this->assertInvalid(
+            fn () => QueryRecipe::fromArray($this->definition('events', [
+                'widget' => 'grouped_metrics',
+                'date_field' => 'occurred_at',
+                'group_by' => 'category',
+                'metrics' => 'invalid',
+            ]))->validateAgainst($index),
+            'grouped metrics must be valid JSON',
+        );
+        $this->assertInvalid(
+            fn () => QueryRecipe::fromArray($this->definition('events', [
+                'widget' => 'grouped_metrics',
+                'date_field' => 'occurred_at',
+                'group_by' => 'category',
+                'metrics' => '[1]',
+            ]))->validateAgainst($index),
+            'grouped metric must be an object',
+        );
+        $this->assertInvalid(
+            fn () => QueryRecipe::fromArray($this->definition('events', [
+                'widget' => 'kpi',
+                'date_field' => 'occurred_at',
+                'metric' => 'avg',
+                'field' => 'missing',
+            ]))->validateAgainst($index),
+            'field [missing] does not exist',
+        );
+        $this->assertInvalid(
+            fn () => QueryRecipe::fromArray($this->definition('events', [
+                'widget' => 'kpi',
+                'date_field' => 'occurred_at',
+                'metric' => 'avg',
+                'field' => 'category',
+            ]))->validateAgainst($index),
+            'field [category] has incompatible type',
+        );
+    }
+
     /**
      * @param  array<string, mixed>  $template
      * @param  list<array<string, mixed>>  $slots
@@ -208,6 +473,9 @@ class QueryRecipeTest extends TestCase
                 $properties->integer('year');
                 $properties->bool('active');
                 $properties->geoPoint('location');
+                $properties->object('meta', function (NewProperties $meta): void {
+                    $meta->keyword('label');
+                });
 
                 return $properties;
             }
@@ -215,6 +483,16 @@ class QueryRecipeTest extends TestCase
         $index->create();
 
         return $index;
+    }
+
+    private function assertInvalid(callable $callback, string $message): void
+    {
+        try {
+            $callback();
+            $this->fail('Expected an InvalidArgumentException containing: '.$message);
+        } catch (InvalidArgumentException $exception) {
+            $this->assertStringContainsString($message, $exception->getMessage());
+        }
     }
 
     /** @return array<string, array<string, mixed>> */

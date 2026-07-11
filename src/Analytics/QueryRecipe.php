@@ -256,8 +256,27 @@ class QueryRecipe
             fn (array $slot): array => self::normalizeSlot($slot),
             array_filter((array) ($definition['slots'] ?? []), fn (mixed $slot): bool => is_array($slot)),
         ));
-        usort($slots, fn (array $left, array $right): int => $left['name'] <=> $right['name']);
         $validationTemplate = (array) ($definition['template'] ?? []);
+        $hasLimitSlot = array_filter($slots, fn (array $slot): bool => ($slot['target'] ?? null) === 'limit') !== [];
+
+        if (! $hasLimitSlot) {
+            $limitSlot = [
+                'name' => 'limit',
+                'target' => 'limit',
+                'type' => 'integer',
+                'required' => false,
+                'minimum' => 1,
+                'maximum' => 100,
+            ];
+
+            if (array_key_exists('limit', $validationTemplate)) {
+                $limitSlot['default'] = $validationTemplate['limit'];
+            }
+
+            $slots[] = self::normalizeSlot($limitSlot);
+        }
+
+        usort($slots, fn (array $left, array $right): int => $left['name'] <=> $right['name']);
 
         foreach ($slots as $slot) {
             $target = $slot['target'] ?? null;
