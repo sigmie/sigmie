@@ -172,6 +172,25 @@ class AnalyticsTest extends TestCase
     /**
      * @test
      */
+    public function count_breakdown_reports_its_document_population(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->breakdown('top_products', 'product', Metric::Count)
+            ->get();
+
+        $row = $result['top_products']['rows'][0];
+
+        $this->assertSame(3, $row['population']['document_count']);
+        $this->assertSame(3, $row['population']['value_count']);
+    }
+
+    /**
+     * @test
+     */
     public function breakdown_merges_bucket_aliases_in_elasticsearch_before_top_n_ranking(): void
     {
         $index = $this->createSalesIndex();
@@ -197,7 +216,9 @@ class AnalyticsTest extends TestCase
         $this->assertEquals(370.0, $rows[0]['value']);
         $this->assertSame('Combined C', $rows[1]['key']);
         $this->assertEquals(350.0, $rows[1]['value']);
-        $this->assertSame(['C', 'Old C'], $rows[1]['source_keys']);
+        $this->assertSame(['Combined C', 'C', 'Old C'], $rows[1]['source_keys']);
+        $this->assertSame(2, $rows[1]['population']['document_count']);
+        $this->assertSame(2, $rows[1]['population']['value_count']);
         $this->assertNotContains('B', array_column($rows, 'key'));
         $this->assertNotContains('C', array_column($rows, 'key'));
         $this->assertNotContains('Old C', array_column($rows, 'key'));
@@ -320,6 +341,47 @@ class AnalyticsTest extends TestCase
         $this->assertSame('B', $rows[1]['key']);
         $this->assertEquals(2, $rows[1]['metrics']['count']);
         $this->assertEquals(40.0, $rows[1]['metrics']['avg_amount']);
+        $this->assertSame(3, $rows[0]['metric_populations']['avg_amount']['document_count']);
+        $this->assertSame(3, $rows[0]['metric_populations']['avg_amount']['value_count']);
+    }
+
+    /**
+     * @test
+     */
+    public function grouped_metrics_computes_alias_metrics_over_one_canonical_population(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $index->merge([
+            new Document(['created_at' => '2024-01-02', 'product' => 'Cancelled by Driver']),
+            new Document(['created_at' => '2024-01-02', 'product' => 'Cancelled by Driver']),
+            new Document(['created_at' => '2024-01-02', 'amount' => 10, 'product' => 'Incomplete']),
+        ], refresh: true);
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->groupedMetrics('product_metrics', 'product', [
+                ['key' => 'count', 'label' => 'Count', 'metric' => Metric::Count],
+                ['key' => 'avg_amount', 'label' => 'Average amount', 'metric' => Metric::Avg, 'field' => 'amount'],
+            ], sortMetric: 'count', bucketAliases: [
+                'Failed' => ['Cancelled by Driver', 'Incomplete'],
+            ])
+            ->get();
+
+        $row = array_values(array_filter(
+            $result['product_metrics']['rows'],
+            fn (array $row): bool => $row['key'] === 'Failed',
+        ))[0] ?? null;
+
+        $this->assertNotNull($row);
+        $this->assertSame(3, $row['count']);
+        $this->assertEquals(10.0, $row['metrics']['avg_amount']);
+        $this->assertSame(3, $row['metric_populations']['avg_amount']['document_count']);
+        $this->assertSame(1, $row['metric_populations']['avg_amount']['value_count']);
+        $this->assertSame(['Failed', 'Cancelled by Driver', 'Incomplete'], $row['source_keys']);
+        $this->assertNotContains('Cancelled by Driver', array_column($result['product_metrics']['rows'], 'key'));
+        $this->assertNotContains('Incomplete', array_column($result['product_metrics']['rows'], 'key'));
     }
 
     /**

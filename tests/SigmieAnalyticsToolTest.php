@@ -183,7 +183,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertFalse($schema['widget']->nullable, "'widget' must NOT be nullable.");
         $this->assertFalse($schema['date_field']->nullable, "'date_field' must NOT be nullable.");
 
-        foreach (['metric', 'field', 'bucket_field', 'metrics', 'sort_metric', 'min_count', 'interval', 'group_by', 'group_by_fields', 'limit', 'bucket_size', 'percents', 'from', 'to', 'filters', 'bucket_aliases', 'include_hits', 'hit_filters', 'hit_fields', 'hit_sort', 'hit_limit'] as $name) {
+        foreach (['metric', 'field', 'bucket_field', 'metrics', 'sort_metric', 'min_count', 'interval', 'min_doc_count', 'group_by', 'group_by_fields', 'limit', 'bucket_size', 'percents', 'from', 'to', 'filters', 'bucket_aliases', 'bucket_aliases_only', 'include_hits', 'hit_filters', 'hit_fields', 'hit_sort', 'hit_limit'] as $name) {
             $this->assertTrue($schema[$name]->nullable, sprintf("Optional property '%s' must be nullable().", $name));
         }
     }
@@ -229,6 +229,27 @@ class SigmieAnalyticsToolTest extends TestCase
 
         $this->assertSame('trend', $result['type']);
         $this->assertEquals(150.0, $result['series'][0]['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function trend_can_omit_empty_buckets(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'trend',
+            'date_field' => 'created_at',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'interval' => 'day',
+            'min_doc_count' => 1,
+            'from' => '2024-01-01',
+            'to' => '2024-01-05',
+        ]));
+
+        $this->assertCount(3, $result['series']);
     }
 
     /**
@@ -353,6 +374,57 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertSame('A', $result['rows'][0]['key']);
         $this->assertEquals(3, $result['rows'][0]['metrics']['count']);
         $this->assertEquals(123.33333333333333, $result['rows'][0]['metrics']['avg_amount']);
+        $this->assertSame(3, $result['rows'][0]['metric_populations']['avg_amount']['value_count']);
+    }
+
+    /**
+     * @test
+     */
+    public function result_applies_bucket_aliases_to_grouped_metrics_before_aggregation(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'grouped_metrics',
+            'date_field' => 'created_at',
+            'group_by' => 'product',
+            'metrics' => '[{"key":"count","label":"Count","metric":"count"},{"key":"avg_amount","label":"Average amount","metric":"avg","field":"amount"}]',
+            'sort_metric' => 'count',
+            'bucket_aliases' => '[{"label":"Combined","values":["A","B"]}]',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertCount(1, $result['rows']);
+        $this->assertSame('Combined', $result['rows'][0]['key']);
+        $this->assertSame(5, $result['rows'][0]['count']);
+        $this->assertEquals(90.0, $result['rows'][0]['metrics']['avg_amount']);
+        $this->assertSame(5, $result['rows'][0]['metric_populations']['avg_amount']['value_count']);
+    }
+
+    /**
+     * @test
+     */
+    public function grouped_metrics_can_return_only_defined_alias_populations(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'grouped_metrics',
+            'date_field' => 'created_at',
+            'group_by' => 'product',
+            'metrics' => '[{"key":"count","label":"Count","metric":"count"}]',
+            'sort_metric' => 'count',
+            'bucket_aliases' => '[{"label":"Only B","values":["B"]}]',
+            'bucket_aliases_only' => true,
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertCount(1, $result['rows']);
+        $this->assertSame('Only B', $result['rows'][0]['key']);
+        $this->assertSame(2, $result['rows'][0]['count']);
+        $this->assertTrue($result['bucket_aliases_only']);
     }
 
     /**

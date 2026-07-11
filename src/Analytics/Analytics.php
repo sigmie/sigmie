@@ -226,11 +226,11 @@ class Analytics implements MultiSearchable
         return $this->addFiltered(new KpiDelta($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $previousFrom, $previousTo), $filter);
     }
 
-    public function trend(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null, Period|array|null $window = null): static
+    public function trend(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null, Period|array|null $window = null, int $minDocCount = 0): static
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addFiltered(new Trend($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone), $filter);
+        return $this->addFiltered(new Trend($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone, $minDocCount), $filter);
     }
 
     public function cumulative(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null, Period|array|null $window = null): static
@@ -288,7 +288,7 @@ class Analytics implements MultiSearchable
     /**
      * @param  list<array{key: string, label?: string, metric: Metric, field?: string}>  $metrics
      */
-    public function groupedMetrics(string $as, string $groupBy, array $metrics, string $sortMetric = 'count', int $limit = 10, string $direction = 'desc', int $minCount = 0, Query|string|null $filter = null, Period|array|null $window = null): static
+    public function groupedMetrics(string $as, string $groupBy, array $metrics, string $sortMetric = 'count', int $limit = 10, string $direction = 'desc', int $minCount = 0, Query|string|null $filter = null, Period|array|null $window = null, array $bucketAliases = [], bool $aliasesOnly = false): static
     {
         [$from, $to] = $this->resolveWindow($window);
         $resolvedMetrics = array_values(array_filter(array_map(
@@ -303,7 +303,7 @@ class Analytics implements MultiSearchable
         ]];
         $sortMetric = $this->groupedMetricsSortMetric($resolvedMetrics, $sortMetric);
 
-        return $this->addFiltered(new GroupedMetrics($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($groupBy), $resolvedMetrics, $sortMetric, $limit, $direction, $minCount), $filter);
+        return $this->addFiltered(new GroupedMetrics($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($groupBy), $resolvedMetrics, $sortMetric, $limit, $direction, $minCount, $bucketAliases, $aliasesOnly), $filter);
     }
 
     /**
