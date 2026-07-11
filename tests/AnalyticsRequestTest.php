@@ -47,6 +47,7 @@ class AnalyticsRequestTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider invalidRequests
      *
      * @param  array<string, mixed>  $request

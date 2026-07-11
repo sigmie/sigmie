@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use InvalidArgumentException;
+use Sigmie\Analytics\AnalyticsRequest;
 use Sigmie\Analytics\QueryRecipe;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Sigmie;
@@ -223,8 +224,8 @@ class QueryRecipeTest extends TestCase
         ];
         $recipe = QueryRecipe::fromArray($definition);
 
-        $this->assertInvalid(fn () => $recipe->bind([]), 'binding [category] is required');
-        $this->assertInvalid(fn () => $recipe->bind(['unknown' => 1]), 'Unknown query recipe bindings');
+        $this->assertInvalid(fn (): AnalyticsRequest => $recipe->bind([]), 'binding [category] is required');
+        $this->assertInvalid(fn (): AnalyticsRequest => $recipe->bind(['unknown' => 1]), 'Unknown query recipe bindings');
 
         $filters = $recipe->bind([
             'category' => "O'Reilly\\Books",
@@ -274,11 +275,11 @@ class QueryRecipeTest extends TestCase
         ];
 
         $this->assertInvalid(
-            fn () => QueryRecipe::fromArray($this->definition('bad dataset', $template)),
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('bad dataset', $template)),
             'Invalid query recipe dataset',
         );
         $this->assertInvalid(
-            fn () => QueryRecipe::fromArray($this->definition('events', $template, [[
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', $template, [[
                 'name' => 'Bad-Name',
                 'target' => null,
                 'type' => 'string',
@@ -286,7 +287,7 @@ class QueryRecipeTest extends TestCase
             'Invalid query recipe slot name',
         );
         $this->assertInvalid(
-            fn () => QueryRecipe::fromArray($this->definition('events', $template, [[
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', $template, [[
                 'name' => 'value',
                 'target' => null,
                 'type' => 'object',
@@ -294,7 +295,7 @@ class QueryRecipeTest extends TestCase
             'Unsupported query recipe slot type',
         );
         $this->assertInvalid(
-            fn () => QueryRecipe::fromArray($this->definition('events', [...$template, 'unsupported' => 'fixed'], [[
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [...$template, 'unsupported' => 'fixed'], [[
                 'name' => 'value',
                 'target' => 'unsupported',
                 'type' => 'string',
@@ -302,35 +303,35 @@ class QueryRecipeTest extends TestCase
             'Unsupported query recipe slot target',
         );
         $this->assertInvalid(
-            fn () => QueryRecipe::fromArray($this->definition('events', [...$template, 'interval' => 'day'], [
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [...$template, 'interval' => 'day'], [
                 ['name' => 'first', 'target' => 'interval', 'type' => 'string'],
                 ['name' => 'second', 'target' => 'interval', 'type' => 'string'],
             ])),
             'Duplicate query recipe slot target',
         );
         $this->assertInvalid(
-            fn () => QueryRecipe::fromArray($this->definition('events', $template, [
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', $template, [
                 ['name' => 'same', 'target' => null, 'type' => 'string'],
                 ['name' => 'same', 'target' => null, 'type' => 'string'],
             ])),
             'Duplicate query recipe slot',
         );
         $this->assertInvalid(
-            fn () => QueryRecipe::fromArray([
+            fn (): QueryRecipe => QueryRecipe::fromArray([
                 ...$this->definition('events', $template, [['name' => 'value', 'target' => null, 'type' => 'string']]),
                 'filter_templates' => [['field' => '', 'operator' => 'equals', 'slot' => 'value']],
             ]),
             'filter field is required',
         );
         $this->assertInvalid(
-            fn () => QueryRecipe::fromArray([
+            fn (): QueryRecipe => QueryRecipe::fromArray([
                 ...$this->definition('events', $template, [['name' => 'value', 'target' => null, 'type' => 'string']]),
                 'filter_templates' => [['field' => 'category', 'operator' => 'contains', 'slot' => 'value']],
             ]),
             'Unsupported query recipe filter operator',
         );
         $this->assertInvalid(
-            fn () => QueryRecipe::fromArray([
+            fn (): QueryRecipe => QueryRecipe::fromArray([
                 ...$this->definition('events', $template),
                 'filter_templates' => [['field' => 'category', 'operator' => 'equals', 'slot' => 'missing']],
             ]),
@@ -364,10 +365,10 @@ class QueryRecipeTest extends TestCase
             'type' => 'string',
         ]]));
 
-        $this->assertInvalid(fn () => $integer->bind(['value' => 'many']), 'must be an integer');
-        $this->assertInvalid(fn () => $integer->bind(['value' => 11]), 'outside its allowed range');
-        $this->assertInvalid(fn () => $number->bind(['value' => 'many']), 'must be numeric');
-        $this->assertInvalid(fn () => $string->bind(['value' => ' ']), 'cannot be empty');
+        $this->assertInvalid(fn (): AnalyticsRequest => $integer->bind(['value' => 'many']), 'must be an integer');
+        $this->assertInvalid(fn (): AnalyticsRequest => $integer->bind(['value' => 11]), 'outside its allowed range');
+        $this->assertInvalid(fn (): AnalyticsRequest => $number->bind(['value' => 'many']), 'must be numeric');
+        $this->assertInvalid(fn (): AnalyticsRequest => $string->bind(['value' => ' ']), 'cannot be empty');
     }
 
     /** @test */
@@ -384,7 +385,7 @@ class QueryRecipeTest extends TestCase
         $this->assertSame($nested, $nested->validateAgainst($index));
 
         $this->assertInvalid(
-            fn () => QueryRecipe::fromArray($this->definition('events', [
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
                 'widget' => 'table',
                 'date_field' => 'occurred_at',
                 'fields' => 'category,amount',
@@ -393,7 +394,7 @@ class QueryRecipeTest extends TestCase
             'Unsupported query recipe sort direction',
         );
         $this->assertInvalid(
-            fn () => QueryRecipe::fromArray($this->definition('events', [
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
                 'widget' => 'grouped_metrics',
                 'date_field' => 'occurred_at',
                 'group_by' => 'category',
@@ -402,7 +403,7 @@ class QueryRecipeTest extends TestCase
             'grouped metrics must be valid JSON',
         );
         $this->assertInvalid(
-            fn () => QueryRecipe::fromArray($this->definition('events', [
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
                 'widget' => 'grouped_metrics',
                 'date_field' => 'occurred_at',
                 'group_by' => 'category',
@@ -411,7 +412,7 @@ class QueryRecipeTest extends TestCase
             'grouped metric must be an object',
         );
         $this->assertInvalid(
-            fn () => QueryRecipe::fromArray($this->definition('events', [
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
                 'widget' => 'kpi',
                 'date_field' => 'occurred_at',
                 'metric' => 'avg',
@@ -420,7 +421,7 @@ class QueryRecipeTest extends TestCase
             'field [missing] does not exist',
         );
         $this->assertInvalid(
-            fn () => QueryRecipe::fromArray($this->definition('events', [
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
                 'widget' => 'kpi',
                 'date_field' => 'occurred_at',
                 'metric' => 'avg',
@@ -490,8 +491,8 @@ class QueryRecipeTest extends TestCase
         try {
             $callback();
             $this->fail('Expected an InvalidArgumentException containing: '.$message);
-        } catch (InvalidArgumentException $exception) {
-            $this->assertStringContainsString($message, $exception->getMessage());
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            $this->assertStringContainsString($message, $invalidArgumentException->getMessage());
         }
     }
 
