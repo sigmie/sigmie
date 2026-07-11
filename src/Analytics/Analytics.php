@@ -226,11 +226,11 @@ class Analytics implements MultiSearchable
         return $this->addFiltered(new KpiDelta($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $previousFrom, $previousTo), $filter);
     }
 
-    public function trend(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null, Period|array|null $window = null): static
+    public function trend(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null, Period|array|null $window = null, int $minDocCount = 0): static
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addFiltered(new Trend($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone), $filter);
+        return $this->addFiltered(new Trend($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone, $minDocCount), $filter);
     }
 
     public function cumulative(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null, Period|array|null $window = null): static

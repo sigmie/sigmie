@@ -189,6 +189,7 @@ class SigmieAnalyticsTool implements Tool
             'sort_metric' => $schema->string()->description('Metric key to sort grouped_metrics by, e.g. count or avg_rating (pass null otherwise)')->nullable()->required(),
             'min_count' => $schema->integer()->description('Minimum document count per group for grouped_metrics, e.g. 5 (pass null otherwise)')->nullable()->required(),
             'interval' => $schema->string()->description('Time bucket for trends and retention: a calendar unit (minute | hour | day | week | month | quarter | year) or a fixed interval like 15d | 12h | 90m (default day)')->default('day')->nullable()->required(),
+            'min_doc_count' => $schema->integer()->description('Minimum documents per trend bucket. Use 1 to omit empty periods; pass null otherwise.')->nullable()->required(),
             'group_by' => $schema->string()->description('Keyword field to group/break down by, for breakdown and grouped_trend (pass null otherwise)')->nullable()->required(),
             'group_by_fields' => $schema->string()->description('Comma-separated keyword fields for multi_breakdown, e.g. "product,channel" (pass null otherwise)')->nullable()->required(),
             'limit' => $schema->integer()->description('Max groups for breakdown/grouped_trend, rows for table, or cells per axis for heatmap (default 10)')->default(10)->nullable()->required(),
@@ -279,7 +280,7 @@ class SigmieAnalyticsTool implements Tool
         match ($widget) {
             'kpi' => $analytics->kpi('result', $metric(), $field),
             'kpi_delta' => $analytics->kpiDelta('result', $metric(), $field),
-            'trend' => $analytics->trend('result', $metric(), $field, $interval()),
+            'trend' => $analytics->trend('result', $metric(), $field, $interval(), minDocCount: max(0, (int) ($request['min_doc_count'] ?? 0))),
             'cumulative' => $analytics->cumulative('result', $metric(), $field, $interval()),
             'grouped_trend' => $analytics->groupedTrend('result', $metric(), $this->required($request, 'field'), $groupBy(), $interval(), $limit),
             'breakdown' => $analytics->breakdown('result', $groupBy(), $metric(), $field, $limit, bucketAliases: $this->bucketAliases($request)),

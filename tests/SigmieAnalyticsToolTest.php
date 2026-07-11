@@ -183,7 +183,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertFalse($schema['widget']->nullable, "'widget' must NOT be nullable.");
         $this->assertFalse($schema['date_field']->nullable, "'date_field' must NOT be nullable.");
 
-        foreach (['metric', 'field', 'bucket_field', 'metrics', 'sort_metric', 'min_count', 'interval', 'group_by', 'group_by_fields', 'limit', 'bucket_size', 'percents', 'from', 'to', 'filters', 'bucket_aliases', 'include_hits', 'hit_filters', 'hit_fields', 'hit_sort', 'hit_limit'] as $name) {
+        foreach (['metric', 'field', 'bucket_field', 'metrics', 'sort_metric', 'min_count', 'interval', 'min_doc_count', 'group_by', 'group_by_fields', 'limit', 'bucket_size', 'percents', 'from', 'to', 'filters', 'bucket_aliases', 'include_hits', 'hit_filters', 'hit_fields', 'hit_sort', 'hit_limit'] as $name) {
             $this->assertTrue($schema[$name]->nullable, sprintf("Optional property '%s' must be nullable().", $name));
         }
     }
@@ -229,6 +229,27 @@ class SigmieAnalyticsToolTest extends TestCase
 
         $this->assertSame('trend', $result['type']);
         $this->assertEquals(150.0, $result['series'][0]['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function trend_can_omit_empty_buckets(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'trend',
+            'date_field' => 'created_at',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'interval' => 'day',
+            'min_doc_count' => 1,
+            'from' => '2024-01-01',
+            'to' => '2024-01-05',
+        ]));
+
+        $this->assertCount(3, $result['series']);
     }
 
     /**
