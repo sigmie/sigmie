@@ -21,6 +21,8 @@ class AnalyticsRequestTest extends TestCase
             'range' => 'last_30_days',
             'from' => '2026-01-01',
             'to' => '2026-02-01',
+            'sort' => null,
+            'hit_sort' => '',
         ]);
 
         $this->assertSame([
