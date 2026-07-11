@@ -172,6 +172,25 @@ class AnalyticsTest extends TestCase
     /**
      * @test
      */
+    public function count_breakdown_reports_its_document_population(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->breakdown('top_products', 'product', Metric::Count)
+            ->get();
+
+        $row = $result['top_products']['rows'][0];
+
+        $this->assertSame(3, $row['population']['document_count']);
+        $this->assertSame(3, $row['population']['value_count']);
+    }
+
+    /**
+     * @test
+     */
     public function breakdown_merges_bucket_aliases_in_elasticsearch_before_top_n_ranking(): void
     {
         $index = $this->createSalesIndex();
