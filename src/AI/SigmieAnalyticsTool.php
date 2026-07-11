@@ -394,32 +394,15 @@ class SigmieAnalyticsTool implements Tool
      */
     protected function steps(Request $request): array
     {
-        $raw = trim((string) ($request['steps'] ?? ''));
-
-        if ($raw === '') {
-            throw new InvalidArgumentException('The funnel widget requires steps — a JSON array of {label, filter} objects, in order.');
-        }
-
-        $decoded = json_decode($raw, true);
-
-        if (! is_array($decoded)) {
-            throw new InvalidArgumentException('funnel steps must be a JSON array of {label, filter} objects, e.g. [{"label":"visited","filter":"event:\'visit\'"}].');
-        }
+        $decoded = (array) json_decode((string) $request['steps'], true, flags: JSON_THROW_ON_ERROR);
 
         $steps = [];
 
         foreach ($decoded as $step) {
-            $label = trim((string) ($step['label'] ?? ''));
-            $filter = trim((string) ($step['filter'] ?? ''));
-
-            if (! ($label !== '' && $filter !== '')) {
-                throw new InvalidArgumentException('Each funnel step needs a non-empty label and filter.');
-            }
-
-            $steps[$label] = $filter;
+            $steps[trim((string) $step['label'])] = trim((string) $step['filter']);
         }
 
-        return $steps !== [] ? $steps : throw new InvalidArgumentException('The funnel widget requires at least one step.');
+        return $steps;
     }
 
     /**
@@ -457,28 +440,16 @@ class SigmieAnalyticsTool implements Tool
             return [];
         }
 
-        $decoded = json_decode($raw, true);
-
-        if (! is_array($decoded)) {
-            throw new InvalidArgumentException('bucket_aliases must be a JSON array of {label, values} objects.');
-        }
+        $decoded = (array) json_decode($raw, true, flags: JSON_THROW_ON_ERROR);
 
         $aliases = [];
 
         foreach ($decoded as $item) {
-            if (! is_array($item)) {
-                throw new InvalidArgumentException('Each bucket_aliases item must be an object with label and values.');
-            }
-
-            $label = trim((string) ($item['label'] ?? ''));
-            $values = array_values(array_filter(array_map(
+            $label = trim((string) $item['label']);
+            $values = array_values(array_map(
                 static fn (mixed $value): string => trim((string) $value),
-                (array) ($item['values'] ?? []),
-            ), static fn (string $value): bool => $value !== ''));
-
-            if ($label === '' || $values === []) {
-                throw new InvalidArgumentException('Each bucket_aliases item needs a non-empty label and values array.');
-            }
+                (array) $item['values'],
+            ));
 
             $aliases[$label] = $values;
         }
@@ -501,37 +472,15 @@ class SigmieAnalyticsTool implements Tool
      */
     protected function metricSpecs(Request $request): array
     {
-        $raw = trim((string) ($request['metrics'] ?? ''));
-
-        if ($raw === '') {
-            throw new InvalidArgumentException('The grouped_metrics widget requires metrics — a JSON array of {key, label, metric, field} objects.');
-        }
-
-        $decoded = json_decode($raw, true);
-
-        if (! is_array($decoded)) {
-            throw new InvalidArgumentException('grouped_metrics metrics must be a JSON array of {key, label, metric, field} objects.');
-        }
+        $decoded = (array) json_decode((string) $request['metrics'], true, flags: JSON_THROW_ON_ERROR);
 
         $metrics = [];
 
         foreach ($decoded as $item) {
-            if (! is_array($item)) {
-                throw new InvalidArgumentException('Each grouped_metrics metric must be an object.');
-            }
-
-            $key = trim((string) ($item['key'] ?? ''));
+            $key = trim((string) $item['key']);
             $label = trim((string) ($item['label'] ?? $key));
-            $metric = Metric::tryFrom(trim((string) ($item['metric'] ?? '')));
+            $metric = Metric::from(trim((string) $item['metric']));
             $field = trim((string) ($item['field'] ?? ''));
-
-            if ($key === '' || ! $metric instanceof Metric) {
-                throw new InvalidArgumentException('Each grouped_metrics metric needs a key and valid metric.');
-            }
-
-            if ($metric !== Metric::Count && $field === '') {
-                throw new InvalidArgumentException('Each non-count grouped_metrics metric needs a field.');
-            }
 
             $metrics[] = array_filter([
                 'key' => $key,
@@ -541,7 +490,7 @@ class SigmieAnalyticsTool implements Tool
             ], fn (mixed $value): bool => $value !== '');
         }
 
-        return $metrics !== [] ? $metrics : throw new InvalidArgumentException('The grouped_metrics widget requires at least one metric.');
+        return $metrics;
     }
 
     protected function configureHits(Analytics $analytics, Request $request): void

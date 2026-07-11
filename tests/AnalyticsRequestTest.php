@@ -250,6 +250,7 @@ class AnalyticsRequestTest extends TestCase
             [[...$groupedMetrics, 'metrics' => []], 'grouped_metrics widget requires at least one metric'],
             [[...$groupedMetrics, 'metrics' => ['count']], 'grouped_metrics metric must be an object'],
             [[...$groupedMetrics, 'metrics' => [['key' => 'count', 'metric' => 'ratio']]], 'grouped_metrics metric needs a key and valid metric'],
+            [[...$groupedMetrics, 'metrics' => [['key' => 'count', 'label' => [], 'metric' => 'count']]], 'grouped_metrics metric label must be a string'],
             [[...$groupedMetrics, 'metrics' => [
                 ['key' => 'count', 'metric' => 'count'],
                 ['key' => 'count', 'metric' => 'count'],

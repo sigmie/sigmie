@@ -509,8 +509,13 @@ class AnalyticsRequest
             self::validateStructuredKeys($metric, ['key', 'label', 'metric', 'field'], 'grouped_metrics metric');
 
             $key = is_string($metric['key'] ?? null) ? trim($metric['key']) : '';
+            $label = $metric['label'] ?? null;
             $resolved = is_string($metric['metric'] ?? null) ? Metric::tryFrom(trim($metric['metric'])) : null;
             $field = is_string($metric['field'] ?? null) ? trim($metric['field']) : '';
+
+            if ($label !== null && ! is_string($label)) {
+                throw new InvalidArgumentException('Each grouped_metrics metric label must be a string.');
+            }
 
             if ($key === '' || ! $resolved instanceof Metric) {
                 throw new InvalidArgumentException('Each grouped_metrics metric needs a key and valid metric.');
