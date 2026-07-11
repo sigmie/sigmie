@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Analytics;
 
 use InvalidArgumentException;
+use Sigmie\Analytics\Enums\Period;
 use Sigmie\Mappings\Contracts\FieldContainer;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
@@ -36,6 +37,21 @@ class QueryRecipe
         'bucket_size',
         'precision',
         'percents',
+    ];
+
+    /** @var array<string, list<string>> */
+    private const SLOT_TARGET_TYPES = [
+        'limit' => ['integer'],
+        'range' => ['period'],
+        'from' => ['date'],
+        'to' => ['date'],
+        'timezone_offset' => ['timezone_offset'],
+        'interval' => ['string'],
+        'sort' => ['string'],
+        'min_count' => ['integer'],
+        'bucket_size' => ['integer'],
+        'precision' => ['integer'],
+        'percents' => ['string'],
     ];
 
     /** @var list<string> */
@@ -335,6 +351,15 @@ class QueryRecipe
                     throw new InvalidArgumentException(sprintf('Unsupported query recipe slot target [%s].', $slot['target']));
                 }
 
+                if (! in_array((string) $slot['type'], self::SLOT_TARGET_TYPES[(string) $slot['target']], true)) {
+                    throw new InvalidArgumentException(sprintf(
+                        'Query recipe slot [%s] type [%s] is incompatible with target [%s].',
+                        $name,
+                        $slot['type'],
+                        $slot['target'],
+                    ));
+                }
+
                 if (in_array($slot['target'], $targets, true)) {
                     throw new InvalidArgumentException(sprintf('Duplicate query recipe slot target [%s].', $slot['target']));
                 }
@@ -425,6 +450,10 @@ class QueryRecipe
         $value = trim((string) $value);
         if ($value === '') {
             throw new InvalidArgumentException(sprintf('Query recipe binding [%s] cannot be empty.', $slot['name']));
+        }
+
+        if ($type === 'period' && ! Period::tryFrom($value) instanceof Period) {
+            throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be a supported period.', $slot['name']));
         }
 
         return $value;

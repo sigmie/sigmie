@@ -125,6 +125,46 @@ class QueryRecipeTest extends TestCase
         }
     }
 
+    /** @test */
+    public function it_rejects_slot_types_that_do_not_match_their_analytics_target(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('type [date] is incompatible with target [range]');
+
+        QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'trend',
+            'date_field' => 'occurred_at',
+            'metric' => 'avg',
+            'field' => 'amount',
+        ], [[
+            'name' => 'period',
+            'target' => 'range',
+            'type' => 'date',
+            'required' => false,
+        ]]));
+    }
+
+    /** @test */
+    public function it_rejects_an_unsupported_period_before_execution(): void
+    {
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'trend',
+            'date_field' => 'occurred_at',
+            'metric' => 'avg',
+            'field' => 'amount',
+        ], [[
+            'name' => 'period',
+            'target' => 'range',
+            'type' => 'period',
+            'required' => true,
+        ]]));
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('must be a supported period');
+
+        $recipe->bind(['period' => 'since_launch']);
+    }
+
     /**
      * @param  array<string, mixed>  $template
      * @param  list<array<string, mixed>>  $slots
