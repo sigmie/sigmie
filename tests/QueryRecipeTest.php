@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Sigmie\Analytics\AnalyticsRequest;
 use Sigmie\Analytics\QueryRecipe;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Parse\FilterParser;
 use Sigmie\Sigmie;
 use Sigmie\SigmieIndex;
 use Sigmie\Testing\TestCase;
@@ -67,6 +68,69 @@ class QueryRecipeTest extends TestCase
         $this->assertSame('limit', $definition['slots'][0]['target']);
         $this->assertSame(25, $recipe->bind([])->toArray()['limit']);
         $this->assertSame(100, $recipe->bind(['limit' => 100])->toArray()['limit']);
+    }
+
+    /** @test */
+    public function it_adds_result_limit_slots_only_to_widgets_that_use_them_or_templates_that_declare_them(): void
+    {
+        $kpi = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'kpi',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+        ]));
+        $breakdown = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'breakdown',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+            'group_by' => 'category',
+        ]));
+
+        $this->assertSame([], $kpi->toArray()['slots']);
+        $this->assertSame('limit', $breakdown->toArray()['slots'][0]['target']);
+    }
+
+    /** @test */
+    public function it_promotes_limit_defaults_without_colliding_with_declared_slot_names(): void
+    {
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'trend',
+            'date_field' => 'occurred_at',
+            'metric' => 'avg',
+            'field' => 'amount',
+            'limit' => '25',
+        ], [[
+            'name' => 'limit',
+            'target' => null,
+            'type' => 'integer',
+            'default' => '3',
+        ]]));
+
+        $slots = array_column($recipe->toArray()['slots'], null, 'name');
+
+        $this->assertSame(3, $slots['limit']['default']);
+        $this->assertSame('limit', $slots['result_limit']['target']);
+        $this->assertSame(25, $slots['result_limit']['default']);
+        $this->assertSame(25, $recipe->bind([])->toArray()['limit']);
+        $this->assertSame(30, $recipe->bind(['result_limit' => '30'])->toArray()['limit']);
+    }
+
+    /** @test */
+    public function it_promotes_a_template_limit_to_an_explicit_target_slot_default(): void
+    {
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'trend',
+            'date_field' => 'occurred_at',
+            'metric' => 'avg',
+            'field' => 'amount',
+            'limit' => '25',
+        ], [[
+            'name' => 'result_limit',
+            'target' => 'limit',
+            'type' => 'integer',
+        ]]));
+
+        $this->assertSame(25, $recipe->toArray()['slots'][0]['default']);
+        $this->assertSame(25, $recipe->bind([])->toArray()['limit']);
     }
 
     /** @test */
@@ -162,6 +226,15 @@ class QueryRecipeTest extends TestCase
 
             $this->assertSame($recipe, $recipe->validateAgainst($index));
         }
+
+        $multi = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'multi_breakdown',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+            'group_by_fields' => ['year', 'active'],
+        ]));
+
+        $this->assertSame($multi, $multi->validateAgainst($index));
     }
 
     /** @test */
@@ -266,6 +339,35 @@ class QueryRecipeTest extends TestCase
     }
 
     /** @test */
+    public function it_keeps_asterisks_in_equality_bindings_literal(): void
+    {
+        $recipe = QueryRecipe::fromArray([
+            ...$this->definition('events', [
+                'widget' => 'kpi',
+                'date_field' => 'occurred_at',
+                'metric' => 'count',
+            ], [[
+                'name' => 'category',
+                'target' => null,
+                'type' => 'string',
+                'required' => true,
+            ]]),
+            'filter_templates' => [[
+                'field' => 'category',
+                'operator' => 'equals',
+                'slot' => 'category',
+            ]],
+        ]);
+
+        $filter = $recipe->bind(['category' => 'A*B'])->toArray()['filters'];
+        $query = (new FilterParser($this->recipeIndex()->properties()))->parse($filter)->toRaw();
+
+        $this->assertSame("category:'A\\*B'", $filter);
+        $this->assertSame('A*B', $query['bool']['must'][0]['term']['category']['value']);
+        $this->assertArrayNotHasKey('wildcard', $query['bool']['must'][0]);
+    }
+
+    /** @test */
     public function it_rejects_malformed_recipe_definitions(): void
     {
         $template = [
@@ -295,7 +397,7 @@ class QueryRecipeTest extends TestCase
             'Unsupported query recipe slot type',
         );
         $this->assertInvalid(
-            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [...$template, 'unsupported' => 'fixed'], [[
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', $template, [[
                 'name' => 'value',
                 'target' => 'unsupported',
                 'type' => 'string',
@@ -337,6 +439,52 @@ class QueryRecipeTest extends TestCase
             ]),
             'filter references unknown slot',
         );
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray([
+                'dataset' => 'events',
+                'template' => $template,
+                'slots' => 'malformed',
+                'filter_templates' => [],
+            ]),
+            'slots must be a list of arrays',
+        );
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray([
+                'dataset' => 'events',
+                'template' => $template,
+                'slots' => [['name' => 'value', 'target' => null, 'type' => 'string']],
+                'filter_templates' => ['malformed'],
+            ]),
+            'filter_templates item must be an object',
+        );
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray([
+                'dataset' => 'events',
+                'template' => [...$template, 'unknown' => true],
+                'slots' => [],
+                'filter_templates' => [],
+            ]),
+            'Unknown analytics arguments: unknown',
+        );
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray([
+                ...$this->definition('events', $template),
+                'filter_template' => [],
+            ]),
+            'Unknown query recipe definition keys: filter_template',
+        );
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
+                'widget' => 'table',
+                'date_field' => 'occurred_at',
+                'sort' => 'amount:desc',
+            ], [[
+                'name' => 'sort',
+                'target' => 'sort',
+                'type' => 'string',
+            ]])),
+            'Unsupported query recipe slot target [sort]',
+        );
     }
 
     /** @test */
@@ -358,6 +506,8 @@ class QueryRecipeTest extends TestCase
             'name' => 'value',
             'target' => null,
             'type' => 'number',
+            'minimum' => 1.5,
+            'maximum' => 10.5,
         ]]));
         $string = QueryRecipe::fromArray($this->definition('events', $template, [[
             'name' => 'value',
@@ -366,9 +516,62 @@ class QueryRecipeTest extends TestCase
         ]]));
 
         $this->assertInvalid(fn (): AnalyticsRequest => $integer->bind(['value' => 'many']), 'must be an integer');
+        $this->assertInvalid(fn (): AnalyticsRequest => $integer->bind(['value' => 1.5]), 'must be an integer');
+        $this->assertInvalid(fn (): AnalyticsRequest => $integer->bind(['value' => '1e1']), 'must be an integer');
         $this->assertInvalid(fn (): AnalyticsRequest => $integer->bind(['value' => 11]), 'outside its allowed range');
         $this->assertInvalid(fn (): AnalyticsRequest => $number->bind(['value' => 'many']), 'must be numeric');
+        $this->assertInvalid(fn (): AnalyticsRequest => $number->bind(['value' => '1e309']), 'must be finite');
+        $this->assertInvalid(fn (): AnalyticsRequest => $number->bind(['value' => 11]), 'outside its allowed range');
         $this->assertInvalid(fn (): AnalyticsRequest => $string->bind(['value' => ' ']), 'cannot be empty');
+    }
+
+    /** @test */
+    public function it_canonicalizes_typed_defaults_and_rejects_invalid_dates_and_bounds(): void
+    {
+        $template = [
+            'widget' => 'kpi',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+        ];
+        $recipe = QueryRecipe::fromArray($this->definition('events', $template, [
+            ['name' => 'day', 'target' => null, 'type' => 'date', 'default' => '2026-01-02'],
+            ['name' => 'minimum', 'target' => null, 'type' => 'number', 'default' => '2.5', 'minimum' => '1.5', 'maximum' => '3.5'],
+        ]));
+        $slots = array_column($recipe->toArray()['slots'], null, 'name');
+
+        $this->assertSame('2026-01-02', $slots['day']['default']);
+        $this->assertSame(2.5, $slots['minimum']['default']);
+        $this->assertSame(1.5, $slots['minimum']['minimum']);
+        $this->assertSame(3.5, $slots['minimum']['maximum']);
+
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', $template, [[
+                'name' => 'day',
+                'target' => null,
+                'type' => 'date',
+                'default' => 'tomorrow',
+            ]])),
+            'must be a valid ISO 8601 date',
+        );
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', $template, [[
+                'name' => 'value',
+                'target' => null,
+                'type' => 'integer',
+                'minimum' => 10,
+                'maximum' => 1,
+            ]])),
+            'minimum cannot exceed its maximum',
+        );
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', $template, [[
+                'name' => 'offset',
+                'target' => 'timezone_offset',
+                'type' => 'timezone_offset',
+                'minimum' => -841,
+            ]])),
+            'timezone bounds must stay between -840 and 840',
+        );
     }
 
     /** @test */
@@ -400,7 +603,7 @@ class QueryRecipeTest extends TestCase
                 'group_by' => 'category',
                 'metrics' => 'invalid',
             ]))->validateAgainst($index),
-            'grouped metrics must be valid JSON',
+            'grouped_metrics metrics must be a JSON array',
         );
         $this->assertInvalid(
             fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
@@ -409,7 +612,7 @@ class QueryRecipeTest extends TestCase
                 'group_by' => 'category',
                 'metrics' => '[1]',
             ]))->validateAgainst($index),
-            'grouped metric must be an object',
+            'grouped_metrics metric must be an object',
         );
         $this->assertInvalid(
             fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
@@ -428,6 +631,43 @@ class QueryRecipeTest extends TestCase
                 'field' => 'category',
             ]))->validateAgainst($index),
             'field [category] has incompatible type',
+        );
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
+                'widget' => 'kpi',
+                'date_field' => 'occurred_at',
+                'metric' => 'count',
+                'filters' => "missing:'value'",
+            ]))->validateAgainst($index),
+            'Invalid query recipe filters',
+        );
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
+                'widget' => 'funnel',
+                'date_field' => 'occurred_at',
+                'steps' => [['label' => 'Missing', 'filter' => "missing:'value'"]],
+            ]))->validateAgainst($index),
+            'Invalid query recipe funnel step filter',
+        );
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
+                'widget' => 'kpi',
+                'date_field' => 'occurred_at',
+                'metric' => 'count',
+                'include_hits' => 1,
+                'hit_fields' => 'missing',
+            ]))->validateAgainst($index),
+            'hit_fields field [missing] does not exist',
+        );
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
+                'widget' => 'kpi',
+                'date_field' => 'occurred_at',
+                'metric' => 'count',
+                'include_hits' => 1,
+                'hit_sort' => 'missing:desc',
+            ]))->validateAgainst($index),
+            'Invalid query recipe hit_sort',
         );
     }
 
@@ -509,7 +749,7 @@ class QueryRecipeTest extends TestCase
             'grouped_trend' => [...$base, 'widget' => 'grouped_trend', 'metric' => 'sum', 'field' => 'amount', 'group_by' => 'category', 'interval' => 'day'],
             'breakdown' => [...$base, 'widget' => 'breakdown', 'metric' => 'sum', 'field' => 'amount', 'group_by' => 'category'],
             'multi_breakdown' => [...$base, 'widget' => 'multi_breakdown', 'metric' => 'sum', 'field' => 'amount', 'group_by_fields' => 'category,subcategory'],
-            'distribution' => [...$base, 'widget' => 'distribution', 'field' => 'amount'],
+            'distribution' => [...$base, 'widget' => 'distribution', 'field' => 'amount', 'bucket_size' => 10],
             'histogram_metric' => [...$base, 'widget' => 'histogram_metric', 'metric' => 'avg', 'field' => 'amount', 'bucket_field' => 'amount', 'bucket_size' => 10],
             'grouped_metrics' => [...$base, 'widget' => 'grouped_metrics', 'group_by' => 'category', 'metrics' => '[{"key":"avg_amount","label":"Average amount","metric":"avg","field":"amount"}]'],
             'percentiles' => [...$base, 'widget' => 'percentiles', 'field' => 'amount', 'percents' => '50,95'],

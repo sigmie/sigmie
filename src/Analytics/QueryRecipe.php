@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Analytics;
 
+use DateTimeImmutable;
 use InvalidArgumentException;
 use Sigmie\Analytics\Enums\Period;
 use Sigmie\Mappings\Contracts\FieldContainer;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Date;
@@ -17,6 +19,9 @@ use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Price;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
+use Sigmie\Parse\FilterParser;
+use Sigmie\Parse\ParseException;
+use Sigmie\Parse\SortParser;
 use Sigmie\SigmieIndex;
 
 class QueryRecipe
@@ -32,7 +37,6 @@ class QueryRecipe
         'to',
         'timezone_offset',
         'interval',
-        'sort',
         'min_count',
         'bucket_size',
         'precision',
@@ -47,7 +51,6 @@ class QueryRecipe
         'to' => ['date'],
         'timezone_offset' => ['timezone_offset'],
         'interval' => ['string'],
-        'sort' => ['string'],
         'min_count' => ['integer'],
         'bucket_size' => ['integer'],
         'precision' => ['integer'],
@@ -56,6 +59,18 @@ class QueryRecipe
 
     /** @var list<string> */
     private const FILTER_OPERATORS = ['equals', 'not_equals', 'gt', 'gte', 'lt', 'lte'];
+
+    /** @var list<string> */
+    private const SLOT_KEYS = ['name', 'target', 'type', 'required', 'default', 'minimum', 'maximum'];
+
+    /** @var list<string> */
+    private const FILTER_TEMPLATE_KEYS = ['field', 'operator', 'slot'];
+
+    /** @var list<string> */
+    private const DEFINITION_KEYS = ['version', 'dataset', 'template', 'slots', 'filter_templates'];
+
+    /** @var list<string> */
+    private const LIMIT_WIDGETS = ['grouped_trend', 'breakdown', 'multi_breakdown', 'grouped_metrics', 'table', 'heatmap'];
 
     /**
      * @param  array<string, mixed>  $definition
@@ -67,6 +82,7 @@ class QueryRecipe
      */
     public static function fromArray(array $definition): self
     {
+        self::validateDefinitionShape($definition);
         $normalized = self::normalize($definition);
         self::validate($normalized);
 
@@ -138,6 +154,7 @@ class QueryRecipe
     public function validateAgainst(SigmieIndex $index): static
     {
         $fields = self::indexFields($index);
+        $properties = $index->properties();
         $template = (array) $this->definition['template'];
 
         $this->requireFieldType($fields, (string) ($template['date_field'] ?? ''), ['date'], 'date_field');
@@ -181,19 +198,21 @@ class QueryRecipe
         }
 
         foreach ($this->csvFields((string) ($template['group_by_fields'] ?? '')) as $field) {
-            $this->requireFieldType($fields, $field, ['keyword', 'text'], 'group_by_fields');
+            $this->requireFieldType($fields, $field, ['keyword', 'text', 'number', 'boolean'], 'group_by_fields');
         }
 
-        foreach ($this->csvFields((string) ($template['fields'] ?? '')) as $field) {
-            $this->requireField($fields, $field, 'fields');
+        foreach (['fields', 'hit_fields'] as $key) {
+            foreach ($this->csvFields((string) ($template[$key] ?? '')) as $field) {
+                $this->requireField($fields, $field, $key);
+            }
         }
 
         if (($template['sort'] ?? '') !== '') {
-            [$sortField, $direction] = array_pad(explode(':', (string) $template['sort'], 2), 2, 'asc');
-            $this->requireField($fields, trim($sortField), 'sort');
-            if (! in_array(strtolower(trim($direction)), ['asc', 'desc'], true)) {
-                throw new InvalidArgumentException(sprintf('Unsupported query recipe sort direction [%s].', $direction));
-            }
+            $this->validateSort($properties, (string) $template['sort'], 'sort', false);
+        }
+
+        if (($template['hit_sort'] ?? '') !== '') {
+            $this->validateSort($properties, (string) $template['hit_sort'], 'hit_sort', true);
         }
 
         if ($widget === 'grouped_metrics') {
@@ -229,6 +248,22 @@ class QueryRecipe
             $this->validateFilterSlotType((string) ($fields[$filterField] ?? ''), (string) $filter['operator'], (array) ($slots[(string) $filter['slot']] ?? []), $filterField);
         }
 
+        foreach (['filters', 'hit_filters'] as $key) {
+            $filter = trim((string) ($template[$key] ?? ''));
+
+            if ($filter !== '') {
+                $this->validateStaticFilter($properties, $filter, $key);
+            }
+        }
+
+        if ($widget === 'funnel') {
+            $steps = json_decode((string) ($template['steps'] ?? ''), true);
+
+            foreach (is_array($steps) ? $steps : [] as $step) {
+                $this->validateStaticFilter($properties, (string) ($step['filter'] ?? ''), 'funnel step filter');
+            }
+        }
+
         return $this;
     }
 
@@ -254,14 +289,29 @@ class QueryRecipe
         $dataset = trim((string) ($definition['dataset'] ?? ''));
         $slots = array_values(array_map(
             fn (array $slot): array => self::normalizeSlot($slot),
-            array_filter((array) ($definition['slots'] ?? []), fn (mixed $slot): bool => is_array($slot)),
+            $definition['slots'] ?? [],
         ));
-        $validationTemplate = (array) ($definition['template'] ?? []);
-        $hasLimitSlot = array_filter($slots, fn (array $slot): bool => ($slot['target'] ?? null) === 'limit') !== [];
+        $validationTemplate = $definition['template'] ?? [];
+        $limitSlotIndex = null;
 
-        if (! $hasLimitSlot) {
+        foreach ($slots as $index => $slot) {
+            if (($slot['target'] ?? null) === 'limit') {
+                $limitSlotIndex = $index;
+
+                break;
+            }
+        }
+
+        if ($limitSlotIndex !== null && array_key_exists('limit', $validationTemplate) && ! array_key_exists('default', $slots[$limitSlotIndex])) {
+            $slots[$limitSlotIndex]['default'] = self::slotValue($slots[$limitSlotIndex], $validationTemplate['limit']);
+        }
+
+        $supportsLimit = array_key_exists('limit', $validationTemplate)
+            || in_array((string) ($validationTemplate['widget'] ?? ''), self::LIMIT_WIDGETS, true);
+
+        if ($limitSlotIndex === null && $supportsLimit) {
             $limitSlot = [
-                'name' => 'limit',
+                'name' => self::availableLimitSlotName($slots),
                 'target' => 'limit',
                 'type' => 'integer',
                 'required' => false,
@@ -300,7 +350,7 @@ class QueryRecipe
                 'operator' => trim((string) ($filter['operator'] ?? 'equals')),
                 'slot' => trim((string) ($filter['slot'] ?? '')),
             ],
-            array_filter((array) ($definition['filter_templates'] ?? []), fn (mixed $filter): bool => is_array($filter)),
+            $definition['filter_templates'] ?? [],
         ));
         usort($filters, fn (array $left, array $right): int => implode('|', $left) <=> implode('|', $right));
 
@@ -326,19 +376,120 @@ class QueryRecipe
             'required' => (bool) ($slot['required'] ?? false),
         ];
 
+        if (array_key_exists('minimum', $slot) && $slot['minimum'] !== null && $slot['minimum'] !== '') {
+            $normalized['minimum'] = self::slotBound($slot['minimum'], $normalized, 'minimum');
+        }
+
+        if (array_key_exists('maximum', $slot) && $slot['maximum'] !== null && $slot['maximum'] !== '') {
+            $normalized['maximum'] = self::slotBound($slot['maximum'], $normalized, 'maximum');
+        }
+
         if (array_key_exists('default', $slot) && $slot['default'] !== null && $slot['default'] !== '') {
-            $normalized['default'] = $slot['default'];
-        }
-
-        if (isset($slot['minimum'])) {
-            $normalized['minimum'] = (int) $slot['minimum'];
-        }
-
-        if (isset($slot['maximum'])) {
-            $normalized['maximum'] = (int) $slot['maximum'];
+            $normalized['default'] = in_array($normalized['type'], self::SLOT_TYPES, true)
+                ? self::slotValue($normalized, $slot['default'])
+                : $slot['default'];
         }
 
         return $normalized;
+    }
+
+    /**
+     * @param  array<string, mixed>  $definition
+     */
+    private static function validateDefinitionShape(array $definition): void
+    {
+        $unknown = array_diff(array_keys($definition), self::DEFINITION_KEYS);
+
+        if ($unknown !== []) {
+            throw new InvalidArgumentException('Unknown query recipe definition keys: '.implode(', ', $unknown).'.');
+        }
+
+        if (array_key_exists('version', $definition) && $definition['version'] !== 1) {
+            throw new InvalidArgumentException('Unsupported query recipe version.');
+        }
+
+        if (array_key_exists('dataset', $definition) && ! is_string($definition['dataset'])) {
+            throw new InvalidArgumentException('Query recipe dataset must be a string.');
+        }
+
+        if (array_key_exists('template', $definition) && ! is_array($definition['template'])) {
+            throw new InvalidArgumentException('Query recipe template must be an array.');
+        }
+
+        self::validateDefinitionList($definition, 'slots', self::SLOT_KEYS);
+        self::validateDefinitionList($definition, 'filter_templates', self::FILTER_TEMPLATE_KEYS);
+
+        foreach ($definition['slots'] ?? [] as $slot) {
+            foreach (['name', 'type'] as $key) {
+                if (array_key_exists($key, $slot) && ! is_string($slot[$key])) {
+                    throw new InvalidArgumentException(sprintf('Query recipe slot %s must be a string.', $key));
+                }
+            }
+
+            if (array_key_exists('target', $slot) && $slot['target'] !== null && ! is_string($slot['target'])) {
+                throw new InvalidArgumentException('Query recipe slot target must be a string or null.');
+            }
+
+            if (array_key_exists('required', $slot) && ! is_bool($slot['required'])) {
+                throw new InvalidArgumentException('Query recipe slot required must be a boolean.');
+            }
+        }
+
+        foreach ($definition['filter_templates'] ?? [] as $filter) {
+            foreach (self::FILTER_TEMPLATE_KEYS as $key) {
+                if (array_key_exists($key, $filter) && ! is_string($filter[$key])) {
+                    throw new InvalidArgumentException(sprintf('Query recipe filter template %s must be a string.', $key));
+                }
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $definition
+     * @param  list<string>  $keys
+     */
+    private static function validateDefinitionList(array $definition, string $name, array $keys): void
+    {
+        if (! array_key_exists($name, $definition)) {
+            return;
+        }
+
+        $items = $definition[$name];
+        if (! is_array($items) || ! array_is_list($items)) {
+            throw new InvalidArgumentException(sprintf('Query recipe %s must be a list of arrays.', $name));
+        }
+
+        foreach ($items as $item) {
+            if (! is_array($item) || array_is_list($item)) {
+                throw new InvalidArgumentException(sprintf('Each query recipe %s item must be an object.', $name));
+            }
+
+            $unknown = array_diff(array_keys($item), $keys);
+            if ($unknown !== []) {
+                throw new InvalidArgumentException(sprintf('Unknown query recipe %s keys: %s.', $name, implode(', ', $unknown)));
+            }
+        }
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $slots
+     */
+    private static function availableLimitSlotName(array $slots): string
+    {
+        $names = array_column($slots, 'name');
+
+        if (! in_array('limit', $names, true)) {
+            return 'limit';
+        }
+
+        $suffix = 1;
+
+        do {
+            $name = $suffix === 1 ? 'result_limit' : sprintf('result_limit_%d', $suffix);
+            $suffix++;
+        } while (in_array($name, $names, true));
+
+        return $name;
     }
 
     /**
@@ -363,6 +514,13 @@ class QueryRecipe
 
             if (! in_array((string) $slot['type'], self::SLOT_TYPES, true)) {
                 throw new InvalidArgumentException(sprintf('Unsupported query recipe slot type [%s].', $slot['type']));
+            }
+
+            if (
+                $slot['type'] === 'timezone_offset'
+                && (($slot['minimum'] ?? -840) < -840 || ($slot['maximum'] ?? 840) > 840)
+            ) {
+                throw new InvalidArgumentException(sprintf('Query recipe slot [%s] timezone bounds must stay between -840 and 840.', $name));
             }
 
             if (($slot['target'] ?? null) !== null) {
@@ -391,6 +549,10 @@ class QueryRecipe
             }
 
             $names[] = $name;
+
+            if (isset($slot['minimum'], $slot['maximum']) && $slot['minimum'] > $slot['maximum']) {
+                throw new InvalidArgumentException(sprintf('Query recipe slot [%s] minimum cannot exceed its maximum.', $name));
+            }
 
             if (array_key_exists('default', $slot)) {
                 self::slotValue($slot, $slot['default']);
@@ -428,7 +590,6 @@ class QueryRecipe
             'to' => '2000-02-01',
             'timezone_offset', 'min_count' => 0,
             'interval' => 'day',
-            'sort' => 'indexed_at:asc',
             'bucket_size' => 1,
             'precision' => 5,
             'percents' => '50',
@@ -444,13 +605,9 @@ class QueryRecipe
         $type = (string) $slot['type'];
 
         if (in_array($type, ['integer', 'timezone_offset'], true)) {
-            if (! is_numeric($value)) {
-                throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be an integer.', $slot['name']));
-            }
-
-            $value = (int) $value;
-            $minimum = (int) ($slot['minimum'] ?? ($type === 'timezone_offset' ? -840 : PHP_INT_MIN));
-            $maximum = (int) ($slot['maximum'] ?? ($type === 'timezone_offset' ? 840 : PHP_INT_MAX));
+            $value = self::slotInteger($value, (string) $slot['name']);
+            $minimum = max((int) ($slot['minimum'] ?? PHP_INT_MIN), $type === 'timezone_offset' ? -840 : PHP_INT_MIN);
+            $maximum = min((int) ($slot['maximum'] ?? PHP_INT_MAX), $type === 'timezone_offset' ? 840 : PHP_INT_MAX);
             if (! ($value >= $minimum && $value <= $maximum)) {
                 throw new InvalidArgumentException(sprintf('Query recipe binding [%s] is outside its allowed range.', $slot['name']));
             }
@@ -459,14 +616,22 @@ class QueryRecipe
         }
 
         if ($type === 'number') {
-            if (! is_numeric($value)) {
-                throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be numeric.', $slot['name']));
+            $value = self::slotNumber($value, (string) $slot['name']);
+            $minimum = (float) ($slot['minimum'] ?? -PHP_FLOAT_MAX);
+            $maximum = (float) ($slot['maximum'] ?? PHP_FLOAT_MAX);
+
+            if (! ($value >= $minimum && $value <= $maximum)) {
+                throw new InvalidArgumentException(sprintf('Query recipe binding [%s] is outside its allowed range.', $slot['name']));
             }
 
-            return (float) $value;
+            return $value;
         }
 
-        $value = trim((string) $value);
+        if (! is_string($value)) {
+            throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be a string.', $slot['name']));
+        }
+
+        $value = trim($value);
         if ($value === '') {
             throw new InvalidArgumentException(sprintf('Query recipe binding [%s] cannot be empty.', $slot['name']));
         }
@@ -475,7 +640,86 @@ class QueryRecipe
             throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be a supported period.', $slot['name']));
         }
 
+        if ($type === 'date') {
+            self::validateSlotDate($value, (string) $slot['name']);
+        }
+
         return $value;
+    }
+
+    /**
+     * @param  array<string, mixed>  $slot
+     */
+    private static function slotBound(mixed $value, array $slot, string $bound): int|float
+    {
+        $type = (string) $slot['type'];
+
+        return match ($type) {
+            'integer', 'timezone_offset' => self::slotInteger($value, sprintf('%s %s', $slot['name'], $bound)),
+            'number' => self::slotNumber($value, sprintf('%s %s', $slot['name'], $bound)),
+            default => throw new InvalidArgumentException(sprintf('Query recipe slot [%s] may define bounds only for integer or number types.', $slot['name'])),
+        };
+    }
+
+    private static function slotInteger(mixed $value, string $name): int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (! is_string($value)) {
+            throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be an integer.', $name));
+        }
+
+        $value = trim($value);
+        if (preg_match('/^-?(0|[1-9]\d*)$/D', $value) !== 1) {
+            throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be an integer.', $name));
+        }
+
+        $integer = filter_var($value, FILTER_VALIDATE_INT);
+
+        return $integer !== false
+            ? $integer
+            : throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be an integer.', $name));
+    }
+
+    private static function slotNumber(mixed $value, string $name): float
+    {
+        if (! is_int($value) && ! is_float($value) && ! is_string($value)) {
+            throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be numeric.', $name));
+        }
+
+        if (is_string($value)) {
+            $value = trim($value);
+        }
+
+        if (! is_numeric($value)) {
+            throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be numeric.', $name));
+        }
+
+        $number = (float) $value;
+
+        return is_finite($number)
+            ? $number
+            : throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be finite.', $name));
+    }
+
+    private static function validateSlotDate(string $value, string $name): void
+    {
+        $format = match (true) {
+            preg_match('/^\d{4}-\d{2}-\d{2}$/D', $value) === 1 => '!Y-m-d',
+            preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/D', $value) === 1 => '!Y-m-d\TH:i:sP',
+            preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,6}(?:Z|[+-]\d{2}:\d{2})$/D', $value) === 1 => '!Y-m-d\TH:i:s.uP',
+            default => null,
+        };
+
+        $date = $format !== null ? DateTimeImmutable::createFromFormat($format, $value) : false;
+
+        if ($date instanceof DateTimeImmutable && DateTimeImmutable::getLastErrors() === false) {
+            return;
+        }
+
+        throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be a valid ISO 8601 date.', $name));
     }
 
     /**
@@ -503,7 +747,7 @@ class QueryRecipe
     {
         $value = is_int($value) || is_float($value)
             ? (string) $value
-            : "'".str_replace(['\\', "'"], ['\\\\', "\\'"], $value)."'";
+            : "'".str_replace(['\\', "'", '*'], ['\\\\', "\\'", '\\*'], $value)."'";
 
         return match ($operator) {
             'equals' => sprintf('%s:%s', $field, $value),
@@ -529,6 +773,58 @@ class QueryRecipe
 
         if (! $valid) {
             throw new InvalidArgumentException(sprintf('Query recipe filter slot for [%s] does not match its field type or operator.', $field));
+        }
+    }
+
+    private function validateStaticFilter(NewProperties $properties, string $filter, string $argument): void
+    {
+        try {
+            (new FilterParser($properties))->parse($filter);
+        } catch (ParseException $parseException) {
+            throw new InvalidArgumentException(
+                sprintf('Invalid query recipe %s: %s', $argument, $parseException->getMessage()),
+                0,
+                $parseException,
+            );
+        }
+    }
+
+    private function validateSort(NewProperties $properties, string $sort, string $argument, bool $multiple): void
+    {
+        $tokens = preg_split('/\s+/', trim($sort)) ?: [];
+
+        if (! $multiple && count($tokens) !== 1) {
+            throw new InvalidArgumentException('Query recipe sort must contain exactly one field.');
+        }
+
+        foreach ($tokens as $token) {
+            if (in_array($token, ['_score', '_doc', '_score:desc'], true)) {
+                continue;
+            }
+
+            if ($multiple && preg_match('/^[\w.]+\[-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?\]:\w+:\w+$/D', $token) === 1) {
+                continue;
+            }
+
+            [$field, $direction] = array_pad(explode(':', $token, 3), 2, null);
+
+            if ($direction !== null && ! in_array($direction, ['asc', 'desc'], true) && substr_count($token, ':') === 1) {
+                throw new InvalidArgumentException(sprintf('Unsupported query recipe %s direction [%s].', $argument, $direction));
+            }
+
+            if ($field === '' || substr_count($token, ':') > 1) {
+                throw new InvalidArgumentException(sprintf('Unsupported query recipe %s [%s].', $argument, $token));
+            }
+        }
+
+        try {
+            (new SortParser($properties))->parse($sort);
+        } catch (ParseException $parseException) {
+            throw new InvalidArgumentException(
+                sprintf('Invalid query recipe %s: %s', $argument, $parseException->getMessage()),
+                0,
+                $parseException,
+            );
         }
     }
 

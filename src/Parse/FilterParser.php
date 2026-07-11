@@ -369,10 +369,34 @@ class FilterParser extends Parser
     protected function unmaskQuotedValue(string $value): string
     {
         return str_replace(
-            [self::ESC_SINGLE, self::ESC_DOUBLE, self::ESC_BACKSLASH],
-            ["'", '"', '\\'],
+            ['\\*', self::ESC_SINGLE, self::ESC_DOUBLE, self::ESC_BACKSLASH],
+            ['*', "'", '"', '\\'],
             $value
         );
+    }
+
+    protected function hasUnescapedWildcard(string $filter): bool
+    {
+        [, $value] = array_pad(explode(':', $filter, 2), 2, '');
+        $length = strlen($value);
+
+        for ($index = 0; $index < $length; $index++) {
+            if ($value[$index] !== '*') {
+                continue;
+            }
+
+            $backslashes = 0;
+
+            for ($position = $index - 1; $position >= 0 && $value[$position] === '\\'; $position--) {
+                $backslashes++;
+            }
+
+            if ($backslashes % 2 === 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // Split a comma-separated list on the commas that sit *outside* a quoted
@@ -415,7 +439,7 @@ class FilterParser extends Parser
             preg_match('/^_id:\[.*\]/s', $string) => $this->handleIDs($string),
             preg_match('/^_id:[\'"]?[a-z_A-Z0-9]+[\'"]?$/', $string) => $this->handleID($string),
             preg_match('/[\w\.]+:\[.*\]/s', $string) => $this->handleIn($string),
-            preg_match('/^[\w\.]+:.*\*.*$/s', $string) => $this->handleWildcard($string),
+            (int) $this->hasUnescapedWildcard($string) => $this->handleWildcard($string),
             preg_match('/[\w\.]+:".*"/s', $string) => $this->handleTerm($string),
             preg_match('/[\w\.]+:\'.*\'/s', $string) => $this->handleTerm($string),
             preg_match('/^([\w\.]+):(-?\d+(.+)?)\.\.(-?\d+(.+)?)$/s', $string) => $this->handleBetween($string),
