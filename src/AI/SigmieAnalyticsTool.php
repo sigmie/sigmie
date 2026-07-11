@@ -11,6 +11,7 @@ use InvalidArgumentException;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
 use Sigmie\Analytics\Analytics;
+use Sigmie\Analytics\AnalyticsRequest;
 use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Analytics\Enums\Period;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
@@ -228,6 +229,15 @@ class SigmieAnalyticsTool implements Tool
      */
     public function result(Request $request): array
     {
+        $arguments = [];
+
+        foreach (AnalyticsRequest::KEYS as $key) {
+            if (isset($request[$key])) {
+                $arguments[$key] = $request[$key];
+            }
+        }
+
+        $request = new Request(AnalyticsRequest::fromArray($arguments)->toArray());
         $widget = trim((string) ($request['widget'] ?? ''));
         $dateField = $this->dateField((string) ($request['date_field'] ?? ''));
 
