@@ -126,17 +126,21 @@ class AnalyticsRequest
             if ($value === null) {
                 continue;
             }
+
             if ($value === '') {
                 continue;
             }
+
             if (in_array($key, self::INTEGER_KEYS, true)) {
                 if (! is_numeric($value) && ! is_bool($value)) {
                     throw new InvalidArgumentException(sprintf('Analytics argument [%s] must be an integer.', $key));
                 }
+
                 $normalized[$key] = (int) $value;
 
                 continue;
             }
+
             if (is_array($value)) {
                 $normalized[$key] = json_encode($value, JSON_THROW_ON_ERROR);
 
@@ -146,6 +150,7 @@ class AnalyticsRequest
             if (! is_scalar($value)) {
                 throw new InvalidArgumentException(sprintf('Analytics argument [%s] must be scalar.', $key));
             }
+
             $normalized[$key] = trim((string) $value);
         }
 

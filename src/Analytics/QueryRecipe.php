@@ -130,7 +130,7 @@ class QueryRecipe
             $field = trim((string) ($template[$key] ?? ''));
 
             if ($field !== '') {
-                self::requireField($fields, $field, $key);
+                $this->requireField($fields, $field, $key);
             }
         }
 
@@ -169,12 +169,12 @@ class QueryRecipe
         }
 
         foreach ($this->csvFields((string) ($template['fields'] ?? '')) as $field) {
-            self::requireField($fields, $field, 'fields');
+            $this->requireField($fields, $field, 'fields');
         }
 
         if (($template['sort'] ?? '') !== '') {
             [$sortField, $direction] = array_pad(explode(':', (string) $template['sort'], 2), 2, 'asc');
-            self::requireField($fields, trim($sortField), 'sort');
+            $this->requireField($fields, trim($sortField), 'sort');
             if (! in_array(strtolower(trim($direction)), ['asc', 'desc'], true)) {
                 throw new InvalidArgumentException(sprintf('Unsupported query recipe sort direction [%s].', $direction));
             }
@@ -190,6 +190,7 @@ class QueryRecipe
                 if (! is_array($groupedMetric)) {
                     throw new InvalidArgumentException('Query recipe grouped metric must be an object.');
                 }
+
                 $groupedMetricName = (string) ($groupedMetric['metric'] ?? '');
 
                 if ($groupedMetricName === 'count') {
@@ -208,7 +209,7 @@ class QueryRecipe
 
         foreach ((array) ($this->definition['filter_templates'] ?? []) as $filter) {
             $filterField = (string) $filter['field'];
-            self::requireField($fields, $filterField, 'filter_template');
+            $this->requireField($fields, $filterField, 'filter_template');
             $this->validateFilterSlotType((string) ($fields[$filterField] ?? ''), (string) $filter['operator'], (array) ($slots[(string) $filter['slot']] ?? []), $filterField);
         }
 
@@ -324,6 +325,7 @@ class QueryRecipe
             if (preg_match('/^[a-z][a-z0-9_]*$/', $name) !== 1) {
                 throw new InvalidArgumentException(sprintf('Invalid query recipe slot name [%s].', $name));
             }
+
             if (! in_array((string) $slot['type'], self::SLOT_TYPES, true)) {
                 throw new InvalidArgumentException(sprintf('Unsupported query recipe slot type [%s].', $slot['type']));
             }
@@ -332,15 +334,18 @@ class QueryRecipe
                 if (! in_array((string) $slot['target'], self::SLOT_TARGETS, true)) {
                     throw new InvalidArgumentException(sprintf('Unsupported query recipe slot target [%s].', $slot['target']));
                 }
+
                 if (in_array($slot['target'], $targets, true)) {
                     throw new InvalidArgumentException(sprintf('Duplicate query recipe slot target [%s].', $slot['target']));
                 }
+
                 $targets[] = $slot['target'];
             }
 
             if (in_array($name, $names, true)) {
                 throw new InvalidArgumentException(sprintf('Duplicate query recipe slot [%s].', $name));
             }
+
             $names[] = $name;
 
             if (array_key_exists('default', $slot)) {
@@ -354,9 +359,11 @@ class QueryRecipe
             if ($field === '') {
                 throw new InvalidArgumentException('Query recipe filter field is required.');
             }
+
             if (! in_array((string) $filter['operator'], self::FILTER_OPERATORS, true)) {
                 throw new InvalidArgumentException(sprintf('Unsupported query recipe filter operator [%s].', $filter['operator']));
             }
+
             if (! in_array($slot, $names, true)) {
                 throw new InvalidArgumentException(sprintf('Query recipe filter references unknown slot [%s].', $slot));
             }
@@ -396,6 +403,7 @@ class QueryRecipe
             if (! is_numeric($value)) {
                 throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be an integer.', $slot['name']));
             }
+
             $value = (int) $value;
             $minimum = (int) ($slot['minimum'] ?? ($type === 'timezone_offset' ? -840 : PHP_INT_MIN));
             $maximum = (int) ($slot['maximum'] ?? ($type === 'timezone_offset' ? 840 : PHP_INT_MAX));
@@ -523,7 +531,7 @@ class QueryRecipe
     /**
      * @param  array<string, string>  $fields
      */
-    private static function requireField(array $fields, string $field, string $argument): void
+    private function requireField(array $fields, string $field, string $argument): void
     {
         if (! isset($fields[$field])) {
             throw new InvalidArgumentException(sprintf('Query recipe %s field [%s] does not exist in the index.', $argument, $field));
@@ -536,7 +544,7 @@ class QueryRecipe
      */
     private function requireFieldType(array $fields, string $field, array $types, string $argument): void
     {
-        self::requireField($fields, $field, $argument);
+        $this->requireField($fields, $field, $argument);
         if (! in_array($fields[$field], $types, true)) {
             throw new InvalidArgumentException(sprintf('Query recipe %s field [%s] has incompatible type [%s].', $argument, $field, $fields[$field]));
         }
