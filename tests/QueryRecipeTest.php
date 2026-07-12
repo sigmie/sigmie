@@ -91,6 +91,30 @@ class QueryRecipeTest extends TestCase
     }
 
     /** @test */
+    public function it_canonicalizes_ranked_widget_sort_as_metric_direction(): void
+    {
+        $legacy = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'breakdown',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+            'field' => 'occurred_at',
+            'group_by' => 'category',
+            'sort' => 'occurred_at:asc',
+        ]));
+        $default = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'union_breakdown',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+            'field' => 'occurred_at',
+            'group_by_fields' => 'category,subcategory',
+        ]));
+
+        $this->assertSame('metric:asc', $legacy->toArray()['template']['sort']);
+        $this->assertSame('metric:desc', $default->toArray()['template']['sort']);
+        $this->assertSame('metric:asc', $legacy->bind([])->toArray()['sort']);
+    }
+
+    /** @test */
     public function it_promotes_limit_defaults_without_colliding_with_declared_slot_names(): void
     {
         $recipe = QueryRecipe::fromArray($this->definition('events', [

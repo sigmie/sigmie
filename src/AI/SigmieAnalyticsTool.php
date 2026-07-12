@@ -200,7 +200,7 @@ class SigmieAnalyticsTool implements Tool
             'bucket_size' => $schema->integer()->description('Bucket width for the distribution widget (pass null otherwise)')->nullable()->required(),
             'percents' => $schema->string()->description('Comma-separated percentiles for the percentiles widget, e.g. "50,75,95,99" (pass null for the default)')->nullable()->required(),
             'fields' => $schema->string()->description('Comma-separated source fields to return for the table widget, e.g. "id,amount" (pass null for the full document)')->nullable()->required(),
-            'sort' => $schema->string()->description('Sort for the table widget as "field:dir", e.g. "amount:desc" (pass null for default descending)')->nullable()->required(),
+            'sort' => $schema->string()->description('Use "metric:asc" or "metric:desc" for ranked breakdown/grouped_metrics widgets; use "field:dir" for table, e.g. "amount:desc" (pass null for descending/default order)')->nullable()->required(),
             'steps' => $schema->string()->description('Funnel steps as an ORDERED JSON array of {label, filter} objects, e.g. [{"label":"visited","filter":"event:\'visit\'"},{"label":"paid","filter":"event:\'paid\'"}] (pass null otherwise)')->nullable()->required(),
             'row_field' => $schema->string()->description('Heatmap row dimension — a keyword field (pass null otherwise)')->nullable()->required(),
             'col_field' => $schema->string()->description('Heatmap column dimension — a keyword field (pass null otherwise)')->nullable()->required(),
@@ -297,12 +297,12 @@ class SigmieAnalyticsTool implements Tool
             'trend' => $analytics->trend('result', $metric(), $field, $interval(), minDocCount: max(0, (int) ($request['min_doc_count'] ?? 0))),
             'cumulative' => $analytics->cumulative('result', $metric(), $field, $interval()),
             'grouped_trend' => $analytics->groupedTrend('result', $metric(), $this->required($request, 'field'), $groupBy(), $interval(), $limit),
-            'breakdown' => $analytics->breakdown('result', $groupBy(), $metric(), $field, $limit, bucketAliases: $this->bucketAliases($request)),
-            'multi_breakdown' => $analytics->multiBreakdown('result', $this->groupByFields($request, $widget), $metric(), $field, $limit),
-            'union_breakdown' => $analytics->unionBreakdown('result', $this->groupByFields($request, $widget), $metric(), $field, $limit),
+            'breakdown' => $analytics->breakdown('result', $groupBy(), $metric(), $field, $limit, $this->rankingDirection($request), bucketAliases: $this->bucketAliases($request)),
+            'multi_breakdown' => $analytics->multiBreakdown('result', $this->groupByFields($request, $widget), $metric(), $field, $limit, $this->rankingDirection($request)),
+            'union_breakdown' => $analytics->unionBreakdown('result', $this->groupByFields($request, $widget), $metric(), $field, $limit, $this->rankingDirection($request)),
             'distribution' => $analytics->distribution('result', $this->required($request, 'field'), (int) ($request['bucket_size'] ?? throw new InvalidArgumentException('The distribution widget requires bucket_size.'))),
             'histogram_metric' => $analytics->histogramMetric('result', $this->required($request, 'bucket_field'), (int) ($request['bucket_size'] ?? throw new InvalidArgumentException('The histogram_metric widget requires bucket_size.')), $metric(), $this->required($request, 'field')),
-            'grouped_metrics' => $analytics->groupedMetrics('result', $groupBy(), $this->metricSpecs($request), $this->optional($request, 'sort_metric') ?? 'count', $limit, minCount: max(0, (int) ($request['min_count'] ?? 0)), bucketAliases: $this->bucketAliases($request), aliasesOnly: (bool) ($request['bucket_aliases_only'] ?? false)),
+            'grouped_metrics' => $analytics->groupedMetrics('result', $groupBy(), $this->metricSpecs($request), $this->optional($request, 'sort_metric') ?? 'count', $limit, $this->rankingDirection($request), minCount: max(0, (int) ($request['min_count'] ?? 0)), bucketAliases: $this->bucketAliases($request), aliasesOnly: (bool) ($request['bucket_aliases_only'] ?? false)),
             'percentiles' => $analytics->percentiles('result', $this->required($request, 'field'), $this->percents($request)),
             'stats' => $analytics->stats('result', $this->required($request, 'field')),
             'table' => $analytics->table('result', $this->csvList($request, 'fields'), $limit, $this->optional($request, 'sort')),
@@ -312,6 +312,17 @@ class SigmieAnalyticsTool implements Tool
             'geo' => $analytics->geo('result', $this->required($request, 'field'), max(1, (int) ($request['precision'] ?? 5))),
             default => throw new InvalidArgumentException(sprintf("Unknown widget '%s'. Use one of: kpi, kpi_delta, trend, cumulative, grouped_trend, breakdown, multi_breakdown, union_breakdown, distribution, histogram_metric, grouped_metrics, percentiles, stats, table, funnel, heatmap, retention, geo.", $widget)),
         };
+    }
+
+    protected function rankingDirection(Request $request): string
+    {
+        $sort = trim((string) ($request['sort'] ?? ''));
+        [, $direction] = array_pad(explode(':', $sort, 2), 2, 'desc');
+        $direction = strtolower(trim($direction));
+
+        return in_array($direction, ['asc', 'desc'], true)
+            ? $direction
+            : throw new InvalidArgumentException(sprintf('Unsupported analytics ranking direction [%s].', $direction));
     }
 
     protected function dateField(string $field): string

@@ -279,6 +279,28 @@ class SigmieAnalyticsToolTest extends TestCase
     /**
      * @test
      */
+    public function ranked_widgets_respect_metric_sort_direction(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'breakdown',
+            'date_field' => 'created_at',
+            'group_by' => 'product',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'sort' => 'metric:asc',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('B', $result['rows'][0]['key']);
+        $this->assertEquals(80.0, $result['rows'][0]['value']);
+    }
+
+    /**
+     * @test
+     */
     public function result_merges_breakdown_bucket_aliases(): void
     {
         $index = $this->createSalesIndex();

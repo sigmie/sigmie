@@ -72,6 +72,9 @@ class QueryRecipe
     /** @var list<string> */
     private const LIMIT_WIDGETS = ['grouped_trend', 'breakdown', 'multi_breakdown', 'union_breakdown', 'grouped_metrics', 'table', 'heatmap'];
 
+    /** @var list<string> */
+    private const RANKING_WIDGETS = ['breakdown', 'multi_breakdown', 'union_breakdown', 'grouped_metrics'];
+
     /**
      * @param  array<string, mixed>  $definition
      */
@@ -213,7 +216,7 @@ class QueryRecipe
             }
         }
 
-        if (($template['sort'] ?? '') !== '') {
+        if (($template['sort'] ?? '') !== '' && ! in_array($widget, self::RANKING_WIDGETS, true)) {
             $this->validateSort($properties, (string) $template['sort'], 'sort', false);
         }
 
@@ -297,7 +300,7 @@ class QueryRecipe
             fn (array $slot): array => self::normalizeSlot($slot),
             $definition['slots'] ?? [],
         ));
-        $validationTemplate = $definition['template'] ?? [];
+        $validationTemplate = self::normalizeRankingSort($definition['template'] ?? []);
         $limitSlotIndex = null;
 
         foreach ($slots as $index => $slot) {
@@ -367,6 +370,29 @@ class QueryRecipe
             'slots' => $slots,
             'filter_templates' => $filters,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $template
+     * @return array<string, mixed>
+     */
+    private static function normalizeRankingSort(array $template): array
+    {
+        if (! in_array((string) ($template['widget'] ?? ''), self::RANKING_WIDGETS, true)) {
+            return $template;
+        }
+
+        $sort = trim((string) ($template['sort'] ?? ''));
+        [, $direction] = array_pad(explode(':', $sort, 2), 2, 'desc');
+        $direction = strtolower(trim($direction));
+
+        if (! in_array($direction, ['asc', 'desc'], true)) {
+            throw new InvalidArgumentException(sprintf('Unsupported query recipe ranking direction [%s].', $direction));
+        }
+
+        $template['sort'] = "metric:{$direction}";
+
+        return $template;
     }
 
     /**
