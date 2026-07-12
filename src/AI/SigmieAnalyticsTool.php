@@ -69,6 +69,7 @@ class SigmieAnalyticsTool implements Tool
             ."- grouped_trend: one trend line per value of group_by — stacked chart (needs metric, field, group_by, interval)\n"
             ."- breakdown: top-N group_by values ranked by a metric (needs group_by, metric, field)\n"
             ."- multi_breakdown: top-N combinations of group_by_fields ranked by a metric (needs group_by_fields, metric, field)\n"
+            ."- union_breakdown: top-N labels combined across group_by_fields and ranked by a metric (needs group_by_fields, metric, field)\n"
             ."- distribution: histogram of a numeric field (needs field, bucket_size)\n"
             ."- histogram_metric: metric aggregated inside numeric buckets (needs bucket_field, bucket_size, metric, field)\n"
             ."- grouped_metrics: one row per group carrying several metrics (needs group_by, metrics, sort_metric, min_count)\n"
@@ -90,6 +91,7 @@ class SigmieAnalyticsTool implements Tool
             ."- \"running total\", \"cumulative X\", \"growth curve\" → cumulative\n"
             ."- \"top N <thing> by X\", \"best <thing>\", \"which <thing> drove the most X\" → breakdown (group_by=<thing>)\n"
             ."- \"top N <thing> by <dimension> by X\", \"best <dim1> + <dim2> combinations\", \"rank combinations\" -> multi_breakdown (group_by_fields=<dim1>,<dim2>)\n"
+            ."- \"combine the same label across roles\", \"count appearances across fields\" -> union_breakdown (group_by_fields=<role1>,<role2>)\n"
             ."- \"average/sum/etc. X by numeric buckets of Y\", \"average rating by calorie bucket\" → histogram_metric (bucket_field=Y, field=X)\n"
             ."- \"rank groups by count and show average X\", \"groups with at least N rows plus another metric\" → grouped_metrics\n"
             ."- \"X this month\" / \"average X last week\" with no bucket word → kpi (or kpi_delta when the user compares to a prior period)\n"
@@ -153,6 +155,7 @@ class SigmieAnalyticsTool implements Tool
             'top 5 groups by total' => ['widget' => 'breakdown', 'date_field' => $date, 'group_by' => $keyword, 'metric' => 'sum', 'field' => $number, 'limit' => 5, 'range' => 'this_month'],
             'top groups with merged labels' => ['widget' => 'breakdown', 'date_field' => $date, 'group_by' => $keyword, 'metric' => 'sum', 'field' => $number, 'limit' => 5, 'range' => 'this_month', 'bucket_aliases' => '[{"label":"Combined","values":["Old name","New name"]}]'],
             'top combinations by total' => ['widget' => 'multi_breakdown', 'date_field' => $date, 'group_by_fields' => sprintf('%s,%s', $keyword, $keyword2), 'metric' => 'sum', 'field' => $number, 'limit' => 5, 'range' => 'this_month'],
+            'top labels across fields' => ['widget' => 'union_breakdown', 'date_field' => $date, 'group_by_fields' => sprintf('%s,%s', $keyword, $keyword2), 'metric' => 'sum', 'field' => $number, 'limit' => 5, 'range' => 'this_month'],
             'histogram of a number' => ['widget' => 'distribution', 'date_field' => $date, 'field' => $number, 'bucket_size' => 100, 'range' => 'this_month'],
             'average by numeric bucket' => ['widget' => 'histogram_metric', 'date_field' => $date, 'bucket_field' => $number, 'field' => $number, 'metric' => 'avg', 'bucket_size' => 100, 'range' => 'this_month'],
             'top groups with two metrics' => ['widget' => 'grouped_metrics', 'date_field' => $date, 'group_by' => $keyword, 'metrics' => '[{"key":"count","label":"Count","metric":"count"},{"key":"avg_amount","label":"Average amount","metric":"avg","field":"'.$number.'"}]', 'sort_metric' => 'count', 'min_count' => 2, 'limit' => 5, 'range' => 'this_month'],
@@ -181,7 +184,7 @@ class SigmieAnalyticsTool implements Tool
         // `widget` and `date_field` are plain required; every optional param is `nullable()->required()`
         // so the schema stays valid under OpenAI's strict function-calling (callers pass null to omit).
         return [
-            'widget' => $schema->string()->description('kpi | kpi_delta | trend | cumulative | grouped_trend | breakdown | multi_breakdown | distribution | histogram_metric | grouped_metrics | percentiles | stats | table | funnel | heatmap | retention | geo')->required(),
+            'widget' => $schema->string()->description('kpi | kpi_delta | trend | cumulative | grouped_trend | breakdown | multi_breakdown | union_breakdown | distribution | histogram_metric | grouped_metrics | percentiles | stats | table | funnel | heatmap | retention | geo')->required(),
             'date_field' => $schema->string()->description('Timeline (date) field to bucket/scope by')->required(),
             'metric' => $schema->string()->description('sum | avg | min | max | count | unique | median (pass null for distribution, percentiles, stats, table, funnel, retention, geo; optional for heatmap — defaults to count)')->nullable()->required(),
             'field' => $schema->string()->description('Numeric field the metric is computed on; also the numeric field for stats and the geo_point field for the geo widget (pass null for count)')->nullable()->required(),
@@ -192,7 +195,7 @@ class SigmieAnalyticsTool implements Tool
             'interval' => $schema->string()->description('Time bucket for trends and retention: a calendar unit (minute | hour | day | week | month | quarter | year) or a fixed interval like 15d | 12h | 90m (default day)')->default('day')->nullable()->required(),
             'min_doc_count' => $schema->integer()->description('Minimum documents per trend bucket. Use 1 to omit empty periods; pass null otherwise.')->nullable()->required(),
             'group_by' => $schema->string()->description('Keyword field to group/break down by, for breakdown and grouped_trend (pass null otherwise)')->nullable()->required(),
-            'group_by_fields' => $schema->string()->description('Comma-separated keyword fields for multi_breakdown, e.g. "product,channel" (pass null otherwise)')->nullable()->required(),
+            'group_by_fields' => $schema->string()->description('Comma-separated compatible keyword fields for multi_breakdown or union_breakdown, e.g. "champion_country,runner_up_country" (pass null otherwise)')->nullable()->required(),
             'limit' => $schema->integer()->description('Max groups for breakdown/grouped_trend, rows for table, or cells per axis for heatmap (default 10)')->default(10)->nullable()->required(),
             'bucket_size' => $schema->integer()->description('Bucket width for the distribution widget (pass null otherwise)')->nullable()->required(),
             'percents' => $schema->string()->description('Comma-separated percentiles for the percentiles widget, e.g. "50,75,95,99" (pass null for the default)')->nullable()->required(),
@@ -295,7 +298,8 @@ class SigmieAnalyticsTool implements Tool
             'cumulative' => $analytics->cumulative('result', $metric(), $field, $interval()),
             'grouped_trend' => $analytics->groupedTrend('result', $metric(), $this->required($request, 'field'), $groupBy(), $interval(), $limit),
             'breakdown' => $analytics->breakdown('result', $groupBy(), $metric(), $field, $limit, bucketAliases: $this->bucketAliases($request)),
-            'multi_breakdown' => $analytics->multiBreakdown('result', $this->groupByFields($request), $metric(), $field, $limit),
+            'multi_breakdown' => $analytics->multiBreakdown('result', $this->groupByFields($request, $widget), $metric(), $field, $limit),
+            'union_breakdown' => $analytics->unionBreakdown('result', $this->groupByFields($request, $widget), $metric(), $field, $limit),
             'distribution' => $analytics->distribution('result', $this->required($request, 'field'), (int) ($request['bucket_size'] ?? throw new InvalidArgumentException('The distribution widget requires bucket_size.'))),
             'histogram_metric' => $analytics->histogramMetric('result', $this->required($request, 'bucket_field'), (int) ($request['bucket_size'] ?? throw new InvalidArgumentException('The histogram_metric widget requires bucket_size.')), $metric(), $this->required($request, 'field')),
             'grouped_metrics' => $analytics->groupedMetrics('result', $groupBy(), $this->metricSpecs($request), $this->optional($request, 'sort_metric') ?? 'count', $limit, minCount: max(0, (int) ($request['min_count'] ?? 0)), bucketAliases: $this->bucketAliases($request), aliasesOnly: (bool) ($request['bucket_aliases_only'] ?? false)),
@@ -306,7 +310,7 @@ class SigmieAnalyticsTool implements Tool
             'heatmap' => $analytics->heatmap('result', $this->required($request, 'row_field'), $this->required($request, 'col_field'), $this->metricOrCount($request), $field, $limit, $limit),
             'retention' => $analytics->retention('result', $this->required($request, 'cohort_field'), $this->required($request, 'id_field'), $interval()),
             'geo' => $analytics->geo('result', $this->required($request, 'field'), max(1, (int) ($request['precision'] ?? 5))),
-            default => throw new InvalidArgumentException(sprintf("Unknown widget '%s'. Use one of: kpi, kpi_delta, trend, cumulative, grouped_trend, breakdown, multi_breakdown, distribution, histogram_metric, grouped_metrics, percentiles, stats, table, funnel, heatmap, retention, geo.", $widget)),
+            default => throw new InvalidArgumentException(sprintf("Unknown widget '%s'. Use one of: kpi, kpi_delta, trend, cumulative, grouped_trend, breakdown, multi_breakdown, union_breakdown, distribution, histogram_metric, grouped_metrics, percentiles, stats, table, funnel, heatmap, retention, geo.", $widget)),
         };
     }
 
@@ -460,11 +464,13 @@ class SigmieAnalyticsTool implements Tool
     /**
      * @return list<string>
      */
-    protected function groupByFields(Request $request): array
+    protected function groupByFields(Request $request, string $widget): array
     {
         $fields = $this->csvList($request, 'group_by_fields');
 
-        return count($fields) >= 2 ? $fields : throw new InvalidArgumentException('The multi_breakdown widget requires at least two group_by_fields.');
+        return count($fields) >= 2
+            ? $fields
+            : throw new InvalidArgumentException(sprintf('The %s widget requires at least two group_by_fields.', $widget));
     }
 
     /**

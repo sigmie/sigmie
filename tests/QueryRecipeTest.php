@@ -239,6 +239,33 @@ class QueryRecipeTest extends TestCase
     }
 
     /** @test */
+    public function it_validates_union_breakdown_fields_and_promotes_its_limit(): void
+    {
+        $index = $this->recipeIndex();
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'union_breakdown',
+            'date_field' => 'occurred_at',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'group_by_fields' => ['category', 'subcategory'],
+            'limit' => 5,
+        ]));
+
+        $this->assertSame($recipe, $recipe->validateAgainst($index));
+        $this->assertSame(8, $recipe->bind(['limit' => 8])->toArray()['limit']);
+
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
+                'widget' => 'union_breakdown',
+                'date_field' => 'occurred_at',
+                'metric' => 'count',
+                'group_by_fields' => ['category', 'year'],
+            ]))->validateAgainst($index),
+            'union_breakdown group_by_fields must have compatible types',
+        );
+    }
+
+    /** @test */
     public function it_rejects_slot_types_that_do_not_match_their_analytics_target(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -882,6 +909,7 @@ class QueryRecipeTest extends TestCase
             'grouped_trend' => [...$base, 'widget' => 'grouped_trend', 'metric' => 'sum', 'field' => 'amount', 'group_by' => 'category', 'interval' => 'day'],
             'breakdown' => [...$base, 'widget' => 'breakdown', 'metric' => 'sum', 'field' => 'amount', 'group_by' => 'category'],
             'multi_breakdown' => [...$base, 'widget' => 'multi_breakdown', 'metric' => 'sum', 'field' => 'amount', 'group_by_fields' => 'category,subcategory'],
+            'union_breakdown' => [...$base, 'widget' => 'union_breakdown', 'metric' => 'sum', 'field' => 'amount', 'group_by_fields' => 'category,subcategory'],
             'distribution' => [...$base, 'widget' => 'distribution', 'field' => 'amount', 'bucket_size' => 10],
             'histogram_metric' => [...$base, 'widget' => 'histogram_metric', 'metric' => 'avg', 'field' => 'amount', 'bucket_field' => 'amount', 'bucket_size' => 10],
             'grouped_metrics' => [...$base, 'widget' => 'grouped_metrics', 'group_by' => 'category', 'metrics' => '[{"key":"count","label":"Count","metric":"count"},{"key":"avg_amount","label":"Average amount","metric":"avg","field":"amount"}]'],

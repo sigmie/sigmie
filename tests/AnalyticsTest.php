@@ -46,6 +46,8 @@ class AnalyticsTest extends TestCase
                 $props->number('amount');
                 $props->category('product');
                 $props->category('channel');
+                $props->category('champion_country');
+                $props->category('runner_up_country');
 
                 return $props;
             }
@@ -54,11 +56,11 @@ class AnalyticsTest extends TestCase
         $index->create();
 
         $index->merge([
-            new Document(['created_at' => '2024-01-01', 'amount' => 100, 'product' => 'A', 'channel' => 'online']),
-            new Document(['created_at' => '2024-01-01', 'amount' => 50, 'product' => 'B', 'channel' => 'online']),
-            new Document(['created_at' => '2024-01-02', 'amount' => 200, 'product' => 'A', 'channel' => 'retail']),
-            new Document(['created_at' => '2024-01-03', 'amount' => 30, 'product' => 'B', 'channel' => 'retail']),
-            new Document(['created_at' => '2024-01-03', 'amount' => 70, 'product' => 'A', 'channel' => 'online']),
+            new Document(['created_at' => '2024-01-01', 'amount' => 100, 'product' => 'A', 'channel' => 'online', 'champion_country' => 'Germany', 'runner_up_country' => 'France']),
+            new Document(['created_at' => '2024-01-01', 'amount' => 50, 'product' => 'B', 'channel' => 'online', 'champion_country' => 'Spain', 'runner_up_country' => 'Germany']),
+            new Document(['created_at' => '2024-01-02', 'amount' => 200, 'product' => 'A', 'channel' => 'retail', 'champion_country' => 'Germany', 'runner_up_country' => 'Italy']),
+            new Document(['created_at' => '2024-01-03', 'amount' => 30, 'product' => 'B', 'channel' => 'retail', 'champion_country' => 'France', 'runner_up_country' => 'Spain']),
+            new Document(['created_at' => '2024-01-03', 'amount' => 70, 'product' => 'A', 'channel' => 'online', 'champion_country' => 'Italy', 'runner_up_country' => 'Germany']),
         ], refresh: true);
 
         return $index;
@@ -247,6 +249,36 @@ class AnalyticsTest extends TestCase
         $this->assertEquals(170.0, $rows[1]['value']);
         $this->assertSame(['B', 'online'], $rows[2]['key_values']);
         $this->assertEquals(50.0, $rows[2]['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function union_breakdown_combines_labels_across_fields_for_counts_and_metrics(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = $index->analytics('created_at')
+            ->from($this->date('2024-01-01'))
+            ->to($this->date('2024-01-04'))
+            ->unionBreakdown('appearances', ['champion_country', 'runner_up_country'], Metric::Count)
+            ->unionBreakdown('totals', ['champion_country', 'runner_up_country'], Metric::Sum, 'amount')
+            ->get();
+
+        $appearances = array_column($result['appearances']['rows'], null, 'key');
+        $totals = $result['totals']['rows'];
+
+        $this->assertSame('union_breakdown', $result['appearances']['type']);
+        $this->assertSame(4, $appearances['Germany']['value']);
+        $this->assertSame(2, $appearances['France']['value']);
+        $this->assertSame(2, $appearances['Italy']['value']);
+        $this->assertSame(2, $appearances['Spain']['value']);
+        $this->assertSame('Germany', $totals[0]['key']);
+        $this->assertEquals(420.0, $totals[0]['value']);
+        $this->assertSame('Italy', $totals[1]['key']);
+        $this->assertEquals(270.0, $totals[1]['value']);
+        $this->assertSame('France', $totals[2]['key']);
+        $this->assertEquals(130.0, $totals[2]['value']);
     }
 
     /**
