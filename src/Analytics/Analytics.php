@@ -27,6 +27,7 @@ use Sigmie\Analytics\Widgets\Retention;
 use Sigmie\Analytics\Widgets\StatSummary;
 use Sigmie\Analytics\Widgets\Table;
 use Sigmie\Analytics\Widgets\Trend;
+use Sigmie\Analytics\Widgets\UnionBreakdown;
 use Sigmie\Analytics\Widgets\Widget;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
@@ -269,6 +270,23 @@ class Analytics implements MultiSearchable
         ));
 
         return $this->addFiltered(new MultiBreakdown($as, $this->dateField, $from, $to, $this->dateFormat, $resolvedGroupBy, $metric, $this->metricField($metric, $field), $limit, $direction), $filter);
+    }
+
+    /**
+     * Add a top-N ranked list that unions the same labels across several grouping fields.
+     *
+     * @param  list<string>  $groupBy
+     */
+    public function unionBreakdown(string $as, array $groupBy, Metric $metric, string $field = '', int $limit = 10, string $direction = 'desc', Query|string|null $filter = null, Period|array|null $window = null): static
+    {
+        [$from, $to] = $this->resolveWindow($window);
+
+        $resolvedGroupBy = array_values(array_map(
+            fn (string $field): string => $this->aggregatableField($field),
+            $groupBy,
+        ));
+
+        return $this->addFiltered(new UnionBreakdown($as, $this->dateField, $from, $to, $this->dateFormat, $resolvedGroupBy, $metric, $this->metricField($metric, $field), $limit, $direction), $filter);
     }
 
     public function distribution(string $as, string $field, int $interval, Query|string|null $filter = null, Period|array|null $window = null): static

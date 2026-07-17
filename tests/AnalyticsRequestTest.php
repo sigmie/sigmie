@@ -130,6 +130,28 @@ class AnalyticsRequestTest extends TestCase
         $this->assertSame('0,25,100', $percentiles->toArray()['percents']);
     }
 
+    /** @test */
+    public function it_normalizes_a_union_breakdown_request(): void
+    {
+        $request = AnalyticsRequest::fromArray([
+            'widget' => 'union_breakdown',
+            'date_field' => 'occurred_at',
+            'metric' => 'sum',
+            'field' => 'prize',
+            'group_by_fields' => ['champion_country', 'runner_up_country'],
+            'limit' => '5',
+        ]);
+
+        $this->assertSame([
+            'date_field' => 'occurred_at',
+            'field' => 'prize',
+            'group_by_fields' => 'champion_country,runner_up_country',
+            'limit' => 5,
+            'metric' => 'sum',
+            'widget' => 'union_breakdown',
+        ], $request->toArray());
+    }
+
     /**
      * @test
      *
@@ -198,6 +220,18 @@ class AnalyticsRequestTest extends TestCase
                 'metric' => 'count',
                 'group_by_fields' => ['category'],
             ], 'requires at least two group_by_fields'],
+            [[
+                'widget' => 'union_breakdown',
+                'date_field' => 'occurred_at',
+                'metric' => 'count',
+                'group_by_fields' => ['champion_country'],
+            ], 'requires at least two group_by_fields'],
+            [[
+                'widget' => 'union_breakdown',
+                'date_field' => 'occurred_at',
+                'metric' => 'count',
+                'group_by_fields' => ['champion_country', 'champion_country'],
+            ], 'requires at least two distinct group_by_fields'],
             [[
                 'widget' => 'heatmap',
                 'date_field' => 'occurred_at',

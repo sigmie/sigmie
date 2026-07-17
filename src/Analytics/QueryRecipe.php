@@ -70,7 +70,10 @@ class QueryRecipe
     private const DEFINITION_KEYS = ['version', 'dataset', 'template', 'slots', 'filter_templates'];
 
     /** @var list<string> */
-    private const LIMIT_WIDGETS = ['grouped_trend', 'breakdown', 'multi_breakdown', 'grouped_metrics', 'table', 'heatmap'];
+    private const LIMIT_WIDGETS = ['grouped_trend', 'breakdown', 'multi_breakdown', 'union_breakdown', 'grouped_metrics', 'table', 'heatmap'];
+
+    /** @var list<string> */
+    private const RANKING_WIDGETS = ['breakdown', 'multi_breakdown', 'union_breakdown', 'grouped_metrics'];
 
     /**
      * @param  array<string, mixed>  $definition
@@ -197,8 +200,14 @@ class QueryRecipe
             }
         }
 
-        foreach ($this->csvFields((string) ($template['group_by_fields'] ?? '')) as $field) {
+        $groupByFields = $this->csvFields((string) ($template['group_by_fields'] ?? ''));
+
+        foreach ($groupByFields as $field) {
             $this->requireFieldType($fields, $field, ['keyword', 'text', 'number', 'boolean'], 'group_by_fields');
+        }
+
+        if ($widget === 'union_breakdown') {
+            $this->validateUnionGroupFields($fields, $groupByFields);
         }
 
         foreach (['fields', 'hit_fields'] as $key) {
@@ -207,7 +216,7 @@ class QueryRecipe
             }
         }
 
-        if (($template['sort'] ?? '') !== '') {
+        if (($template['sort'] ?? '') !== '' && ! in_array($widget, self::RANKING_WIDGETS, true)) {
             $this->validateSort($properties, (string) $template['sort'], 'sort', false);
         }
 
@@ -291,7 +300,7 @@ class QueryRecipe
             fn (array $slot): array => self::normalizeSlot($slot),
             $definition['slots'] ?? [],
         ));
-        $validationTemplate = $definition['template'] ?? [];
+        $validationTemplate = self::normalizeRankingSort($definition['template'] ?? []);
         $limitSlotIndex = null;
 
         foreach ($slots as $index => $slot) {
@@ -361,6 +370,29 @@ class QueryRecipe
             'slots' => $slots,
             'filter_templates' => $filters,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $template
+     * @return array<string, mixed>
+     */
+    private static function normalizeRankingSort(array $template): array
+    {
+        if (! in_array((string) ($template['widget'] ?? ''), self::RANKING_WIDGETS, true)) {
+            return $template;
+        }
+
+        $sort = trim((string) ($template['sort'] ?? ''));
+        [, $direction] = array_pad(explode(':', $sort, 2), 2, 'desc');
+        $direction = strtolower(trim($direction));
+
+        if (! in_array($direction, ['asc', 'desc'], true)) {
+            throw new InvalidArgumentException(sprintf('Unsupported query recipe ranking direction [%s].', $direction));
+        }
+
+        $template['sort'] = sprintf('metric:%s', $direction);
+
+        return $template;
     }
 
     /**
@@ -891,6 +923,24 @@ class QueryRecipe
         $this->requireField($fields, $field, $argument);
         if (! in_array($fields[$field], $types, true)) {
             throw new InvalidArgumentException(sprintf('Query recipe %s field [%s] has incompatible type [%s].', $argument, $field, $fields[$field]));
+        }
+    }
+
+    /**
+     * @param  array<string, string>  $fields
+     * @param  list<string>  $groupByFields
+     */
+    private function validateUnionGroupFields(array $fields, array $groupByFields): void
+    {
+        $types = array_values(array_unique(array_map(
+            fn (string $field): string => in_array($fields[$field], ['keyword', 'text'], true)
+                ? 'string'
+                : $fields[$field],
+            $groupByFields,
+        )));
+
+        if (count($types) > 1) {
+            throw new InvalidArgumentException('Query recipe union_breakdown group_by_fields must have compatible types.');
         }
     }
 

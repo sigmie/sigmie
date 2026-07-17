@@ -1,7 +1,7 @@
 ---
 title: Aggregations
 short_description: Run Elasticsearch metric and bucket aggregations with Sigmie — sum, avg, stats, terms, histogram, date histogram, geohash grid, and pipeline aggregations.
-keywords: [aggregations, facets, analytics, bucket aggregations, metrics]
+keywords: [aggregations, facets, analytics, bucket aggregations, union terms, metrics]
 category: Features
 order: 2
 related_pages: [facets, search]
@@ -109,6 +109,28 @@ $response->aggregation('category_terms.buckets');
 ```
 
 `missing('N/A')` puts documents without the field into a bucket of that key.
+
+### Union terms
+
+`unionTerms()` combines the same label from several role fields into one terms bucket. This is useful when one logical dimension is stored in fields such as `champion_country` and `runner_up_country`:
+
+```php
+use Sigmie\Query\Aggs;
+use Sigmie\Query\Aggregations\Metrics\Sum;
+
+$agg->unionTerms('countries', ['champion_country', 'runner_up_country'])
+    ->size(10)
+    ->order('prize_total', 'desc')
+    ->aggregate(fn (Aggs $sub): Sum => $sub->sum('prize_total', 'prize'));
+
+$response->aggregation('countries.buckets');
+// [
+//     ['key' => 'Germany', 'doc_count' => 4, 'prize_total' => ['value' => 420.0]],
+//     ...
+// ]
+```
+
+Field names are passed to a fixed aggregation script as parameters. A document that contains the same label in multiple configured fields contributes to that label once. Use the higher-level [`unionBreakdown()`](analytics.md#union-breakdown) API when you also want mapping validation, time windows, filters, and normalized rows.
 
 ### Range
 

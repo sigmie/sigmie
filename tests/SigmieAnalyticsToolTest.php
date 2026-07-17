@@ -48,6 +48,8 @@ class SigmieAnalyticsToolTest extends TestCase
                 $props->number('amount');
                 $props->category('product');
                 $props->category('channel');
+                $props->category('champion_country');
+                $props->category('runner_up_country');
                 $props->object('meta', function (NewProperties $properties): void {
                     $properties->date('observed_at');
                     $properties->number('score');
@@ -60,11 +62,11 @@ class SigmieAnalyticsToolTest extends TestCase
         $index->create();
 
         $index->merge([
-            new Document(['created_at' => '2024-01-01', 'amount' => 100, 'product' => 'A', 'channel' => 'online']),
-            new Document(['created_at' => '2024-01-01', 'amount' => 50, 'product' => 'B', 'channel' => 'online']),
-            new Document(['created_at' => '2024-01-02', 'amount' => 200, 'product' => 'A', 'channel' => 'retail']),
-            new Document(['created_at' => '2024-01-03', 'amount' => 30, 'product' => 'B', 'channel' => 'retail']),
-            new Document(['created_at' => '2024-01-03', 'amount' => 70, 'product' => 'A', 'channel' => 'online']),
+            new Document(['created_at' => '2024-01-01', 'amount' => 100, 'product' => 'A', 'channel' => 'online', 'champion_country' => 'Germany', 'runner_up_country' => 'France']),
+            new Document(['created_at' => '2024-01-01', 'amount' => 50, 'product' => 'B', 'channel' => 'online', 'champion_country' => 'Spain', 'runner_up_country' => 'Germany']),
+            new Document(['created_at' => '2024-01-02', 'amount' => 200, 'product' => 'A', 'channel' => 'retail', 'champion_country' => 'Germany', 'runner_up_country' => 'Italy']),
+            new Document(['created_at' => '2024-01-03', 'amount' => 30, 'product' => 'B', 'channel' => 'retail', 'champion_country' => 'France', 'runner_up_country' => 'Spain']),
+            new Document(['created_at' => '2024-01-03', 'amount' => 70, 'product' => 'A', 'channel' => 'online', 'champion_country' => 'Italy', 'runner_up_country' => 'Germany']),
         ], refresh: true);
 
         return $index;
@@ -104,6 +106,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertStringContainsString('hit_filters', $description);
         $this->assertStringContainsString('bucket_aliases', $description);
         $this->assertStringContainsString('multi_breakdown', $description);
+        $this->assertStringContainsString('union_breakdown', $description);
         $this->assertStringContainsString('group_by_fields', $description);
         $this->assertStringContainsString('histogram_metric', $description);
         $this->assertStringContainsString('grouped_metrics', $description);
@@ -155,7 +158,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertStringContainsString('Examples (', $description);
 
         // One example per widget, as valid JSON grounded in the index's real fields.
-        foreach (['kpi', 'kpi_delta', 'trend', 'cumulative', 'grouped_trend', 'breakdown', 'multi_breakdown', 'distribution', 'histogram_metric', 'grouped_metrics', 'percentiles', 'stats', 'table', 'funnel', 'heatmap', 'retention', 'geo'] as $widget) {
+        foreach (['kpi', 'kpi_delta', 'trend', 'cumulative', 'grouped_trend', 'breakdown', 'multi_breakdown', 'union_breakdown', 'distribution', 'histogram_metric', 'grouped_metrics', 'percentiles', 'stats', 'table', 'funnel', 'heatmap', 'retention', 'geo'] as $widget) {
             $this->assertStringContainsString(sprintf('"widget":"%s"', $widget), $description);
         }
 
@@ -255,6 +258,29 @@ class SigmieAnalyticsToolTest extends TestCase
     /**
      * @test
      */
+    public function grouped_trend_count_does_not_require_a_metric_field(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'grouped_trend',
+            'date_field' => 'created_at',
+            'group_by' => 'product',
+            'metric' => 'count',
+            'field' => null,
+            'interval' => 'day',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('grouped_trend', $result['type']);
+        $this->assertSame(['A', 'B'], array_column($result['groups'], 'group'));
+        $this->assertSame([1, 1, 1], array_column($result['groups'][0]['series'], 'value'));
+    }
+
+    /**
+     * @test
+     */
     public function result_runs_a_breakdown_widget(): void
     {
         $index = $this->createSalesIndex();
@@ -271,6 +297,28 @@ class SigmieAnalyticsToolTest extends TestCase
 
         $this->assertSame('A', $result['rows'][0]['key']);
         $this->assertEquals(370.0, $result['rows'][0]['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function ranked_widgets_respect_metric_sort_direction(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'breakdown',
+            'date_field' => 'created_at',
+            'group_by' => 'product',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'sort' => 'metric:asc',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('B', $result['rows'][0]['key']);
+        $this->assertEquals(80.0, $result['rows'][0]['value']);
     }
 
     /**
@@ -327,6 +375,33 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertEquals(200.0, $result['rows'][0]['value']);
         $this->assertSame(['A', 'online'], $result['rows'][1]['key_values']);
         $this->assertEquals(170.0, $result['rows'][1]['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function result_runs_a_union_breakdown_widget(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'union_breakdown',
+            'date_field' => 'created_at',
+            'group_by_fields' => 'champion_country,runner_up_country',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'limit' => 3,
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('union_breakdown', $result['type']);
+        $this->assertSame('Germany', $result['rows'][0]['key']);
+        $this->assertEquals(420.0, $result['rows'][0]['value']);
+        $this->assertSame('Italy', $result['rows'][1]['key']);
+        $this->assertEquals(270.0, $result['rows'][1]['value']);
+        $this->assertSame('France', $result['rows'][2]['key']);
+        $this->assertEquals(130.0, $result['rows'][2]['value']);
     }
 
     /**

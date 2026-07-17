@@ -91,6 +91,30 @@ class QueryRecipeTest extends TestCase
     }
 
     /** @test */
+    public function it_canonicalizes_ranked_widget_sort_as_metric_direction(): void
+    {
+        $legacy = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'breakdown',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+            'field' => 'occurred_at',
+            'group_by' => 'category',
+            'sort' => 'occurred_at:asc',
+        ]));
+        $default = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'union_breakdown',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+            'field' => 'occurred_at',
+            'group_by_fields' => 'category,subcategory',
+        ]));
+
+        $this->assertSame('metric:asc', $legacy->toArray()['template']['sort']);
+        $this->assertSame('metric:desc', $default->toArray()['template']['sort']);
+        $this->assertSame('metric:asc', $legacy->bind([])->toArray()['sort']);
+    }
+
+    /** @test */
     public function it_promotes_limit_defaults_without_colliding_with_declared_slot_names(): void
     {
         $recipe = QueryRecipe::fromArray($this->definition('events', [
@@ -236,6 +260,33 @@ class QueryRecipeTest extends TestCase
         ]));
 
         $this->assertSame($multi, $multi->validateAgainst($index));
+    }
+
+    /** @test */
+    public function it_validates_union_breakdown_fields_and_promotes_its_limit(): void
+    {
+        $index = $this->recipeIndex();
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'union_breakdown',
+            'date_field' => 'occurred_at',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'group_by_fields' => ['category', 'subcategory'],
+            'limit' => 5,
+        ]));
+
+        $this->assertSame($recipe, $recipe->validateAgainst($index));
+        $this->assertSame(8, $recipe->bind(['limit' => 8])->toArray()['limit']);
+
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
+                'widget' => 'union_breakdown',
+                'date_field' => 'occurred_at',
+                'metric' => 'count',
+                'group_by_fields' => ['category', 'year'],
+            ]))->validateAgainst($index),
+            'union_breakdown group_by_fields must have compatible types',
+        );
     }
 
     /** @test */
@@ -882,6 +933,7 @@ class QueryRecipeTest extends TestCase
             'grouped_trend' => [...$base, 'widget' => 'grouped_trend', 'metric' => 'sum', 'field' => 'amount', 'group_by' => 'category', 'interval' => 'day'],
             'breakdown' => [...$base, 'widget' => 'breakdown', 'metric' => 'sum', 'field' => 'amount', 'group_by' => 'category'],
             'multi_breakdown' => [...$base, 'widget' => 'multi_breakdown', 'metric' => 'sum', 'field' => 'amount', 'group_by_fields' => 'category,subcategory'],
+            'union_breakdown' => [...$base, 'widget' => 'union_breakdown', 'metric' => 'sum', 'field' => 'amount', 'group_by_fields' => 'category,subcategory'],
             'distribution' => [...$base, 'widget' => 'distribution', 'field' => 'amount', 'bucket_size' => 10],
             'histogram_metric' => [...$base, 'widget' => 'histogram_metric', 'metric' => 'avg', 'field' => 'amount', 'bucket_field' => 'amount', 'bucket_size' => 10],
             'grouped_metrics' => [...$base, 'widget' => 'grouped_metrics', 'group_by' => 'category', 'metrics' => '[{"key":"count","label":"Count","metric":"count"},{"key":"avg_amount","label":"Average amount","metric":"avg","field":"amount"}]'],

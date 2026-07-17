@@ -20,6 +20,7 @@ use Sigmie\Query\Aggregations\Bucket\SignificantText;
 use Sigmie\Query\Aggregations\Bucket\Sort;
 use Sigmie\Query\Aggregations\Bucket\TermFilter;
 use Sigmie\Query\Aggregations\Bucket\Terms;
+use Sigmie\Query\Aggregations\Bucket\UnionTerms;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Aggregations\Enums\MinimumInterval;
 use Sigmie\Query\Aggregations\Metrics\Avg;
@@ -214,6 +215,18 @@ class Aggs implements AggsInterface
     public function multiTerms(string $name, array $fields): MultiTerms
     {
         $aggregation = new MultiTerms($name, $fields);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    /**
+     * @param  list<string>  $fields
+     */
+    public function unionTerms(string $name, array $fields): UnionTerms
+    {
+        $aggregation = new UnionTerms($name, $fields);
 
         $this->aggs[] = $aggregation;
 

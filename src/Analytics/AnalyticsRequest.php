@@ -20,6 +20,7 @@ class AnalyticsRequest
         'grouped_trend',
         'breakdown',
         'multi_breakdown',
+        'union_breakdown',
         'distribution',
         'histogram_metric',
         'grouped_metrics',
@@ -337,6 +338,7 @@ class AnalyticsRequest
             'grouped_trend',
             'breakdown',
             'multi_breakdown',
+            'union_breakdown',
             'histogram_metric',
         ];
 
@@ -367,9 +369,10 @@ class AnalyticsRequest
         }
 
         match ($widget) {
-            'grouped_trend' => self::requireMany($request, ['group_by', 'field']),
+            'grouped_trend' => self::required($request, 'group_by'),
             'breakdown' => self::required($request, 'group_by'),
             'multi_breakdown' => self::required($request, 'group_by_fields'),
+            'union_breakdown' => self::required($request, 'group_by_fields'),
             'distribution' => self::requireMany($request, ['field', 'bucket_size']),
             'percentiles', 'stats', 'geo' => self::required($request, 'field'),
             'histogram_metric' => self::requireMany($request, ['bucket_field', 'bucket_size', 'field']),
@@ -406,8 +409,16 @@ class AnalyticsRequest
      */
     private static function validateStructuredValues(array $request, string $widget): void
     {
-        if (isset($request['group_by_fields']) && count(self::csvValues($request, 'group_by_fields')) < 2) {
-            throw new InvalidArgumentException('The multi_breakdown widget requires at least two group_by_fields.');
+        if (isset($request['group_by_fields'])) {
+            $groupByFields = self::csvValues($request, 'group_by_fields');
+
+            if (count($groupByFields) < 2) {
+                throw new InvalidArgumentException(sprintf('The %s widget requires at least two group_by_fields.', $widget));
+            }
+
+            if ($widget === 'union_breakdown' && count(array_unique($groupByFields)) < 2) {
+                throw new InvalidArgumentException('The union_breakdown widget requires at least two distinct group_by_fields.');
+            }
         }
 
         if (isset($request['percents'])) {
