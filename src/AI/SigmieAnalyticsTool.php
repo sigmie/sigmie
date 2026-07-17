@@ -66,7 +66,7 @@ class SigmieAnalyticsTool implements Tool
             ."- kpi_delta: kpi plus % change vs the previous equal-length period (needs metric, field)\n"
             ."- trend: a metric over time — line/area/bar (needs metric, field, interval)\n"
             ."- cumulative: running total over time — growth curve (needs metric, field, interval)\n"
-            ."- grouped_trend: one trend line per value of group_by — stacked chart (needs metric, field, group_by, interval)\n"
+            ."- grouped_trend: one trend line per value of group_by — stacked chart (needs metric, group_by, interval; field is optional for count)\n"
             ."- breakdown: top-N group_by values ranked by a metric (needs group_by, metric, field)\n"
             ."- multi_breakdown: top-N combinations of group_by_fields ranked by a metric (needs group_by_fields, metric, field)\n"
             ."- union_breakdown: top-N labels combined across group_by_fields and ranked by a metric (needs group_by_fields, metric, field)\n"
@@ -296,7 +296,7 @@ class SigmieAnalyticsTool implements Tool
             'kpi_delta' => $analytics->kpiDelta('result', $metric(), $field),
             'trend' => $analytics->trend('result', $metric(), $field, $interval(), minDocCount: max(0, (int) ($request['min_doc_count'] ?? 0))),
             'cumulative' => $analytics->cumulative('result', $metric(), $field, $interval()),
-            'grouped_trend' => $analytics->groupedTrend('result', $metric(), $this->required($request, 'field'), $groupBy(), $interval(), $limit),
+            'grouped_trend' => $analytics->groupedTrend('result', $metric(), $field, $groupBy(), $interval(), $limit),
             'breakdown' => $analytics->breakdown('result', $groupBy(), $metric(), $field, $limit, $this->rankingDirection($request), bucketAliases: $this->bucketAliases($request)),
             'multi_breakdown' => $analytics->multiBreakdown('result', $this->groupByFields($request, $widget), $metric(), $field, $limit, $this->rankingDirection($request)),
             'union_breakdown' => $analytics->unionBreakdown('result', $this->groupByFields($request, $widget), $metric(), $field, $limit, $this->rankingDirection($request)),

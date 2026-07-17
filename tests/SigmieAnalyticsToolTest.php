@@ -258,6 +258,29 @@ class SigmieAnalyticsToolTest extends TestCase
     /**
      * @test
      */
+    public function grouped_trend_count_does_not_require_a_metric_field(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'grouped_trend',
+            'date_field' => 'created_at',
+            'group_by' => 'product',
+            'metric' => 'count',
+            'field' => null,
+            'interval' => 'day',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('grouped_trend', $result['type']);
+        $this->assertSame(['A', 'B'], array_column($result['groups'], 'group'));
+        $this->assertSame([1, 1, 1], array_column($result['groups'][0]['series'], 'value'));
+    }
+
+    /**
+     * @test
+     */
     public function result_runs_a_breakdown_widget(): void
     {
         $index = $this->createSalesIndex();

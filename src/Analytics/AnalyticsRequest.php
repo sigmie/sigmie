@@ -369,7 +369,7 @@ class AnalyticsRequest
         }
 
         match ($widget) {
-            'grouped_trend' => self::requireMany($request, ['group_by', 'field']),
+            'grouped_trend' => self::required($request, 'group_by'),
             'breakdown' => self::required($request, 'group_by'),
             'multi_breakdown' => self::required($request, 'group_by_fields'),
             'union_breakdown' => self::required($request, 'group_by_fields'),
