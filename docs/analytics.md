@@ -189,6 +189,37 @@ $tournaments->analytics('played_at')
 
 The fields must have compatible aggregatable mapping types. When the same label appears in more than one configured field on one document, that document contributes to the label only once. `limit` and `direction` work like the other ranked breakdown widgets. For the lower-level aggregation API, see [union terms](aggregations.md#union-terms).
 
+### Grouped metrics — several measures per group
+
+`groupedMetrics()` ranks one dimension by a selected metric while returning additional measures for every group. Use it for charts or tables such as "products ranked by order count, with average order value alongside it". `minCount` removes groups whose document population is too small to be useful.
+
+```php
+$orders->analytics('created_at')
+    ->groupedMetrics(
+        'product_metrics',
+        groupBy: 'product',
+        metrics: [
+            ['key' => 'orders', 'label' => 'Orders', 'metric' => Metric::Count],
+            ['key' => 'average_amount', 'label' => 'Average amount', 'metric' => Metric::Avg, 'field' => 'amount'],
+        ],
+        sortMetric: 'orders',
+        limit: 10,
+        minCount: 2,
+    )
+    ->get();
+
+// ['product_metrics' => ['rows' => [
+//     ['key' => 'A', 'value' => 3, 'count' => 3,
+//      'metrics' => ['orders' => 3, 'average_amount' => 123.33],
+//      'metric_populations' => [
+//          'orders' => ['document_count' => 3, 'value_count' => 3, 'field' => ''],
+//          'average_amount' => ['document_count' => 3, 'value_count' => 3, 'field' => 'amount'],
+//      ]], ...
+// ]]]
+```
+
+Every metric has a stable `key` used by `sortMetric` and in each row's `metrics` map. Non-count metrics require a numeric `field`. `metric_populations` distinguishes the group's full document population from the rows where a metric field has a value, which makes missing values visible instead of silently presenting an average as if it covered every document. Use `direction: 'asc'` for the lowest metric first.
+
 ### Distribution — histogram of a numeric field
 
 ```php
@@ -198,6 +229,34 @@ $orders->analytics('created_at')
 
 // ['order_sizes' => ['buckets' => [['label' => 0, 'count' => 3], ['label' => 100, 'count' => 1], ...]]]
 ```
+
+### Histogram metric — a measure inside numeric buckets
+
+`histogramMetric()` first divides a numeric `bucketField` into fixed-width ranges, then computes a metric inside each range. Unlike `distribution()`, which only counts documents, this can answer questions such as "what is the average rating for each price band?"
+
+```php
+$products->analytics('created_at')
+    ->histogramMetric(
+        'average_rating_by_price',
+        bucketField: 'price',
+        interval: 50,
+        metric: Metric::Avg,
+        field: 'rating',
+    )
+    ->get();
+
+// ['average_rating_by_price' => [
+//     'type' => 'histogram_metric',
+//     'bucket_field' => 'price',
+//     'interval' => 50,
+//     'series' => [
+//         ['label' => 0, 'value' => 4.2, 'count' => 18],
+//         ['label' => 50, 'value' => 4.6, 'count' => 7], ...
+//     ],
+// ]]
+```
+
+Each `label` is the lower bound of its numeric bucket: `50` represents values from 50 up to, but not including, 100. `value` is the requested metric and `count` is the number of documents in that bucket, so a chart can display both the result and its supporting population.
 
 ### Percentiles — p50 / p75 / p95 / p99
 
