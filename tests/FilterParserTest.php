@@ -59,6 +59,21 @@ class FilterParserTest extends TestCase
         $this->assertCount(2, $res->json('hits.hits'));
     }
 
+    /** @test */
+    public function escaped_asterisks_are_parsed_as_literal_term_values(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('category');
+
+        $parser = new FilterParser($properties);
+
+        $literal = $parser->parse("category:'A\\*B'")->toRaw();
+        $wildcard = $parser->parse("category:'A*B'")->toRaw();
+
+        $this->assertSame('A*B', $literal['bool']['must'][0]['term']['category']['value']);
+        $this->assertSame('A*B', $wildcard['bool']['must'][0]['wildcard']['category']['value']);
+    }
+
     /**
      * @test
      *

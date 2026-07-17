@@ -13,15 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write
+      contents: read
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
+        uses: actions/checkout@v6
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -34,17 +30,10 @@ jobs:
         run: composer install --prefer-dist --no-progress --no-interaction
 
       - name: Run Rector
-        run: vendor/bin/rector process --no-progress-bar
+        run: vendor/bin/rector process --dry-run --no-progress-bar
 
       - name: Run Pint
-        run: vendor/bin/pint
-
-      - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: 'chore: apply rector and pint fixes'
-          commit_user_name: 'github-actions[bot]'
-          commit_user_email: 'github-actions[bot]@users.noreply.github.com'
+        run: vendor/bin/pint --test
 
   test-elasticsearch:
     needs: code-quality
@@ -82,7 +71,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
 
       - name: Start Embeddings Service
         run: |
@@ -208,7 +197,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
 
       - name: Start Embeddings Service
         run: |
