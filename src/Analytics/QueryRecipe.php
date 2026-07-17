@@ -390,7 +390,7 @@ class QueryRecipe
             throw new InvalidArgumentException(sprintf('Unsupported query recipe ranking direction [%s].', $direction));
         }
 
-        $template['sort'] = "metric:{$direction}";
+        $template['sort'] = sprintf('metric:%s', $direction);
 
         return $template;
     }

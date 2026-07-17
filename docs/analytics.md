@@ -1,7 +1,7 @@
 ---
 title: Analytics
-short_description: Build dashboard analytics on a Sigmie index — KPIs, period-over-period deltas, time-series trends, breakdowns, distributions, percentiles, cumulative growth, funnels, cohort retention, heatmaps, geo maps and document tables — and expose them to AI agents.
-keywords: [analytics, dashboard, trends, KPI, time series, breakdown, histogram, percentiles, funnel, retention, cohort, heatmap, geo, table, multi-search, AI agent]
+short_description: Build live Elasticsearch analytics with Sigmie using KPIs, trends, ranked breakdowns, cross-field unions, cohorts, funnels, tables, and AI tools.
+keywords: [analytics, dashboard, trends, KPI, time series, breakdown, union breakdown, histogram, percentiles, funnel, retention, cohort, heatmap, geo, table, multi-search, AI agent]
 category: Features
 order: 3
 related_pages: [aggregations, facets, laravel-ai]
@@ -101,6 +101,20 @@ $orders->analytics('created_at')
 // ]]]
 ```
 
+For a grouped event count, no numeric metric field is needed. Pass an empty field to the PHP API; the AI analytics tool accepts `field: null` for the same request:
+
+```php
+$events->analytics('occurred_at')
+    ->groupedTrend(
+        'events_by_type',
+        Metric::Count,
+        field: '',
+        groupBy: 'event_type',
+        interval: CalendarInterval::Day,
+    )
+    ->get();
+```
+
 ### Breakdown — top-N ranked list
 
 A dimension ranked by a metric ("top products by revenue", "top issues by event count").
@@ -114,6 +128,66 @@ $orders->analytics('created_at')
 //     ['key' => 'A', 'value' => 370.0, 'count' => 3], ...
 // ]]]
 ```
+
+Ranked widgets order by their computed metric. Use `direction: 'asc'` to return the lowest values first:
+
+```php
+$orders->analytics('created_at')
+    ->breakdown('smallest_queues', 'queue', Metric::Count, limit: 5, direction: 'asc')
+    ->get();
+```
+
+The AI analytics tool expresses the same choice as `sort: "metric:asc"` or `sort: "metric:desc"`. This is intentionally different from a table's `field:direction` sort.
+
+### Multi breakdown — rank combinations
+
+`multiBreakdown()` keeps every field as a separate part of a composite key. Use it when `product + channel` is the entity being ranked:
+
+```php
+$orders->analytics('created_at')
+    ->multiBreakdown(
+        'top_product_channels',
+        ['product', 'channel'],
+        Metric::Sum,
+        field: 'amount',
+        limit: 10,
+    )
+    ->get();
+
+// ['top_product_channels' => ['rows' => [
+//     ['key' => ['product' => 'A', 'channel' => 'online'],
+//      'key_values' => ['A', 'online'], 'label' => 'A / online',
+//      'value' => 240.0, 'count' => 2], ...
+// ]]]
+```
+
+### Union breakdown — one label across fields
+
+`unionBreakdown()` treats compatible fields as different roles for one logical label. A country stored as either `champion_country` or `runner_up_country` contributes to one country bucket, so callers do not need to merge separate breakdowns:
+
+```php
+$tournaments->analytics('played_at')
+    ->unionBreakdown(
+        'country_appearances',
+        ['champion_country', 'runner_up_country'],
+        Metric::Count,
+        limit: 10,
+    )
+    ->unionBreakdown(
+        'country_prize',
+        ['champion_country', 'runner_up_country'],
+        Metric::Sum,
+        field: 'prize',
+        limit: 10,
+    )
+    ->get();
+
+// ['country_appearances' => ['rows' => [
+//     ['key' => 'Germany', 'value' => 4, 'count' => 4], ...
+// ]]]
+```
+
+The fields must have compatible aggregatable mapping types. When the same label appears in more than one configured field on one document, that document contributes to the label only once. `limit` and `direction` work like the other ranked breakdown widgets. For the lower-level aggregation API, see [union terms](aggregations.md#union-terms).
 
 ### Distribution — histogram of a numeric field
 
@@ -395,7 +469,7 @@ $dashboard = $analytics->formatResponse($metrics);
 
 ## Analytics for AI agents
 
-Add [`AsTool`](laravel-ai.md) to an index and its `tools()` suite includes an `analytics` tool. The agent picks a `widget` — `kpi`, `kpi_delta`, `trend`, `cumulative`, `grouped_trend`, `breakdown`, `distribution`, `percentiles`, `stats`, `table`, `funnel`, `heatmap`, `retention` or `geo` — and arguments; "give me sales this month as a chart" becomes a `trend` call, and "show it per month instead" is the **same call with `interval: month`** — the agent adapts one argument and re-runs. The tool's description carries a grounded example per widget (using the index's own fields), so the model sees the exact argument shape each one expects.
+Add [`AsTool`](laravel-ai.md) to an index and its `tools()` suite includes an `analytics` tool. The agent picks a `widget`, including `grouped_trend`, `breakdown`, `multi_breakdown`, and `union_breakdown`, plus its arguments. "Give me sales this month as a chart" becomes a `trend` call, and "show it per month instead" is the **same call with `interval: month`** — the agent adapts one argument and re-runs. The tool's description carries a grounded example per widget (using the index's own fields), so the model sees the exact argument shape each one expects.
 
 ```php
 class OrderIndex extends SigmieIndex
@@ -414,4 +488,4 @@ public function tools(): array
 }
 ```
 
-The agent supplies the `date_field` (validated against the index's date fields), the `metric`/`field` (from its numeric fields), and optionally a `range` (`this_month`, `last_7_days`, …) and `timezone_offset` (minutes east of UTC) so charts land in the user's local time. When the user asks for a metric/chart and examples or rows behind it, the agent can set `include_hits=1`, plus optional `hit_fields`, `hit_sort`, `hit_limit`, and `hit_filters`. As with the other tools, the optional `$baseFilter` is server-controlled scoping — AND-ed into every query and never taken from the agent — so an agent can only ever see its own slice of the data.
+The agent supplies the `date_field` (validated against the index's date fields), the `metric`/`field` (from its numeric fields), and optionally a `range` (`this_month`, `last_7_days`, …) and `timezone_offset` (minutes east of UTC) so charts land in the user's local time. A count-based `grouped_trend` may pass `field: null`. Ranked widgets use `sort: "metric:asc"` or `sort: "metric:desc"`; `union_breakdown` passes at least two compatible fields in `group_by_fields`. When the user asks for a metric/chart and examples or rows behind it, the agent can set `include_hits=1`, plus optional `hit_fields`, `hit_sort`, `hit_limit`, and `hit_filters`. As with the other tools, the optional `$baseFilter` is server-controlled scoping — AND-ed into every query and never taken from the agent — so an agent can only ever see its own slice of the data.

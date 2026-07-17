@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use PHPUnit\Framework\TestCase;
+use Sigmie\Query\Aggregations\Metrics\Sum;
 use Sigmie\Query\Aggs;
 
 class UnionTermsTest extends TestCase
@@ -18,7 +19,7 @@ class UnionTermsTest extends TestCase
         $aggs->unionTerms('countries', $fields)
             ->size(5)
             ->order('metric', 'desc')
-            ->aggregate(fn (Aggs $sub) => $sub->sum('metric', 'prize'));
+            ->aggregate(fn (Aggs $sub): Sum => $sub->sum('metric', 'prize'));
 
         $raw = $aggs->toRaw()['countries'];
         $script = $raw['terms']['script'];
