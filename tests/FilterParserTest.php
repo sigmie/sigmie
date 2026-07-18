@@ -182,6 +182,7 @@ class FilterParserTest extends TestCase
             'extra closing square bracket' => ['status:["active"]]'],
             'content after array' => ['status:["active"]garbage'],
             'content after quoted term' => ['status:"active"garbage'],
+            'content after wildcard' => ['status:"active*"garbage'],
             'content after geo filter' => ['location:1km[51.49,13.77]garbage'],
             'content after nested filter' => ['user:{name:"Nico"}garbage'],
         ];
