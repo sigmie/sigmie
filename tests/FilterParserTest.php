@@ -74,6 +74,54 @@ class FilterParserTest extends TestCase
         $this->assertSame('A*B', $wildcard['bool']['must'][0]['wildcard']['category']['value']);
     }
 
+    /** @test */
+    public function quoted_values_are_parsed_as_an_inclusive_range(): void
+    {
+        $properties = new NewProperties;
+        $properties->date('created_at');
+
+        $query = (new FilterParser($properties))
+            ->parse('created_at:"2023-01-01".."2023-12-31"')
+            ->toRaw();
+
+        $this->assertSame([
+            'relation' => 'intersects',
+            'gte' => '2023-01-01',
+            'lte' => '2023-12-31',
+        ], $query['bool']['must'][0]['range']['created_at']);
+    }
+
+    /** @test */
+    public function lenient_nested_filters_collect_errors(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('name');
+        $properties->nested('user', fn (NewProperties $user): Keyword => $user->keyword('name'));
+
+        $parser = new FilterParser($properties, false);
+
+        $notNested = $parser->parse('name:{value:"Nico"}')->toRaw();
+
+        $this->assertArrayHasKey('match_none', $notNested['bool']['must'][0]);
+        $this->assertSame([
+            ['message' => "Field 'name' isn't a nested field."],
+        ], $parser->errors());
+
+        $invalidChild = $parser->parse('user:{missing:"Nico"}')->toRaw();
+
+        $this->assertArrayHasKey(
+            'match_none',
+            $invalidChild['bool']['must'][0]['nested']['query']['bool']['must'][0],
+        );
+        $this->assertSame([
+            [
+                'message' => 'Field missing does not exist.',
+                'field' => 'missing',
+            ],
+            ['message' => 'Filter string \'missing:"Nico"\' couldn\'t be parsed.'],
+        ], $parser->errors());
+    }
+
     /**
      * @test
      *

@@ -406,6 +406,24 @@ class FilterParser extends Parser
         return preg_split('/,(?=(?:[^"\']*["\'][^"\']*["\'])*[^"\']*$)/', $value);
     }
 
+    protected function betweenParts(string $range): ?array
+    {
+        if (! preg_match(
+            '/^(?P<field>[\w\.]+):(?:"(?P<double_min>[^"]+)"|\'(?P<single_min>[^\']+)\'|(?P<plain_min>-?\d.*?))\.\.(?:"(?P<double_max>[^"]+)"|\'(?P<single_max>[^\']+)\'|(?P<plain_max>-?\d.*))$/s',
+            $range,
+            $matches,
+            PREG_UNMATCHED_AS_NULL,
+        )) {
+            return null;
+        }
+
+        return [
+            $matches['field'],
+            $matches['double_min'] ?? $matches['single_min'] ?? $matches['plain_min'],
+            $matches['double_max'] ?? $matches['single_max'] ?? $matches['plain_max'],
+        ];
+    }
+
     public function facetFilter(Type $field, string $filterString): Boolean
     {
         $this->facetField = $field;
@@ -439,10 +457,10 @@ class FilterParser extends Parser
             preg_match('/^_id:\[.*\]/s', $string) => $this->handleIDs($string),
             preg_match('/^_id:[\'"]?[a-z_A-Z0-9]+[\'"]?$/', $string) => $this->handleID($string),
             preg_match('/[\w\.]+:\[.*\]/s', $string) => $this->handleIn($string),
+            (int) ($this->betweenParts($string) !== null) => $this->handleBetween($string),
             (int) $this->hasUnescapedWildcard($string) => $this->handleWildcard($string),
             preg_match('/[\w\.]+:".*"/s', $string) => $this->handleTerm($string),
             preg_match('/[\w\.]+:\'.*\'/s', $string) => $this->handleTerm($string),
-            preg_match('/^([\w\.]+):(-?\d+(.+)?)\.\.(-?\d+(.+)?)$/s', $string) => $this->handleBetween($string),
             preg_match('/^[\w\.]+:\d+(km|m|cm|mm|mi|yd|ft|in|nmi)\[\-?\d+(\.\d+)?\,\-?\d+(\.\d+)?\]/', $string) => $this->handleGeo($string),
             preg_match('/[\w\.]+:.*$/s', $string) => $this->handleTerm($string),
             default => null
@@ -472,22 +490,19 @@ class FilterParser extends Parser
 
         if (! $type instanceof TypesNested) {
             $this->handleError(sprintf("Field '%s' isn't a nested field.", $field));
-        }
 
-        $filters = trim($filters);
-
-        $parentPath = $this->parentPath ? $this->parentPath.'.'.$field : $field;
-
-        // If the type is not nested and  we don't throw on error, we return a MatchNone
-        if (is_null($type)) {
             return new MatchNone;
         }
 
-        $parser = new static($type->properties);
+        $parentPath = $this->parentPath ? $this->parentPath.'.'.$field : $field;
+
+        $parser = new static($type->properties, $this->throwOnError);
 
         $parser->parentPath($parentPath);
 
         $query = $parser->parse($filters);
+
+        $this->errors = [...$this->errors, ...$parser->errors()];
 
         return new Nested($parentPath, $query);
     }
@@ -523,11 +538,11 @@ class FilterParser extends Parser
 
     public function handleBetween(string $range): ?Query
     {
-        preg_match('/^([\w\.]+):(.+)\.\.(.+)$/s', $range, $matches);
+        [$field, $min, $max] = $this->betweenParts($range)
+            ?? throw new ParseException(sprintf("Invalid inclusive range '%s'.", $range));
 
-        $field = $matches[1];
-        $min = $matches[2];
-        $max = $matches[3];
+        $min = $this->unmaskQuotedValue($min);
+        $max = $this->unmaskQuotedValue($max);
 
         $realFieldName = $this->handleFieldName($field);
 
