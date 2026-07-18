@@ -122,6 +122,70 @@ class FilterParserTest extends TestCase
         ], $parser->errors());
     }
 
+    /** @test */
+    public function single_ids_accept_punctuation(): void
+    {
+        $parser = new FilterParser;
+
+        $filters = [
+            "_id:'order-123:v2'" => 'order-123:v2',
+            '_id:order-123' => 'order-123',
+            '_id:"tenant/order.123"' => 'tenant/order.123',
+        ];
+
+        foreach ($filters as $filter => $expected) {
+            $query = $parser->parse($filter)->toRaw();
+
+            $this->assertSame([$expected], $query['bool']['must'][0]['ids']['values']);
+        }
+    }
+
+    /** @test */
+    public function decimal_geo_distances_are_parsed(): void
+    {
+        $properties = new NewProperties;
+        $properties->geoPoint('location');
+
+        $parser = new FilterParser($properties);
+
+        $query = $parser->parse('location:1.5km[51.49,13.77]')->toRaw();
+
+        $this->assertSame('1.5km', $query['bool']['must'][0]['geo_distance']['distance']);
+
+        $zero = $parser->parse('location:0.0km[51.49,13.77]')->toRaw();
+
+        $this->assertArrayHasKey('match_none', $zero['bool']['must'][0]);
+    }
+
+    /**
+     * @test
+     * @dataProvider malformedFilterStrings
+     */
+    public function malformed_filter_strings_throw_a_parse_exception(string $filter): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('status');
+        $properties->geoPoint('location');
+        $properties->nested('user', fn (NewProperties $user): Keyword => $user->keyword('name'));
+
+        $this->expectException(ParseException::class);
+
+        (new FilterParser($properties))->parse($filter);
+    }
+
+    public function malformedFilterStrings(): array
+    {
+        return [
+            'missing closing square bracket' => ['status:["active"'],
+            'unexpected closing square bracket' => ['status:"active"]'],
+            'extra closing square bracket' => ['status:["active"]]'],
+            'content after array' => ['status:["active"]garbage'],
+            'content after quoted term' => ['status:"active"garbage'],
+            'content after geo filter' => ['location:1km[51.49,13.77]garbage'],
+            'content after nested filter' => ['user:{name:"Nico"}garbage'],
+        ];
+    }
+
     /**
      * @test
      *
