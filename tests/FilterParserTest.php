@@ -159,6 +159,7 @@ class FilterParserTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider malformedFilterStrings
      */
     public function malformed_filter_strings_throw_a_parse_exception(string $filter): void
