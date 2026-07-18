@@ -157,6 +157,14 @@ class FilterParserTest extends TestCase
         $this->assertArrayHasKey('match_none', $zero['bool']['must'][0]);
     }
 
+    /** @test */
+    public function invalid_inclusive_range_handler_throws_a_parse_exception(): void
+    {
+        $this->expectException(ParseException::class);
+
+        (new FilterParser)->handleBetween('price:..100');
+    }
+
     /**
      * @test
      *
