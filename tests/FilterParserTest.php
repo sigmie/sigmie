@@ -74,6 +74,128 @@ class FilterParserTest extends TestCase
         $this->assertSame('A*B', $wildcard['bool']['must'][0]['wildcard']['category']['value']);
     }
 
+    /** @test */
+    public function quoted_values_are_parsed_as_an_inclusive_range(): void
+    {
+        $properties = new NewProperties;
+        $properties->date('created_at');
+
+        $query = (new FilterParser($properties))
+            ->parse('created_at:"2023-01-01".."2023-12-31"')
+            ->toRaw();
+
+        $this->assertSame([
+            'relation' => 'intersects',
+            'gte' => '2023-01-01',
+            'lte' => '2023-12-31',
+        ], $query['bool']['must'][0]['range']['created_at']);
+    }
+
+    /** @test */
+    public function lenient_nested_filters_collect_errors(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('name');
+        $properties->nested('user', fn (NewProperties $user): Keyword => $user->keyword('name'));
+
+        $parser = new FilterParser($properties, false);
+
+        $notNested = $parser->parse('name:{value:"Nico"}')->toRaw();
+
+        $this->assertArrayHasKey('match_none', $notNested['bool']['must'][0]);
+        $this->assertSame([
+            ['message' => "Field 'name' isn't a nested field."],
+        ], $parser->errors());
+
+        $invalidChild = $parser->parse('user:{missing:"Nico"}')->toRaw();
+
+        $this->assertArrayHasKey(
+            'match_none',
+            $invalidChild['bool']['must'][0]['nested']['query']['bool']['must'][0],
+        );
+        $this->assertSame([
+            [
+                'message' => 'Field missing does not exist.',
+                'field' => 'missing',
+            ],
+            ['message' => 'Filter string \'missing:"Nico"\' couldn\'t be parsed.'],
+        ], $parser->errors());
+    }
+
+    /** @test */
+    public function single_ids_accept_punctuation(): void
+    {
+        $parser = new FilterParser;
+
+        $filters = [
+            "_id:'order-123:v2'" => 'order-123:v2',
+            '_id:order-123' => 'order-123',
+            '_id:"tenant/order.123"' => 'tenant/order.123',
+        ];
+
+        foreach ($filters as $filter => $expected) {
+            $query = $parser->parse($filter)->toRaw();
+
+            $this->assertSame([$expected], $query['bool']['must'][0]['ids']['values']);
+        }
+    }
+
+    /** @test */
+    public function decimal_geo_distances_are_parsed(): void
+    {
+        $properties = new NewProperties;
+        $properties->geoPoint('location');
+
+        $parser = new FilterParser($properties);
+
+        $query = $parser->parse('location:1.5km[51.49,13.77]')->toRaw();
+
+        $this->assertSame('1.5km', $query['bool']['must'][0]['geo_distance']['distance']);
+
+        $zero = $parser->parse('location:0.0km[51.49,13.77]')->toRaw();
+
+        $this->assertArrayHasKey('match_none', $zero['bool']['must'][0]);
+    }
+
+    /** @test */
+    public function invalid_inclusive_range_handler_throws_a_parse_exception(): void
+    {
+        $this->expectException(ParseException::class);
+
+        (new FilterParser)->handleBetween('price:..100');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider malformedFilterStrings
+     */
+    public function malformed_filter_strings_throw_a_parse_exception(string $filter): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('status');
+        $properties->geoPoint('location');
+        $properties->nested('user', fn (NewProperties $user): Keyword => $user->keyword('name'));
+
+        $this->expectException(ParseException::class);
+
+        (new FilterParser($properties))->parse($filter);
+    }
+
+    public function malformedFilterStrings(): array
+    {
+        return [
+            'missing closing square bracket' => ['status:["active"'],
+            'unexpected closing square bracket' => ['status:"active"]'],
+            'extra closing square bracket' => ['status:["active"]]'],
+            'content after array' => ['status:["active"]garbage'],
+            'content after quoted term' => ['status:"active"garbage'],
+            'content after wildcard' => ['status:"active*"garbage'],
+            'content after geo filter' => ['location:1km[51.49,13.77]garbage'],
+            'content after nested filter' => ['user:{name:"Nico"}garbage'],
+        ];
+    }
+
     /**
      * @test
      *

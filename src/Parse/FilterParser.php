@@ -82,6 +82,7 @@ class FilterParser extends Parser
         $currentOp = null;
         $paren = 0;
         $brace = 0;
+        $bracket = 0;
         $inQuote = false;
         $quoteChar = '';
         $length = strlen($query);
@@ -109,7 +110,7 @@ class FilterParser extends Parser
                 continue;
             }
 
-            if ($paren === 0 && $brace === 0 && ($operator = $this->operatorAt($query, $i)) !== null) {
+            if ($paren === 0 && $brace === 0 && $bracket === 0 && ($operator = $this->operatorAt($query, $i)) !== null) {
                 $tokens[] = ['op' => $currentOp, 'expr' => trim($buffer)];
                 $buffer = '';
                 $currentOp = $operator;
@@ -123,19 +124,21 @@ class FilterParser extends Parser
                 ')' => $paren--,
                 '{' => $brace++,
                 '}' => $brace--,
+                '[' => $bracket++,
+                ']' => $bracket--,
                 default => null,
             };
 
-            if ($paren < 0 || $brace < 0) {
-                throw new ParseException(sprintf("Invalid filter: unbalanced parentheses in '%s'.", $query));
+            if ($paren < 0 || $brace < 0 || $bracket < 0) {
+                throw new ParseException(sprintf("Invalid filter: unbalanced delimiters in '%s'.", $query));
             }
 
             $buffer .= $char;
             $i++;
         }
 
-        if ($paren !== 0 || $brace !== 0 || $inQuote) {
-            throw new ParseException(sprintf("Invalid filter: unbalanced parentheses in '%s'.", $query));
+        if ($paren !== 0 || $brace !== 0 || $bracket !== 0 || $inQuote) {
+            throw new ParseException(sprintf("Invalid filter: unbalanced delimiters in '%s'.", $query));
         }
 
         $tokens[] = ['op' => $currentOp, 'expr' => trim($buffer)];
@@ -399,11 +402,38 @@ class FilterParser extends Parser
         return false;
     }
 
+    protected function isWildcard(string $filter): bool
+    {
+        if (! preg_match('/^[\w\.]+:(?:"[^"]*"|\'[^\']*\'|[^\'"\[\]{}]*)$/s', $filter)) {
+            return false;
+        }
+
+        return $this->hasUnescapedWildcard($filter);
+    }
+
     // Split a comma-separated list on the commas that sit *outside* a quoted
     // value, so ['Smith, John','Acme'] yields two items, not three.
     protected function splitListValues(string $value): array
     {
         return preg_split('/,(?=(?:[^"\']*["\'][^"\']*["\'])*[^"\']*$)/', $value);
+    }
+
+    protected function betweenParts(string $range): ?array
+    {
+        if (! preg_match(
+            '/^(?P<field>[\w\.]+):(?:"(?P<double_min>[^"]+)"|\'(?P<single_min>[^\']+)\'|(?P<plain_min>-?\d.*?))\.\.(?:"(?P<double_max>[^"]+)"|\'(?P<single_max>[^\']+)\'|(?P<plain_max>-?\d.*))$/s',
+            $range,
+            $matches,
+            PREG_UNMATCHED_AS_NULL,
+        )) {
+            return null;
+        }
+
+        return [
+            $matches['field'],
+            $matches['double_min'] ?? $matches['single_min'] ?? $matches['plain_min'],
+            $matches['double_max'] ?? $matches['single_max'] ?? $matches['plain_max'],
+        ];
     }
 
     public function facetFilter(Type $field, string $filterString): Boolean
@@ -430,21 +460,19 @@ class FilterParser extends Parser
         // to the right handler.
         $query = match (1) {
             preg_match('/^[\w\.]+:\{.*\}$/s', $string) => $this->handleNested($string),
-            preg_match('/[\w\.]+:\*$/', $string) => $this->handleHas($string),
-            preg_match('/[\w\.]+:true$/', $string) => $this->handleIs($string),
-            preg_match('/[\w\.]+:false$/', $string) => $this->handleIsNot($string),
-            preg_match('/^([\w\.]+)([<>]=?)(?!=)(.+)/s', $string) => $this->handleRange($string),
-            preg_match('/^([\w\.]+)([<>]=?)(?!=)(\'.+\')/s', $string) => $this->handleRange($string),
-            preg_match('/^([\w\.]+)([<>]=?)(?!=)(\".+\")/s', $string) => $this->handleRange($string),
-            preg_match('/^_id:\[.*\]/s', $string) => $this->handleIDs($string),
-            preg_match('/^_id:[\'"]?[a-z_A-Z0-9]+[\'"]?$/', $string) => $this->handleID($string),
-            preg_match('/[\w\.]+:\[.*\]/s', $string) => $this->handleIn($string),
-            (int) $this->hasUnescapedWildcard($string) => $this->handleWildcard($string),
-            preg_match('/[\w\.]+:".*"/s', $string) => $this->handleTerm($string),
-            preg_match('/[\w\.]+:\'.*\'/s', $string) => $this->handleTerm($string),
-            preg_match('/^([\w\.]+):(-?\d+(.+)?)\.\.(-?\d+(.+)?)$/s', $string) => $this->handleBetween($string),
-            preg_match('/^[\w\.]+:\d+(km|m|cm|mm|mi|yd|ft|in|nmi)\[\-?\d+(\.\d+)?\,\-?\d+(\.\d+)?\]/', $string) => $this->handleGeo($string),
-            preg_match('/[\w\.]+:.*$/s', $string) => $this->handleTerm($string),
+            preg_match('/^[\w\.]+:\*$/', $string) => $this->handleHas($string),
+            preg_match('/^[\w\.]+:true$/', $string) => $this->handleIs($string),
+            preg_match('/^[\w\.]+:false$/', $string) => $this->handleIsNot($string),
+            preg_match('/^([\w\.]+)([<>]=?)(?!=)(.+)$/s', $string) => $this->handleRange($string),
+            preg_match('/^_id:\[.*\]$/s', $string) => $this->handleIDs($string),
+            preg_match('/^_id:(?:"[^"]+"|\'[^\']+\'|[^\s\'"\[\]{}()]+)$/s', $string) => $this->handleID($string),
+            preg_match('/^[\w\.]+:\[.*\]$/s', $string) => $this->handleIn($string),
+            (int) ($this->betweenParts($string) !== null) => $this->handleBetween($string),
+            (int) $this->isWildcard($string) => $this->handleWildcard($string),
+            preg_match('/^[\w\.]+:".*"$/s', $string) => $this->handleTerm($string),
+            preg_match('/^[\w\.]+:\'.*\'$/s', $string) => $this->handleTerm($string),
+            preg_match('/^[\w\.]+:\d+(?:\.\d+)?(km|m|cm|mm|mi|yd|ft|in|nmi)\[\-?\d+(\.\d+)?\,\-?\d+(\.\d+)?\]$/', $string) => $this->handleGeo($string),
+            preg_match('/^[\w\.]+:[^\'"\[\]{}]*$/s', $string) => $this->handleTerm($string),
             default => null
         };
 
@@ -472,22 +500,19 @@ class FilterParser extends Parser
 
         if (! $type instanceof TypesNested) {
             $this->handleError(sprintf("Field '%s' isn't a nested field.", $field));
-        }
 
-        $filters = trim($filters);
-
-        $parentPath = $this->parentPath ? $this->parentPath.'.'.$field : $field;
-
-        // If the type is not nested and  we don't throw on error, we return a MatchNone
-        if (is_null($type)) {
             return new MatchNone;
         }
 
-        $parser = new static($type->properties);
+        $parentPath = $this->parentPath ? $this->parentPath.'.'.$field : $field;
+
+        $parser = new static($type->properties, $this->throwOnError);
 
         $parser->parentPath($parentPath);
 
         $query = $parser->parse($filters);
+
+        $this->errors = [...$this->errors, ...$parser->errors()];
 
         return new Nested($parentPath, $query);
     }
@@ -495,7 +520,7 @@ class FilterParser extends Parser
     public function handleGeo(string $geo): MatchNone|null|Query
     {
         preg_match(
-            '/(?P<field>[\w\.]+):(?P<distance>\d+(?:km|m|cm|mm|mi|yd|ft|in|nmi))\[(?P<latitude>-?\d+(\.\d+)?),(?P<longitude>-?\d+(\.\d+)?)\]/',
+            '/(?P<field>[\w\.]+):(?P<distance>\d+(?:\.\d+)?(?:km|m|cm|mm|mi|yd|ft|in|nmi))\[(?P<latitude>-?\d+(\.\d+)?),(?P<longitude>-?\d+(\.\d+)?)\]/',
             $geo,
             $matches
         );
@@ -505,7 +530,7 @@ class FilterParser extends Parser
         $latitude = $matches['latitude'];
         $longitude = $matches['longitude'];
 
-        if (preg_match('/^0(?:km|m|cm|mm|mi|yd|ft|in|nmi)$/', $distance)) {
+        if (preg_match('/^0+(?:\.0+)?(?:km|m|cm|mm|mi|yd|ft|in|nmi)$/', $distance)) {
             return new MatchNone;
         }
 
@@ -523,11 +548,11 @@ class FilterParser extends Parser
 
     public function handleBetween(string $range): ?Query
     {
-        preg_match('/^([\w\.]+):(.+)\.\.(.+)$/s', $range, $matches);
+        [$field, $min, $max] = $this->betweenParts($range)
+            ?? throw new ParseException(sprintf("Invalid inclusive range '%s'.", $range));
 
-        $field = $matches[1];
-        $min = $matches[2];
-        $max = $matches[3];
+        $min = $this->unmaskQuotedValue($min);
+        $max = $this->unmaskQuotedValue($max);
 
         $realFieldName = $this->handleFieldName($field);
 
@@ -567,7 +592,7 @@ class FilterParser extends Parser
     {
         [, $value] = explode(':', $id, 2);
 
-        $value = trim($value, '\'"');
+        $value = $this->unmaskQuotedValue(trim($value, '\'"'));
 
         return new IDs([$value]);
     }
