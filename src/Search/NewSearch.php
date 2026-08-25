@@ -296,6 +296,13 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         return $this;
     }
 
+    public function from(int $from = 0): static
+    {
+        $this->searchContext->from = $from;
+
+        return $this;
+    }
+
     protected function handleRetrievableFields(Search $search)
     {
         $search->fields($this->retrieve ?? [
