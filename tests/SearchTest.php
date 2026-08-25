@@ -93,6 +93,38 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function from_sets_the_elasticsearch_offset(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('name');
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['name' => 'alpha'], _id: '1'),
+            new Document(['name' => 'bravo'], _id: '2'),
+            new Document(['name' => 'charlie'], _id: '3'),
+        ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->sort('name:asc')
+            ->from(1)
+            ->size(1)
+            ->get()
+            ->hits();
+
+        $this->assertCount(1, $hits);
+        $this->assertSame('bravo', $hits[0]->_source['name']);
+    }
+
+    /**
+     * @test
+     */
     public function autocomplete_prefix_returns_completion_suggestions_from_elasticsearch(): void
     {
         $indexName = uniqid();
