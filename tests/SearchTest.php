@@ -98,17 +98,28 @@ class SearchTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->text('name');
+        $blueprint->keyword('name');
 
-        $raw = $this->sigmie->newSearch($indexName)
+        $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
-            ->from(40)
-            ->size(20)
-            ->makeSearch()
-            ->toRaw();
+            ->create();
 
-        $this->assertSame(40, $raw['from']);
-        $this->assertSame(20, $raw['size']);
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['name' => 'alpha'], _id: '1'),
+            new Document(['name' => 'bravo'], _id: '2'),
+            new Document(['name' => 'charlie'], _id: '3'),
+        ]);
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->sort('name:asc')
+            ->from(1)
+            ->size(1)
+            ->get()
+            ->hits();
+
+        $this->assertCount(1, $hits);
+        $this->assertSame('bravo', $hits[0]->_source['name']);
     }
 
     /**
