@@ -303,6 +303,14 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         return $this;
     }
 
+    public function searchAfter(array $sort): static
+    {
+        $this->searchContext->searchAfter = $sort;
+        $this->searchContext->from = 0;
+
+        return $this;
+    }
+
     protected function handleRetrievableFields(Search $search)
     {
         $search->fields($this->retrieve ?? [
@@ -319,6 +327,15 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     protected function handleFrom(Search $search)
     {
         $search->from($this->searchContext->from);
+    }
+
+    protected function handleSearchAfter(Search $search): void
+    {
+        if ($this->searchContext->searchAfter === null) {
+            return;
+        }
+
+        $search->addRaw('search_after', $this->searchContext->searchAfter);
     }
 
     protected function handleKnn(Search $search)
@@ -473,6 +490,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         $this->handleAggs($search);
         $this->handleSize($search);
         $this->handleFrom($search);
+        $this->handleSearchAfter($search);
         $this->handleMinScore($search);
         $this->handleSuggest($search);
         $this->handleTrackTotalHits($search);
