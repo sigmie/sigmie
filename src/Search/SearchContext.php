@@ -16,6 +16,7 @@ class SearchContext
         public array $facetFields = [],
         public int $size = 20,
         public int $from = 0,
+        public ?array $searchAfter = null,
         public array $autocompletePrefixStrings = [],
     ) {}
 }
