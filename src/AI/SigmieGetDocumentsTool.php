@@ -7,6 +7,7 @@ namespace Sigmie\AI;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
+use Sigmie\Parse\FilterParser;
 use Sigmie\SigmieIndex;
 
 /**
@@ -14,7 +15,7 @@ use Sigmie\SigmieIndex;
  * sample_documents surface an `_id` the agent wants to read in full.
  *
  * Reuses the index's `collect()->getMany()` multi-get (Elasticsearch `_mget`). IDs that do not
- * exist are simply absent from the returned documents.
+ * exist, or fall outside the `$baseFilters` scope, are simply absent from the returned documents.
  */
 class SigmieGetDocumentsTool implements Tool
 {
@@ -22,6 +23,7 @@ class SigmieGetDocumentsTool implements Tool
 
     public function __construct(
         protected SigmieIndex $index,
+        protected string $baseFilters = '',
     ) {}
 
     public function name(): string
@@ -61,6 +63,12 @@ class SigmieGetDocumentsTool implements Tool
             fn ($id): bool => is_string($id) && $id !== '',
         )), 0, 100);
 
-        return $this->index->collect()->except($this->index->exceptFromTools())->getMany($ids);
+        $collection = $this->index->collect()->except($this->index->exceptFromTools());
+
+        if ($this->baseFilters !== '') {
+            $collection->filterQuery((new FilterParser($this->index->properties()))->parse($this->baseFilters));
+        }
+
+        return $collection->getMany($ids);
     }
 }
