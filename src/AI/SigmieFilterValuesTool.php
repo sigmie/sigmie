@@ -91,6 +91,7 @@ class SigmieFilterValuesTool implements Tool
         while (! isset($aggregation['sum_other_doc_count']) && is_array($aggregation[$fieldName] ?? null)) {
             $aggregation = $aggregation[$fieldName];
         }
+
         $otherDocuments = (int) ($aggregation['sum_other_doc_count'] ?? 0);
 
         return [
