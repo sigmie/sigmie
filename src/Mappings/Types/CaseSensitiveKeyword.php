@@ -17,7 +17,7 @@ class CaseSensitiveKeyword extends Type
 
     public function queries(array|string $queryString): array
     {
-        return [new Term($this->name, $queryString), new Prefix($this->name, $queryString)];
+        return [new Term($this->name(), $queryString), new Prefix($this->name(), $queryString)];
     }
 
     public function aggregation(Aggs $aggs, string $params): void

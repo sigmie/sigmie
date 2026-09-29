@@ -19,6 +19,7 @@ use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Term\Terms;
 use Sigmie\Query\Queries\Term\Wildcard;
 use Sigmie\Query\Queries\Text\Nested;
+use Sigmie\Search\InnerHits;
 
 class FilterParser extends Parser
 {
@@ -33,6 +34,8 @@ class FilterParser extends Parser
 
     protected ?string $parentPath = null;
 
+    protected ?InnerHits $innerHits = null;
+
     public static int $maxNestingLevel = 32;
 
     protected Type $facetField;
@@ -40,6 +43,16 @@ class FilterParser extends Parser
     public function parentPath(string $path): static
     {
         $this->parentPath = $path;
+
+        return $this;
+    }
+
+    /**
+     * Nested filters built by this parser return the inner hits the search requests.
+     */
+    public function innerHits(InnerHits $innerHits): static
+    {
+        $this->innerHits = $innerHits;
 
         return $this;
     }
@@ -510,11 +523,15 @@ class FilterParser extends Parser
 
         $parser->parentPath($parentPath);
 
+        if ($this->innerHits instanceof InnerHits) {
+            $parser->innerHits($this->innerHits);
+        }
+
         $query = $parser->parse($filters);
 
         $this->errors = [...$this->errors, ...$parser->errors()];
 
-        return new Nested($parentPath, $query);
+        return new Nested($parentPath, $query, innerHits: $this->innerHits);
     }
 
     public function handleGeo(string $geo): MatchNone|null|Query

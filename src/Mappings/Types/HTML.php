@@ -28,7 +28,7 @@ class HTML extends Text
     public function queries(array|string $queryString): array
     {
         return [new Match_(
-            $this->name,
+            $this->name(),
             $queryString,
         )];
     }

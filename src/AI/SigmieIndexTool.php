@@ -31,6 +31,7 @@ class SigmieIndexTool implements Tool
     use DescribesIndexFields;
     use HandlesToolErrors;
     use ScopesToBaseFilters;
+    use SelectsOutputFields;
 
     public function __construct(
         protected SigmieIndex $index,
@@ -58,6 +59,8 @@ class SigmieIndexTool implements Tool
             ."Geo sort: field[lat,lon]:km:asc\n"
             ."Facets: field1 field2:20 (space-separated, optional :size for keywords or :interval for numbers)\n"
             ."Matching: equality filters on text/keyword fields are exact and CASE-SENSITIVE — if a filter returns 0 unexpectedly, call discover_filter_values to confirm the exact stored value.\n"
+            ."Output: each hit holds `_id` plus the source fields in `fields` (null uses the index default).\n"
+            ."Matches: to see WHICH items of a nested field matched the query or a nested filter, list nested paths in `matches` (e.g. 'chunks' for whole items, 'chunks.text' for one field of them). Each hit then holds `_matches` with, per path, `total` (all matching items) and `items` (each with `_offset`, its position in that array), e.g. {\"_matches\": {\"chunks\": {\"total\": 2, \"items\": [{\"_offset\": 4, \"text\": \"...\"}]}}}. Combine with `fields` that leave the nested field out to get only the matching items instead of the whole array. `total` above the number of items means the list is capped.\n"
             ."Discovering valid values: if you do not know a field's valid values, call discover_filter_values with the field name (and optional query) before filtering.\n"
             .'Schema: call describe_index for the full structured field list, types and filter syntax.');
     }
@@ -75,6 +78,8 @@ class SigmieIndexTool implements Tool
             'facet_filters' => $schema->string()->description('Active facet filter values (pass null when no facet filters)')->nullable()->required(),
             'per_page' => $schema->integer()->description('Number of results per page (default 10)')->default(10)->nullable()->required(),
             'page' => $schema->integer()->description('Page number (default 1)')->default(1)->nullable()->required(),
+            'fields' => $this->outputFieldsSchema($schema),
+            'matches' => $schema->string()->description("Comma-separated nested paths whose matching items you want back in `_matches`, e.g. 'chunks' or 'chunks.text,chunks.type' (pass null for none). Use with `fields` to keep the rest small.")->nullable()->required(),
         ];
     }
 
@@ -103,6 +108,14 @@ class SigmieIndexTool implements Tool
 
         $this->applyBaseFilters($search);
 
+        if (($fields = $this->outputFields($request['fields'] ?? null)) !== []) {
+            $search->retrieve($fields);
+        }
+
+        if (($matches = $this->commaSeparated($request['matches'] ?? null)) !== []) {
+            $search->innerHits($matches);
+        }
+
         if ($aiFilters = $request['filters'] ?? null) {
             $search->filters((string) $aiFilters, throwOnError: true);
         }
@@ -121,10 +134,11 @@ class SigmieIndexTool implements Tool
 
         $response = $search->get();
 
-        $hits = array_map(
-            fn ($hit) => ['_id' => $hit->_id, ...$hit->_source],
-            $response->hits()
-        );
+        $hits = array_map(fn (array $hit): array => [
+            '_id' => $hit['_id'],
+            ...$hit['_source'] ?? [],
+            ...(isset($hit['_matches']) ? ['_matches' => $hit['_matches']] : []),
+        ], $response->json('hits'));
 
         $result = [
             'total' => $response->total(),

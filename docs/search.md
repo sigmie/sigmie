@@ -1,7 +1,7 @@
 ---
 title: Search
 short_description: Build user-facing Elasticsearch searches with Sigmie — typo tolerance, faceted navigation, highlighting, semantic search, and filter-parser syntax.
-keywords: [search, query, filters, sorting, highlighting, typo tolerance]
+keywords: [search, query, filters, sorting, highlighting, typo tolerance, nested, inner hits]
 category: Core Concepts
 order: 5
 related_pages: [query, document, semantic-search, filter-parser]
@@ -336,6 +336,221 @@ $sigmie->newSearch('users')
     ->retrieve(['contact.dog.name'])
     ->get();
 ```
+
+Without `fields()`, the query searches every field, including the fields inside nested fields.
+
+## Matching nested items (inner hits)
+
+A nested field holds a list of objects, such as the reviews of a product. When a search for "battery" matches one review, Elasticsearch returns the whole product. Its `_source` holds every review, so you cannot see which review matched. Inner hits answer that question. They return, per hit, the nested items that matched:
+
+```
+product "Aurora Phone"           search "battery"
+  reviews[0] Battery easily...   -> matched
+  reviews[1] Camera is great...  -> not matched
+  reviews[2] Battery drains...   -> matched
+
+_source          -> the product, all 3 reviews
+_matches.reviews -> reviews 0 and 2, total 2
+```
+
+Take a shop index with nested reviews:
+
+```php
+$props = new NewProperties;
+$props->title('title');
+$props->nested('reviews', function (NewProperties $props) {
+    $props->text('comment');
+    $props->number('stars');
+    $props->keyword('author');
+});
+$props->nested('questions', function (NewProperties $props) {
+    $props->text('question');
+    $props->text('answer');
+});
+
+$sigmie->newIndex('products')->properties($props)->lowercase()->create();
+
+$sigmie->collect('products', refresh: true)->merge([
+    new Document([
+        'title' => 'Aurora Phone',
+        'reviews' => [
+            ['comment' => 'Battery easily lasts two days.', 'stars' => 5, 'author' => 'anna'],
+            ['comment' => 'Camera is great in daylight.', 'stars' => 4, 'author' => 'ben'],
+            ['comment' => 'Battery drains fast when gaming.', 'stars' => 2, 'author' => 'chris'],
+        ],
+        'questions' => [
+            ['question' => 'Is the battery replaceable?', 'answer' => 'No, it is sealed.'],
+            ['question' => 'Does it support eSIM?', 'answer' => 'Yes.'],
+        ],
+    ], 'aurora'),
+]);
+```
+
+Pass the nested paths whose matching items you want to `innerHits()`:
+
+```php
+$hits = $sigmie->newSearch('products')
+    ->properties($props)
+    ->queryString('battery')
+    ->innerHits(['reviews']) // [tl! highlight]
+    ->get()
+    ->json('hits');
+```
+
+Each hit keeps its `_source` and gets a `_matches` key:
+
+```json
+{
+    "_id": "aurora",
+    "_source": {
+        "title": "Aurora Phone",
+        "reviews": [
+            {"comment": "Battery easily lasts two days.", "stars": 5, "author": "anna"},
+            {"comment": "Camera is great in daylight.", "stars": 4, "author": "ben"},
+            {"comment": "Battery drains fast when gaming.", "stars": 2, "author": "chris"}
+        ],
+        "questions": [
+            {"question": "Is the battery replaceable?", "answer": "No, it is sealed."},
+            {"question": "Does it support eSIM?", "answer": "Yes."}
+        ]
+    },
+    "_matches": {
+        "reviews": {
+            "total": 2,
+            "items": [
+                {"_offset": 0, "comment": "Battery easily lasts two days.", "stars": 5, "author": "anna"},
+                {"_offset": 2, "comment": "Battery drains fast when gaming.", "stars": 2, "author": "chris"}
+            ]
+        }
+    }
+}
+```
+
+| Key | Holds |
+|-----|-------|
+| `_source` | The document, or the `retrieve()` fields. Inner hits never change it. |
+| `_matches.reviews.total` | How many reviews of this product matched. |
+| `_matches.reviews.items` | The matching reviews, best match first. |
+| `_offset` | The item's position in the `reviews` array, starting at 0. |
+
+Only the paths you name get matches. Without `innerHits()`, a hit has no `_matches` key. A requested path with no matching items still appears, with `total: 0` and no items.
+
+### Select fields with dot syntax
+
+Name fields inside the nested field, instead of the nested field itself, to return only those fields of each matching item:
+
+```php
+->innerHits(['reviews.comment', 'reviews.stars'])
+```
+
+```json
+"_matches": {
+    "reviews": {
+        "total": 2,
+        "items": [
+            {"_offset": 0, "comment": "Battery easily lasts two days.", "stars": 5},
+            {"_offset": 2, "comment": "Battery drains fast when gaming.", "stars": 2}
+        ]
+    }
+}
+```
+
+### Only the matching items
+
+`retrieve()` controls `_source`, and `innerHits()` controls `_matches`. Leave the nested field out of `retrieve()` to get the product title plus only the matching reviews, instead of every review:
+
+```php
+$hits = $sigmie->newSearch('products')
+    ->properties($props)
+    ->queryString('battery')
+    ->retrieve(['title']) // [tl! highlight]
+    ->innerHits(['reviews.comment'])
+    ->get()
+    ->json('hits');
+```
+
+```json
+{
+    "_id": "aurora",
+    "_source": {"title": "Aurora Phone"},
+    "_matches": {
+        "reviews": {
+            "total": 2,
+            "items": [
+                {"_offset": 0, "comment": "Battery easily lasts two days."},
+                {"_offset": 2, "comment": "Battery drains fast when gaming."}
+            ]
+        }
+    }
+}
+```
+
+### Several paths
+
+List several nested paths. Each gets its own entry:
+
+```php
+->retrieve(['title'])
+->innerHits(['reviews.comment', 'questions'])
+```
+
+```json
+"_matches": {
+    "reviews": {
+        "total": 2,
+        "items": [
+            {"_offset": 0, "comment": "Battery easily lasts two days."},
+            {"_offset": 2, "comment": "Battery drains fast when gaming."}
+        ]
+    },
+    "questions": {
+        "total": 1,
+        "items": [
+            {"_offset": 0, "question": "Is the battery replaceable?", "answer": "No, it is sealed."}
+        ]
+    }
+}
+```
+
+### Size and totals
+
+`innerHits()` returns every matching item, up to 100 per path. 100 is the Elasticsearch default for `index.max_inner_result_window`. Pass `size` to return fewer:
+
+```php
+->retrieve(['title'])
+->innerHits(['reviews.comment'], size: 1) // [tl! highlight]
+```
+
+`total` still counts every match, so a capped list is visible. Here `total` is 2 and one item returns:
+
+```json
+"_matches": {
+    "reviews": {
+        "total": 2,
+        "items": [
+            {"_offset": 0, "comment": "Battery easily lasts two days."}
+        ]
+    }
+}
+```
+
+When `total` is greater than the number of items, the list is capped. The same applies when more than 100 items match: `items` holds 100 and `total` holds the real count. To return more than 100, raise `index.max_inner_result_window` on the index and pass a larger `size`.
+
+### Nested filters
+
+A [nested filter](filter-parser.md) also produces matches. When the query and a filter both match items of one path, `_matches` holds each item once:
+
+```php
+->queryString('battery')                // matches reviews 0 and 2
+->filters('reviews:{stars>=4}')          // matches reviews 0 and 1
+->innerHits(['reviews.comment'])         // reviews 0, 1 and 2, total 3
+```
+
+Deeper nested paths use dots too. For orders with nested items, `innerHits(['orders.items.sku'])` with the filter `orders:{items:{sku:'y'}}` returns the matching items under `_matches['orders.items']`. Each item also holds `_parents`, the offsets of its parent items, such as `{"orders": 1}`.
+
+`except()` applies to the items too. With `->except(['reviews.author'])`, no item holds `author`, even with `innerHits(['reviews'])`.
+
+> **Note:** `innerHits()` throws an `InvalidArgumentException` for a field that does not exist or is not inside a nested field, such as `title`.
 
 ## Reading results
 

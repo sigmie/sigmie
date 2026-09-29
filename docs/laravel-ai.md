@@ -1,7 +1,7 @@
 ---
 title: Laravel AI SDK
 short_description: Expose Sigmie indices as Laravel AI agent tools — auto-generated descriptions, base filters for multi-tenancy, and the full Sigmie filter syntax.
-keywords: [laravel ai, ai sdk, tools, agents, llm, private fields]
+keywords: [laravel ai, ai sdk, tools, agents, llm, private fields, tool output, inner hits]
 category: Integrations
 order: 2
 related_pages: [search, filter-parser, sort-parser, facets, laravel-scout]
@@ -126,6 +126,92 @@ $get->handle(new Request(['ids' => ['order-of-user-3', 'order-of-user-4']]));
 
 > **Warning:** A malformed base filter throws a `ParseException` on every call. It never falls back to matching all documents.
 
+## Controlling tool output
+
+`search_index`, `sample_documents`, and `get_documents` return every source field by default. For an index with large fields, such as a full judgment body, ten hits can fill the agent's context. The `fields` argument and `toolFields()` keep results small, and the `matches` argument returns only the passages that matched.
+
+The agent passes `fields`, a comma-separated list of source fields. Dotted paths reach nested fields:
+
+```json
+{"query": "burglary", "fields": "case_number,court_name,chunks.text"}
+```
+
+Override `toolFields()` to set the default the tools use when the agent passes `fields: null`. An empty list, the default, returns every field:
+
+```php
+class JudgmentIndex extends SigmieIndex
+{
+    use AsTool;
+
+    public function properties(): NewProperties
+    {
+        $props = new NewProperties;
+        $props->keyword('case_number');
+        $props->category('court_name');
+        $props->date('decision_date');
+        $props->longText('text');                // full judgment body
+        $props->nested('chunks', function (NewProperties $props) {
+            $props->keyword('type');
+            $props->text('text');                // one passage
+        });
+
+        return $props;
+    }
+
+    public function toolFields(): array
+    {
+        return ['case_number', 'court_name', 'decision_date']; // [tl! highlight]
+    }
+}
+```
+
+The agent can still request a field outside the default, such as `fields: "text"`. The tool descriptions name the default, so the agent knows what it gets. [Private fields](#private-fields) always win: a field from `exceptFromTools()` never returns, even when the agent requests it.
+
+### Matching passages
+
+A search for "burglary" matches the judgment, but the hit alone does not say which of its `chunks` matched. To cite a passage, the agent needs those chunks. The `matches` argument returns them. It lists the nested paths whose matching items the agent wants back. This is Elasticsearch inner hits, explained in [Search](search.md#matching-nested-items-inner-hits).
+
+The agent calls `search_index` with `matches`. `fields` stays at the index default, so the full body and the chunk array stay out:
+
+```json
+{"query": "burglary", "fields": null, "matches": "chunks.text"}
+```
+
+Each hit gets `_matches`, next to the source fields:
+
+```json
+{
+    "total": 1,
+    "hits": [
+        {
+            "_id": "case-1",
+            "case_number": "B 100-24",
+            "court_name": "Stockholm",
+            "decision_date": "2024-05-02",
+            "_matches": {
+                "chunks": {
+                    "total": 4,
+                    "items": [
+                        {"_offset": 1, "text": "The burglary was proven."},
+                        {"_offset": 4, "text": "A burglary witness testified."},
+                        {"_offset": 2, "text": "The burglary tools were found."},
+                        {"_offset": 3, "text": "Burglary sentence of one year."}
+                    ]
+                }
+            }
+        }
+    ]
+}
+```
+
+| Key | Holds |
+|-----|-------|
+| `_matches.chunks.total` | How many chunks of this judgment matched the query or a nested filter. |
+| `_matches.chunks.items` | The matching chunks, best match first, up to 100. |
+| `_offset` | The chunk's position in the `chunks` array. |
+
+`matches: "chunks"` returns whole chunks, and `matches: "chunks.text,chunks.type"` returns those fields of each chunk. A nested filter such as `chunks:{type:'sentencing'}` also produces matches, and a chunk that matched both the query and the filter appears once. With `matches: null`, the default, hits have no `_matches` key. [Private fields](#private-fields) never appear in matches.
+
 ## Private fields
 
 Override `exceptFromTools()` to keep fields out of every document the tools return. Dotted paths reach nested fields:
@@ -214,6 +300,10 @@ Facets: field1 field2:20 (space-separated, optional :size for keywords or :inter
 | `facet_filters` | string | Active facet filter values. |
 | `per_page` | int (default 10) | Results per page. |
 | `page` | int (default 1) | Page number. |
+| `fields` | string | Comma-separated source fields to return. `null` uses `toolFields()`. |
+| `matches` | string | Comma-separated nested paths whose matching items return in `_matches`. `null` returns none. |
+
+`sample_documents` and `get_documents` accept the same `fields` parameter.
 
 ## Filter syntax
 

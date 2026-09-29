@@ -1004,7 +1004,8 @@ class SigmieIndexToolTest extends TestCase
 
         $schema = (new SigmieGetDocumentsTool($index))->schema(new FakeJsonSchema);
 
-        $this->assertSame(['ids'], array_keys($schema));
+        $this->assertSame(['ids', 'fields'], array_keys($schema));
+        $this->assertTrue($schema['fields']->nullable);
         $this->assertSame('array', $schema['ids']->type);
         $this->assertTrue($schema['ids']->required);
         $this->assertSame('string', $schema['ids']->itemsType->type);
@@ -1193,7 +1194,7 @@ class SigmieIndexToolTest extends TestCase
 
         $schema = (new SigmieIndexTool($index))->schema(new FakeJsonSchema);
 
-        $expected = ['query', 'filters', 'sort', 'facets', 'facet_filters', 'per_page', 'page'];
+        $expected = ['query', 'filters', 'sort', 'facets', 'facet_filters', 'per_page', 'page', 'fields', 'matches'];
         $this->assertSame($expected, array_keys($schema));
 
         foreach ($schema as $name => $prop) {
@@ -1246,7 +1247,9 @@ class SigmieIndexToolTest extends TestCase
 
         $schema = (new SigmieSampleDocumentsTool($index))->schema(new FakeJsonSchema);
 
-        $this->assertSame(['limit'], array_keys($schema));
+        $this->assertSame(['limit', 'fields'], array_keys($schema));
+        $this->assertTrue($schema['fields']->required);
+        $this->assertTrue($schema['fields']->nullable);
         $this->assertTrue($schema['limit']->required);
         $this->assertTrue($schema['limit']->nullable);
         $this->assertSame(5, $schema['limit']->defaultValue);
@@ -1385,6 +1388,199 @@ class SigmieIndexToolTest extends TestCase
         sort($ids);
 
         return $ids;
+    }
+
+    private function createJudgmentsIndex(): SigmieIndex
+    {
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
+            use AsTool;
+
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
+            public function properties(): NewProperties
+            {
+                $props = new NewProperties;
+                $props->keyword('case_number');
+                $props->category('court_name');
+                $props->text('text');
+                $props->nested('chunks', function (NewProperties $props): void {
+                    $props->keyword('type');
+                    $props->text('text');
+                    $props->keyword('internal_note');
+                });
+
+                return $props;
+            }
+
+            public function toolFields(): array
+            {
+                return ['case_number', 'court_name'];
+            }
+
+            public function exceptFromTools(): array
+            {
+                return ['chunks.internal_note'];
+            }
+        };
+
+        $index->create();
+        $index->merge([
+            new Document([
+                'case_number' => 'B 100-24',
+                'court_name' => 'Stockholm',
+                'text' => 'FULL JUDGMENT BODY about a burglary appeal.',
+                'chunks' => [
+                    ['type' => 'summary', 'text' => 'Summary of the case.', 'internal_note' => 'NOTE-0'],
+                    ['type' => 'reasoning', 'text' => 'The burglary was proven.', 'internal_note' => 'NOTE-1'],
+                    ['type' => 'reasoning', 'text' => 'The burglary tools were found.', 'internal_note' => 'NOTE-2'],
+                    ['type' => 'sentencing', 'text' => 'Burglary sentence of one year.', 'internal_note' => 'NOTE-3'],
+                    ['type' => 'reasoning', 'text' => 'A burglary witness testified.', 'internal_note' => 'NOTE-4'],
+                    ['type' => 'reasoning', 'text' => 'The defence was rejected.', 'internal_note' => 'NOTE-5'],
+                ],
+            ], 'case-1'),
+        ], refresh: true);
+
+        return $index;
+    }
+
+    /**
+     * @test
+     */
+    public function document_tools_return_only_the_requested_fields_including_nested_paths(): void
+    {
+        [$search, , $sample, $get] = $this->createJudgmentsIndex()->tools();
+
+        $documents = [
+            $search->result(new Request(['query' => '', 'fields' => 'case_number, chunks.type']))['hits'][0],
+            json_decode($sample->handle(new Request(['limit' => 1, 'fields' => 'case_number, chunks.type'])), true)[0]['_source'],
+            json_decode($get->handle(new Request(['ids' => ['case-1'], 'fields' => 'case_number, chunks.type'])), true)[0]['_source'],
+        ];
+
+        foreach ($documents as $document) {
+            unset($document['_id']);
+
+            $this->assertEqualsCanonicalizing(['case_number', 'chunks'], array_keys($document));
+            $this->assertSame(['type' => 'summary'], $document['chunks'][0]);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function document_tools_use_the_index_tool_fields_when_fields_is_null(): void
+    {
+        [$search, , $sample, $get] = $this->createJudgmentsIndex()->tools();
+
+        $documents = [
+            $search->result(new Request(['query' => '', 'fields' => null]))['hits'][0],
+            json_decode($sample->handle(new Request(['limit' => 1, 'fields' => null])), true)[0]['_source'],
+            json_decode($get->handle(new Request(['ids' => ['case-1'], 'fields' => null])), true)[0]['_source'],
+        ];
+
+        foreach ($documents as $document) {
+            unset($document['_id']);
+
+            $this->assertEqualsCanonicalizing(['case_number', 'court_name'], array_keys($document));
+        }
+
+        $this->assertStringContainsString('Pass null for the default: case_number,court_name.', $search->schema(new FakeJsonSchema)['fields']->descriptionText);
+    }
+
+    /**
+     * @test
+     */
+    public function document_tools_return_a_field_outside_the_default_when_requested(): void
+    {
+        [$search, , $sample, $get] = $this->createJudgmentsIndex()->tools();
+
+        $documents = [
+            $search->result(new Request(['query' => '', 'fields' => 'text']))['hits'][0],
+            json_decode($sample->handle(new Request(['limit' => 1, 'fields' => 'text'])), true)[0]['_source'],
+            json_decode($get->handle(new Request(['ids' => ['case-1'], 'fields' => 'text'])), true)[0]['_source'],
+        ];
+
+        foreach ($documents as $document) {
+            $this->assertSame('FULL JUDGMENT BODY about a burglary appeal.', $document['text']);
+            $this->assertArrayNotHasKey('case_number', $document);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function fields_excepted_from_tools_are_never_returned_even_when_requested(): void
+    {
+        [$search, , $sample, $get] = $this->createPrivateParticipantsIndex()->tools();
+
+        $fields = 'title,secret,participants.name,participants.identification_number';
+
+        $outputs = [
+            $search->handle(new Request(['query' => 'Appeal', 'fields' => $fields])),
+            $sample->handle(new Request(['limit' => 5, 'fields' => $fields])),
+            $get->handle(new Request(['ids' => ['case-1'], 'fields' => $fields])),
+        ];
+
+        foreach ($outputs as $output) {
+            $this->assertStringContainsString('Anna', $output);
+
+            foreach (['SECRET-VALUE', '19800101-1111', '19900202-2222'] as $private) {
+                $this->assertStringNotContainsString($private, $output);
+            }
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function search_returns_the_matching_nested_items_of_the_requested_paths(): void
+    {
+        [$search] = $this->createJudgmentsIndex()->tools();
+
+        $this->assertArrayNotHasKey('_matches', $search->result(new Request(['query' => 'burglary', 'matches' => null]))['hits'][0]);
+
+        $hit = $search->result(new Request(['query' => 'burglary', 'fields' => null, 'matches' => 'chunks.text']))['hits'][0];
+
+        $this->assertArrayNotHasKey('chunks', $hit);
+        $this->assertSame(4, $hit['_matches']['chunks']['total']);
+        $this->assertEqualsCanonicalizing([1, 2, 3, 4], array_column($hit['_matches']['chunks']['items'], '_offset'));
+
+        foreach ($hit['_matches']['chunks']['items'] as $passage) {
+            $this->assertEqualsCanonicalizing(['_offset', 'text'], array_keys($passage));
+            $this->assertStringContainsStringIgnoringCase('burglary', $passage['text']);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function search_matches_follow_a_nested_filter_and_never_return_fields_excepted_from_tools(): void
+    {
+        [$search] = $this->createJudgmentsIndex()->tools();
+
+        $output = $search->handle(new Request([
+            'query' => '',
+            'filters' => "chunks:{type:'sentencing'}",
+            'matches' => 'chunks',
+        ]));
+
+        $this->assertEquals(
+            ['total' => 1, 'items' => [['_offset' => 3, 'type' => 'sentencing', 'text' => 'Burglary sentence of one year.']]],
+            json_decode($output, true)['hits'][0]['_matches']['chunks']
+        );
+        $this->assertStringNotContainsString('NOTE-', $output);
     }
 
     private function createPrivateParticipantsIndex(): SigmieIndex

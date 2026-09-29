@@ -94,7 +94,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         parent::__construct($elasticsearchConnection);
 
         $this->searchContext = new SearchContext;
-        $this->filterParser = new FilterParser($this->properties, false);
+        $this->filterParser = (new FilterParser($this->properties, false))->innerHits($this->searchContext->innerHits);
         $this->facetParser = new FacetParser($this->properties, false);
         $this->sortParser = new SortParser($this->properties, false);
         $this->aggregations = new Aggs;
@@ -121,6 +121,22 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     public function except(array $fields): static
     {
         $this->except = $fields;
+        $this->searchContext->innerHits->except($fields);
+
+        return $this;
+    }
+
+    /**
+     * Return, per hit, the items of these nested paths that matched the query or a nested
+     * filter. Name a nested path for whole items (`reviews`) or fields inside it
+     * (`reviews.comment`). Each hit gets `_matches` with the `total` and `items` per path.
+     *
+     * @param  list<string>  $fields
+     * @param  int  $size  items per path; Elasticsearch caps it at `index.max_inner_result_window`
+     */
+    public function innerHits(array $fields, int $size = InnerHits::MAX_SIZE): static
+    {
+        $this->searchContext->innerHits->request($fields, $size);
 
         return $this;
     }
@@ -495,6 +511,8 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         $search = new Search($this->elasticsearchConnection);
 
         $search->index($this->index);
+
+        $this->searchContext->innerHits->resolve($this->properties);
 
         $this->handleHighlight($search);
         $this->handleRetrievableFields($search);
@@ -992,7 +1010,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     protected function wrapNestedQuery(Query $queryClause, $field): Query
     {
         if ($nestedPath = $field->nestedPath()) {
-            return new Nested($nestedPath, $queryClause);
+            return new Nested($nestedPath, $queryClause, innerHits: $this->searchContext->innerHits);
         }
 
         return $queryClause;

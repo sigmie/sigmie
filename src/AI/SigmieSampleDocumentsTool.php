@@ -19,6 +19,7 @@ class SigmieSampleDocumentsTool implements Tool
 {
     use HandlesToolErrors;
     use ScopesToBaseFilters;
+    use SelectsOutputFields;
 
     public function __construct(
         protected SigmieIndex $index,
@@ -44,6 +45,7 @@ class SigmieSampleDocumentsTool implements Tool
         // function-calling. Callers that want the default simply pass null.
         return [
             'limit' => $schema->integer()->description('Number of example documents to return (1-20, default 5)')->default(5)->nullable()->required(),
+            'fields' => $this->outputFieldsSchema($schema),
         ];
     }
 
@@ -61,7 +63,9 @@ class SigmieSampleDocumentsTool implements Tool
 
         // Sigmie's search builder has no random ordering, so sampling uses the collection's
         // random_score query with the scope as its inner query.
-        $collection = $this->index->collect()->except($this->index->exceptFromTools());
+        $collection = $this->index->collect()
+            ->only($this->outputFields($request['fields'] ?? null))
+            ->except($this->index->exceptFromTools());
 
         $this->applyBaseFilters($collection);
 
