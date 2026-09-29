@@ -277,6 +277,21 @@ brand:20 price:50
 
 When facets are requested, the tool response includes a `facets` key with the aggregation data.
 
+## Discovering filter values
+
+`discover_filter_values` lists the values of one facetable field, so the agent filters on real values instead of guessing. It returns at most `limit` values (default 20). When more values exist, `truncated` is `true` and `other_documents` counts the documents in the values that were left out:
+
+```json
+{
+    "field": "color",
+    "values": { "red": 12, "blue": 7 },
+    "truncated": true, // [tl! highlight]
+    "other_documents": 5
+}
+```
+
+Here `limit` was 2, and 5 more documents have other colors. Before it treats the list as complete (for example, to count colors), the agent raises `limit` or narrows the list with `filters`, such as `"color:b*"`. Numeric and date fields return min/max and always report `truncated: false`.
+
 ## Errors
 
 The tools parse the agent's `filters`, `facets` and `facet_filters` strictly. An unknown field or unparseable expression returns an `error` result the agent can read and correct, instead of an empty result:

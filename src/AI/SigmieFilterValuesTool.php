@@ -37,7 +37,7 @@ class SigmieFilterValuesTool implements Tool
     public function description(): string
     {
         return sprintf(
-            "List the valid values of a facetable field of the '%s' index so you can filter accurately — call this when you do not know a field's values. Provide `field` (a facetable field from the search tool's field list) and optional `filters` (same DSL as the search tool, e.g. \"field:nav*\" to prefix-match, or filter another field to narrow). Keyword/category fields return value counts; numeric/date fields return min/max.",
+            "List the valid values of a facetable field of the '%s' index so you can filter accurately — call this when you do not know a field's values. Provide `field` (a facetable field from the search tool's field list) and optional `filters` (same DSL as the search tool, e.g. \"field:nav*\" to prefix-match, or filter another field to narrow). Keyword/category fields return value counts; numeric/date fields return min/max. `truncated: true` means more values exist than `limit`; `other_documents` counts the documents in the omitted values. Raise `limit` or narrow with `filters` before treating the list as complete.",
             $this->index->name()
         );
     }
@@ -81,11 +81,24 @@ class SigmieFilterValuesTool implements Tool
             $search->filters(implode(' AND ', array_map(static fn (string $f): string => sprintf('(%s)', $f), $filters)), throwOnError: true);
         }
 
-        $facets = (array) ($search->get()->json('facets') ?? []);
+        $response = $search->get();
+        $facets = (array) ($response->json('facets') ?? []);
+
+        // Terms facets return only the top `limit` buckets. Elasticsearch counts the documents in
+        // the omitted buckets as `sum_other_doc_count`; surface it so the agent knows the list is
+        // partial. Field types nest the terms aggregation at different depths under the field name.
+        $aggregation = $response->facetAggregations()[$fieldName] ?? [];
+        while (! isset($aggregation['sum_other_doc_count']) && is_array($aggregation[$fieldName] ?? null)) {
+            $aggregation = $aggregation[$fieldName];
+        }
+
+        $otherDocuments = (int) ($aggregation['sum_other_doc_count'] ?? 0);
 
         return [
             'field' => $fieldName,
             'values' => $facets[$fieldName] ?? null,
+            'truncated' => $otherDocuments > 0,
+            'other_documents' => $otherDocuments,
         ];
     }
 }
