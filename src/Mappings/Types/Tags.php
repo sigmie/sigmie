@@ -25,6 +25,6 @@ class Tags extends Text implements Analyze
 
     public function queries(array|string $queryString): array
     {
-        return [new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer()), new MatchPhrasePrefix($this->name, $queryString, analyzer: $this->searchAnalyzer())];
+        return [new Match_($this->name(), $queryString, analyzer: $this->searchAnalyzer()), new MatchPhrasePrefix($this->name(), $queryString, analyzer: $this->searchAnalyzer())];
     }
 }

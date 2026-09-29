@@ -156,8 +156,8 @@ $movies->toArray();                     // load all into memory (small indices o
 `only()` and `except()` limit the source that `get()`, `getMany()`, `take()`, and `random()` return. Dotted paths reach nested fields:
 
 ```php
-$cases->except(['participants.identification_number'])->getMany(['case_1', 'case_2']);
-$cases->only(['title', 'year'])->random(5);
+$customers->except(['contacts.email'])->getMany(['customer_1', 'customer_2']);
+$movies->only(['title', 'year'])->random(5);
 ```
 
 `Document` implements `ArrayAccess`:

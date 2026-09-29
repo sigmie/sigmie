@@ -28,7 +28,7 @@ class SigmieSearchResponse extends AbstractFormatter
         return [
             'code' => $this->code(),
             'semantic' => $this->semantic,
-            'hits' => $this->queryResponseRaw['hits']['hits'] ?? [],
+            'hits' => $this->formattedHits(),
             'processing_time_ms' => $this->queryResponseRaw['took'] ?? 0,
             'total' => $this->queryResponseRaw['hits']['total']['value'] ?? 0,
             'query_strings' => array_map(fn ($qs): string => (string) $qs, $this->search->queryStrings ?? []),
@@ -47,6 +47,36 @@ class SigmieSearchResponse extends AbstractFormatter
         ];
     }
 
+    /**
+     * The raw hits as json('hits') and hits() both return them.
+     */
+    protected function formattedHits(): array
+    {
+        return array_map($this->formatHit(...), $this->queryResponseRaw['hits']['hits'] ?? []);
+    }
+
+    /**
+     * Replaces the raw, per-clause nested `inner_hits` with `_matches`, merged per requested path.
+     * Other inner hits, such as the `top` hits of uniqueBy(), stay as they are.
+     */
+    protected function formatHit(array $hit): array
+    {
+        if (! $this->search->innerHits->requested()) {
+            return $hit;
+        }
+
+        $nested = array_filter($hit['inner_hits'] ?? [], fn (string $name): bool => str_contains($name, '#'), ARRAY_FILTER_USE_KEY);
+
+        $hit['_matches'] = $this->search->innerHits->matches($nested);
+        $hit['inner_hits'] = array_diff_key($hit['inner_hits'] ?? [], $nested);
+
+        if ($hit['inner_hits'] === []) {
+            unset($hit['inner_hits']);
+        }
+
+        return $hit;
+    }
+
     public function autocompletion()
     {
         return $this->queryResponseRaw['suggest']['autocompletion'] ?? [];
@@ -59,8 +89,9 @@ class SigmieSearchResponse extends AbstractFormatter
             $hit['_id'],
             $hit['_score'],
             $hit['_index'],
-            $hit['sort'] ?? null
-        ), $this->queryResponseRaw['hits']['hits'] ?? []);
+            $hit['sort'] ?? null,
+            $hit['_matches'] ?? [],
+        ), $this->formattedHits());
     }
 
     public function total()

@@ -314,8 +314,8 @@ $orders->analytics('created_at')
 Pass `except` to drop fields from every row. It wins over `fields`, so a nested path stays hidden even when its parent is listed:
 
 ```php
-$cases->analytics('decided_at')
-    ->table('recent', fields: ['title', 'participants'], except: ['participants.identification_number'])
+$customers->analytics('created_at')
+    ->table('recent', fields: ['name', 'contacts'], except: ['contacts.email'])
     ->get();
 ```
 

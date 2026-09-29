@@ -18,5 +18,6 @@ class SearchContext
         public int $from = 0,
         public ?array $searchAfter = null,
         public array $autocompletePrefixStrings = [],
+        public InnerHits $innerHits = new InnerHits,
     ) {}
 }

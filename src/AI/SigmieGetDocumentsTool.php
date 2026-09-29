@@ -23,6 +23,7 @@ class SigmieGetDocumentsTool implements Tool
 {
     use HandlesToolErrors;
     use ScopesToBaseFilters;
+    use SelectsOutputFields;
 
     public function __construct(
         protected SigmieIndex $index,
@@ -48,6 +49,7 @@ class SigmieGetDocumentsTool implements Tool
             'ids' => $schema->array()->items($schema->string())
                 ->description('Document ids to retrieve (1-100)')
                 ->required(),
+            'fields' => $this->outputFieldsSchema($schema),
         ];
     }
 
@@ -73,6 +75,10 @@ class SigmieGetDocumentsTool implements Tool
             ->size(count($ids));
 
         $this->applyBaseFilters($search);
+
+        if (($fields = $this->outputFields($request['fields'] ?? null)) !== []) {
+            $search->retrieve($fields);
+        }
 
         $order = array_flip($ids);
         $hits = $search->get()->hits();

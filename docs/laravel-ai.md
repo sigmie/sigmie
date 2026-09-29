@@ -1,7 +1,7 @@
 ---
 title: Laravel AI SDK
 short_description: Expose Sigmie indices as Laravel AI agent tools — auto-generated descriptions, base filters for multi-tenancy, and the full Sigmie filter syntax.
-keywords: [laravel ai, ai sdk, tools, agents, llm, private fields]
+keywords: [laravel ai, ai sdk, tools, agents, llm, private fields, tool output, inner hits]
 category: Integrations
 order: 2
 related_pages: [search, filter-parser, sort-parser, facets, laravel-scout]
@@ -126,22 +126,125 @@ $get->handle(new Request(['ids' => ['order-of-user-3', 'order-of-user-4']]));
 
 > **Warning:** A malformed base filter throws a `ParseException` on every call. It never falls back to matching all documents.
 
-## Private fields
+## Controlling tool output
 
-Override `exceptFromTools()` to keep fields out of every document the tools return. Dotted paths reach nested fields:
+`search_index`, `sample_documents`, and `get_documents` return every source field by default. For an index with large fields, such as a full article body, ten hits can fill the agent's context. The `fields` argument and `toolFields()` keep results small, and the `matches` argument returns only the sections that matched.
+
+The agent passes `fields`, a comma-separated list of source fields. Dotted paths reach nested fields:
+
+```json
+{"query": "solar", "fields": "title,author,sections.text"}
+```
+
+Override `toolFields()` to set the default the tools use when the agent passes `fields: null`. An empty list, the default, returns every field:
 
 ```php
-class CaseIndex extends SigmieIndex
+class ArticleIndex extends SigmieIndex
 {
     use AsTool;
 
     public function properties(): NewProperties
     {
         $props = new NewProperties;
-        $props->name('title');
-        $props->nested('participants', function (NewProperties $props) {
+        $props->title('title');
+        $props->category('author');
+        $props->date('published_at');
+        $props->longText('body');                // full article body
+        $props->nested('sections', function (NewProperties $props) {
+            $props->keyword('type');
+            $props->text('text');                // one section
+        });
+        $props->nested('comments', function (NewProperties $props) {
+            $props->text('text');
+        });
+
+        return $props;
+    }
+
+    public function toolFields(): array
+    {
+        return ['title', 'author', 'published_at']; // [tl! highlight]
+    }
+}
+```
+
+The agent can still request a field outside the default, such as `fields: "body"`. The tool descriptions name the default, so the agent knows what it gets. [Private fields](#private-fields) always win: a field from `exceptFromTools()` never returns, even when the agent requests it.
+
+### Matching sections
+
+A search for "solar" matches the article, but the hit alone does not say which of its `sections` matched. To quote the relevant section, the agent needs those sections. The `matches` argument returns them. It lists the nested paths whose matching items the agent wants back. This is Elasticsearch inner hits, explained in [Search](search.md#matching-nested-items-inner-hits).
+
+The agent calls `search_index` with `matches`. `fields` stays at the index default, so the full body and the section array stay out:
+
+```json
+{"query": "solar", "fields": null, "matches": "sections.text"}
+```
+
+Each hit gets `_matches`, next to the source fields:
+
+```json
+{
+    "total": 1,
+    "hits": [
+        {
+            "_id": "article-1",
+            "title": "Energy at home",
+            "author": "Jane Doe",
+            "published_at": "2024-05-02",
+            "_matches": {
+                "sections": {
+                    "total": 4,
+                    "items": [
+                        {"_offset": 1, "text": "The solar panels were installed."},
+                        {"_offset": 2, "text": "The solar inverter was replaced."},
+                        {"_offset": 4, "text": "A solar battery stores the surplus."},
+                        {"_offset": 3, "text": "Solar power pays off in six years."}
+                    ]
+                }
+            }
+        }
+    ]
+}
+```
+
+| Key | Holds |
+|-----|-------|
+| `_matches.sections.total` | How many sections of this article matched the query or a nested filter. |
+| `_matches.sections.items` | The matching sections, best match first, up to 100. |
+| `_offset` | The section's position in the `sections` array. |
+
+`matches: "sections"` returns whole sections, and `matches: "sections.text sections.type"` returns those fields of each section. Entries are separated by spaces or commas.
+
+Add `:size` to an entry to cap that path's items, the same way `facets` takes `field:size`. Each path has its own size, from 1 to 100, and the default is 100:
+
+```json
+{"query": "solar", "fields": null, "matches": "sections.text:2 comments"}
+```
+
+Here `_matches.sections` holds 2 of the 4 matching sections with `total: 4`, and `_matches.comments` holds every matching comment. An invalid size, such as `sections.text:0` or `sections.text:500`, returns an error the agent can correct from:
+
+```json
+{"error": "Invalid matches entry 'sections.text:0'. Use a nested path, optionally with ':size' from 1 to 100, e.g. 'sections.text:5'. Check the field names and the filter/sort syntax in this tool's description, then try again."}
+```
+
+A nested filter such as `sections:{type:'conclusion'}` also produces matches, and a section that matched both the query and the filter appears once. With `matches: null`, the default, hits have no `_matches` key. [Private fields](#private-fields) never appear in matches.
+
+## Private fields
+
+Override `exceptFromTools()` to keep fields out of every document the tools return. Dotted paths reach nested fields:
+
+```php
+class CustomerIndex extends SigmieIndex
+{
+    use AsTool;
+
+    public function properties(): NewProperties
+    {
+        $props = new NewProperties;
+        $props->name('name');
+        $props->nested('contacts', function (NewProperties $props) {
             $props->keyword('name');
-            $props->keyword('identification_number');
+            $props->keyword('email');
         });
 
         return $props;
@@ -149,23 +252,23 @@ class CaseIndex extends SigmieIndex
 
     public function exceptFromTools(): array
     {
-        return ['participants.identification_number']; // [tl! highlight]
+        return ['contacts.email']; // [tl! highlight]
     }
 }
 ```
 
-`search_index`, `sample_documents`, `get_documents`, and the `analytics` tool's `table` widget and `include_hits` rows omit these fields. Elasticsearch drops them from `_source` before the response leaves the cluster. The exclusion wins over the agent's own `fields` and `hit_fields`, so `hit_fields: "participants"` returns `participants.name` only.
+`search_index`, `sample_documents`, `get_documents`, and the `analytics` tool's `table` widget and `include_hits` rows omit these fields. Elasticsearch drops them from `_source` before the response leaves the cluster. The exclusion wins over the agent's own `fields` and `hit_fields`, so `hit_fields: "contacts"` returns `contacts.name` only.
 
 The fields are filter-only. The agent can still filter on them:
 
 ```
-participants:{identification_number:'19800101-1111'}
+contacts:{email:'jane@example.com'}
 ```
 
 Every tool refuses to list, facet, group, measure, or sort by a private field or any field below it. This covers `discover_filter_values`, the search `facets` and `sort`, and every `analytics` argument that names a field, such as `group_by`, `group_by_fields`, `row_field`, `field`, `sort`, and `hit_sort`. `handle()` returns an error the agent can correct from, and `result()` throws an `InvalidArgumentException`:
 
 ```json
-{"error": "Field participants.identification_number is private and cannot be listed, grouped, faceted or sorted; you can still filter on it. ..."}
+{"error": "Field contacts.email is private and cannot be listed, grouped, faceted or sorted; you can still filter on it. ..."}
 ```
 
 The tool descriptions and `describe_index` mark these fields as filter only, so the agent does not try. Your own code keeps full access: `facets()` on a search and `analytics()` on the index are unaffected.
@@ -214,6 +317,10 @@ Facets: field1 field2:20 (space-separated, optional :size for keywords or :inter
 | `facet_filters` | string | Active facet filter values. |
 | `per_page` | int (default 10) | Results per page. |
 | `page` | int (default 1) | Page number. |
+| `fields` | string | Comma-separated source fields to return. `null` uses `toolFields()`. |
+| `matches` | string | Nested paths whose matching items return in `_matches`, separated by spaces or commas, each optionally `path:size` (1-100, default 100). `null` returns none. |
+
+`sample_documents` and `get_documents` accept the same `fields` parameter.
 
 ## Filter syntax
 

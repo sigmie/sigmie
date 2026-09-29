@@ -15,7 +15,7 @@ class Boolean extends Type
         $queries = [];
 
         if (trim(strtolower($queryString)) === trim(strtolower($this->name))) {
-            $queries[] = new Term($this->name, true);
+            $queries[] = new Term($this->name(), true);
         }
 
         return $queries;

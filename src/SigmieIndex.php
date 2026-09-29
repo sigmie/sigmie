@@ -38,4 +38,17 @@ abstract class SigmieIndex
     {
         return [];
     }
+
+    /**
+     * Source fields the document tools (search, sample_documents, get_documents) return when the
+     * agent passes no `fields` argument. Empty returns every field. Use it to keep large fields,
+     * such as a full-text body, out of default results; the agent can still request them by name.
+     * exceptFromTools() always wins over both this default and the agent's request.
+     *
+     * @return list<string>
+     */
+    public function toolFields(): array
+    {
+        return [];
+    }
 }

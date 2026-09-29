@@ -25,6 +25,6 @@ class Path extends Text implements Analyze
 
     public function queries(array|string $queryString): array
     {
-        return [new Prefix($this->name, $queryString), new Match_($this->name, $queryString)];
+        return [new Prefix($this->name(), $queryString), new Match_($this->name(), $queryString)];
     }
 }

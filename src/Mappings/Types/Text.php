@@ -303,12 +303,12 @@ class Text extends Type implements FromRaw
 
         if ($this->type === 'search_as_you_type') {
             $queries[] = new MultiMatch([
-                $this->name,
-                $this->name.'._2gram',
-                $this->name.'._3gram',
+                $this->name(),
+                $this->name().'._2gram',
+                $this->name().'._3gram',
             ], $queryString);
         } else {
-            $queries[] = new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer());
+            $queries[] = new Match_($this->name(), $queryString, analyzer: $this->searchAnalyzer());
         }
 
         return $queries;
