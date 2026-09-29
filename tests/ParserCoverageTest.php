@@ -106,12 +106,10 @@ class ParserCoverageTest extends TestCase
         $this->assertSame('category', $category->originalName());
         $this->assertSame(['published' => 1], $category->facets([
             'category' => [
-                'category' => [
-                    'buckets' => [
-                        [
-                            'key' => 'published',
-                            'doc_count' => 1,
-                        ],
+                'buckets' => [
+                    [
+                        'key' => 'published',
+                        'doc_count' => 1,
                     ],
                 ],
             ],

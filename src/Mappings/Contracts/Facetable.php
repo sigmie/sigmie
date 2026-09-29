@@ -14,7 +14,8 @@ interface Facetable
     public function isFacetable(): bool;
 
     /**
-     * Get facets from aggregation results
+     * Get facets from the aggregations this field added in aggregation(),
+     * already unwrapped from the facet filter and nested wrappers.
      */
     public function facets(array $aggregation): ?array;
 

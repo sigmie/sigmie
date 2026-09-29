@@ -49,6 +49,15 @@ $response->json('facets');
 
 Use `category()` for categorical data (brand, department, genre). Use `keyword()` for exact-match strings (SKU, status).
 
+`caseSensitiveKeyword()` fields count each spelling separately:
+
+```php
+$props->caseSensitiveKeyword('tag');
+
+$response->facet('tag');
+// ['sport' => 2, 'Sport' => 1]
+```
+
 ## Price facets
 
 Price fields return min, max, and a histogram. The argument after `:` is the bucket size:
@@ -62,7 +71,7 @@ $response = $sigmie->newSearch('products')
     ->facets('price:100')        // $100 buckets
     ->get();
 
-$price = $props->get()['price']->facets($response->facetAggregations());
+$price = $response->facet('price');
 // [
 //     'min' => 299,
 //     'max' => 1499,
@@ -90,7 +99,7 @@ $response = $sigmie->newSearch('products')
     ->facets('rating')
     ->get();
 
-$stats = $props->get()['rating']->facets($response->facetAggregations());
+$stats = $response->facet('rating');
 // [
 //     'count' => 127,
 //     'min' => 1.0,
@@ -112,6 +121,9 @@ $response = $sigmie->newSearch('articles')
     ->queryString('technology')
     ->facets('author')
     ->get();
+
+$response->facet('author');
+// ['Jane Doe' => 14, 'John Smith' => 9]
 ```
 
 ## Filtering with facets
@@ -197,7 +209,7 @@ This is the standard pattern for filter UIs.
 
 ## Nested fields
 
-Use dot notation:
+Use dot notation. Nested facets return the same shape as root facets:
 
 ```php
 $props->nested('attributes', function (NewProperties $p) {
@@ -211,9 +223,14 @@ $response = $sigmie->newSearch('products')
     ->facets('attributes.color attributes.price:50')
     ->get();
 
-$compiled = $props->get();
-$colors = $compiled->get('attributes.color')->facets($response->facetAggregations());
+$response->facet('attributes.color');
+// ['red' => 12, 'blue' => 7]
+
+$response->facet('attributes.price');
+// ['min' => 20, 'max' => 180, 'histogram' => [0 => 4, 50 => 9, 100 => 6, 150 => 2]]
 ```
+
+`json('facets')` keys nested facets by their full path, `attributes.color`.
 
 Multi-level nesting works too:
 
@@ -230,30 +247,29 @@ $props->nested('product', function (NewProperties $p) {
 
 ## Reading facet data
 
-### From the response JSON
+`facet()` returns one field's facet as an array, for root and nested fields alike:
+
+```php
+$price = $response->facet('price');                // ['min' => ..., 'max' => ..., 'histogram' => [...]]
+$rating = $response->facet('rating');              // ['count' => ..., 'min' => ..., 'max' => ..., 'avg' => ..., 'sum' => ...]
+$colors = $response->facet('attributes.color');    // ['red' => 12, 'blue' => 7]
+```
+
+`json('facets')` returns every requested facet, keyed by field path:
 
 ```php
 $allFacets = $response->json('facets');
 $brand = $response->json('facets.brand');
-$color = $response->json('facets.color');
 ```
 
-### Through property objects
+| Field type | Facet |
+|------------|-------|
+| `keyword`, `category`, `tags`, `caseSensitiveKeyword` | Value counts |
+| `text()->keyword()` | Value counts of the keyword sub-field |
+| `number` | `count`, `min`, `max`, `avg`, `sum` |
+| `price` | `min`, `max`, `histogram` |
 
-For price and number facets, the property object computes structured data:
-
-```php
-$compiled = $props->get();
-
-$price = $compiled['price']->facets($response->facetAggregations());
-$min = $price['min'];
-$max = $price['max'];
-$histogram = $price['histogram'];
-
-$rating = $compiled['rating']->facets($response->facetAggregations());
-$avg = $rating['avg'];
-$count = $rating['count'];
-```
+> **Note:** `json('facets.attributes.color')` reads `.` as a path separator. Use `facet('attributes.color')` for nested fields.
 
 ## Combined example
 
@@ -279,11 +295,10 @@ $response = $sigmie->newSearch('products')
     )
     ->get();
 
-$compiled = $props->get();
-$brand = $response->json('facets.brand');
-$color = $response->json('facets.color');
-$price = $compiled['price']->facets($response->facetAggregations());
-$rating = $compiled['rating']->facets($response->facetAggregations());
+$brand = $response->facet('brand');
+$color = $response->facet('color');
+$price = $response->facet('price');
+$rating = $response->facet('rating');
 ```
 
 ## Empty search with facets
