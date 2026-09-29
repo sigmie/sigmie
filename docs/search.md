@@ -364,8 +364,10 @@ $props->nested('reviews', function (NewProperties $props) {
     $props->keyword('author');
 });
 $props->nested('questions', function (NewProperties $props) {
-    $props->text('question');
-    $props->text('answer');
+    $props->text('text');
+});
+$props->nested('answers', function (NewProperties $props) {
+    $props->text('text');
 });
 
 $sigmie->newIndex('products')->properties($props)->lowercase()->create();
@@ -379,20 +381,24 @@ $sigmie->collect('products', refresh: true)->merge([
             ['comment' => 'Battery drains fast when gaming.', 'stars' => 2, 'author' => 'chris'],
         ],
         'questions' => [
-            ['question' => 'Is the battery replaceable?', 'answer' => 'No, it is sealed.'],
-            ['question' => 'Does it support eSIM?', 'answer' => 'Yes.'],
+            ['text' => 'Is the battery replaceable?'],
+            ['text' => 'Does it support eSIM?'],
+        ],
+        'answers' => [
+            ['text' => 'No, the battery is sealed.'],
+            ['text' => 'Yes, eSIM works.'],
         ],
     ], 'aurora'),
 ]);
 ```
 
-Pass the nested paths whose matching items you want to `innerHits()`:
+Pass the nested path whose matching items you want to `innerHits()`:
 
 ```php
 $hits = $sigmie->newSearch('products')
     ->properties($props)
     ->queryString('battery')
-    ->innerHits(['reviews']) // [tl! highlight]
+    ->innerHits('reviews') // [tl! highlight]
     ->get()
     ->json('hits');
 ```
@@ -410,8 +416,12 @@ Each hit keeps its `_source` and gets a `_matches` key:
             {"comment": "Battery drains fast when gaming.", "stars": 2, "author": "chris"}
         ],
         "questions": [
-            {"question": "Is the battery replaceable?", "answer": "No, it is sealed."},
-            {"question": "Does it support eSIM?", "answer": "Yes."}
+            {"text": "Is the battery replaceable?"},
+            {"text": "Does it support eSIM?"}
+        ],
+        "answers": [
+            {"text": "No, the battery is sealed."},
+            {"text": "Yes, eSIM works."}
         ]
     },
     "_matches": {
@@ -437,10 +447,11 @@ Only the paths you name get matches. Without `innerHits()`, a hit has no `_match
 
 ### Select fields with dot syntax
 
-Name fields inside the nested field, instead of the nested field itself, to return only those fields of each matching item:
+Name a field inside the nested field, instead of the nested field itself, to return only that field of each matching item. Call again for another field of the same path, and the fields merge:
 
 ```php
-->innerHits(['reviews.comment', 'reviews.stars'])
+->innerHits('reviews.comment')
+->innerHits('reviews.stars')
 ```
 
 ```json
@@ -464,7 +475,7 @@ $hits = $sigmie->newSearch('products')
     ->properties($props)
     ->queryString('battery')
     ->retrieve(['title']) // [tl! highlight]
-    ->innerHits(['reviews.comment'])
+    ->innerHits('reviews.comment')
     ->get()
     ->json('hits');
 ```
@@ -485,13 +496,20 @@ $hits = $sigmie->newSearch('products')
 }
 ```
 
-### Several paths
+### Several paths, each with its own size
 
-List several nested paths. Each gets its own entry:
+Call `innerHits()` once per nested path. Each path gets its own entry and its own `size`:
 
 ```php
-->retrieve(['title'])
-->innerHits(['reviews.comment', 'questions'])
+$hits = $sigmie->newSearch('products')
+    ->properties($props)
+    ->queryString('battery')
+    ->retrieve(['title'])
+    ->innerHits('reviews', size: 10)
+    ->innerHits('questions.text', size: 5)
+    ->innerHits('answers')                 // default size: 100
+    ->get()
+    ->json('hits');
 ```
 
 ```json
@@ -499,17 +517,29 @@ List several nested paths. Each gets its own entry:
     "reviews": {
         "total": 2,
         "items": [
-            {"_offset": 0, "comment": "Battery easily lasts two days."},
-            {"_offset": 2, "comment": "Battery drains fast when gaming."}
+            {"_offset": 0, "comment": "Battery easily lasts two days.", "stars": 5, "author": "anna"},
+            {"_offset": 2, "comment": "Battery drains fast when gaming.", "stars": 2, "author": "chris"}
         ]
     },
     "questions": {
         "total": 1,
         "items": [
-            {"_offset": 0, "question": "Is the battery replaceable?", "answer": "No, it is sealed."}
+            {"_offset": 0, "text": "Is the battery replaceable?"}
+        ]
+    },
+    "answers": {
+        "total": 1,
+        "items": [
+            {"_offset": 0, "text": "No, the battery is sealed."}
         ]
     }
 }
+```
+
+An array is the shortcut for several fields or paths that share one size:
+
+```php
+->innerHits(['reviews.comment', 'reviews.stars', 'questions.text'], size: 5)
 ```
 
 ### Size and totals
@@ -518,7 +548,7 @@ List several nested paths. Each gets its own entry:
 
 ```php
 ->retrieve(['title'])
-->innerHits(['reviews.comment'], size: 1) // [tl! highlight]
+->innerHits('reviews.comment', size: 1) // [tl! highlight]
 ```
 
 `total` still counts every match, so a capped list is visible. Here `total` is 2 and one item returns:
@@ -536,6 +566,8 @@ List several nested paths. Each gets its own entry:
 
 When `total` is greater than the number of items, the list is capped. The same applies when more than 100 items match: `items` holds 100 and `total` holds the real count. To return more than 100, raise `index.max_inner_result_window` on the index and pass a larger `size`.
 
+When you call `innerHits()` again for the same path, the later `size` wins and the fields merge. A whole-path request covers every field under it, so `->innerHits('reviews.comment', size: 8)->innerHits('reviews', size: 1)` returns one whole review.
+
 ### Nested filters
 
 A [nested filter](filter-parser.md) also produces matches. When the query and a filter both match items of one path, `_matches` holds each item once:
@@ -543,12 +575,12 @@ A [nested filter](filter-parser.md) also produces matches. When the query and a 
 ```php
 ->queryString('battery')                // matches reviews 0 and 2
 ->filters('reviews:{stars>=4}')          // matches reviews 0 and 1
-->innerHits(['reviews.comment'])         // reviews 0, 1 and 2, total 3
+->innerHits('reviews.comment')           // reviews 0, 1 and 2, total 3
 ```
 
-Deeper nested paths use dots too. For orders with nested items, `innerHits(['orders.items.sku'])` with the filter `orders:{items:{sku:'y'}}` returns the matching items under `_matches['orders.items']`. Each item also holds `_parents`, the offsets of its parent items, such as `{"orders": 1}`.
+Deeper nested paths use dots too. For orders with nested items, `innerHits('orders.items.sku')` with the filter `orders:{items:{sku:'y'}}` returns the matching items under `_matches['orders.items']`. Each item also holds `_parents`, the offsets of its parent items, such as `{"orders": 1}`.
 
-`except()` applies to the items too. With `->except(['reviews.author'])`, no item holds `author`, even with `innerHits(['reviews'])`.
+`except()` applies to the items too. With `->except(['reviews.author'])`, no item holds `author`, even with `innerHits('reviews')`.
 
 > **Note:** `innerHits()` throws an `InvalidArgumentException` for a field that does not exist or is not inside a nested field, such as `title`.
 

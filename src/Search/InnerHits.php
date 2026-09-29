@@ -33,9 +33,11 @@ class InnerHits
     protected const PARENT_ONLY = 'parent';
 
     /**
-     * @var list<string>
+     * Every request in call order: the fields and the size they share.
+     *
+     * @var list<array{fields: list<string>, size: int}>
      */
-    protected array $fields = [];
+    protected array $requests = [];
 
     /**
      * Nested path => `_source` includes for its items.
@@ -44,11 +46,19 @@ class InnerHits
      */
     protected array $paths = [];
 
+    /**
+     * Nested path => items returned per hit.
+     *
+     * @var array<string, int>
+     */
+    protected array $sizes = [];
+
     protected array $except = [];
 
-    protected int $size = self::MAX_SIZE;
-
     /**
+     * Adds a request; earlier requests stay. A later request for the same nested path sets that
+     * path's size, and its fields merge with the earlier ones.
+     *
      * @param  list<string>  $fields  nested paths (whole items) or fields inside them, in dot syntax
      */
     public function request(array $fields, int $size): void
@@ -57,8 +67,7 @@ class InnerHits
             throw new InvalidArgumentException('Inner hits size must be at least 1.');
         }
 
-        $this->fields = $fields;
-        $this->size = $size;
+        $this->requests[] = ['fields' => $fields, 'size' => $size];
     }
 
     public function except(array $fields): void
@@ -68,30 +77,35 @@ class InnerHits
 
     public function requested(): bool
     {
-        return $this->fields !== [];
+        return $this->requests !== [];
     }
 
     /**
-     * Maps every requested field to its closest nested ancestor.
+     * Maps every requested field to its closest nested ancestor. A whole-path request covers
+     * every field selection under that path.
      *
      * @throws InvalidArgumentException when a field is unknown or not inside a nested field
      */
     public function resolve(Properties $properties): void
     {
         $this->paths = [];
+        $this->sizes = [];
 
-        foreach ($this->fields as $field) {
-            if ($properties->get($field) === null) {
-                throw new InvalidArgumentException(sprintf("Field '%s' does not exist.", $field));
+        foreach ($this->requests as $request) {
+            foreach ($request['fields'] as $field) {
+                if ($properties->get($field) === null) {
+                    throw new InvalidArgumentException(sprintf("Field '%s' does not exist.", $field));
+                }
+
+                $path = $this->nestedAncestor($properties, $field)
+                    ?? throw new InvalidArgumentException(sprintf("Field '%s' is not a nested field or inside one.", $field));
+
+                $this->paths[$path] = match (true) {
+                    $field === $path, ($this->paths[$path] ?? null) === [$path] => [$path],
+                    default => [...$this->paths[$path] ?? [], $field],
+                };
+                $this->sizes[$path] = $request['size'];
             }
-
-            $path = $this->nestedAncestor($properties, $field)
-                ?? throw new InvalidArgumentException(sprintf("Field '%s' is not a nested field or inside one.", $field));
-
-            $this->paths[$path] = match (true) {
-                $field === $path, ($this->paths[$path] ?? null) === [$path] => [$path],
-                default => [...$this->paths[$path] ?? [], $field],
-            };
         }
     }
 
@@ -103,14 +117,16 @@ class InnerHits
         if (isset($this->paths[$path])) {
             return [
                 'name' => $path.'#'.$id,
-                'size' => $this->size,
+                'size' => $this->sizes[$path],
                 '_source' => ['includes' => $this->paths[$path], 'excludes' => $this->except],
             ];
         }
 
+        // A parent of a requested deeper path returns as many parents as allowed, so their
+        // children stay reachable. Parents beyond the cap drop their children from the count.
         foreach (array_keys($this->paths) as $requested) {
             if (str_starts_with($requested, $path.'.')) {
-                return ['name' => $path.'#'.$id.'#'.self::PARENT_ONLY, 'size' => $this->size, '_source' => false];
+                return ['name' => $path.'#'.$id.'#'.self::PARENT_ONLY, 'size' => self::MAX_SIZE, '_source' => false];
             }
         }
 
@@ -152,7 +168,7 @@ class InnerHits
 
             $matches[$path] = [
                 'total' => $total,
-                'items' => array_column(array_slice($items, 0, $this->size), 'item'),
+                'items' => array_column(array_slice($items, 0, $this->sizes[$path]), 'item'),
             ];
         }
 

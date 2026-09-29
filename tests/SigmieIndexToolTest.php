@@ -1566,6 +1566,30 @@ class SigmieIndexToolTest extends TestCase
     /**
      * @test
      */
+    public function search_matches_accept_a_size_per_path(): void
+    {
+        [$search] = $this->createJudgmentsIndex()->tools();
+
+        foreach (['chunks.text:2', 'chunks.type:9, chunks.text:2'] as $matches) {
+            $chunks = $search->result(new Request(['query' => 'burglary', 'matches' => $matches]))['hits'][0]['_matches']['chunks'];
+
+            $this->assertSame(4, $chunks['total']);
+            $this->assertCount(2, $chunks['items']);
+        }
+
+        foreach (['chunks.text:0', 'chunks.text:101', 'chunks.text:two'] as $matches) {
+            $output = json_decode($search->handle(new Request(['query' => 'burglary', 'matches' => $matches])), true);
+
+            $this->assertStringContainsString(
+                sprintf("Invalid matches entry '%s'. Use a nested path, optionally with ':size' from 1 to 100", $matches),
+                $output['error'] ?? ''
+            );
+        }
+    }
+
+    /**
+     * @test
+     */
     public function search_matches_follow_a_nested_filter_and_never_return_fields_excepted_from_tools(): void
     {
         [$search] = $this->createJudgmentsIndex()->tools();

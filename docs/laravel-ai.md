@@ -210,7 +210,21 @@ Each hit gets `_matches`, next to the source fields:
 | `_matches.chunks.items` | The matching chunks, best match first, up to 100. |
 | `_offset` | The chunk's position in the `chunks` array. |
 
-`matches: "chunks"` returns whole chunks, and `matches: "chunks.text,chunks.type"` returns those fields of each chunk. A nested filter such as `chunks:{type:'sentencing'}` also produces matches, and a chunk that matched both the query and the filter appears once. With `matches: null`, the default, hits have no `_matches` key. [Private fields](#private-fields) never appear in matches.
+`matches: "chunks"` returns whole chunks, and `matches: "chunks.text chunks.type"` returns those fields of each chunk. Entries are separated by spaces or commas.
+
+Add `:size` to an entry to cap that path's items, the same way `facets` takes `field:size`. Each path has its own size, from 1 to 100, and the default is 100:
+
+```json
+{"query": "burglary", "fields": null, "matches": "chunks.text:2 participants"}
+```
+
+Here `_matches.chunks` holds 2 of the 4 matching chunks with `total: 4`, and `_matches.participants` holds every matching participant. An invalid size, such as `chunks.text:0` or `chunks.text:500`, returns an error the agent can correct from:
+
+```json
+{"error": "Invalid matches entry 'chunks.text:0'. Use a nested path, optionally with ':size' from 1 to 100, e.g. 'chunks.text:5'. Check the field names and the filter/sort syntax in this tool's description, then try again."}
+```
+
+A nested filter such as `chunks:{type:'sentencing'}` also produces matches, and a chunk that matched both the query and the filter appears once. With `matches: null`, the default, hits have no `_matches` key. [Private fields](#private-fields) never appear in matches.
 
 ## Private fields
 
@@ -301,7 +315,7 @@ Facets: field1 field2:20 (space-separated, optional :size for keywords or :inter
 | `per_page` | int (default 10) | Results per page. |
 | `page` | int (default 1) | Page number. |
 | `fields` | string | Comma-separated source fields to return. `null` uses `toolFields()`. |
-| `matches` | string | Comma-separated nested paths whose matching items return in `_matches`. `null` returns none. |
+| `matches` | string | Nested paths whose matching items return in `_matches`, separated by spaces or commas, each optionally `path:size` (1-100, default 100). `null` returns none. |
 
 `sample_documents` and `get_documents` accept the same `fields` parameter.
 

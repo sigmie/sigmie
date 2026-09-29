@@ -127,16 +127,20 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     }
 
     /**
-     * Return, per hit, the items of these nested paths that matched the query or a nested
-     * filter. Name a nested path for whole items (`reviews`) or fields inside it
-     * (`reviews.comment`). Each hit gets `_matches` with the `total` and `items` per path.
+     * Return, per hit, the items of a nested path that matched the query or a nested filter.
+     * Name a nested path for whole items (`reviews`) or a field inside it (`reviews.comment`);
+     * an array names several that share the size. Each hit gets `_matches` with the `total` and
+     * `items` per path.
      *
-     * @param  list<string>  $fields
+     * Calls add up, one per path: `->innerHits('reviews', size: 10)->innerHits('answers')`.
+     * Calling again for the same path merges its fields and the later size wins.
+     *
+     * @param  string|list<string>  $fields
      * @param  int  $size  items per path; Elasticsearch caps it at `index.max_inner_result_window`
      */
-    public function innerHits(array $fields, int $size = InnerHits::MAX_SIZE): static
+    public function innerHits(string|array $fields, int $size = InnerHits::MAX_SIZE): static
     {
-        $this->searchContext->innerHits->request($fields, $size);
+        $this->searchContext->innerHits->request((array) $fields, $size);
 
         return $this;
     }

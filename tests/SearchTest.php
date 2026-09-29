@@ -689,7 +689,8 @@ class SearchTest extends TestCase
 
     /**
      * A phone with 12 reviews: 0-9 mention "battery", 10-11 do not. Even reviews have 5 stars,
-     * odd ones 2. Two questions, one about the battery. A laptop without battery reviews.
+     * odd ones 2. Eight questions, 0-6 about the battery. Six answers, all about the battery.
+     * A laptop without battery reviews.
      *
      * @return array{0: string, 1: NewProperties}
      */
@@ -705,7 +706,10 @@ class SearchTest extends TestCase
             $blueprint->keyword('author');
         });
         $blueprint->nested('questions', function (NewProperties $blueprint): void {
-            $blueprint->text('question');
+            $blueprint->text('text');
+        });
+        $blueprint->nested('answers', function (NewProperties $blueprint): void {
+            $blueprint->text('text');
         });
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
@@ -720,12 +724,17 @@ class SearchTest extends TestCase
             new Document([
                 'title' => 'Phone X',
                 'reviews' => $reviews,
-                'questions' => [['question' => 'Is the battery replaceable?'], ['question' => 'Which colors exist?']],
+                'questions' => [
+                    ...array_map(fn (int $i): array => ['text' => sprintf('Question %d about the battery?', $i)], range(0, 6)),
+                    ['text' => 'Which colors exist?'],
+                ],
+                'answers' => array_map(fn (int $i): array => ['text' => sprintf('Answer %d: the battery is sealed.', $i)], range(0, 5)),
             ], 'phone'),
             new Document([
                 'title' => 'Laptop Y',
                 'reviews' => [['comment' => 'Great keyboard', 'stars' => 5, 'author' => 'author-x']],
                 'questions' => [],
+                'answers' => [],
             ], 'laptop'),
         ]);
 
@@ -800,19 +809,75 @@ class SearchTest extends TestCase
     /**
      * @test
      */
-    public function inner_hits_return_several_nested_paths(): void
+    public function inner_hits_array_form_returns_several_paths_sharing_one_size(): void
     {
         [$indexName, $blueprint] = $this->createProductsWithReviews();
 
         $matches = $this->sigmie->newSearch($indexName)
             ->properties($blueprint)
             ->queryString('battery')
-            ->innerHits(['reviews.comment', 'questions'])
+            ->innerHits(['reviews.comment', 'questions'], size: 3)
             ->get()
             ->json('hits.0._matches');
 
+        $this->assertSame(['reviews', 'questions'], array_keys($matches));
         $this->assertSame(10, $matches['reviews']['total']);
-        $this->assertSame(['total' => 1, 'items' => [['_offset' => 0, 'question' => 'Is the battery replaceable?']]], $matches['questions']);
+        $this->assertCount(3, $matches['reviews']['items']);
+        $this->assertSame(7, $matches['questions']['total']);
+        $this->assertCount(3, $matches['questions']['items']);
+        $this->assertEqualsCanonicalizing(['_offset', 'text'], array_keys($matches['questions']['items'][0]));
+    }
+
+    /**
+     * @test
+     */
+    public function inner_hits_chained_calls_return_each_path_with_its_own_size(): void
+    {
+        [$indexName, $blueprint] = $this->createProductsWithReviews();
+
+        $matches = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('battery')
+            ->innerHits('reviews', size: 10)
+            ->innerHits('questions.text', size: 5)
+            ->innerHits('answers')
+            ->get()
+            ->json('hits.0._matches');
+
+        $this->assertSame(['reviews', 'questions', 'answers'], array_keys($matches));
+        $this->assertSame([10, 10], [$matches['reviews']['total'], count($matches['reviews']['items'])]);
+        $this->assertSame([7, 5], [$matches['questions']['total'], count($matches['questions']['items'])]);
+        $this->assertSame([6, 6], [$matches['answers']['total'], count($matches['answers']['items'])]);
+        $this->assertEqualsCanonicalizing(['_offset', 'comment', 'stars', 'author'], array_keys($matches['reviews']['items'][0]));
+    }
+
+    /**
+     * @test
+     */
+    public function inner_hits_for_the_same_path_merge_fields_and_the_later_size_wins(): void
+    {
+        [$indexName, $blueprint] = $this->createProductsWithReviews();
+
+        $search = fn (): NewSearch => $this->sigmie->newSearch($indexName)->properties($blueprint)->queryString('battery');
+
+        $fields = $search()
+            ->innerHits('reviews.comment', size: 2)
+            ->innerHits('reviews.stars', size: 4)
+            ->get()
+            ->json('hits.0._matches.reviews');
+
+        $this->assertSame(10, $fields['total']);
+        $this->assertCount(4, $fields['items']);
+        $this->assertEqualsCanonicalizing(['_offset', 'comment', 'stars'], array_keys($fields['items'][0]));
+
+        $whole = $search()
+            ->innerHits('reviews.comment', size: 8)
+            ->innerHits('reviews', size: 1)
+            ->get()
+            ->json('hits.0._matches.reviews');
+
+        $this->assertCount(1, $whole['items']);
+        $this->assertEqualsCanonicalizing(['_offset', 'comment', 'stars', 'author'], array_keys($whole['items'][0]));
     }
 
     /**

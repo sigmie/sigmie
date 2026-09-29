@@ -31,21 +31,11 @@ trait SelectsOutputFields
      */
     protected function outputFields(mixed $fields): array
     {
-        $requested = $this->commaSeparated($fields);
-
-        return $requested === [] ? $this->index->toolFields() : $requested;
-    }
-
-    /**
-     * A comma-separated argument as a list of trimmed, non-empty field names.
-     *
-     * @return list<string>
-     */
-    protected function commaSeparated(mixed $fields): array
-    {
-        return array_values(array_filter(
+        $requested = array_values(array_filter(
             array_map(trim(...), explode(',', (string) $fields)),
             fn (string $field): bool => $field !== '',
         ));
+
+        return $requested === [] ? $this->index->toolFields() : $requested;
     }
 }
