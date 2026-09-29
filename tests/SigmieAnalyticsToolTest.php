@@ -770,6 +770,25 @@ class SigmieAnalyticsToolTest extends TestCase
     /**
      * @test
      */
+    public function filters_with_unbalanced_parentheses_cannot_escape_base_filters(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index, baseFilters: "product:'A'"))->result(new Request([
+            'widget' => 'kpi',
+            'date_field' => 'created_at',
+            'metric' => 'count',
+            'filters' => "product:'Z') OR (product:'B'",
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertEquals(0, $result['value']);
+    }
+
+    /**
+     * @test
+     */
     public function unknown_date_field_returns_a_correctable_error(): void
     {
         $index = $this->createSalesIndex();

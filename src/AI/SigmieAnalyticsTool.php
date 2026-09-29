@@ -14,6 +14,7 @@ use Sigmie\Analytics\Analytics;
 use Sigmie\Analytics\AnalyticsRequest;
 use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Analytics\Enums\Period;
+use Sigmie\Parse\FilterParser;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Search;
 use Sigmie\SigmieIndex;
@@ -263,7 +264,11 @@ class SigmieAnalyticsTool implements Tool
             );
         }
 
-        if (($filters = $this->filters($request)) !== '') {
+        if ($this->baseFilters !== '') {
+            $analytics->filterQuery((new FilterParser($this->index->properties()))->parse($this->baseFilters));
+        }
+
+        if (($filters = trim((string) ($request['filters'] ?? ''))) !== '') {
             $analytics->filters($filters);
         }
 
@@ -552,16 +557,6 @@ class SigmieAnalyticsTool implements Tool
         $value = trim((string) ($value ?? ''));
 
         return $value === '' ? null : new DateTimeImmutable($value);
-    }
-
-    protected function filters(Request $request): string
-    {
-        $parts = array_values(array_filter([
-            $this->baseFilters,
-            trim((string) ($request['filters'] ?? '')),
-        ], static fn (string $f): bool => $f !== ''));
-
-        return implode(' AND ', array_map(static fn (string $f): string => sprintf('(%s)', $f), $parts));
     }
 
     protected function required(Request $request, string $key): string

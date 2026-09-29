@@ -363,6 +363,35 @@ class SigmieIndexToolTest extends TestCase
     /**
      * @test
      */
+    public function ai_filters_with_unbalanced_parentheses_cannot_escape_base_filters(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
+            new Document(['name' => 'Galaxy', 'brand' => 'Samsung', 'price' => 899, 'in_stock' => true, 'created_at' => '2024-03-10']),
+        ], refresh: true);
+
+        $escape = "brand:'Google') OR (brand:'Samsung'";
+
+        $result = (new SigmieIndexTool($index, baseFilters: "brand:'Apple'"))->result(new Request([
+            'query' => '',
+            'filters' => $escape,
+        ]));
+
+        $this->assertNotContains('Samsung', array_column($result['hits'], 'brand'));
+
+        $values = (new SigmieFilterValuesTool($index, baseFilters: "brand:'Apple'"))->result(new Request([
+            'field' => 'brand',
+            'filters' => $escape,
+        ]));
+
+        $this->assertArrayNotHasKey('Samsung', (array) $values['values']);
+    }
+
+    /**
+     * @test
+     */
     public function handle_applies_sort(): void
     {
         $index = $this->createProductIndex();

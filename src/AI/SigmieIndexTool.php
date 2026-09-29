@@ -7,6 +7,7 @@ namespace Sigmie\AI;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
+use Sigmie\Parse\FilterParser;
 use Sigmie\SigmieIndex;
 
 /**
@@ -95,18 +96,14 @@ class SigmieIndexTool implements Tool
                 $request->integer('per_page', 10),
             );
 
-        $filterParts = [];
-
+        // The scope is parsed on its own and applied as a separate clause, so an agent filter
+        // with unbalanced parentheses cannot combine with it into an OR that escapes the scope.
         if ($this->baseFilters !== '') {
-            $filterParts[] = sprintf('(%s)', $this->baseFilters);
+            $search->filterQuery((new FilterParser($this->index->properties()))->parse($this->baseFilters));
         }
 
         if ($aiFilters = $request['filters'] ?? null) {
-            $filterParts[] = sprintf('(%s)', $aiFilters);
-        }
-
-        if ($filterParts !== []) {
-            $search->filters(implode(' AND ', $filterParts), throwOnError: true);
+            $search->filters((string) $aiFilters, throwOnError: true);
         }
 
         if ($sort = $request['sort'] ?? null) {
