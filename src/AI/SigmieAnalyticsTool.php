@@ -305,7 +305,7 @@ class SigmieAnalyticsTool implements Tool
             'grouped_metrics' => $analytics->groupedMetrics('result', $groupBy(), $this->metricSpecs($request), $this->optional($request, 'sort_metric') ?? 'count', $limit, $this->rankingDirection($request), minCount: max(0, (int) ($request['min_count'] ?? 0)), bucketAliases: $this->bucketAliases($request), aliasesOnly: (bool) ($request['bucket_aliases_only'] ?? false)),
             'percentiles' => $analytics->percentiles('result', $this->required($request, 'field'), $this->percents($request)),
             'stats' => $analytics->stats('result', $this->required($request, 'field')),
-            'table' => $analytics->table('result', $this->csvList($request, 'fields'), $limit, $this->optional($request, 'sort')),
+            'table' => $analytics->table('result', $this->csvList($request, 'fields'), $limit, $this->optional($request, 'sort'), except: $this->index->exceptFromTools()),
             'funnel' => $analytics->funnel('result', $this->steps($request)),
             'heatmap' => $analytics->heatmap('result', $this->required($request, 'row_field'), $this->required($request, 'col_field'), $this->metricOrCount($request), $field, $limit, $limit),
             'retention' => $analytics->retention('result', $this->required($request, 'cohort_field'), $this->required($request, 'id_field'), $interval()),
@@ -517,7 +517,8 @@ class SigmieAnalyticsTool implements Tool
 
             $search
                 ->size($limit)
-                ->trackTotalHits(true);
+                ->trackTotalHits(true)
+                ->except($this->index->exceptFromTools());
 
             $fields = $this->csvList($request, 'hit_fields');
             if ($fields !== []) {

@@ -158,12 +158,12 @@ trait Actions
         $query = [];
 
         if ($this->only) {
-            $query['_source_includes'] = implode('', $this->only);
+            $query['_source_includes'] = implode(',', $this->only);
         }
 
         // @codeCoverageIgnoreStart
         if ($this->except) {
-            $query['_source_excludes'] = implode('', $this->except);
+            $query['_source_excludes'] = implode(',', $this->except);
         }
 
         // @codeCoverageIgnoreEnd
@@ -185,11 +185,11 @@ trait Actions
         $query = [];
 
         if ($this->only) {
-            $query['_source_includes'] = implode('', $this->only);
+            $query['_source_includes'] = implode(',', $this->only);
         }
 
         if ($this->except) {
-            $query['_source_excludes'] = implode('', $this->except);
+            $query['_source_excludes'] = implode(',', $this->except);
         }
 
         $response = $this->mgetAPICall($indexName, $payload, $query);

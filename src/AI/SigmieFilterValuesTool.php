@@ -69,7 +69,7 @@ class SigmieFilterValuesTool implements Tool
 
         $search = $this->index->newSearch()
             ->queryString('')
-            ->facets(sprintf('%s:%d', $fieldName, $limit))
+            ->facets(sprintf('%s:%d', $fieldName, $limit), throwOnError: true)
             ->size(0);
 
         $filters = array_values(array_filter([
@@ -78,7 +78,7 @@ class SigmieFilterValuesTool implements Tool
         ], static fn (string $f): bool => $f !== ''));
 
         if ($filters !== []) {
-            $search->filters(implode(' AND ', array_map(static fn (string $f): string => sprintf('(%s)', $f), $filters)));
+            $search->filters(implode(' AND ', array_map(static fn (string $f): string => sprintf('(%s)', $f), $filters)), throwOnError: true);
         }
 
         $response = $search->get();

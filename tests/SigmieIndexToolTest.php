@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Base\ElasticsearchException;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Parse\ParseException;
 use Sigmie\Tests\Stubs\FakeJsonSchema;
@@ -860,7 +859,7 @@ class SigmieIndexToolTest extends TestCase
         $index = $this->createProductIndex();
 
         // result() keeps normal exception semantics for programmatic callers.
-        $this->expectException(ElasticsearchException::class);
+        $this->expectException(ParseException::class);
 
         (new SigmieFilterValuesTool($index))->result(new Request(['field' => 'nope']));
     }
@@ -993,6 +992,100 @@ class SigmieIndexToolTest extends TestCase
             'query' => '',
             'filters' => '(brand:',
         ]));
+    }
+
+    /**
+     * @test
+     */
+    public function handle_surfaces_unknown_filter_field_as_error(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
+        ], refresh: true);
+
+        // An unknown field must reach the agent as an error, not a silent match-none with total 0.
+        $result = json_decode((new SigmieIndexTool($index))->handle(new Request([
+            'query' => '',
+            'filters' => "color:'red'",
+        ])), true);
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertStringContainsString('color', $result['error']);
+    }
+
+    /**
+     * @test
+     */
+    public function handle_surfaces_unparseable_filter_as_error(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
+        ], refresh: true);
+
+        $result = json_decode((new SigmieIndexTool($index))->handle(new Request([
+            'query' => '',
+            'filters' => 'price=999',
+        ])), true);
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertStringContainsString('price=999', $result['error']);
+    }
+
+    /**
+     * @test
+     */
+    public function handle_surfaces_unknown_facet_field_as_error(): void
+    {
+        $index = $this->createProductIndex();
+
+        $result = json_decode((new SigmieIndexTool($index))->handle(new Request([
+            'query' => '',
+            'facets' => 'color',
+        ])), true);
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertStringContainsString('color', $result['error']);
+    }
+
+    /**
+     * @test
+     */
+    public function handle_surfaces_unknown_facet_filter_field_as_error(): void
+    {
+        $index = $this->createProductIndex();
+
+        $result = json_decode((new SigmieIndexTool($index))->handle(new Request([
+            'query' => '',
+            'facets' => 'brand',
+            'facet_filters' => "color:'red'",
+        ])), true);
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertStringContainsString('color', $result['error']);
+    }
+
+    /**
+     * @test
+     */
+    public function filter_values_handle_surfaces_unknown_filter_field_as_error(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
+        ], refresh: true);
+
+        $result = json_decode((new SigmieFilterValuesTool($index))->handle(new Request([
+            'field' => 'brand',
+            'filters' => "color:'red'",
+        ])), true);
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertStringContainsString('color', $result['error']);
     }
 
     /**
@@ -1177,5 +1270,81 @@ class SigmieIndexToolTest extends TestCase
         $this->assertSame('nested', $fields['variants']['type']);
         $this->assertSame('color', $fields['variants']['subfields'][0]['name']);
         $this->assertSame('size', $fields['variants']['subfields'][1]['name']);
+    }
+
+    /**
+     * @test
+     */
+    public function document_tools_never_return_fields_excepted_from_tools(): void
+    {
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
+            use AsTool;
+
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
+            public function properties(): NewProperties
+            {
+                $props = new NewProperties;
+                $props->name('title');
+                $props->keyword('secret');
+                $props->nested('participants', function (NewProperties $props): void {
+                    $props->keyword('name');
+                    $props->keyword('identification_number');
+                    $props->keyword('personal_number_short');
+                });
+
+                return $props;
+            }
+
+            public function exceptFromTools(): array
+            {
+                return ['secret', 'participants.identification_number', 'participants.personal_number_short'];
+            }
+        };
+
+        $index->create();
+        $index->merge([
+            new Document([
+                'title' => 'Appeal decision',
+                'secret' => 'SECRET-VALUE',
+                'participants' => [
+                    ['name' => 'Anna', 'identification_number' => '19800101-1111', 'personal_number_short' => '800101'],
+                    ['name' => 'Erik', 'identification_number' => '19900202-2222', 'personal_number_short' => '900202'],
+                ],
+            ], 'case-1'),
+        ], refresh: true);
+
+        [$search, , $sample, $get] = $index->tools();
+
+        $outputs = [
+            $search->handle(new Request([
+                'query' => 'Appeal',
+                'filters' => "participants:{identification_number:'19800101-1111'}",
+            ])),
+            $sample->handle(new Request(['limit' => 5])),
+            $get->handle(new Request(['ids' => ['case-1']])),
+        ];
+
+        foreach ($outputs as $output) {
+            $this->assertStringContainsString('Anna', $output);
+            $this->assertStringContainsString('Appeal decision', $output);
+
+            foreach (['SECRET-VALUE', '19800101-1111', '19900202-2222', '800101', '900202'] as $private) {
+                $this->assertStringNotContainsString($private, $output);
+            }
+        }
     }
 }

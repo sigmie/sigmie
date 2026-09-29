@@ -65,6 +65,8 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected bool $retrieveEmbeddingsField = false;
 
+    protected array $except = [];
+
     protected ResponseFormater $formatter;
 
     public readonly SearchContext $searchContext;
@@ -109,6 +111,16 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     public function retrieveEmbeddingsField(bool $retrieve = true): static
     {
         $this->retrieveEmbeddingsField = $retrieve;
+
+        return $this;
+    }
+
+    /**
+     * Source fields to drop from every hit, even when retrieve() includes a parent field.
+     */
+    public function except(array $fields): static
+    {
+        $this->except = $fields;
 
         return $this;
     }
@@ -316,7 +328,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         $search->fields($this->retrieve ?? [
             ...$this->properties->fieldNames(),
             ...($this->retrieveEmbeddingsField ? ['_embeddings'] : []),
-        ]);
+        ])->except($this->except);
     }
 
     protected function handleSize(Search $search)

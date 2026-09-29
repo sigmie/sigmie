@@ -15,7 +15,8 @@ class TopHits extends Bucket
         protected string $name,
         protected ?array $sort = null,
         protected ?array $_sources = null,
-        protected int $size = 1
+        protected int $size = 1,
+        protected array $sourceExcludes = [],
     ) {
         parent::__construct($name);
     }
@@ -30,6 +31,10 @@ class TopHits extends Bucket
             $topHits['_source'] = [
                 'includes' => $this->_sources,
             ];
+        }
+
+        if ($this->sourceExcludes !== []) {
+            $topHits['_source']['excludes'] = $this->sourceExcludes;
         }
 
         if ($this->sort !== null) {

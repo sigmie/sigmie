@@ -362,13 +362,14 @@ class Analytics implements MultiSearchable
     /**
      * Add a table of the actual matching documents — the rows behind a number, not a metric. $fields
      * limits the returned source (empty returns the full document); $sort is a "field:dir" string
-     * ("amount:desc", defaults to descending) sorting the rows before $limit is applied.
+     * ("amount:desc", defaults to descending) sorting the rows before $limit is applied. $except drops
+     * source fields from every row, even when $fields includes their parent.
      */
-    public function table(string $as, array $fields = [], int $limit = 10, ?string $sort = null, Query|string|null $filter = null, Period|array|null $window = null): static
+    public function table(string $as, array $fields = [], int $limit = 10, ?string $sort = null, Query|string|null $filter = null, Period|array|null $window = null, array $except = []): static
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addFiltered(new Table($as, $this->dateField, $from, $to, $this->dateFormat, $fields, $limit, $this->sortClause($sort)), $filter);
+        return $this->addFiltered(new Table($as, $this->dateField, $from, $to, $this->dateFormat, $fields, $limit, $this->sortClause($sort), $except), $filter);
     }
 
     /**

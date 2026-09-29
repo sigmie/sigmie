@@ -110,7 +110,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function random(int $size = 10): Collection
     {
-        $response = $this->searchAPICall($this->name, [
+        $payload = [
             'from' => 0,
             'size' => $size,
             'query' => [
@@ -120,7 +120,13 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
                     'boost_mode' => 'replace',
                 ],
             ],
-        ]);
+        ];
+
+        if ($this->only || $this->except) {
+            $payload['_source'] = array_filter(['includes' => $this->only, 'excludes' => $this->except]);
+        }
+
+        $response = $this->searchAPICall($this->name, $payload);
 
         $collection = new Collection;
 

@@ -335,7 +335,7 @@ class SearchTest extends TestCase
             ->makeFacetSearch()
             ->get();
 
-        $facets = $blueprint->get()['category']->facets($response->get()['aggregations']);
+        $facets = $blueprint->get()['category']->facets($response->get()['aggregations']['category']);
 
         $this->assertSame(['blog' => 1, 'docs' => 1], $facets);
     }
@@ -2114,9 +2114,7 @@ class SearchTest extends TestCase
             ->filterQuery(new Term('active', true))
             ->get();
 
-        $props = $blueprint();
-
-        $facets = $props['category']->facets($res->facetAggregations());
+        $facets = $res->facet('category');
 
         $this->assertEquals(['private' => 1, 'public' => 1], $facets);
     }
