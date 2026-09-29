@@ -239,6 +239,33 @@ brand:20 price:50
 
 When facets are requested, the tool response includes a `facets` key with the aggregation data.
 
+## Errors
+
+The tools parse the agent's `filters`, `facets` and `facet_filters` strictly. An unknown field or unparseable expression returns an `error` result the agent can read and correct, instead of an empty result:
+
+```
+filters: color:'red'    (no "color" field)
+
+before: {"total": 0, "hits": []}
+after:  {"error": "Field color does not exist. Check the field names and the filter/sort syntax in this tool's description, then try again."}
+```
+
+The same applies to `discover_filter_values` for its `field` and `filters`.
+
+Only the agent-facing `handle()` returns errors as JSON. The structured `result()` methods throw, so programmatic callers keep normal exception handling:
+
+```php
+use Laravel\Ai\Tools\Request;
+use Sigmie\AI\SigmieFilterValuesTool;
+use Sigmie\Parse\ParseException;
+
+try {
+    (new SigmieFilterValuesTool($index))->result(new Request(['field' => 'nope']));
+} catch (ParseException $e) {
+    // "Field nope does not exist."
+}
+```
+
 ## See also
 
 - [Filter Parser](filter-parser.md) — every filter operator.

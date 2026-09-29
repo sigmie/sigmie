@@ -300,6 +300,8 @@ $sigmie->newSearch('products')
 
 When a silently-dropped clause would be unsafe — returning a broader result set than intended — pass `throwOnError: true` and treat a non-empty `errors` array as a failed request rather than a warning.
 
+The [Laravel AI tools](laravel-ai.md#errors) always parse with `throwOnError: true`, so an agent sees the error instead of an empty result.
+
 ## Syntax cheatsheet
 
 | Operation | Syntax | Example |
