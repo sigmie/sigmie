@@ -271,6 +271,8 @@ class FacetsTest extends TestCase
             ->facets('keyword')
             ->get();
 
+        $this->assertNull($searchResponse->facet('missing'));
+
         $facets = $searchResponse->facet('keyword');
 
         $expectedHistogram = [
