@@ -363,6 +363,36 @@ class SigmieIndexToolTest extends TestCase
     /**
      * @test
      */
+    public function ai_filters_with_unbalanced_parentheses_cannot_escape_base_filters(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
+            new Document(['name' => 'Galaxy', 'brand' => 'Samsung', 'price' => 899, 'in_stock' => true, 'created_at' => '2024-03-10']),
+        ], refresh: true);
+
+        $escape = "brand:'Google') OR (brand:'Samsung'";
+
+        $search = new SigmieIndexTool($index, baseFilters: "brand:'Apple'");
+        $values = new SigmieFilterValuesTool($index, baseFilters: "brand:'Apple'");
+
+        $searchResult = json_decode($search->handle(new Request(['query' => '', 'filters' => $escape])), true);
+        $valuesResult = json_decode($values->handle(new Request(['field' => 'brand', 'filters' => $escape])), true);
+
+        $this->assertNotContains('Samsung', array_column($searchResult['hits'] ?? [], 'brand'));
+        $this->assertArrayNotHasKey('Samsung', (array) ($valuesResult['values'] ?? []));
+        $this->assertArrayHasKey('error', $searchResult);
+        $this->assertArrayHasKey('error', $valuesResult);
+
+        $this->expectException(ParseException::class);
+
+        $search->result(new Request(['query' => '', 'filters' => $escape]));
+    }
+
+    /**
+     * @test
+     */
     public function handle_applies_sort(): void
     {
         $index = $this->createProductIndex();

@@ -15,6 +15,7 @@ use Sigmie\AI\AsTool;
 use Sigmie\AI\SigmieAnalyticsTool;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Parse\ParseException;
 use Sigmie\Sigmie;
 use Sigmie\SigmieIndex;
 use Sigmie\Testing\TestCase;
@@ -765,6 +766,33 @@ class SigmieAnalyticsToolTest extends TestCase
         ]));
 
         $this->assertEquals(370.0, $result['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function filters_with_unbalanced_parentheses_cannot_escape_base_filters(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $tool = new SigmieAnalyticsTool($index, baseFilters: "product:'A'");
+        $request = new Request([
+            'widget' => 'kpi',
+            'date_field' => 'created_at',
+            'metric' => 'count',
+            'filters' => "product:'Z') OR (product:'B'",
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]);
+
+        $result = json_decode($tool->handle($request), true);
+
+        $this->assertEquals(0, $result['value'] ?? 0);
+        $this->assertArrayHasKey('error', $result);
+
+        $this->expectException(ParseException::class);
+
+        $tool->result($request);
     }
 
     /**

@@ -100,13 +100,22 @@ new SigmieIndexTool(
 
 // Or via the trait:
 app(OrderIndex::class)->toTool(baseFilters: "user_id:{$user->id}");
+
+// Or scope every tool at once:
+app(OrderIndex::class)->tools("user_id:{$user->id}");
 ```
 
-Base filters are wrapped in parentheses and AND-ed with whatever the AI passes:
+The base filter is parsed on its own and applied as a separate filter clause. The AI's `filters` string is parsed alone, so it never joins the base filter as text:
 
 ```
-(user_id:3) AND (status:'shipped' OR status:'delivered')
+base filter:  user_id:3                              -> hard filter clause
+AI filters:   status:'shipped' OR status:'delivered' -> second clause
+match:        documents that pass both clauses
 ```
+
+An AI filter with unbalanced parentheses, such as `status:'x') OR (user_id:4`, cannot turn the query into an `OR` that escapes the scope. The tool rejects it: `handle()` returns an `{"error": ...}` the agent can correct from, and `result()` throws a `ParseException`.
+
+> **Warning:** A malformed base filter throws a `ParseException` on every call. It never falls back to matching all documents.
 
 ## Private fields
 

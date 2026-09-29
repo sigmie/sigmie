@@ -7,6 +7,7 @@ namespace Sigmie\AI;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
+use Sigmie\Parse\FilterParser;
 use Sigmie\SigmieIndex;
 
 /**
@@ -72,13 +73,12 @@ class SigmieFilterValuesTool implements Tool
             ->facets(sprintf('%s:%d', $fieldName, $limit), throwOnError: true)
             ->size(0);
 
-        $filters = array_values(array_filter([
-            $this->baseFilters,
-            trim((string) ($request['filters'] ?? '')),
-        ], static fn (string $f): bool => $f !== ''));
+        if ($this->baseFilters !== '') {
+            $search->filterQuery((new FilterParser($this->index->properties()))->parse($this->baseFilters));
+        }
 
-        if ($filters !== []) {
-            $search->filters(implode(' AND ', array_map(static fn (string $f): string => sprintf('(%s)', $f), $filters)), throwOnError: true);
+        if (($filters = trim((string) ($request['filters'] ?? ''))) !== '') {
+            $search->filters($filters, throwOnError: true);
         }
 
         $response = $search->get();
