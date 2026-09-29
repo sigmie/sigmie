@@ -83,8 +83,8 @@ public function tools(): array
 
 - `search_index` — query, filter, sort, facet and paginate.
 - `discover_filter_values` — list valid values for a field before filtering.
-- `sample_documents` — a few random documents so the agent can see the real data shape.
-- `get_documents` — retrieve specific documents by their `_id` (e.g. ids surfaced by `search_index`). Non-existent ids are omitted.
+- `sample_documents` — a few random documents from inside the base filter, so the agent can see the real data shape.
+- `get_documents` — retrieve specific documents by their `_id` (e.g. ids surfaced by `search_index`). Ids that do not exist or fall outside the base filter are omitted.
 - `describe_index` — the structured field list, types and filter syntax.
 - `analytics` — dashboard widgets (KPIs, trends, breakdowns, distributions, percentiles).
 
@@ -114,6 +114,15 @@ match:        documents that pass both clauses
 ```
 
 An AI filter with unbalanced parentheses, such as `status:'x') OR (user_id:4`, cannot turn the query into an `OR` that escapes the scope. The tool rejects it: `handle()` returns an `{"error": ...}` the agent can correct from, and `result()` throws a `ParseException`.
+
+Every tool in the suite applies the base filter, including `sample_documents` and `get_documents`. Sampling draws only from in-scope documents, and an out-of-scope id returns the same result as a missing id:
+
+```php
+[, , $sample, $get] = app(OrderIndex::class)->tools('user_id:3');
+
+$get->handle(new Request(['ids' => ['order-of-user-3', 'order-of-user-4']]));
+// [{"_id": "order-of-user-3", ...}]  (order-of-user-4 is omitted, like a missing id)
+```
 
 > **Warning:** A malformed base filter throws a `ParseException` on every call. It never falls back to matching all documents.
 

@@ -7,21 +7,26 @@ namespace Sigmie\AI;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
+use Sigmie\Document\Document;
+use Sigmie\Document\Hit;
+use Sigmie\Query\Queries\Term\IDs;
 use Sigmie\SigmieIndex;
 
 /**
  * Fetches specific documents from the index by their `_id`. Use after search_index or
  * sample_documents surface an `_id` the agent wants to read in full.
  *
- * Reuses the index's `collect()->getMany()` multi-get (Elasticsearch `_mget`). IDs that do not
- * exist are simply absent from the returned documents.
+ * Runs an ids-filtered search inside the `$baseFilters` scope and returns hits in the requested
+ * order. IDs that do not exist, or fall outside the scope, are simply absent from the result.
  */
 class SigmieGetDocumentsTool implements Tool
 {
     use HandlesToolErrors;
+    use ScopesToBaseFilters;
 
     public function __construct(
         protected SigmieIndex $index,
+        protected string $baseFilters = '',
     ) {}
 
     public function name(): string
@@ -61,6 +66,20 @@ class SigmieGetDocumentsTool implements Tool
             fn ($id): bool => is_string($id) && $id !== '',
         )), 0, 100);
 
-        return $this->index->collect()->except($this->index->exceptFromTools())->getMany($ids);
+        $search = $this->index->newSearch()
+            ->queryString('')
+            ->filterQuery(new IDs($ids))
+            ->except($this->index->exceptFromTools())
+            ->size(count($ids));
+
+        $this->applyBaseFilters($search);
+
+        $order = array_flip($ids);
+        $hits = $search->get()->hits();
+
+        usort($hits, fn (Hit $a, Hit $b): int => $order[$a->_id] <=> $order[$b->_id]);
+
+        // Documents serialise to {_id, _source}; a Hit would add its `_score`.
+        return array_map(fn (Hit $hit): Document => new Document($hit->_source, $hit->_id), $hits);
     }
 }

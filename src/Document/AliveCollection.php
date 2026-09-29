@@ -14,6 +14,7 @@ use Sigmie\Document\Contracts\DocumentCollection;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Shared\Mappings;
 use Sigmie\Mappings\Properties;
+use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Semantic\DocumentProcessor;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\UsesApis;
@@ -37,6 +38,8 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     protected ?array $only = null;
 
     protected ?array $except = null;
+
+    protected ?QueryClause $filterQuery = null;
 
     protected bool $populateEmbeddings = true;
 
@@ -115,7 +118,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
             'size' => $size,
             'query' => [
                 'function_score' => [
-                    'query' => ['match_all' => (object) []],
+                    'query' => $this->filterQuery?->toRaw() ?? ['match_all' => (object) []],
                     'random_score' => (object) [],
                     'boost_mode' => 'replace',
                 ],
@@ -322,6 +325,16 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     public function except(array $fields): self
     {
         $this->except = $fields;
+
+        return $this;
+    }
+
+    /**
+     * Restrict random() to documents matching the query.
+     */
+    public function filterQuery(QueryClause $query): self
+    {
+        $this->filterQuery = $query;
 
         return $this;
     }

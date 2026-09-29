@@ -18,9 +18,11 @@ use Sigmie\SigmieIndex;
 class SigmieSampleDocumentsTool implements Tool
 {
     use HandlesToolErrors;
+    use ScopesToBaseFilters;
 
     public function __construct(
         protected SigmieIndex $index,
+        protected string $baseFilters = '',
     ) {}
 
     public function name(): string
@@ -57,7 +59,13 @@ class SigmieSampleDocumentsTool implements Tool
     {
         $limit = max(1, min(20, (int) ($request['limit'] ?? 5)));
 
+        // Sigmie's search builder has no random ordering, so sampling uses the collection's
+        // random_score query with the scope as its inner query.
+        $collection = $this->index->collect()->except($this->index->exceptFromTools());
+
+        $this->applyBaseFilters($collection);
+
         // Documents serialise to {_id, _source} via their JsonSerializable.
-        return $this->index->collect()->except($this->index->exceptFromTools())->random($limit)->toArray();
+        return $collection->random($limit)->toArray();
     }
 }

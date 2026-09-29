@@ -14,7 +14,6 @@ use Sigmie\Analytics\Analytics;
 use Sigmie\Analytics\AnalyticsRequest;
 use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Analytics\Enums\Period;
-use Sigmie\Parse\FilterParser;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Search;
 use Sigmie\SigmieIndex;
@@ -42,6 +41,7 @@ class SigmieAnalyticsTool implements Tool
 {
     use DescribesIndexFields;
     use HandlesToolErrors;
+    use ScopesToBaseFilters;
 
     public function __construct(
         protected SigmieIndex $index,
@@ -268,9 +268,7 @@ class SigmieAnalyticsTool implements Tool
             );
         }
 
-        if ($this->baseFilters !== '') {
-            $analytics->filterQuery((new FilterParser($this->index->properties()))->parse($this->baseFilters));
-        }
+        $this->applyBaseFilters($analytics);
 
         if (($filters = trim((string) ($request['filters'] ?? ''))) !== '') {
             $analytics->filters($filters);

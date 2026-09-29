@@ -937,6 +937,67 @@ class SigmieIndexToolTest extends TestCase
     /**
      * @test
      */
+    public function sample_documents_only_samples_documents_inside_the_base_filter(): void
+    {
+        $index = $this->createScopedProductIndex();
+
+        $result = (new SigmieSampleDocumentsTool($index, "brand:'Apple'"))->result(new Request(['limit' => 20]));
+
+        $this->assertSame(['doc_1', 'doc_3'], $this->sortedIds($result));
+    }
+
+    /**
+     * @test
+     */
+    public function get_documents_treats_an_id_outside_the_base_filter_as_missing(): void
+    {
+        $index = $this->createScopedProductIndex();
+        $tool = new SigmieGetDocumentsTool($index, "brand:'Apple'");
+
+        $result = json_decode($tool->handle(new Request(['ids' => ['doc_3', 'doc_2', 'doc_1', 'missing']])), true);
+
+        $this->assertSame(['doc_3', 'doc_1'], array_column($result, '_id'));
+        $this->assertSame('iMac', $result[0]['_source']['name']);
+        $this->assertSame('[]', $tool->handle(new Request(['ids' => ['doc_2']])));
+        $this->assertSame('[]', $tool->handle(new Request(['ids' => ['missing']])));
+    }
+
+    /**
+     * @test
+     */
+    public function as_tool_trait_scopes_every_tool_with_the_base_filter(): void
+    {
+        $index = $this->createScopedProductIndex();
+
+        [$search, $values, $sample, $get, $schema, $analytics] = $index->tools("brand:'Apple'");
+
+        $outputs = [
+            $search->handle(new Request(['query' => ''])),
+            $values->handle(new Request(['field' => 'brand'])),
+            $sample->handle(new Request(['limit' => 20])),
+            $get->handle(new Request(['ids' => ['doc_1', 'doc_2', 'doc_3']])),
+            $schema->handle(new Request([])),
+            $analytics->handle(new Request([
+                'widget' => 'table',
+                'date_field' => 'created_at',
+                'fields' => 'name,brand',
+                'from' => '2024-01-01',
+                'to' => '2024-12-31',
+            ])),
+        ];
+
+        foreach ($outputs as $output) {
+            $this->assertStringNotContainsString('Samsung', $output);
+            $this->assertStringNotContainsString('Galaxy', $output);
+        }
+
+        $this->assertSame(['doc_1', 'doc_3'], $this->sortedIds(json_decode($outputs[2], true)));
+        $this->assertSame(['doc_1', 'doc_3'], $this->sortedIds(json_decode($outputs[3], true)));
+    }
+
+    /**
+     * @test
+     */
     public function get_documents_tool_schema_requires_an_ids_array(): void
     {
         $index = $this->createProductIndex();
@@ -1300,6 +1361,30 @@ class SigmieIndexToolTest extends TestCase
         $this->assertSame('nested', $fields['variants']['type']);
         $this->assertSame('color', $fields['variants']['subfields'][0]['name']);
         $this->assertSame('size', $fields['variants']['subfields'][1]['name']);
+    }
+
+    /**
+     * Two Apple documents (doc_1, doc_3) inside a `brand:'Apple'` scope and one Samsung document (doc_2) outside it.
+     */
+    private function createScopedProductIndex(): SigmieIndex
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15'], 'doc_1'),
+            new Document(['name' => 'Galaxy', 'brand' => 'Samsung', 'price' => 899, 'in_stock' => true, 'created_at' => '2024-03-10'], 'doc_2'),
+            new Document(['name' => 'iMac', 'brand' => 'Apple', 'price' => 1299, 'in_stock' => true, 'created_at' => '2024-04-01'], 'doc_3'),
+        ], refresh: true);
+
+        return $index;
+    }
+
+    private function sortedIds(array $documents): array
+    {
+        $ids = array_column(json_decode(json_encode($documents), true), '_id');
+        sort($ids);
+
+        return $ids;
     }
 
     private function createPrivateParticipantsIndex(): SigmieIndex
