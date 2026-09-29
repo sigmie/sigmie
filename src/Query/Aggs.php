@@ -238,8 +238,9 @@ class Aggs implements AggsInterface
         int $size = 1,
         ?array $sourceIncludes = null,
         ?array $sort = null,
+        array $sourceExcludes = [],
     ): TopHits {
-        $aggregation = new TopHits($name, $sort, $sourceIncludes, $size);
+        $aggregation = new TopHits($name, $sort, $sourceIncludes, $size, $sourceExcludes);
 
         $this->aggs[] = $aggregation;
 

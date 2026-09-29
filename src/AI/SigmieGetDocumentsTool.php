@@ -61,6 +61,6 @@ class SigmieGetDocumentsTool implements Tool
             fn ($id): bool => is_string($id) && $id !== '',
         )), 0, 100);
 
-        return $this->index->collect()->getMany($ids);
+        return $this->index->collect()->except($this->index->exceptFromTools())->getMany($ids);
     }
 }

@@ -30,6 +30,8 @@ class Search
 
     protected array $fields = [];
 
+    protected array $except = [];
+
     protected array $raw = [];
 
     protected array $sort = [];
@@ -145,6 +147,17 @@ class Search
     public function fields(array $fields): self
     {
         $this->fields = $fields;
+
+        return $this;
+    }
+
+    /**
+     * Source fields to drop from every hit. Elasticsearch applies excludes after fields(), so an
+     * excluded path stays hidden even when a broader included field contains it.
+     */
+    public function except(array $fields): self
+    {
+        $this->except = $fields;
 
         return $this;
     }
@@ -267,6 +280,10 @@ class Search
 
         if ($this->fields !== []) {
             $result['_source'] = $this->fields;
+        }
+
+        if ($this->except !== []) {
+            $result['_source'] = ['includes' => $this->fields, 'excludes' => $this->except];
         }
 
         if ($this->knn !== []) {

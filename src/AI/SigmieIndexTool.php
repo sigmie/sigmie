@@ -89,6 +89,7 @@ class SigmieIndexTool implements Tool
     {
         $search = $this->index->newSearch()
             ->queryString((string) ($request['query'] ?? ''))
+            ->except($this->index->exceptFromTools())
             ->page(
                 $request->integer('page', 1),
                 $request->integer('per_page', 10),
