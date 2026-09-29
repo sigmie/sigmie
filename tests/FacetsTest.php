@@ -307,6 +307,42 @@ class FacetsTest extends TestCase
     /**
      * @test
      */
+    public function case_sensitive_keyword_facets(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->caseSensitiveKeyword('tag');
+
+        $index = $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $index = $this->sigmie->collect($indexName, refresh: true);
+
+        $index->merge([
+            new Document(['tag' => 'Sport']),
+            new Document(['tag' => 'sport']),
+            new Document(['tag' => 'sport']),
+        ]);
+
+        $searchResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets('tag')
+            ->get();
+
+        /** @var Properties $props */
+        $props = $blueprint();
+
+        $facets = $props['tag']->facets($searchResponse->facetAggregations());
+
+        $this->assertEquals(['sport' => 2, 'Sport' => 1], $facets);
+    }
+
+    /**
+     * @test
+     */
     public function text_bool_number_facets(): void
     {
         $indexName = uniqid();
