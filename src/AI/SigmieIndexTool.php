@@ -88,6 +88,11 @@ class SigmieIndexTool implements Tool
      */
     public function result(Request $request): array
     {
+        $this->refusePrivateFields(
+            ...$this->expressionFields($request['sort'] ?? null),
+            ...$this->expressionFields($request['facets'] ?? null),
+        );
+
         $search = $this->index->newSearch()
             ->queryString((string) ($request['query'] ?? ''))
             ->except($this->index->exceptFromTools())

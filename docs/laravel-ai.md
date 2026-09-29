@@ -147,13 +147,19 @@ class CaseIndex extends SigmieIndex
 
 `search_index`, `sample_documents`, `get_documents`, and the `analytics` tool's `table` widget and `include_hits` rows omit these fields. Elasticsearch drops them from `_source` before the response leaves the cluster. The exclusion wins over the agent's own `fields` and `hit_fields`, so `hit_fields: "participants"` returns `participants.name` only.
 
-The fields stay in the tool descriptions, and the agent can still filter on them:
+The fields are filter-only. The agent can still filter on them:
 
 ```
 participants:{identification_number:'19800101-1111'}
 ```
 
-> **Warning:** Facets and `discover_filter_values` return field values as buckets. Do not let the agent facet on a private field.
+Every tool refuses to list, facet, group, measure, or sort by a private field or any field below it. This covers `discover_filter_values`, the search `facets` and `sort`, and every `analytics` argument that names a field, such as `group_by`, `group_by_fields`, `row_field`, `field`, `sort`, and `hit_sort`. `handle()` returns an error the agent can correct from, and `result()` throws an `InvalidArgumentException`:
+
+```json
+{"error": "Field participants.identification_number is private and cannot be listed, grouped, faceted or sorted; you can still filter on it. ..."}
+```
+
+The tool descriptions and `describe_index` mark these fields as filter only, so the agent does not try. Your own code keeps full access: `facets()` on a search and `analytics()` on the index are unaffected.
 
 ## The auto-generated description
 

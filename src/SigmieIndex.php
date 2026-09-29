@@ -28,8 +28,9 @@ abstract class SigmieIndex
      * Source fields the AI tools never return in document content (search hits, samples,
      * retrieved documents, analytics rows). Elasticsearch drops them from `_source` before the
      * response leaves the cluster, so the agent's own field selection cannot bring them back.
-     * The fields stay described and filterable. Facets and discover_filter_values still return
-     * their values as buckets. Dotted paths reach nested fields.
+     * The fields stay described and filterable, but the tools refuse to facet, group, measure or
+     * sort by them (or their descendants), so no aggregation returns their values either.
+     * Dotted paths reach nested fields. Library APIs such as facets() and analytics() are unaffected.
      *
      * @return list<string>
      */

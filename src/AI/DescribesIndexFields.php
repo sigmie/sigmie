@@ -21,17 +21,22 @@ use Sigmie\Mappings\Types\Type;
 /**
  * Shared field introspection for the index tools. Turns an index's properties() into either
  * human-readable field lines (for {@see SigmieIndexTool}'s description) or a structured field
- * list (for {@see SigmieIndexSchemaTool}). The using class must expose `protected SigmieIndex $index`.
+ * list (for {@see SigmieIndexSchemaTool}). Private fields ({@see GuardsPrivateFields}) are marked
+ * filter-only and left out of the field lists an analytics widget groups or measures by.
+ * The using class must expose `protected SigmieIndex $index`.
  */
 trait DescribesIndexFields
 {
+    use GuardsPrivateFields;
+
     /**
      * Structured per-field schema: name, type, capabilities, description and a filter example.
      *
      * @param  array<int, Type>|null  $fields
+     * @param  string  $parentPath  full path of the enclosing nested field, whose sub-fields are named relative to it
      * @return list<array<string, mixed>>
      */
-    protected function fieldsSchema(?array $fields = null, string $prefix = ''): array
+    protected function fieldsSchema(?array $fields = null, string $prefix = '', string $parentPath = ''): array
     {
         $fields ??= $this->index->properties()->get()->toArray();
 
@@ -41,7 +46,7 @@ trait DescribesIndexFields
             $name = $prefix !== '' ? sprintf('%s.%s', $prefix, $field->name) : $field->name;
 
             if ($field instanceof Object_) {
-                $schema = [...$schema, ...$this->fieldsSchema($field->getProperties()->toArray(), $name)];
+                $schema = [...$schema, ...$this->fieldsSchema($field->getProperties()->toArray(), $name, $parentPath)];
 
                 continue;
             }
@@ -52,14 +57,21 @@ trait DescribesIndexFields
                 continue;
             }
 
+            $path = $parentPath !== '' ? sprintf('%s.%s', $parentPath, $name) : $name;
+            $private = $this->isPrivateField($path);
+
             $entry = [
                 'name' => $name,
                 'type' => $type,
                 'filterable' => $this->fieldFilterable($field),
-                'sortable' => $this->fieldSortable($field),
-                'facetable' => $field->isFacetable(),
+                'sortable' => ! $private && $this->fieldSortable($field),
+                'facetable' => ! $private && $field->isFacetable(),
                 'filter' => $this->filterExample($field, $name),
             ];
+
+            if ($private) {
+                $entry['filter_only'] = true;
+            }
 
             $description = $field->getDescription();
 
@@ -68,7 +80,7 @@ trait DescribesIndexFields
             }
 
             if ($field instanceof Nested) {
-                $entry['subfields'] = $this->fieldsSchema($field->getProperties()->toArray());
+                $entry['subfields'] = $this->fieldsSchema($field->getProperties()->toArray(), '', $path);
             }
 
             $schema[] = $entry;
@@ -100,7 +112,7 @@ trait DescribesIndexFields
                 continue;
             }
 
-            if (in_array($this->fieldTypeName($field), $types, true)) {
+            if (in_array($this->fieldTypeName($field), $types, true) && ! $this->isPrivateField($name)) {
                 $names[] = $name;
             }
         }
@@ -131,7 +143,7 @@ trait DescribesIndexFields
                 continue;
             }
 
-            $desc = $this->describeField($field, $name);
+            $desc = $this->describeField($field, $name, $name);
 
             if ($desc !== null) {
                 $descriptions[] = $desc;
@@ -141,7 +153,7 @@ trait DescribesIndexFields
         return $descriptions;
     }
 
-    private function describeField(Type $field, string $name): ?string
+    private function describeField(Type $field, string $name, string $path): ?string
     {
         $type = $this->fieldTypeName($field);
 
@@ -152,13 +164,13 @@ trait DescribesIndexFields
 
         // @codeCoverageIgnoreEnd
 
-        $capabilities = $this->fieldCapabilities($field);
+        $capabilities = $this->isPrivateField($path) ? ['filter only'] : $this->fieldCapabilities($field);
         $filter = $this->filterExample($field, $name);
 
         $tags = $capabilities !== [] ? ' ('.implode(', ', $capabilities).')' : '';
 
         if ($field instanceof Nested) {
-            return $this->describeNested($field, $name, $tags);
+            return $this->describeNested($field, $name, $path, $tags);
         }
 
         $line = sprintf('- %s [%s]%s: %s', $name, $type, $tags, $filter);
@@ -170,10 +182,10 @@ trait DescribesIndexFields
             : $line;
     }
 
-    private function describeNested(Nested $field, string $name, string $tags): string
+    private function describeNested(Nested $field, string $name, string $path, string $tags): string
     {
         $subFields = array_filter(array_map(
-            fn (Type $child): ?string => $this->describeField($child, $child->name),
+            fn (Type $child): ?string => $this->describeField($child, $child->name, sprintf('%s.%s', $path, $child->name)),
             $field->getProperties()->toArray()
         ));
 
