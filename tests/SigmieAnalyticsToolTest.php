@@ -13,6 +13,7 @@ use DateTimeZone;
 use Laravel\Ai\Tools\Request;
 use Sigmie\AI\AsTool;
 use Sigmie\AI\SigmieAnalyticsTool;
+use Sigmie\Parse\ParseException;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Sigmie;
@@ -774,16 +775,24 @@ class SigmieAnalyticsToolTest extends TestCase
     {
         $index = $this->createSalesIndex();
 
-        $result = (new SigmieAnalyticsTool($index, baseFilters: "product:'A'"))->result(new Request([
+        $tool = new SigmieAnalyticsTool($index, baseFilters: "product:'A'");
+        $request = new Request([
             'widget' => 'kpi',
             'date_field' => 'created_at',
             'metric' => 'count',
             'filters' => "product:'Z') OR (product:'B'",
             'from' => '2024-01-01',
             'to' => '2024-01-04',
-        ]));
+        ]);
 
-        $this->assertEquals(0, $result['value']);
+        $result = json_decode($tool->handle($request), true);
+
+        $this->assertEquals(0, $result['value'] ?? 0);
+        $this->assertArrayHasKey('error', $result);
+
+        $this->expectException(ParseException::class);
+
+        $tool->result($request);
     }
 
     /**

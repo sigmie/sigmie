@@ -374,19 +374,20 @@ class SigmieIndexToolTest extends TestCase
 
         $escape = "brand:'Google') OR (brand:'Samsung'";
 
-        $result = (new SigmieIndexTool($index, baseFilters: "brand:'Apple'"))->result(new Request([
-            'query' => '',
-            'filters' => $escape,
-        ]));
+        $search = new SigmieIndexTool($index, baseFilters: "brand:'Apple'");
+        $values = new SigmieFilterValuesTool($index, baseFilters: "brand:'Apple'");
 
-        $this->assertNotContains('Samsung', array_column($result['hits'], 'brand'));
+        $searchResult = json_decode($search->handle(new Request(['query' => '', 'filters' => $escape])), true);
+        $valuesResult = json_decode($values->handle(new Request(['field' => 'brand', 'filters' => $escape])), true);
 
-        $values = (new SigmieFilterValuesTool($index, baseFilters: "brand:'Apple'"))->result(new Request([
-            'field' => 'brand',
-            'filters' => $escape,
-        ]));
+        $this->assertNotContains('Samsung', array_column($searchResult['hits'] ?? [], 'brand'));
+        $this->assertArrayNotHasKey('Samsung', (array) ($valuesResult['values'] ?? []));
+        $this->assertArrayHasKey('error', $searchResult);
+        $this->assertArrayHasKey('error', $valuesResult);
 
-        $this->assertArrayNotHasKey('Samsung', (array) $values['values']);
+        $this->expectException(ParseException::class);
+
+        $search->result(new Request(['query' => '', 'filters' => $escape]));
     }
 
     /**
