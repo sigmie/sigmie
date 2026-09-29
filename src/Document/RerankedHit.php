@@ -16,6 +16,7 @@ class RerankedHit extends Hit
             $hit->_score,
             $hit->_index,
             $hit->sort,
+            $hit->_matches,
         );
     }
 

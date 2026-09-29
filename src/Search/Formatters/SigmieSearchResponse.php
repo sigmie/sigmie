@@ -28,7 +28,7 @@ class SigmieSearchResponse extends AbstractFormatter
         return [
             'code' => $this->code(),
             'semantic' => $this->semantic,
-            'hits' => array_map($this->formatHit(...), $this->queryResponseRaw['hits']['hits'] ?? []),
+            'hits' => $this->formattedHits(),
             'processing_time_ms' => $this->queryResponseRaw['took'] ?? 0,
             'total' => $this->queryResponseRaw['hits']['total']['value'] ?? 0,
             'query_strings' => array_map(fn ($qs): string => (string) $qs, $this->search->queryStrings ?? []),
@@ -45,6 +45,14 @@ class SigmieSearchResponse extends AbstractFormatter
             'autocomplete' => $this->queryResponseRaw['suggest']['autocompletion'] ?? [],
             // 'params' => $this->context->params ?? [],
         ];
+    }
+
+    /**
+     * The raw hits as json('hits') and hits() both return them.
+     */
+    protected function formattedHits(): array
+    {
+        return array_map($this->formatHit(...), $this->queryResponseRaw['hits']['hits'] ?? []);
     }
 
     /**
@@ -81,8 +89,9 @@ class SigmieSearchResponse extends AbstractFormatter
             $hit['_id'],
             $hit['_score'],
             $hit['_index'],
-            $hit['sort'] ?? null
-        ), $this->queryResponseRaw['hits']['hits'] ?? []);
+            $hit['sort'] ?? null,
+            $hit['_matches'] ?? [],
+        ), $this->formattedHits());
     }
 
     public function total()

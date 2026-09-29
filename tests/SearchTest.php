@@ -854,6 +854,51 @@ class SearchTest extends TestCase
     /**
      * @test
      */
+    public function hits_expose_matches_per_nested_path(): void
+    {
+        [$indexName, $blueprint] = $this->createProductsWithReviews();
+
+        $hits = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('battery')
+            ->innerHits('reviews', size: 10)
+            ->innerHits('questions.text', size: 5)
+            ->innerHits('answers')
+            ->get()
+            ->hits();
+
+        $this->assertCount(1, $hits);
+
+        foreach ($hits as $hit) {
+            $this->assertCount(10, $hit->matches('reviews'));
+            $this->assertSame(10, $hit->matchesTotal('reviews'));
+            $this->assertCount(5, $hit->matches('questions'));
+            $this->assertSame(7, $hit->matchesTotal('questions'));
+            $this->assertSame($hit->matches('questions'), $hit->matches('questions.text'));
+            $this->assertSame(6, $hit->matchesTotal('answers'));
+            $this->assertSame(['reviews', 'questions', 'answers'], array_keys($hit->matches()));
+            $this->assertSame($hit->matches('reviews'), $hit->matches()['reviews']);
+            $this->assertStringContainsString('battery', $hit->matches('reviews')[0]['comment']);
+
+            $this->assertSame([], $hit->matches('missing'));
+            $this->assertSame(0, $hit->matchesTotal('missing'));
+            $this->assertSame([], $hit->matches('title'));
+
+            $this->assertSame(10, $hit->toArray()['_matches']['reviews']['total']);
+            $this->assertSame(7, (new RerankedHit($hit, 0.5))->matchesTotal('questions'));
+        }
+
+        $plain = $this->sigmie->newSearch($indexName)->properties($blueprint)->queryString('battery')->get()->hits()[0];
+
+        $this->assertSame([], $plain->matches());
+        $this->assertSame([], $plain->matches('reviews'));
+        $this->assertSame(0, $plain->matchesTotal('reviews'));
+        $this->assertArrayNotHasKey('_matches', $plain->toArray());
+    }
+
+    /**
+     * @test
+     */
     public function inner_hits_for_the_same_path_merge_fields_and_the_later_size_wins(): void
     {
         [$indexName, $blueprint] = $this->createProductsWithReviews();

@@ -445,6 +445,41 @@ Each hit keeps its `_source` and gets a `_matches` key:
 
 Only the paths you name get matches. Without `innerHits()`, a hit has no `_matches` key. A requested path with no matching items still appears, with `total: 0` and no items.
 
+### Reading matches
+
+Each `Hit` from `hits()` reads its matches by nested path:
+
+```php
+$response = $sigmie->newSearch('products')
+    ->properties($props)
+    ->queryString('battery')
+    ->innerHits('reviews.comment')
+    ->innerHits('questions.text')
+    ->innerHits('answers')
+    ->get();
+
+foreach ($response->hits() as $hit) {
+    $hit->matches('reviews');      // [['_offset' => 0, 'comment' => 'Battery easily lasts two days.'],
+                                   //  ['_offset' => 2, 'comment' => 'Battery drains fast when gaming.']]
+    $hit->matchesTotal('reviews'); // 2
+    $hit->matches();               // ['reviews' => [...], 'questions' => [...], 'answers' => [...]]
+}
+```
+
+| Method | Returns |
+|--------|---------|
+| `matches(string $path)` | The matching items of that nested path. |
+| `matchesTotal(string $path)` | How many items of that path matched, including items beyond `size`. |
+| `matches()` | The items of every requested path, keyed by path. |
+
+The argument is the nested path, the same key as in `_matches`. A field inside it resolves to that path, so `matches('questions.text')` returns the `questions` items. A path you did not request returns `[]`, and its total is `0`. `Hit::toArray()` includes `_matches` only when the search requested inner hits. Reranked hits keep their matches.
+
+The raw form is the `_matches` key of `json('hits')`:
+
+```php
+$response->json('hits.0._matches.reviews')['total']; // 2
+```
+
 ### Select fields with dot syntax
 
 Name a field inside the nested field, instead of the nested field itself, to return only that field of each matching item. Call again for another field of the same path, and the fields merge:
