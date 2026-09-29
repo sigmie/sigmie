@@ -124,6 +124,7 @@ class SigmieAnalyticsTool implements Tool
         $description .= "\nGeo fields for `field` (geo widget): ".(
             $geoFields !== [] ? implode(', ', $geoFields) : '(none — this index has no geo_point field)'
         );
+        $description .= $this->privateFieldsNote();
 
         $description .= "\n\nTime window: `from` and `to` are ISO dates (default: last 30 days).\n"
             ."Narrow with `filters` (same DSL as the search tool, e.g. \"status:'paid' AND amount>10\") — it scopes this widget to that slice of the window. Call describe_index for the full field list and filter syntax.\n"
@@ -243,6 +244,9 @@ class SigmieAnalyticsTool implements Tool
 
         $request = new Request(AnalyticsRequest::fromArray($arguments)->toArray());
         $widget = trim((string) ($request['widget'] ?? ''));
+
+        $this->refusePrivateArguments($request);
+
         $dateField = $this->dateField((string) ($request['date_field'] ?? ''));
 
         $analytics = $this->index->analytics(
@@ -513,6 +517,21 @@ class SigmieAnalyticsTool implements Tool
         }
 
         return $metrics;
+    }
+
+    /**
+     * Refuses every argument that buckets, measures or orders by a field. `filters`, `hit_filters`
+     * and funnel `steps` only restrict, and `fields` / `hit_fields` are stripped by except().
+     */
+    protected function refusePrivateArguments(Request $request): void
+    {
+        $this->refusePrivateFields(
+            ...array_map(fn (string $key): ?string => $this->optional($request, $key), ['date_field', 'field', 'bucket_field', 'group_by', 'row_field', 'col_field', 'cohort_field', 'id_field']),
+            ...$this->csvList($request, 'group_by_fields'),
+            ...$this->expressionFields($request['sort'] ?? null),
+            ...$this->expressionFields($request['hit_sort'] ?? null),
+            ...($this->optional($request, 'metrics') !== null ? array_column($this->metricSpecs($request), 'field') : []),
+        );
     }
 
     protected function configureHits(Analytics $analytics, Request $request): void

@@ -1302,10 +1302,7 @@ class SigmieIndexToolTest extends TestCase
         $this->assertSame('size', $fields['variants']['subfields'][1]['name']);
     }
 
-    /**
-     * @test
-     */
-    public function document_tools_never_return_fields_excepted_from_tools(): void
+    private function createPrivateParticipantsIndex(): SigmieIndex
     {
         $index = new class($this->sigmie) extends SigmieIndex
         {
@@ -1330,6 +1327,7 @@ class SigmieIndexToolTest extends TestCase
                 $props = new NewProperties;
                 $props->name('title');
                 $props->keyword('secret');
+                $props->category('court');
                 $props->nested('participants', function (NewProperties $props): void {
                     $props->keyword('name');
                     $props->keyword('identification_number');
@@ -1350,14 +1348,31 @@ class SigmieIndexToolTest extends TestCase
             new Document([
                 'title' => 'Appeal decision',
                 'secret' => 'SECRET-VALUE',
+                'court' => 'Stockholm',
                 'participants' => [
                     ['name' => 'Anna', 'identification_number' => '19800101-1111', 'personal_number_short' => '800101'],
                     ['name' => 'Erik', 'identification_number' => '19900202-2222', 'personal_number_short' => '900202'],
                 ],
             ], 'case-1'),
+            new Document([
+                'title' => 'Custody ruling',
+                'secret' => 'OTHER-SECRET',
+                'court' => 'Malmo',
+                'participants' => [
+                    ['name' => 'Olle', 'identification_number' => '19700303-3333', 'personal_number_short' => '700303'],
+                ],
+            ], 'case-2'),
         ], refresh: true);
 
-        [$search, , $sample, $get] = $index->tools();
+        return $index;
+    }
+
+    /**
+     * @test
+     */
+    public function document_tools_never_return_fields_excepted_from_tools(): void
+    {
+        [$search, , $sample, $get] = $this->createPrivateParticipantsIndex()->tools();
 
         $outputs = [
             $search->handle(new Request([
@@ -1376,5 +1391,76 @@ class SigmieIndexToolTest extends TestCase
                 $this->assertStringNotContainsString($private, $output);
             }
         }
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider listingsOfFieldsExceptedFromTools
+     */
+    public function tools_refuse_to_list_facet_or_sort_fields_excepted_from_tools(int $tool, array $arguments, string $privateField): void
+    {
+        $output = $this->createPrivateParticipantsIndex()->tools()[$tool]->handle(new Request($arguments));
+
+        $this->assertStringContainsString(
+            sprintf('Field %s is private and cannot be listed, grouped, faceted or sorted; you can still filter on it.', $privateField),
+            json_decode($output, true)['error'] ?? ''
+        );
+
+        foreach (['SECRET-VALUE', 'OTHER-SECRET', '19800101-1111', '19900202-2222', '19700303-3333'] as $private) {
+            $this->assertStringNotContainsString($private, $output);
+        }
+    }
+
+    /**
+     * @return array<string, array{0: int, 1: array<string, mixed>, 2: string}>
+     */
+    public static function listingsOfFieldsExceptedFromTools(): array
+    {
+        $id = 'participants.identification_number';
+
+        return [
+            'discover_filter_values' => [1, ['field' => $id], $id],
+            'discover_filter_values on a filtered private field' => [1, ['field' => $id, 'filters' => "participants:{identification_number:'19800101-1111'}"], $id],
+            'discover_filter_values on a top-level private field' => [1, ['field' => 'secret'], 'secret'],
+            'search facets' => [0, ['query' => '', 'facets' => 'court '.$id.':10'], $id],
+            'search facets with facet_filters' => [0, ['query' => '', 'facets' => $id, 'facet_filters' => $id.":'19800101-1111'"], $id],
+            'search sort' => [0, ['query' => '', 'sort' => 'secret:asc'], 'secret'],
+        ];
+    }
+
+    /**
+     * @test
+     */
+    public function fields_excepted_from_tools_still_filter_and_are_described_as_filter_only(): void
+    {
+        $index = $this->createPrivateParticipantsIndex();
+        [$search, $values, , , $schema] = $index->tools();
+
+        $courts = $values->result(new Request([
+            'field' => 'court',
+            'filters' => "participants:{identification_number:'19800101-1111'}",
+        ]));
+
+        $this->assertSame(['Stockholm'], array_keys((array) $courts['values']));
+
+        $hits = $search->result(new Request(['query' => '', 'filters' => "secret:'OTHER-SECRET'", 'facets' => 'court']));
+
+        $this->assertSame(['case-2'], array_column($hits['hits'], '_id'));
+        $this->assertSame(['Malmo'], array_keys((array) $hits['facets']['court']));
+
+        $this->assertStringContainsString('- secret [keyword] (filter only):', $search->description());
+        $this->assertStringContainsString('identification_number [keyword] (filter only):', $search->description());
+        $this->assertStringContainsString('Private fields (filter only', $values->description());
+
+        $fields = array_column($schema->result(new Request([]))['fields'], null, 'name');
+        $subfields = array_column($fields['participants']['subfields'], null, 'name');
+
+        $this->assertTrue($fields['secret']['filter_only']);
+        $this->assertFalse($fields['secret']['facetable']);
+        $this->assertFalse($fields['secret']['sortable']);
+        $this->assertTrue($subfields['identification_number']['filter_only']);
+        $this->assertArrayNotHasKey('filter_only', $subfields['name']);
+        $this->assertArrayNotHasKey('filter_only', $fields['court']);
     }
 }

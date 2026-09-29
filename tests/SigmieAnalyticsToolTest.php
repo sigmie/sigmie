@@ -10,6 +10,7 @@ require_once __DIR__.'/Stubs/LaravelAiStubs.php';
 
 use DateTimeImmutable;
 use DateTimeZone;
+use InvalidArgumentException;
 use Laravel\Ai\Tools\Request;
 use Sigmie\AI\AsTool;
 use Sigmie\AI\SigmieAnalyticsTool;
@@ -68,6 +69,68 @@ class SigmieAnalyticsToolTest extends TestCase
             new Document(['created_at' => '2024-01-02', 'amount' => 200, 'product' => 'A', 'channel' => 'retail', 'champion_country' => 'Germany', 'runner_up_country' => 'Italy']),
             new Document(['created_at' => '2024-01-03', 'amount' => 30, 'product' => 'B', 'channel' => 'retail', 'champion_country' => 'France', 'runner_up_country' => 'Spain']),
             new Document(['created_at' => '2024-01-03', 'amount' => 70, 'product' => 'A', 'channel' => 'online', 'champion_country' => 'Italy', 'runner_up_country' => 'Germany']),
+        ], refresh: true);
+
+        return $index;
+    }
+
+    private function createPrivateParticipantsIndex(): SigmieIndex
+    {
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
+            use AsTool;
+
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
+            public function properties(): NewProperties
+            {
+                $props = new NewProperties;
+                $props->date('created_at');
+                $props->number('amount');
+                $props->number('salary');
+                $props->category('court');
+                $props->nested('participants', function (NewProperties $props): void {
+                    $props->keyword('name');
+                    $props->keyword('identification_number');
+                });
+
+                return $props;
+            }
+
+            public function exceptFromTools(): array
+            {
+                return ['salary', 'participants.identification_number'];
+            }
+        };
+
+        $index->create();
+        $index->merge([
+            new Document([
+                'created_at' => '2024-01-01',
+                'amount' => 100,
+                'salary' => 987654,
+                'court' => 'Stockholm',
+                'participants' => [['name' => 'Anna', 'identification_number' => '19800101-1111']],
+            ]),
+            new Document([
+                'created_at' => '2024-01-01',
+                'amount' => 50,
+                'salary' => 123456,
+                'court' => 'Malmo',
+                'participants' => [['name' => 'Erik', 'identification_number' => '19900202-2222']],
+            ]),
         ], refresh: true);
 
         return $index;
@@ -654,53 +717,7 @@ class SigmieAnalyticsToolTest extends TestCase
      */
     public function table_and_hits_never_return_fields_excepted_from_tools(): void
     {
-        $index = new class($this->sigmie) extends SigmieIndex
-        {
-            use AsTool;
-
-            protected string $indexName;
-
-            public function __construct(Sigmie $sigmie)
-            {
-                parent::__construct($sigmie);
-
-                $this->indexName = uniqid();
-            }
-
-            public function name(): string
-            {
-                return $this->indexName;
-            }
-
-            public function properties(): NewProperties
-            {
-                $props = new NewProperties;
-                $props->date('created_at');
-                $props->number('amount');
-                $props->nested('participants', function (NewProperties $props): void {
-                    $props->keyword('name');
-                    $props->keyword('identification_number');
-                });
-
-                return $props;
-            }
-
-            public function exceptFromTools(): array
-            {
-                return ['participants.identification_number'];
-            }
-        };
-
-        $index->create();
-        $index->merge([
-            new Document([
-                'created_at' => '2024-01-01',
-                'amount' => 100,
-                'participants' => [['name' => 'Anna', 'identification_number' => '19800101-1111']],
-            ]),
-        ], refresh: true);
-
-        $tool = new SigmieAnalyticsTool($index);
+        $tool = new SigmieAnalyticsTool($this->createPrivateParticipantsIndex());
 
         $outputs = [
             $tool->handle(new Request([
@@ -726,6 +743,94 @@ class SigmieAnalyticsToolTest extends TestCase
             $this->assertStringContainsString('Anna', $output);
             $this->assertStringNotContainsString('19800101-1111', $output);
         }
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider widgetsOnFieldsExceptedFromTools
+     */
+    public function widgets_refuse_to_group_measure_or_sort_by_fields_excepted_from_tools(array $arguments, string $privateField): void
+    {
+        $tool = new SigmieAnalyticsTool($this->createPrivateParticipantsIndex());
+
+        $output = $tool->handle(new Request([
+            'date_field' => 'created_at',
+            'from' => '2024-01-01',
+            'to' => '2024-01-02',
+            ...$arguments,
+        ]));
+
+        $this->assertStringContainsString(sprintf('Field %s is private', $privateField), json_decode($output, true)['error'] ?? '');
+
+        foreach (['19800101-1111', '19900202-2222', '987654', '123456'] as $private) {
+            $this->assertStringNotContainsString($private, $output);
+        }
+    }
+
+    /**
+     * @return array<string, array{0: array<string, mixed>, 1: string}>
+     */
+    public static function widgetsOnFieldsExceptedFromTools(): array
+    {
+        $id = 'participants.identification_number';
+
+        return [
+            'breakdown' => [['widget' => 'breakdown', 'group_by' => $id, 'metric' => 'count'], $id],
+            'grouped_trend' => [['widget' => 'grouped_trend', 'group_by' => $id, 'metric' => 'count', 'interval' => 'day'], $id],
+            'grouped_metrics' => [['widget' => 'grouped_metrics', 'group_by' => $id, 'metrics' => '[{"key":"count","metric":"count"}]'], $id],
+            'grouped_metrics metric field' => [['widget' => 'grouped_metrics', 'group_by' => 'court', 'metrics' => '[{"key":"max_salary","metric":"max","field":"salary"}]', 'sort_metric' => 'max_salary'], 'salary'],
+            'multi_breakdown' => [['widget' => 'multi_breakdown', 'group_by_fields' => 'court,'.$id, 'metric' => 'count'], $id],
+            'union_breakdown' => [['widget' => 'union_breakdown', 'group_by_fields' => 'court,'.$id, 'metric' => 'count'], $id],
+            'heatmap row' => [['widget' => 'heatmap', 'row_field' => $id, 'col_field' => 'court'], $id],
+            'heatmap col' => [['widget' => 'heatmap', 'row_field' => 'court', 'col_field' => $id], $id],
+            'retention' => [['widget' => 'retention', 'cohort_field' => 'created_at', 'id_field' => $id, 'interval' => 'day'], $id],
+            'kpi' => [['widget' => 'kpi', 'metric' => 'max', 'field' => 'salary'], 'salary'],
+            'distribution' => [['widget' => 'distribution', 'field' => 'salary', 'bucket_size' => 1], 'salary'],
+            'histogram_metric' => [['widget' => 'histogram_metric', 'bucket_field' => 'salary', 'bucket_size' => 1, 'metric' => 'count', 'field' => 'amount'], 'salary'],
+            'percentiles' => [['widget' => 'percentiles', 'field' => 'salary'], 'salary'],
+            'stats' => [['widget' => 'stats', 'field' => 'salary'], 'salary'],
+            'table sort' => [['widget' => 'table', 'fields' => 'amount', 'sort' => 'salary:desc'], 'salary'],
+            'hit_sort' => [['widget' => 'kpi', 'metric' => 'count', 'include_hits' => 1, 'hit_fields' => 'amount', 'hit_sort' => 'salary:desc'], 'salary'],
+        ];
+    }
+
+    /**
+     * @test
+     */
+    public function fields_excepted_from_tools_still_filter_widgets(): void
+    {
+        $tool = new SigmieAnalyticsTool($this->createPrivateParticipantsIndex());
+
+        $result = $tool->result(new Request([
+            'widget' => 'breakdown',
+            'date_field' => 'created_at',
+            'group_by' => 'court',
+            'metric' => 'count',
+            'from' => '2024-01-01',
+            'to' => '2024-01-02',
+            'filters' => "participants:{identification_number:'19800101-1111'} AND salary>100000",
+        ]));
+
+        $this->assertSame(['Stockholm'], array_column($result['rows'], 'key'));
+        $this->assertStringContainsString('Private fields (filter only', $tool->description());
+        $this->assertStringContainsString("Numeric fields for `field`: amount\n", $tool->description());
+    }
+
+    /**
+     * @test
+     */
+    public function result_throws_for_a_field_excepted_from_tools(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Field participants.identification_number is private');
+
+        (new SigmieAnalyticsTool($this->createPrivateParticipantsIndex()))->result(new Request([
+            'widget' => 'breakdown',
+            'date_field' => 'created_at',
+            'group_by' => 'participants.identification_number',
+            'metric' => 'count',
+        ]));
     }
 
     /**

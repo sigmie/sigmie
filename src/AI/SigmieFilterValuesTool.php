@@ -21,6 +21,7 @@ use Sigmie\SigmieIndex;
  */
 class SigmieFilterValuesTool implements Tool
 {
+    use GuardsPrivateFields;
     use HandlesToolErrors;
 
     public function __construct(
@@ -40,7 +41,7 @@ class SigmieFilterValuesTool implements Tool
         return sprintf(
             "List the valid values of a facetable field of the '%s' index so you can filter accurately — call this when you do not know a field's values. Provide `field` (a facetable field from the search tool's field list) and optional `filters` (same DSL as the search tool, e.g. \"field:nav*\" to prefix-match, or filter another field to narrow). Keyword/category fields return value counts; numeric/date fields return min/max. `truncated: true` means more values exist than `limit`; `other_documents` counts the documents in the omitted values. Raise `limit` or narrow with `filters` before treating the list as complete.",
             $this->index->name()
-        );
+        ).$this->privateFieldsNote();
     }
 
     public function schema(JsonSchema $schema): array
@@ -67,6 +68,8 @@ class SigmieFilterValuesTool implements Tool
     {
         $fieldName = trim((string) ($request['field'] ?? ''));
         $limit = max(1, (int) ($request['limit'] ?? self::DEFAULT_LIMIT));
+
+        $this->refusePrivateFields($fieldName);
 
         $search = $this->index->newSearch()
             ->queryString('')
