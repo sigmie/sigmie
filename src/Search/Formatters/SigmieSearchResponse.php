@@ -126,15 +126,37 @@ class SigmieSearchResponse extends AbstractFormatter
     public function formatFacets(): object
     {
         $facets = [];
-        foreach ($this->properties->toArray() as $type) {
-            if ($type->isFacetable() && in_array($type->name, $this->search->facetFields)) {
-                $facetData = $type->facets($this->facetAggregations());
-                if (! is_null($facetData)) {
-                    $facets[$type->name] = (object) $facetData;
-                }
+
+        foreach ($this->search->facetFields as $field) {
+            $facet = $this->facet($field);
+
+            if (! is_null($facet)) {
+                $facets[$field] = (object) $facet;
             }
         }
 
         return (object) $facets;
+    }
+
+    /**
+     * FacetParser wraps each facet as `filter[name] -> field aggs`, and nested
+     * fields as `nested[name] -> filter[name] -> field aggs`. Unwrap here so
+     * each type reads only the aggregations it added.
+     */
+    public function facet(string $field): ?array
+    {
+        $type = $this->properties->get($field);
+
+        if (is_null($type) || ! $type->isFacetable()) {
+            return null;
+        }
+
+        $aggregations = $this->facetAggregations()[$type->name()] ?? [];
+
+        if (! is_null($type->nestedPath())) {
+            $aggregations = $aggregations[$type->name()] ?? [];
+        }
+
+        return $type->facets($aggregations);
     }
 }

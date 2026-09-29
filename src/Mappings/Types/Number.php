@@ -80,7 +80,7 @@ class Number extends Type
 
     public function facets(array $aggregation): ?array
     {
-        return $aggregation[$this->name()][$this->name()] ?? $aggregation[$this->name()] ?? [];
+        return $aggregation[$this->name()] ?? [];
     }
 
     public function validate(string $key, mixed $value): array
