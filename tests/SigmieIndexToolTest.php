@@ -1390,7 +1390,7 @@ class SigmieIndexToolTest extends TestCase
         return $ids;
     }
 
-    private function createJudgmentsIndex(): SigmieIndex
+    private function createArticlesIndex(): SigmieIndex
     {
         $index = new class($this->sigmie) extends SigmieIndex
         {
@@ -1413,10 +1413,10 @@ class SigmieIndexToolTest extends TestCase
             public function properties(): NewProperties
             {
                 $props = new NewProperties;
-                $props->keyword('case_number');
-                $props->category('court_name');
-                $props->text('text');
-                $props->nested('chunks', function (NewProperties $props): void {
+                $props->title('title');
+                $props->category('author');
+                $props->text('body');
+                $props->nested('sections', function (NewProperties $props): void {
                     $props->keyword('type');
                     $props->text('text');
                     $props->keyword('internal_note');
@@ -1427,30 +1427,30 @@ class SigmieIndexToolTest extends TestCase
 
             public function toolFields(): array
             {
-                return ['case_number', 'court_name'];
+                return ['title', 'author'];
             }
 
             public function exceptFromTools(): array
             {
-                return ['chunks.internal_note'];
+                return ['sections.internal_note'];
             }
         };
 
         $index->create();
         $index->merge([
             new Document([
-                'case_number' => 'B 100-24',
-                'court_name' => 'Stockholm',
-                'text' => 'FULL JUDGMENT BODY about a burglary appeal.',
-                'chunks' => [
-                    ['type' => 'summary', 'text' => 'Summary of the case.', 'internal_note' => 'NOTE-0'],
-                    ['type' => 'reasoning', 'text' => 'The burglary was proven.', 'internal_note' => 'NOTE-1'],
-                    ['type' => 'reasoning', 'text' => 'The burglary tools were found.', 'internal_note' => 'NOTE-2'],
-                    ['type' => 'sentencing', 'text' => 'Burglary sentence of one year.', 'internal_note' => 'NOTE-3'],
-                    ['type' => 'reasoning', 'text' => 'A burglary witness testified.', 'internal_note' => 'NOTE-4'],
-                    ['type' => 'reasoning', 'text' => 'The defence was rejected.', 'internal_note' => 'NOTE-5'],
+                'title' => 'Energy at home',
+                'author' => 'Jane Doe',
+                'body' => 'FULL ARTICLE BODY about solar power.',
+                'sections' => [
+                    ['type' => 'summary', 'text' => 'Summary of the article.', 'internal_note' => 'NOTE-0'],
+                    ['type' => 'analysis', 'text' => 'The solar panels were installed.', 'internal_note' => 'NOTE-1'],
+                    ['type' => 'analysis', 'text' => 'The solar inverter was replaced.', 'internal_note' => 'NOTE-2'],
+                    ['type' => 'conclusion', 'text' => 'Solar power pays off in six years.', 'internal_note' => 'NOTE-3'],
+                    ['type' => 'analysis', 'text' => 'A solar battery stores the surplus.', 'internal_note' => 'NOTE-4'],
+                    ['type' => 'analysis', 'text' => 'The heat pump was kept.', 'internal_note' => 'NOTE-5'],
                 ],
-            ], 'case-1'),
+            ], 'article-1'),
         ], refresh: true);
 
         return $index;
@@ -1461,19 +1461,19 @@ class SigmieIndexToolTest extends TestCase
      */
     public function document_tools_return_only_the_requested_fields_including_nested_paths(): void
     {
-        [$search, , $sample, $get] = $this->createJudgmentsIndex()->tools();
+        [$search, , $sample, $get] = $this->createArticlesIndex()->tools();
 
         $documents = [
-            $search->result(new Request(['query' => '', 'fields' => 'case_number, chunks.type']))['hits'][0],
-            json_decode($sample->handle(new Request(['limit' => 1, 'fields' => 'case_number, chunks.type'])), true)[0]['_source'],
-            json_decode($get->handle(new Request(['ids' => ['case-1'], 'fields' => 'case_number, chunks.type'])), true)[0]['_source'],
+            $search->result(new Request(['query' => '', 'fields' => 'title, sections.type']))['hits'][0],
+            json_decode($sample->handle(new Request(['limit' => 1, 'fields' => 'title, sections.type'])), true)[0]['_source'],
+            json_decode($get->handle(new Request(['ids' => ['article-1'], 'fields' => 'title, sections.type'])), true)[0]['_source'],
         ];
 
         foreach ($documents as $document) {
             unset($document['_id']);
 
-            $this->assertEqualsCanonicalizing(['case_number', 'chunks'], array_keys($document));
-            $this->assertSame(['type' => 'summary'], $document['chunks'][0]);
+            $this->assertEqualsCanonicalizing(['title', 'sections'], array_keys($document));
+            $this->assertSame(['type' => 'summary'], $document['sections'][0]);
         }
     }
 
@@ -1482,21 +1482,21 @@ class SigmieIndexToolTest extends TestCase
      */
     public function document_tools_use_the_index_tool_fields_when_fields_is_null(): void
     {
-        [$search, , $sample, $get] = $this->createJudgmentsIndex()->tools();
+        [$search, , $sample, $get] = $this->createArticlesIndex()->tools();
 
         $documents = [
             $search->result(new Request(['query' => '', 'fields' => null]))['hits'][0],
             json_decode($sample->handle(new Request(['limit' => 1, 'fields' => null])), true)[0]['_source'],
-            json_decode($get->handle(new Request(['ids' => ['case-1'], 'fields' => null])), true)[0]['_source'],
+            json_decode($get->handle(new Request(['ids' => ['article-1'], 'fields' => null])), true)[0]['_source'],
         ];
 
         foreach ($documents as $document) {
             unset($document['_id']);
 
-            $this->assertEqualsCanonicalizing(['case_number', 'court_name'], array_keys($document));
+            $this->assertEqualsCanonicalizing(['title', 'author'], array_keys($document));
         }
 
-        $this->assertStringContainsString('Pass null for the default: case_number,court_name.', $search->schema(new FakeJsonSchema)['fields']->descriptionText);
+        $this->assertStringContainsString('Pass null for the default: title,author.', $search->schema(new FakeJsonSchema)['fields']->descriptionText);
     }
 
     /**
@@ -1504,17 +1504,17 @@ class SigmieIndexToolTest extends TestCase
      */
     public function document_tools_return_a_field_outside_the_default_when_requested(): void
     {
-        [$search, , $sample, $get] = $this->createJudgmentsIndex()->tools();
+        [$search, , $sample, $get] = $this->createArticlesIndex()->tools();
 
         $documents = [
-            $search->result(new Request(['query' => '', 'fields' => 'text']))['hits'][0],
-            json_decode($sample->handle(new Request(['limit' => 1, 'fields' => 'text'])), true)[0]['_source'],
-            json_decode($get->handle(new Request(['ids' => ['case-1'], 'fields' => 'text'])), true)[0]['_source'],
+            $search->result(new Request(['query' => '', 'fields' => 'body']))['hits'][0],
+            json_decode($sample->handle(new Request(['limit' => 1, 'fields' => 'body'])), true)[0]['_source'],
+            json_decode($get->handle(new Request(['ids' => ['article-1'], 'fields' => 'body'])), true)[0]['_source'],
         ];
 
         foreach ($documents as $document) {
-            $this->assertSame('FULL JUDGMENT BODY about a burglary appeal.', $document['text']);
-            $this->assertArrayNotHasKey('case_number', $document);
+            $this->assertSame('FULL ARTICLE BODY about solar power.', $document['body']);
+            $this->assertArrayNotHasKey('title', $document);
         }
     }
 
@@ -1523,20 +1523,20 @@ class SigmieIndexToolTest extends TestCase
      */
     public function fields_excepted_from_tools_are_never_returned_even_when_requested(): void
     {
-        [$search, , $sample, $get] = $this->createPrivateParticipantsIndex()->tools();
+        [$search, , $sample, $get] = $this->createPrivateContactsIndex()->tools();
 
-        $fields = 'title,secret,participants.name,participants.identification_number';
+        $fields = 'title,secret,contacts.name,contacts.email';
 
         $outputs = [
-            $search->handle(new Request(['query' => 'Appeal', 'fields' => $fields])),
+            $search->handle(new Request(['query' => 'Premium', 'fields' => $fields])),
             $sample->handle(new Request(['limit' => 5, 'fields' => $fields])),
-            $get->handle(new Request(['ids' => ['case-1'], 'fields' => $fields])),
+            $get->handle(new Request(['ids' => ['customer-1'], 'fields' => $fields])),
         ];
 
         foreach ($outputs as $output) {
-            $this->assertStringContainsString('Anna', $output);
+            $this->assertStringContainsString('Jane', $output);
 
-            foreach (['SECRET-VALUE', '19800101-1111', '19900202-2222'] as $private) {
+            foreach (['SECRET-VALUE', 'jane@example.com', 'john@example.com'] as $private) {
                 $this->assertStringNotContainsString($private, $output);
             }
         }
@@ -1547,19 +1547,19 @@ class SigmieIndexToolTest extends TestCase
      */
     public function search_returns_the_matching_nested_items_of_the_requested_paths(): void
     {
-        [$search] = $this->createJudgmentsIndex()->tools();
+        [$search] = $this->createArticlesIndex()->tools();
 
-        $this->assertArrayNotHasKey('_matches', $search->result(new Request(['query' => 'burglary', 'matches' => null]))['hits'][0]);
+        $this->assertArrayNotHasKey('_matches', $search->result(new Request(['query' => 'solar', 'matches' => null]))['hits'][0]);
 
-        $hit = $search->result(new Request(['query' => 'burglary', 'fields' => null, 'matches' => 'chunks.text']))['hits'][0];
+        $hit = $search->result(new Request(['query' => 'solar', 'fields' => null, 'matches' => 'sections.text']))['hits'][0];
 
-        $this->assertArrayNotHasKey('chunks', $hit);
-        $this->assertSame(4, $hit['_matches']['chunks']['total']);
-        $this->assertEqualsCanonicalizing([1, 2, 3, 4], array_column($hit['_matches']['chunks']['items'], '_offset'));
+        $this->assertArrayNotHasKey('sections', $hit);
+        $this->assertSame(4, $hit['_matches']['sections']['total']);
+        $this->assertEqualsCanonicalizing([1, 2, 3, 4], array_column($hit['_matches']['sections']['items'], '_offset'));
 
-        foreach ($hit['_matches']['chunks']['items'] as $passage) {
-            $this->assertEqualsCanonicalizing(['_offset', 'text'], array_keys($passage));
-            $this->assertStringContainsStringIgnoringCase('burglary', $passage['text']);
+        foreach ($hit['_matches']['sections']['items'] as $section) {
+            $this->assertEqualsCanonicalizing(['_offset', 'text'], array_keys($section));
+            $this->assertStringContainsStringIgnoringCase('solar', $section['text']);
         }
     }
 
@@ -1568,17 +1568,17 @@ class SigmieIndexToolTest extends TestCase
      */
     public function search_matches_accept_a_size_per_path(): void
     {
-        [$search] = $this->createJudgmentsIndex()->tools();
+        [$search] = $this->createArticlesIndex()->tools();
 
-        foreach (['chunks.text:2', 'chunks.type:9, chunks.text:2'] as $matches) {
-            $chunks = $search->result(new Request(['query' => 'burglary', 'matches' => $matches]))['hits'][0]['_matches']['chunks'];
+        foreach (['sections.text:2', 'sections.type:9, sections.text:2'] as $matches) {
+            $sections = $search->result(new Request(['query' => 'solar', 'matches' => $matches]))['hits'][0]['_matches']['sections'];
 
-            $this->assertSame(4, $chunks['total']);
-            $this->assertCount(2, $chunks['items']);
+            $this->assertSame(4, $sections['total']);
+            $this->assertCount(2, $sections['items']);
         }
 
-        foreach (['chunks.text:0', 'chunks.text:101', 'chunks.text:two'] as $matches) {
-            $output = json_decode($search->handle(new Request(['query' => 'burglary', 'matches' => $matches])), true);
+        foreach (['sections.text:0', 'sections.text:101', 'sections.text:two'] as $matches) {
+            $output = json_decode($search->handle(new Request(['query' => 'solar', 'matches' => $matches])), true);
 
             $this->assertStringContainsString(
                 sprintf("Invalid matches entry '%s'. Use a nested path, optionally with ':size' from 1 to 100", $matches),
@@ -1592,22 +1592,22 @@ class SigmieIndexToolTest extends TestCase
      */
     public function search_matches_follow_a_nested_filter_and_never_return_fields_excepted_from_tools(): void
     {
-        [$search] = $this->createJudgmentsIndex()->tools();
+        [$search] = $this->createArticlesIndex()->tools();
 
         $output = $search->handle(new Request([
             'query' => '',
-            'filters' => "chunks:{type:'sentencing'}",
-            'matches' => 'chunks',
+            'filters' => "sections:{type:'conclusion'}",
+            'matches' => 'sections',
         ]));
 
         $this->assertEquals(
-            ['total' => 1, 'items' => [['_offset' => 3, 'type' => 'sentencing', 'text' => 'Burglary sentence of one year.']]],
-            json_decode($output, true)['hits'][0]['_matches']['chunks']
+            ['total' => 1, 'items' => [['_offset' => 3, 'type' => 'conclusion', 'text' => 'Solar power pays off in six years.']]],
+            json_decode($output, true)['hits'][0]['_matches']['sections']
         );
         $this->assertStringNotContainsString('NOTE-', $output);
     }
 
-    private function createPrivateParticipantsIndex(): SigmieIndex
+    private function createPrivateContactsIndex(): SigmieIndex
     {
         $index = new class($this->sigmie) extends SigmieIndex
         {
@@ -1632,11 +1632,11 @@ class SigmieIndexToolTest extends TestCase
                 $props = new NewProperties;
                 $props->name('title');
                 $props->keyword('secret');
-                $props->category('court');
-                $props->nested('participants', function (NewProperties $props): void {
+                $props->category('region');
+                $props->nested('contacts', function (NewProperties $props): void {
                     $props->keyword('name');
-                    $props->keyword('identification_number');
-                    $props->keyword('personal_number_short');
+                    $props->keyword('email');
+                    $props->keyword('phone');
                 });
 
                 return $props;
@@ -1644,29 +1644,29 @@ class SigmieIndexToolTest extends TestCase
 
             public function exceptFromTools(): array
             {
-                return ['secret', 'participants.identification_number', 'participants.personal_number_short'];
+                return ['secret', 'contacts.email', 'contacts.phone'];
             }
         };
 
         $index->create();
         $index->merge([
             new Document([
-                'title' => 'Appeal decision',
+                'title' => 'Premium account',
                 'secret' => 'SECRET-VALUE',
-                'court' => 'Stockholm',
-                'participants' => [
-                    ['name' => 'Anna', 'identification_number' => '19800101-1111', 'personal_number_short' => '800101'],
-                    ['name' => 'Erik', 'identification_number' => '19900202-2222', 'personal_number_short' => '900202'],
+                'region' => 'North',
+                'contacts' => [
+                    ['name' => 'Jane', 'email' => 'jane@example.com', 'phone' => '555-0101'],
+                    ['name' => 'John', 'email' => 'john@example.com', 'phone' => '555-0102'],
                 ],
-            ], 'case-1'),
+            ], 'customer-1'),
             new Document([
-                'title' => 'Custody ruling',
+                'title' => 'Basic account',
                 'secret' => 'OTHER-SECRET',
-                'court' => 'Malmo',
-                'participants' => [
-                    ['name' => 'Olle', 'identification_number' => '19700303-3333', 'personal_number_short' => '700303'],
+                'region' => 'South',
+                'contacts' => [
+                    ['name' => 'Max', 'email' => 'max@example.com', 'phone' => '555-0103'],
                 ],
-            ], 'case-2'),
+            ], 'customer-2'),
         ], refresh: true);
 
         return $index;
@@ -1677,22 +1677,22 @@ class SigmieIndexToolTest extends TestCase
      */
     public function document_tools_never_return_fields_excepted_from_tools(): void
     {
-        [$search, , $sample, $get] = $this->createPrivateParticipantsIndex()->tools();
+        [$search, , $sample, $get] = $this->createPrivateContactsIndex()->tools();
 
         $outputs = [
             $search->handle(new Request([
-                'query' => 'Appeal',
-                'filters' => "participants:{identification_number:'19800101-1111'}",
+                'query' => 'Premium',
+                'filters' => "contacts:{email:'jane@example.com'}",
             ])),
             $sample->handle(new Request(['limit' => 5])),
-            $get->handle(new Request(['ids' => ['case-1']])),
+            $get->handle(new Request(['ids' => ['customer-1']])),
         ];
 
         foreach ($outputs as $output) {
-            $this->assertStringContainsString('Anna', $output);
-            $this->assertStringContainsString('Appeal decision', $output);
+            $this->assertStringContainsString('Jane', $output);
+            $this->assertStringContainsString('Premium account', $output);
 
-            foreach (['SECRET-VALUE', '19800101-1111', '19900202-2222', '800101', '900202'] as $private) {
+            foreach (['SECRET-VALUE', 'jane@example.com', 'john@example.com', '555-0101', '555-0102'] as $private) {
                 $this->assertStringNotContainsString($private, $output);
             }
         }
@@ -1705,14 +1705,14 @@ class SigmieIndexToolTest extends TestCase
      */
     public function tools_refuse_to_list_facet_or_sort_fields_excepted_from_tools(int $tool, array $arguments, string $privateField): void
     {
-        $output = $this->createPrivateParticipantsIndex()->tools()[$tool]->handle(new Request($arguments));
+        $output = $this->createPrivateContactsIndex()->tools()[$tool]->handle(new Request($arguments));
 
         $this->assertStringContainsString(
             sprintf('Field %s is private and cannot be listed, grouped, faceted or sorted; you can still filter on it.', $privateField),
             json_decode($output, true)['error'] ?? ''
         );
 
-        foreach (['SECRET-VALUE', 'OTHER-SECRET', '19800101-1111', '19900202-2222', '19700303-3333'] as $private) {
+        foreach (['SECRET-VALUE', 'OTHER-SECRET', 'jane@example.com', 'john@example.com', 'max@example.com'] as $private) {
             $this->assertStringNotContainsString($private, $output);
         }
     }
@@ -1722,14 +1722,14 @@ class SigmieIndexToolTest extends TestCase
      */
     public static function listingsOfFieldsExceptedFromTools(): array
     {
-        $id = 'participants.identification_number';
+        $id = 'contacts.email';
 
         return [
             'discover_filter_values' => [1, ['field' => $id], $id],
-            'discover_filter_values on a filtered private field' => [1, ['field' => $id, 'filters' => "participants:{identification_number:'19800101-1111'}"], $id],
+            'discover_filter_values on a filtered private field' => [1, ['field' => $id, 'filters' => "contacts:{email:'jane@example.com'}"], $id],
             'discover_filter_values on a top-level private field' => [1, ['field' => 'secret'], 'secret'],
-            'search facets' => [0, ['query' => '', 'facets' => 'court '.$id.':10'], $id],
-            'search facets with facet_filters' => [0, ['query' => '', 'facets' => $id, 'facet_filters' => $id.":'19800101-1111'"], $id],
+            'search facets' => [0, ['query' => '', 'facets' => 'region '.$id.':10'], $id],
+            'search facets with facet_filters' => [0, ['query' => '', 'facets' => $id, 'facet_filters' => $id.":'jane@example.com'"], $id],
             'search sort' => [0, ['query' => '', 'sort' => 'secret:asc'], 'secret'],
         ];
     }
@@ -1739,33 +1739,33 @@ class SigmieIndexToolTest extends TestCase
      */
     public function fields_excepted_from_tools_still_filter_and_are_described_as_filter_only(): void
     {
-        $index = $this->createPrivateParticipantsIndex();
+        $index = $this->createPrivateContactsIndex();
         [$search, $values, , , $schema] = $index->tools();
 
-        $courts = $values->result(new Request([
-            'field' => 'court',
-            'filters' => "participants:{identification_number:'19800101-1111'}",
+        $regions = $values->result(new Request([
+            'field' => 'region',
+            'filters' => "contacts:{email:'jane@example.com'}",
         ]));
 
-        $this->assertSame(['Stockholm'], array_keys((array) $courts['values']));
+        $this->assertSame(['North'], array_keys((array) $regions['values']));
 
-        $hits = $search->result(new Request(['query' => '', 'filters' => "secret:'OTHER-SECRET'", 'facets' => 'court']));
+        $hits = $search->result(new Request(['query' => '', 'filters' => "secret:'OTHER-SECRET'", 'facets' => 'region']));
 
-        $this->assertSame(['case-2'], array_column($hits['hits'], '_id'));
-        $this->assertSame(['Malmo'], array_keys((array) $hits['facets']['court']));
+        $this->assertSame(['customer-2'], array_column($hits['hits'], '_id'));
+        $this->assertSame(['South'], array_keys((array) $hits['facets']['region']));
 
         $this->assertStringContainsString('- secret [keyword] (filter only):', $search->description());
-        $this->assertStringContainsString('identification_number [keyword] (filter only):', $search->description());
+        $this->assertStringContainsString('email [keyword] (filter only):', $search->description());
         $this->assertStringContainsString('Private fields (filter only', $values->description());
 
         $fields = array_column($schema->result(new Request([]))['fields'], null, 'name');
-        $subfields = array_column($fields['participants']['subfields'], null, 'name');
+        $subfields = array_column($fields['contacts']['subfields'], null, 'name');
 
         $this->assertTrue($fields['secret']['filter_only']);
         $this->assertFalse($fields['secret']['facetable']);
         $this->assertFalse($fields['secret']['sortable']);
-        $this->assertTrue($subfields['identification_number']['filter_only']);
+        $this->assertTrue($subfields['email']['filter_only']);
         $this->assertArrayNotHasKey('filter_only', $subfields['name']);
-        $this->assertArrayNotHasKey('filter_only', $fields['court']);
+        $this->assertArrayNotHasKey('filter_only', $fields['region']);
     }
 }

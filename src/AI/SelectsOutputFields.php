@@ -21,7 +21,7 @@ trait SelectsOutputFields
         $default = $this->index->toolFields();
 
         return $schema->string()->description(sprintf(
-            "Comma-separated source fields to return; dotted paths reach nested fields (e.g. 'title,chunks.text'). Pass null for the default: %s.",
+            "Comma-separated source fields to return; dotted paths reach nested fields (e.g. 'title,sections.text'). Pass null for the default: %s.",
             $default === [] ? 'all fields' : implode(',', $default)
         ))->nullable()->required();
     }

@@ -128,31 +128,34 @@ $get->handle(new Request(['ids' => ['order-of-user-3', 'order-of-user-4']]));
 
 ## Controlling tool output
 
-`search_index`, `sample_documents`, and `get_documents` return every source field by default. For an index with large fields, such as a full judgment body, ten hits can fill the agent's context. The `fields` argument and `toolFields()` keep results small, and the `matches` argument returns only the passages that matched.
+`search_index`, `sample_documents`, and `get_documents` return every source field by default. For an index with large fields, such as a full article body, ten hits can fill the agent's context. The `fields` argument and `toolFields()` keep results small, and the `matches` argument returns only the sections that matched.
 
 The agent passes `fields`, a comma-separated list of source fields. Dotted paths reach nested fields:
 
 ```json
-{"query": "burglary", "fields": "case_number,court_name,chunks.text"}
+{"query": "solar", "fields": "title,author,sections.text"}
 ```
 
 Override `toolFields()` to set the default the tools use when the agent passes `fields: null`. An empty list, the default, returns every field:
 
 ```php
-class JudgmentIndex extends SigmieIndex
+class ArticleIndex extends SigmieIndex
 {
     use AsTool;
 
     public function properties(): NewProperties
     {
         $props = new NewProperties;
-        $props->keyword('case_number');
-        $props->category('court_name');
-        $props->date('decision_date');
-        $props->longText('text');                // full judgment body
-        $props->nested('chunks', function (NewProperties $props) {
+        $props->title('title');
+        $props->category('author');
+        $props->date('published_at');
+        $props->longText('body');                // full article body
+        $props->nested('sections', function (NewProperties $props) {
             $props->keyword('type');
-            $props->text('text');                // one passage
+            $props->text('text');                // one section
+        });
+        $props->nested('comments', function (NewProperties $props) {
+            $props->text('text');
         });
 
         return $props;
@@ -160,21 +163,21 @@ class JudgmentIndex extends SigmieIndex
 
     public function toolFields(): array
     {
-        return ['case_number', 'court_name', 'decision_date']; // [tl! highlight]
+        return ['title', 'author', 'published_at']; // [tl! highlight]
     }
 }
 ```
 
-The agent can still request a field outside the default, such as `fields: "text"`. The tool descriptions name the default, so the agent knows what it gets. [Private fields](#private-fields) always win: a field from `exceptFromTools()` never returns, even when the agent requests it.
+The agent can still request a field outside the default, such as `fields: "body"`. The tool descriptions name the default, so the agent knows what it gets. [Private fields](#private-fields) always win: a field from `exceptFromTools()` never returns, even when the agent requests it.
 
-### Matching passages
+### Matching sections
 
-A search for "burglary" matches the judgment, but the hit alone does not say which of its `chunks` matched. To cite a passage, the agent needs those chunks. The `matches` argument returns them. It lists the nested paths whose matching items the agent wants back. This is Elasticsearch inner hits, explained in [Search](search.md#matching-nested-items-inner-hits).
+A search for "solar" matches the article, but the hit alone does not say which of its `sections` matched. To quote the relevant section, the agent needs those sections. The `matches` argument returns them. It lists the nested paths whose matching items the agent wants back. This is Elasticsearch inner hits, explained in [Search](search.md#matching-nested-items-inner-hits).
 
-The agent calls `search_index` with `matches`. `fields` stays at the index default, so the full body and the chunk array stay out:
+The agent calls `search_index` with `matches`. `fields` stays at the index default, so the full body and the section array stay out:
 
 ```json
-{"query": "burglary", "fields": null, "matches": "chunks.text"}
+{"query": "solar", "fields": null, "matches": "sections.text"}
 ```
 
 Each hit gets `_matches`, next to the source fields:
@@ -184,18 +187,18 @@ Each hit gets `_matches`, next to the source fields:
     "total": 1,
     "hits": [
         {
-            "_id": "case-1",
-            "case_number": "B 100-24",
-            "court_name": "Stockholm",
-            "decision_date": "2024-05-02",
+            "_id": "article-1",
+            "title": "Energy at home",
+            "author": "Jane Doe",
+            "published_at": "2024-05-02",
             "_matches": {
-                "chunks": {
+                "sections": {
                     "total": 4,
                     "items": [
-                        {"_offset": 1, "text": "The burglary was proven."},
-                        {"_offset": 4, "text": "A burglary witness testified."},
-                        {"_offset": 2, "text": "The burglary tools were found."},
-                        {"_offset": 3, "text": "Burglary sentence of one year."}
+                        {"_offset": 1, "text": "The solar panels were installed."},
+                        {"_offset": 2, "text": "The solar inverter was replaced."},
+                        {"_offset": 4, "text": "A solar battery stores the surplus."},
+                        {"_offset": 3, "text": "Solar power pays off in six years."}
                     ]
                 }
             }
@@ -206,42 +209,42 @@ Each hit gets `_matches`, next to the source fields:
 
 | Key | Holds |
 |-----|-------|
-| `_matches.chunks.total` | How many chunks of this judgment matched the query or a nested filter. |
-| `_matches.chunks.items` | The matching chunks, best match first, up to 100. |
-| `_offset` | The chunk's position in the `chunks` array. |
+| `_matches.sections.total` | How many sections of this article matched the query or a nested filter. |
+| `_matches.sections.items` | The matching sections, best match first, up to 100. |
+| `_offset` | The section's position in the `sections` array. |
 
-`matches: "chunks"` returns whole chunks, and `matches: "chunks.text chunks.type"` returns those fields of each chunk. Entries are separated by spaces or commas.
+`matches: "sections"` returns whole sections, and `matches: "sections.text sections.type"` returns those fields of each section. Entries are separated by spaces or commas.
 
 Add `:size` to an entry to cap that path's items, the same way `facets` takes `field:size`. Each path has its own size, from 1 to 100, and the default is 100:
 
 ```json
-{"query": "burglary", "fields": null, "matches": "chunks.text:2 participants"}
+{"query": "solar", "fields": null, "matches": "sections.text:2 comments"}
 ```
 
-Here `_matches.chunks` holds 2 of the 4 matching chunks with `total: 4`, and `_matches.participants` holds every matching participant. An invalid size, such as `chunks.text:0` or `chunks.text:500`, returns an error the agent can correct from:
+Here `_matches.sections` holds 2 of the 4 matching sections with `total: 4`, and `_matches.comments` holds every matching comment. An invalid size, such as `sections.text:0` or `sections.text:500`, returns an error the agent can correct from:
 
 ```json
-{"error": "Invalid matches entry 'chunks.text:0'. Use a nested path, optionally with ':size' from 1 to 100, e.g. 'chunks.text:5'. Check the field names and the filter/sort syntax in this tool's description, then try again."}
+{"error": "Invalid matches entry 'sections.text:0'. Use a nested path, optionally with ':size' from 1 to 100, e.g. 'sections.text:5'. Check the field names and the filter/sort syntax in this tool's description, then try again."}
 ```
 
-A nested filter such as `chunks:{type:'sentencing'}` also produces matches, and a chunk that matched both the query and the filter appears once. With `matches: null`, the default, hits have no `_matches` key. [Private fields](#private-fields) never appear in matches.
+A nested filter such as `sections:{type:'conclusion'}` also produces matches, and a section that matched both the query and the filter appears once. With `matches: null`, the default, hits have no `_matches` key. [Private fields](#private-fields) never appear in matches.
 
 ## Private fields
 
 Override `exceptFromTools()` to keep fields out of every document the tools return. Dotted paths reach nested fields:
 
 ```php
-class CaseIndex extends SigmieIndex
+class CustomerIndex extends SigmieIndex
 {
     use AsTool;
 
     public function properties(): NewProperties
     {
         $props = new NewProperties;
-        $props->name('title');
-        $props->nested('participants', function (NewProperties $props) {
+        $props->name('name');
+        $props->nested('contacts', function (NewProperties $props) {
             $props->keyword('name');
-            $props->keyword('identification_number');
+            $props->keyword('email');
         });
 
         return $props;
@@ -249,23 +252,23 @@ class CaseIndex extends SigmieIndex
 
     public function exceptFromTools(): array
     {
-        return ['participants.identification_number']; // [tl! highlight]
+        return ['contacts.email']; // [tl! highlight]
     }
 }
 ```
 
-`search_index`, `sample_documents`, `get_documents`, and the `analytics` tool's `table` widget and `include_hits` rows omit these fields. Elasticsearch drops them from `_source` before the response leaves the cluster. The exclusion wins over the agent's own `fields` and `hit_fields`, so `hit_fields: "participants"` returns `participants.name` only.
+`search_index`, `sample_documents`, `get_documents`, and the `analytics` tool's `table` widget and `include_hits` rows omit these fields. Elasticsearch drops them from `_source` before the response leaves the cluster. The exclusion wins over the agent's own `fields` and `hit_fields`, so `hit_fields: "contacts"` returns `contacts.name` only.
 
 The fields are filter-only. The agent can still filter on them:
 
 ```
-participants:{identification_number:'19800101-1111'}
+contacts:{email:'jane@example.com'}
 ```
 
 Every tool refuses to list, facet, group, measure, or sort by a private field or any field below it. This covers `discover_filter_values`, the search `facets` and `sort`, and every `analytics` argument that names a field, such as `group_by`, `group_by_fields`, `row_field`, `field`, `sort`, and `hit_sort`. `handle()` returns an error the agent can correct from, and `result()` throws an `InvalidArgumentException`:
 
 ```json
-{"error": "Field participants.identification_number is private and cannot be listed, grouped, faceted or sorted; you can still filter on it. ..."}
+{"error": "Field contacts.email is private and cannot be listed, grouped, faceted or sorted; you can still filter on it. ..."}
 ```
 
 The tool descriptions and `describe_index` mark these fields as filter only, so the agent does not try. Your own code keeps full access: `facets()` on a search and `analytics()` on the index are unaffected.

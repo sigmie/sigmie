@@ -74,7 +74,7 @@ class SigmieAnalyticsToolTest extends TestCase
         return $index;
     }
 
-    private function createPrivateParticipantsIndex(): SigmieIndex
+    private function createPrivateContactsIndex(): SigmieIndex
     {
         $index = new class($this->sigmie) extends SigmieIndex
         {
@@ -100,10 +100,10 @@ class SigmieAnalyticsToolTest extends TestCase
                 $props->date('created_at');
                 $props->number('amount');
                 $props->number('salary');
-                $props->category('court');
-                $props->nested('participants', function (NewProperties $props): void {
+                $props->category('region');
+                $props->nested('contacts', function (NewProperties $props): void {
                     $props->keyword('name');
-                    $props->keyword('identification_number');
+                    $props->keyword('email');
                 });
 
                 return $props;
@@ -111,7 +111,7 @@ class SigmieAnalyticsToolTest extends TestCase
 
             public function exceptFromTools(): array
             {
-                return ['salary', 'participants.identification_number'];
+                return ['salary', 'contacts.email'];
             }
         };
 
@@ -121,15 +121,15 @@ class SigmieAnalyticsToolTest extends TestCase
                 'created_at' => '2024-01-01',
                 'amount' => 100,
                 'salary' => 987654,
-                'court' => 'Stockholm',
-                'participants' => [['name' => 'Anna', 'identification_number' => '19800101-1111']],
+                'region' => 'North',
+                'contacts' => [['name' => 'Jane', 'email' => 'jane@example.com']],
             ]),
             new Document([
                 'created_at' => '2024-01-01',
                 'amount' => 50,
                 'salary' => 123456,
-                'court' => 'Malmo',
-                'participants' => [['name' => 'Erik', 'identification_number' => '19900202-2222']],
+                'region' => 'South',
+                'contacts' => [['name' => 'John', 'email' => 'john@example.com']],
             ]),
         ], refresh: true);
 
@@ -717,13 +717,13 @@ class SigmieAnalyticsToolTest extends TestCase
      */
     public function table_and_hits_never_return_fields_excepted_from_tools(): void
     {
-        $tool = new SigmieAnalyticsTool($this->createPrivateParticipantsIndex());
+        $tool = new SigmieAnalyticsTool($this->createPrivateContactsIndex());
 
         $outputs = [
             $tool->handle(new Request([
                 'widget' => 'table',
                 'date_field' => 'created_at',
-                'fields' => 'amount,participants',
+                'fields' => 'amount,contacts',
                 'from' => '2024-01-01',
                 'to' => '2024-01-02',
             ])),
@@ -735,13 +735,13 @@ class SigmieAnalyticsToolTest extends TestCase
                 'from' => '2024-01-01',
                 'to' => '2024-01-02',
                 'include_hits' => 1,
-                'hit_fields' => 'amount,participants.identification_number,participants.name',
+                'hit_fields' => 'amount,contacts.email,contacts.name',
             ])),
         ];
 
         foreach ($outputs as $output) {
-            $this->assertStringContainsString('Anna', $output);
-            $this->assertStringNotContainsString('19800101-1111', $output);
+            $this->assertStringContainsString('Jane', $output);
+            $this->assertStringNotContainsString('jane@example.com', $output);
         }
     }
 
@@ -752,7 +752,7 @@ class SigmieAnalyticsToolTest extends TestCase
      */
     public function widgets_refuse_to_group_measure_or_sort_by_fields_excepted_from_tools(array $arguments, string $privateField): void
     {
-        $tool = new SigmieAnalyticsTool($this->createPrivateParticipantsIndex());
+        $tool = new SigmieAnalyticsTool($this->createPrivateContactsIndex());
 
         $output = $tool->handle(new Request([
             'date_field' => 'created_at',
@@ -763,7 +763,7 @@ class SigmieAnalyticsToolTest extends TestCase
 
         $this->assertStringContainsString(sprintf('Field %s is private', $privateField), json_decode($output, true)['error'] ?? '');
 
-        foreach (['19800101-1111', '19900202-2222', '987654', '123456'] as $private) {
+        foreach (['jane@example.com', 'john@example.com', '987654', '123456'] as $private) {
             $this->assertStringNotContainsString($private, $output);
         }
     }
@@ -773,17 +773,17 @@ class SigmieAnalyticsToolTest extends TestCase
      */
     public static function widgetsOnFieldsExceptedFromTools(): array
     {
-        $id = 'participants.identification_number';
+        $id = 'contacts.email';
 
         return [
             'breakdown' => [['widget' => 'breakdown', 'group_by' => $id, 'metric' => 'count'], $id],
             'grouped_trend' => [['widget' => 'grouped_trend', 'group_by' => $id, 'metric' => 'count', 'interval' => 'day'], $id],
             'grouped_metrics' => [['widget' => 'grouped_metrics', 'group_by' => $id, 'metrics' => '[{"key":"count","metric":"count"}]'], $id],
-            'grouped_metrics metric field' => [['widget' => 'grouped_metrics', 'group_by' => 'court', 'metrics' => '[{"key":"max_salary","metric":"max","field":"salary"}]', 'sort_metric' => 'max_salary'], 'salary'],
-            'multi_breakdown' => [['widget' => 'multi_breakdown', 'group_by_fields' => 'court,'.$id, 'metric' => 'count'], $id],
-            'union_breakdown' => [['widget' => 'union_breakdown', 'group_by_fields' => 'court,'.$id, 'metric' => 'count'], $id],
-            'heatmap row' => [['widget' => 'heatmap', 'row_field' => $id, 'col_field' => 'court'], $id],
-            'heatmap col' => [['widget' => 'heatmap', 'row_field' => 'court', 'col_field' => $id], $id],
+            'grouped_metrics metric field' => [['widget' => 'grouped_metrics', 'group_by' => 'region', 'metrics' => '[{"key":"max_salary","metric":"max","field":"salary"}]', 'sort_metric' => 'max_salary'], 'salary'],
+            'multi_breakdown' => [['widget' => 'multi_breakdown', 'group_by_fields' => 'region,'.$id, 'metric' => 'count'], $id],
+            'union_breakdown' => [['widget' => 'union_breakdown', 'group_by_fields' => 'region,'.$id, 'metric' => 'count'], $id],
+            'heatmap row' => [['widget' => 'heatmap', 'row_field' => $id, 'col_field' => 'region'], $id],
+            'heatmap col' => [['widget' => 'heatmap', 'row_field' => 'region', 'col_field' => $id], $id],
             'retention' => [['widget' => 'retention', 'cohort_field' => 'created_at', 'id_field' => $id, 'interval' => 'day'], $id],
             'kpi' => [['widget' => 'kpi', 'metric' => 'max', 'field' => 'salary'], 'salary'],
             'distribution' => [['widget' => 'distribution', 'field' => 'salary', 'bucket_size' => 1], 'salary'],
@@ -800,19 +800,19 @@ class SigmieAnalyticsToolTest extends TestCase
      */
     public function fields_excepted_from_tools_still_filter_widgets(): void
     {
-        $tool = new SigmieAnalyticsTool($this->createPrivateParticipantsIndex());
+        $tool = new SigmieAnalyticsTool($this->createPrivateContactsIndex());
 
         $result = $tool->result(new Request([
             'widget' => 'breakdown',
             'date_field' => 'created_at',
-            'group_by' => 'court',
+            'group_by' => 'region',
             'metric' => 'count',
             'from' => '2024-01-01',
             'to' => '2024-01-02',
-            'filters' => "participants:{identification_number:'19800101-1111'} AND salary>100000",
+            'filters' => "contacts:{email:'jane@example.com'} AND salary>100000",
         ]));
 
-        $this->assertSame(['Stockholm'], array_column($result['rows'], 'key'));
+        $this->assertSame(['North'], array_column($result['rows'], 'key'));
         $this->assertStringContainsString('Private fields (filter only', $tool->description());
         $this->assertStringContainsString("Numeric fields for `field`: amount\n", $tool->description());
     }
@@ -823,12 +823,12 @@ class SigmieAnalyticsToolTest extends TestCase
     public function result_throws_for_a_field_excepted_from_tools(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Field participants.identification_number is private');
+        $this->expectExceptionMessage('Field contacts.email is private');
 
-        (new SigmieAnalyticsTool($this->createPrivateParticipantsIndex()))->result(new Request([
+        (new SigmieAnalyticsTool($this->createPrivateContactsIndex()))->result(new Request([
             'widget' => 'breakdown',
             'date_field' => 'created_at',
-            'group_by' => 'participants.identification_number',
+            'group_by' => 'contacts.email',
             'metric' => 'count',
         ]));
     }

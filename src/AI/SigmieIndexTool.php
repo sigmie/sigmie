@@ -62,7 +62,7 @@ class SigmieIndexTool implements Tool
             ."Facets: field1 field2:20 (space-separated, optional :size for keywords or :interval for numbers)\n"
             ."Matching: equality filters on text/keyword fields are exact and CASE-SENSITIVE — if a filter returns 0 unexpectedly, call discover_filter_values to confirm the exact stored value.\n"
             ."Output: each hit holds `_id` plus the source fields in `fields` (null uses the index default).\n"
-            ."Matches: to see WHICH items of a nested field matched the query or a nested filter, list nested paths in `matches` (e.g. 'chunks' for whole items, 'chunks.text' for one field of them), each optionally with ':size' to cap its items (1-".InnerHits::MAX_SIZE.', default '.InnerHits::MAX_SIZE."), e.g. 'chunks.text:5 answers'. Each hit then holds `_matches` with, per path, `total` (all matching items) and `items` (each with `_offset`, its position in that array), e.g. {\"_matches\": {\"chunks\": {\"total\": 2, \"items\": [{\"_offset\": 4, \"text\": \"...\"}]}}}. Combine with `fields` that leave the nested field out to get only the matching items instead of the whole array. `total` above the number of items means the list is capped.\n"
+            ."Matches: to see WHICH items of a nested field matched the query or a nested filter, list nested paths in `matches` (e.g. 'sections' for whole items, 'sections.text' for one field of them), each optionally with ':size' to cap its items (1-".InnerHits::MAX_SIZE.', default '.InnerHits::MAX_SIZE."), e.g. 'sections.text:5 comments'. Each hit then holds `_matches` with, per path, `total` (all matching items) and `items` (each with `_offset`, its position in that array), e.g. {\"_matches\": {\"sections\": {\"total\": 2, \"items\": [{\"_offset\": 4, \"text\": \"...\"}]}}}. Combine with `fields` that leave the nested field out to get only the matching items instead of the whole array. `total` above the number of items means the list is capped.\n"
             ."Discovering valid values: if you do not know a field's valid values, call discover_filter_values with the field name (and optional query) before filtering.\n"
             .'Schema: call describe_index for the full structured field list, types and filter syntax.');
     }
@@ -81,7 +81,7 @@ class SigmieIndexTool implements Tool
             'per_page' => $schema->integer()->description('Number of results per page (default 10)')->default(10)->nullable()->required(),
             'page' => $schema->integer()->description('Page number (default 1)')->default(1)->nullable()->required(),
             'fields' => $this->outputFieldsSchema($schema),
-            'matches' => $schema->string()->description("Nested paths whose matching items you want back in `_matches`, separated by spaces or commas, each optionally 'path:size' (size 1-".InnerHits::MAX_SIZE.', default '.InnerHits::MAX_SIZE."), e.g. 'chunks.text:5 answers' (pass null for none). Use with `fields` to keep the rest small.")->nullable()->required(),
+            'matches' => $schema->string()->description("Nested paths whose matching items you want back in `_matches`, separated by spaces or commas, each optionally 'path:size' (size 1-".InnerHits::MAX_SIZE.', default '.InnerHits::MAX_SIZE."), e.g. 'sections.text:5 comments' (pass null for none). Use with `fields` to keep the rest small.")->nullable()->required(),
         ];
     }
 
@@ -155,8 +155,8 @@ class SigmieIndexTool implements Tool
     }
 
     /**
-     * The `matches` argument as [path, size] pairs, e.g. "chunks.text:5 answers" or
-     * "chunks.text:5, answers" -> [['chunks.text', 5], ['answers', 100]].
+     * The `matches` argument as [path, size] pairs, e.g. "sections.text:5 comments" or
+     * "sections.text:5, comments" -> [['sections.text', 5], ['comments', 100]].
      *
      * @return list<array{0: string, 1: int}>
      *
@@ -171,7 +171,7 @@ class SigmieIndexTool implements Tool
                 || ($size = (int) ($parts[2] ?? InnerHits::MAX_SIZE)) < 1
                 || $size > InnerHits::MAX_SIZE) {
                 throw new InvalidArgumentException(sprintf(
-                    "Invalid matches entry '%s'. Use a nested path, optionally with ':size' from 1 to %d, e.g. 'chunks.text:5'.",
+                    "Invalid matches entry '%s'. Use a nested path, optionally with ':size' from 1 to %d, e.g. 'sections.text:5'.",
                     $token,
                     InnerHits::MAX_SIZE,
                 ));

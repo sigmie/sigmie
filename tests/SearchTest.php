@@ -667,20 +667,20 @@ class SearchTest extends TestCase
         $indexName = uniqid();
 
         $blueprint = new NewProperties;
-        $blueprint->keyword('case_number');
-        $blueprint->nested('chunks', function (NewProperties $blueprint): void {
+        $blueprint->keyword('slug');
+        $blueprint->nested('sections', function (NewProperties $blueprint): void {
             $blueprint->text('text');
         });
 
         $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
 
         $this->sigmie->collect($indexName, refresh: true)->merge([
-            new Document(['case_number' => 'B 1-24', 'chunks' => [['text' => 'The appeal was granted.'], ['text' => 'Costs were awarded.']]]),
+            new Document(['slug' => 'energy-at-home', 'sections' => [['text' => 'The solar panels were installed.'], ['text' => 'The heat pump was kept.']]]),
         ]);
 
         $hits = $this->sigmie->newSearch($indexName)
             ->properties($blueprint)
-            ->queryString('appeal')
+            ->queryString('solar')
             ->get()
             ->json('hits');
 
