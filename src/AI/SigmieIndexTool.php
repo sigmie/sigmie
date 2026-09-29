@@ -105,7 +105,7 @@ class SigmieIndexTool implements Tool
         }
 
         if ($filterParts !== []) {
-            $search->filters(implode(' AND ', $filterParts));
+            $search->filters(implode(' AND ', $filterParts), throwOnError: true);
         }
 
         if ($sort = $request['sort'] ?? null) {
@@ -116,6 +116,7 @@ class SigmieIndexTool implements Tool
             $search->facets(
                 (string) $facets,
                 (string) ($request['facet_filters'] ?? ''),
+                throwOnError: true,
             );
         }
 

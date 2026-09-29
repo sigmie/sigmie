@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Base\ElasticsearchException;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Parse\ParseException;
 use Sigmie\Tests\Stubs\FakeJsonSchema;
@@ -807,7 +806,7 @@ class SigmieIndexToolTest extends TestCase
         $index = $this->createProductIndex();
 
         // result() keeps normal exception semantics for programmatic callers.
-        $this->expectException(ElasticsearchException::class);
+        $this->expectException(ParseException::class);
 
         (new SigmieFilterValuesTool($index))->result(new Request(['field' => 'nope']));
     }
@@ -940,6 +939,100 @@ class SigmieIndexToolTest extends TestCase
             'query' => '',
             'filters' => '(brand:',
         ]));
+    }
+
+    /**
+     * @test
+     */
+    public function handle_surfaces_unknown_filter_field_as_error(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
+        ], refresh: true);
+
+        // An unknown field must reach the agent as an error, not a silent match-none with total 0.
+        $result = json_decode((new SigmieIndexTool($index))->handle(new Request([
+            'query' => '',
+            'filters' => "color:'red'",
+        ])), true);
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertStringContainsString('color', $result['error']);
+    }
+
+    /**
+     * @test
+     */
+    public function handle_surfaces_unparseable_filter_as_error(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
+        ], refresh: true);
+
+        $result = json_decode((new SigmieIndexTool($index))->handle(new Request([
+            'query' => '',
+            'filters' => 'price=999',
+        ])), true);
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertStringContainsString('price=999', $result['error']);
+    }
+
+    /**
+     * @test
+     */
+    public function handle_surfaces_unknown_facet_field_as_error(): void
+    {
+        $index = $this->createProductIndex();
+
+        $result = json_decode((new SigmieIndexTool($index))->handle(new Request([
+            'query' => '',
+            'facets' => 'color',
+        ])), true);
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertStringContainsString('color', $result['error']);
+    }
+
+    /**
+     * @test
+     */
+    public function handle_surfaces_unknown_facet_filter_field_as_error(): void
+    {
+        $index = $this->createProductIndex();
+
+        $result = json_decode((new SigmieIndexTool($index))->handle(new Request([
+            'query' => '',
+            'facets' => 'brand',
+            'facet_filters' => "color:'red'",
+        ])), true);
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertStringContainsString('color', $result['error']);
+    }
+
+    /**
+     * @test
+     */
+    public function filter_values_handle_surfaces_unknown_filter_field_as_error(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
+        ], refresh: true);
+
+        $result = json_decode((new SigmieFilterValuesTool($index))->handle(new Request([
+            'field' => 'brand',
+            'filters' => "color:'red'",
+        ])), true);
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertStringContainsString('color', $result['error']);
     }
 
     /**
