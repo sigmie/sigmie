@@ -767,6 +767,59 @@ class SigmieIndexToolTest extends TestCase
     /**
      * @test
      */
+    public function filter_values_reports_truncation_when_more_values_exist_than_the_limit(): void
+    {
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
+            public function properties(): NewProperties
+            {
+                $props = new NewProperties;
+                $props->keyword('color');
+
+                return $props;
+            }
+        };
+        $index->create();
+
+        $index->merge([
+            new Document(['color' => 'red']),
+            new Document(['color' => 'red']),
+            new Document(['color' => 'blue']),
+            new Document(['color' => 'green']),
+        ], refresh: true);
+
+        $tool = new SigmieFilterValuesTool($index);
+
+        $partial = json_decode($tool->handle(new Request(['field' => 'color', 'limit' => 2])), true);
+
+        $this->assertCount(2, $partial['values']);
+        $this->assertTrue($partial['truncated']);
+        $this->assertSame(1, $partial['other_documents']);
+
+        $complete = json_decode($tool->handle(new Request(['field' => 'color', 'limit' => 3])), true);
+
+        $this->assertCount(3, $complete['values']);
+        $this->assertFalse($complete['truncated']);
+        $this->assertSame(0, $complete['other_documents']);
+    }
+
+    /**
+     * @test
+     */
     public function filter_values_returns_min_max_for_numeric_fields(): void
     {
         $index = $this->createProductIndex();
