@@ -325,7 +325,7 @@ class FacetsTest extends TestCase
                 $field = $prefix.$name;
                 $param = $name === 'price' ? ':100' : '';
 
-                $cases["{$depth} {$name}"] = [$field.$param, $field, $facets];
+                $cases[sprintf('%s %s', $depth, $name)] = [$field.$param, $field, $facets];
             }
         }
 
