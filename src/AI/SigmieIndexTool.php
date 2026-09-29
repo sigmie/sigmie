@@ -7,7 +7,6 @@ namespace Sigmie\AI;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
-use Sigmie\Parse\FilterParser;
 use Sigmie\SigmieIndex;
 
 /**
@@ -31,6 +30,7 @@ class SigmieIndexTool implements Tool
 {
     use DescribesIndexFields;
     use HandlesToolErrors;
+    use ScopesToBaseFilters;
 
     public function __construct(
         protected SigmieIndex $index,
@@ -101,11 +101,7 @@ class SigmieIndexTool implements Tool
                 $request->integer('per_page', 10),
             );
 
-        // The scope is parsed on its own and applied as a separate clause, so an agent filter
-        // with unbalanced parentheses cannot combine with it into an OR that escapes the scope.
-        if ($this->baseFilters !== '') {
-            $search->filterQuery((new FilterParser($this->index->properties()))->parse($this->baseFilters));
-        }
+        $this->applyBaseFilters($search);
 
         if ($aiFilters = $request['filters'] ?? null) {
             $search->filters((string) $aiFilters, throwOnError: true);

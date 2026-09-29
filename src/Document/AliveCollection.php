@@ -15,7 +15,6 @@ use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Shared\Mappings;
 use Sigmie\Mappings\Properties;
 use Sigmie\Query\Contracts\QueryClause;
-use Sigmie\Query\Queries\Term\IDs;
 use Sigmie\Semantic\DocumentProcessor;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\UsesApis;
@@ -85,19 +84,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function getMany(array $ids): array
     {
-        if (! $this->filterQuery instanceof QueryClause) {
-            return $this->retrieveDocuments($this->name, $ids)->toArray();
-        }
-
-        // `_mget` cannot filter, so a scoped lookup searches for the ids inside the scope. An id
-        // outside the scope is then absent, exactly like a missing id.
-        $query = ['bool' => ['filter' => [(new IDs($ids))->toRaw(), $this->filterQuery->toRaw()]]];
-        $order = array_flip($ids);
-        $documents = $this->searchDocuments($query, count($ids))->toArray();
-
-        usort($documents, fn (Document $a, Document $b): int => $order[$a->_id] <=> $order[$b->_id]);
-
-        return $documents;
+        return $this->retrieveDocuments($this->name, $ids)->toArray();
     }
 
     public function refresh(): static
@@ -126,21 +113,16 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     public function random(int $size = 10): Collection
     {
-        return $this->searchDocuments([
-            'function_score' => [
-                'query' => $this->filterQuery?->toRaw() ?? ['match_all' => (object) []],
-                'random_score' => (object) [],
-                'boost_mode' => 'replace',
-            ],
-        ], $size);
-    }
-
-    protected function searchDocuments(array $query, int $size): Collection
-    {
         $payload = [
             'from' => 0,
             'size' => $size,
-            'query' => $query,
+            'query' => [
+                'function_score' => [
+                    'query' => $this->filterQuery?->toRaw() ?? ['match_all' => (object) []],
+                    'random_score' => (object) [],
+                    'boost_mode' => 'replace',
+                ],
+            ],
         ];
 
         if ($this->only || $this->except) {
@@ -348,7 +330,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
     }
 
     /**
-     * Restrict random() and getMany() to documents matching the query.
+     * Restrict random() to documents matching the query.
      */
     public function filterQuery(QueryClause $query): self
     {

@@ -7,7 +7,6 @@ namespace Sigmie\AI;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
-use Sigmie\Parse\FilterParser;
 use Sigmie\SigmieIndex;
 
 /**
@@ -19,6 +18,7 @@ use Sigmie\SigmieIndex;
 class SigmieSampleDocumentsTool implements Tool
 {
     use HandlesToolErrors;
+    use ScopesToBaseFilters;
 
     public function __construct(
         protected SigmieIndex $index,
@@ -59,11 +59,11 @@ class SigmieSampleDocumentsTool implements Tool
     {
         $limit = max(1, min(20, (int) ($request['limit'] ?? 5)));
 
+        // Sigmie's search builder has no random ordering, so sampling uses the collection's
+        // random_score query with the scope as its inner query.
         $collection = $this->index->collect()->except($this->index->exceptFromTools());
 
-        if ($this->baseFilters !== '') {
-            $collection->filterQuery((new FilterParser($this->index->properties()))->parse($this->baseFilters));
-        }
+        $this->applyBaseFilters($collection);
 
         // Documents serialise to {_id, _source} via their JsonSerializable.
         return $collection->random($limit)->toArray();

@@ -7,7 +7,6 @@ namespace Sigmie\AI;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
-use Sigmie\Parse\FilterParser;
 use Sigmie\SigmieIndex;
 
 /**
@@ -23,6 +22,7 @@ class SigmieFilterValuesTool implements Tool
 {
     use GuardsPrivateFields;
     use HandlesToolErrors;
+    use ScopesToBaseFilters;
 
     public function __construct(
         protected SigmieIndex $index,
@@ -76,9 +76,7 @@ class SigmieFilterValuesTool implements Tool
             ->facets(sprintf('%s:%d', $fieldName, $limit), throwOnError: true)
             ->size(0);
 
-        if ($this->baseFilters !== '') {
-            $search->filterQuery((new FilterParser($this->index->properties()))->parse($this->baseFilters));
-        }
+        $this->applyBaseFilters($search);
 
         if (($filters = trim((string) ($request['filters'] ?? ''))) !== '') {
             $search->filters($filters, throwOnError: true);
