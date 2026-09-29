@@ -153,6 +153,13 @@ $movies->clear();                       // delete every document
 $movies->toArray();                     // load all into memory (small indices only)
 ```
 
+`only()` and `except()` limit the source that `get()`, `getMany()`, `take()`, and `random()` return. Dotted paths reach nested fields:
+
+```php
+$cases->except(['participants.identification_number'])->getMany(['case_1', 'case_2']);
+$cases->only(['title', 'year'])->random(5);
+```
+
 `Document` implements `ArrayAccess`:
 
 ```php

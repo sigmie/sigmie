@@ -58,6 +58,6 @@ class SigmieSampleDocumentsTool implements Tool
         $limit = max(1, min(20, (int) ($request['limit'] ?? 5)));
 
         // Documents serialise to {_id, _source} via their JsonSerializable.
-        return $this->index->collect()->random($limit)->toArray();
+        return $this->index->collect()->except($this->index->exceptFromTools())->random($limit)->toArray();
     }
 }

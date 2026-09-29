@@ -1,7 +1,7 @@
 ---
 title: Laravel AI SDK
 short_description: Expose Sigmie indices as Laravel AI agent tools — auto-generated descriptions, base filters for multi-tenancy, and the full Sigmie filter syntax.
-keywords: [laravel ai, ai sdk, tools, agents, llm]
+keywords: [laravel ai, ai sdk, tools, agents, llm, private fields]
 category: Integrations
 order: 2
 related_pages: [search, filter-parser, sort-parser, facets, laravel-scout]
@@ -107,6 +107,44 @@ Base filters are wrapped in parentheses and AND-ed with whatever the AI passes:
 ```
 (user_id:3) AND (status:'shipped' OR status:'delivered')
 ```
+
+## Private fields
+
+Override `exceptFromTools()` to keep fields out of every document the tools return. Dotted paths reach nested fields:
+
+```php
+class CaseIndex extends SigmieIndex
+{
+    use AsTool;
+
+    public function properties(): NewProperties
+    {
+        $props = new NewProperties;
+        $props->name('title');
+        $props->nested('participants', function (NewProperties $props) {
+            $props->keyword('name');
+            $props->keyword('identification_number');
+        });
+
+        return $props;
+    }
+
+    public function exceptFromTools(): array
+    {
+        return ['participants.identification_number']; // [tl! highlight]
+    }
+}
+```
+
+`search_index`, `sample_documents`, `get_documents`, and the `analytics` tool's `table` widget and `include_hits` rows omit these fields. Elasticsearch drops them from `_source` before the response leaves the cluster. The exclusion wins over the agent's own `fields` and `hit_fields`, so `hit_fields: "participants"` returns `participants.name` only.
+
+The fields stay in the tool descriptions, and the agent can still filter on them:
+
+```
+participants:{identification_number:'19800101-1111'}
+```
+
+> **Warning:** Facets and `discover_filter_values` return field values as buckets. Do not let the agent facet on a private field.
 
 ## The auto-generated description
 

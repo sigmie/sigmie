@@ -651,6 +651,85 @@ class SigmieAnalyticsToolTest extends TestCase
     /**
      * @test
      */
+    public function table_and_hits_never_return_fields_excepted_from_tools(): void
+    {
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
+            use AsTool;
+
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
+            public function properties(): NewProperties
+            {
+                $props = new NewProperties;
+                $props->date('created_at');
+                $props->number('amount');
+                $props->nested('participants', function (NewProperties $props): void {
+                    $props->keyword('name');
+                    $props->keyword('identification_number');
+                });
+
+                return $props;
+            }
+
+            public function exceptFromTools(): array
+            {
+                return ['participants.identification_number'];
+            }
+        };
+
+        $index->create();
+        $index->merge([
+            new Document([
+                'created_at' => '2024-01-01',
+                'amount' => 100,
+                'participants' => [['name' => 'Anna', 'identification_number' => '19800101-1111']],
+            ]),
+        ], refresh: true);
+
+        $tool = new SigmieAnalyticsTool($index);
+
+        $outputs = [
+            $tool->handle(new Request([
+                'widget' => 'table',
+                'date_field' => 'created_at',
+                'fields' => 'amount,participants',
+                'from' => '2024-01-01',
+                'to' => '2024-01-02',
+            ])),
+            $tool->handle(new Request([
+                'widget' => 'kpi',
+                'date_field' => 'created_at',
+                'metric' => 'sum',
+                'field' => 'amount',
+                'from' => '2024-01-01',
+                'to' => '2024-01-02',
+                'include_hits' => 1,
+                'hit_fields' => 'amount,participants.identification_number,participants.name',
+            ])),
+        ];
+
+        foreach ($outputs as $output) {
+            $this->assertStringContainsString('Anna', $output);
+            $this->assertStringNotContainsString('19800101-1111', $output);
+        }
+    }
+
+    /**
+     * @test
+     */
     public function result_runs_a_funnel_widget(): void
     {
         $index = $this->createSalesIndex();
