@@ -311,6 +311,14 @@ $orders->analytics('created_at')
 // ]]]
 ```
 
+Pass `except` to drop fields from every row. It wins over `fields`, so a nested path stays hidden even when its parent is listed:
+
+```php
+$cases->analytics('decided_at')
+    ->table('recent', fields: ['title', 'participants'], except: ['participants.identification_number'])
+    ->get();
+```
+
 `top_hits` returns the top N of one bucket — it is **not** a paginated, field-collapsed search. For an interactive table with deep pagination use a regular [`search()`](search.md); to batch that search into the same request as the dashboard, see [multi-search](#one-request-with-multi-search) below.
 
 ### Funnel — ordered step conversion

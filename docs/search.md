@@ -73,6 +73,16 @@ $sigmie->newSearch('fairy-tales')
     ->get();
 ```
 
+Use `except()` to drop fields from every hit. It wins over `retrieve()`, so a nested path stays hidden even when its parent is retrieved:
+
+```php
+$sigmie->newSearch('cases')
+    ->properties($props)
+    ->queryString('appeal')
+    ->except(['participants.identification_number']) // [tl! highlight]
+    ->get();
+```
+
 ## Filter
 
 The [filter parser](filter-parser.md) reads filters in a human-friendly syntax:
