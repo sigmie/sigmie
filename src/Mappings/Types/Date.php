@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use DateTime;
+use Sigmie\Mappings\Traits\HasDateFacets;
 
 class Date extends Type
 {
+    use HasDateFacets;
+
     protected string $type = 'date';
 
     public function __construct(

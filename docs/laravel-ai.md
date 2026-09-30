@@ -421,7 +421,16 @@ When facets are requested, the tool response includes a `facets` key with the ag
 }
 ```
 
-Here `limit` was 2, and 5 more documents have other colors. Before it treats the list as complete (for example, to count colors), the agent raises `limit` or narrows the list with `filters`, such as `"color:b*"`. Numeric and date fields return min/max and always report `truncated: false`.
+Here `limit` was 2, and 5 more documents have other colors. Before it treats the list as complete (for example, to count colors), the agent raises `limit` or narrows the list with `filters`, such as `"color:b*"`. Numeric and date fields return min/max and always report `truncated: false`. A date field returns the period it covers, as date strings, and `filters` narrow that period:
+
+```json
+{
+    "field": "published_at",
+    "values": { "count": 3, "min": "2023-01-04T00:00:00.000Z", "max": "2025-11-30T00:00:00.000Z" }, // [tl! highlight]
+    "truncated": false,
+    "other_documents": 0
+}
+```
 
 ## Errors
 

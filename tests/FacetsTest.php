@@ -316,6 +316,7 @@ class FacetsTest extends TestCase
             'count' => ['count' => 2, 'min' => 1.0, 'max' => 3.0, 'avg' => 2.0, 'sum' => 4.0],
             'price' => ['min' => 100.0, 'max' => 300.0, 'histogram' => [100 => 1, 200 => 0, 300 => 1]],
             'text' => ['Other text' => 1, 'Some text' => 1],
+            'published_at' => ['count' => 2, 'min' => '2024-01-15T00:00:00.000Z', 'max' => '2024-03-10T00:00:00.000Z'],
         ];
 
         $cases = [];
@@ -360,6 +361,43 @@ class FacetsTest extends TestCase
         $this->assertEquals(['action' => 1, 'sport' => 1], $searchResponse->facet('shirt.keyword'));
     }
 
+    /**
+     * @test
+     *
+     * @dataProvider dateFacetFilters
+     */
+    public function date_facet_range_narrows_with_facet_filter(string $field, string $facetFilter): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = $this->everyFacetableTypeBlueprint();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge($this->everyFacetableTypeDocuments());
+
+        $searchResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets($field, $facetFilter)
+            ->get();
+
+        $this->assertEquals(
+            ['count' => 1, 'min' => '2024-01-15T00:00:00.000Z', 'max' => '2024-01-15T00:00:00.000Z'],
+            $searchResponse->facet($field),
+        );
+    }
+
+    public static function dateFacetFilters(): array
+    {
+        return [
+            'root' => ['published_at', "keyword:'sport'"],
+            'nested' => ['shirt.published_at', "shirt.keyword:'sport'"],
+        ];
+    }
+
     private function everyFacetableTypeBlueprint(): NewProperties
     {
         $fields = function (NewProperties $blueprint): void {
@@ -368,6 +406,7 @@ class FacetsTest extends TestCase
             $blueprint->number('count');
             $blueprint->price();
             $blueprint->text('text')->keyword();
+            $blueprint->date('published_at');
         };
 
         $blueprint = new NewProperties;
@@ -386,8 +425,8 @@ class FacetsTest extends TestCase
     private function everyFacetableTypeDocuments(): array
     {
         $values = [
-            ['keyword' => 'sport', 'tag' => 'Sport', 'count' => 1, 'price' => 100, 'text' => 'Some text'],
-            ['keyword' => 'action', 'tag' => 'sport', 'count' => 3, 'price' => 300, 'text' => 'Other text'],
+            ['keyword' => 'sport', 'tag' => 'Sport', 'count' => 1, 'price' => 100, 'text' => 'Some text', 'published_at' => '2024-01-15'],
+            ['keyword' => 'action', 'tag' => 'sport', 'count' => 3, 'price' => 300, 'text' => 'Other text', 'published_at' => '2024-03-10'],
         ];
 
         return array_map(
