@@ -14,7 +14,7 @@ use Sigmie\SigmieIndex;
  * time, so the agent can filter accurately instead of guessing.
  *
  * Thin by design — it requests a facet on the field and returns the engine's own parsed result
- * (value counts for keyword/category, min/max/histogram for numeric/date). Field validity and
+ * (value counts for keyword/category, min/max for numeric/date, plus a histogram for price). Field validity and
  * per-type parsing are handled by the search/facet layer; an unknown or non-facetable field
  * simply yields no values.
  */

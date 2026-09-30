@@ -1,6 +1,6 @@
 ---
 title: Facets
-short_description: Build faceted navigation with Sigmie — term, price histogram, and stats facets, with disjunctive and conjunctive logic for e-commerce sidebars.
+short_description: Build faceted navigation with Sigmie — term, price histogram, stats, and date range facets, with disjunctive and conjunctive logic for e-commerce sidebars.
 keywords: [facets, filters, faceted search, navigation, refinement]
 category: Features
 order: 3
@@ -108,6 +108,42 @@ $stats = $response->facet('rating');
 //     'sum' => 546.1,
 // ]
 ```
+
+## Date facets
+
+Date fields (`date` and `datetime`) return the range they cover: the document `count` and the earliest and latest date. Use them to answer "which period does this data cover?":
+
+```php
+$props->date('published_at');
+
+$response = $sigmie->newSearch('posts')
+    ->properties($props)
+    ->queryString('')
+    ->facets('published_at') // [tl! highlight]
+    ->get();
+
+$response->facet('published_at');
+// [
+//     'count' => 3,
+//     'min' => '2023-01-04T00:00:00.000Z',
+//     'max' => '2025-11-30T00:00:00.000Z',
+// ]
+```
+
+`min` and `max` are date strings in the field's first format, not epoch milliseconds. When no document matches, `count` is `0` and `min` and `max` are `null`. Facet filters on other fields narrow the range:
+
+```php
+$response = $sigmie->newSearch('posts')
+    ->properties($props)
+    ->queryString('')
+    ->facets('published_at', "author:'Ada'")
+    ->get();
+
+$response->facet('published_at');
+// ['count' => 2, 'min' => '2023-01-04T00:00:00.000Z', 'max' => '2024-06-18T00:00:00.000Z']
+```
+
+A date facet is a range, not a list of values. For counts per day, month, or year, use [analytics](analytics.md) `trend` or a `date_histogram` [aggregation](aggregations.md).
 
 ## Text facets
 
@@ -268,6 +304,7 @@ $brand = $response->json('facets.brand');
 | `text()->keyword()` | Value counts of the keyword sub-field |
 | `number` | `count`, `min`, `max`, `avg`, `sum` |
 | `price` | `min`, `max`, `histogram` |
+| `date`, `datetime` | `count`, `min`, `max` (date strings) |
 
 > **Note:** `json('facets.attributes.color')` reads `.` as a path separator. Use `facet('attributes.color')` for nested fields.
 

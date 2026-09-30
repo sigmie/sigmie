@@ -868,6 +868,28 @@ class SigmieIndexToolTest extends TestCase
     /**
      * @test
      */
+    public function filter_values_returns_date_range_for_date_fields(): void
+    {
+        $index = $this->createProductIndex();
+
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple', 'price' => 999, 'in_stock' => true, 'created_at' => '2024-01-15']),
+            new Document(['name' => 'Pixel', 'brand' => 'Google', 'price' => 699, 'in_stock' => true, 'created_at' => '2024-02-20']),
+            new Document(['name' => 'MacBook', 'brand' => 'Apple', 'price' => 1999, 'in_stock' => true, 'created_at' => '2024-03-10']),
+        ], refresh: true);
+
+        $tool = new SigmieFilterValuesTool($index);
+
+        $all = json_decode($tool->handle(new Request(['field' => 'created_at'])), true);
+        $google = json_decode($tool->handle(new Request(['field' => 'created_at', 'filters' => "brand:'Google'"])), true);
+
+        $this->assertSame(['count' => 3, 'min' => '2024-01-15T00:00:00.000Z', 'max' => '2024-03-10T00:00:00.000Z'], $all['values']);
+        $this->assertSame(['count' => 1, 'min' => '2024-02-20T00:00:00.000Z', 'max' => '2024-02-20T00:00:00.000Z'], $google['values']);
+    }
+
+    /**
+     * @test
+     */
     public function filter_values_handle_surfaces_unknown_field_as_error(): void
     {
         $index = $this->createProductIndex();
