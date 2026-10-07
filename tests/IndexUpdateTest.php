@@ -906,10 +906,10 @@ class IndexUpdateTest extends TestCase
                 $docs->merge([new Document(['name' => 'Snow White'])]);
 
                 $this->assertCount(1, $this->sigmie->collect($alias));
-                $this->assertEquals('Cinderella', $this->sigmie->collect($alias)->toArray()[0]->_source['name']);
+                $this->assertEquals('Cinderella', array_values($this->sigmie->collect($alias)->toArray())[0]->_source['name']);
             });
 
-        $this->assertEquals('Snow White', $this->sigmie->collect($alias)->toArray()[0]->_source['name']);
+        $this->assertEquals('Snow White', array_values($this->sigmie->collect($alias)->toArray())[0]->_source['name']);
     }
 
     /**
