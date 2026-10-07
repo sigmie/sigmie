@@ -92,7 +92,9 @@ class Sigmie
     public function newIndex(string $name): NewIndex
     {
         return (new NewIndex($this->elasticsearchConnection))
-            ->alias($name);
+            ->alias($name)
+            ->apis($this->apis)
+            ->collectionHooks($this->collectionHooks);
     }
 
     public function index(string $name): null|AliasedIndex|Index

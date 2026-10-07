@@ -210,6 +210,49 @@ To clients, the index name is unchanged. There's no downtime.
 
 > **Warning:** Index settings are **not** merged. Anything you don't re-declare in the `update()` callback is dropped. Re-set everything you want to keep.
 
+## Rebuild an index
+
+`update()` copies documents that are already in Elasticsearch. When the source of truth lives somewhere else, such as a database or a CSV feed, use `rebuild()`. It builds a fresh index from your data, then swaps it in with no downtime:
+
+```php
+use Sigmie\Document\AliveCollection;
+
+$sigmie->newIndex('movies')
+    ->properties($props)
+    ->rebuild(function (AliveCollection $docs) use ($movies) {
+        $docs->merge($movies);
+    });
+```
+
+`rebuild()`:
+
+1. Creates a new physical index with the index's settings and mappings.
+2. Runs your callback to fill it. Searches keep using the current index.
+3. Points the `movies` alias at the new index in one atomic request.
+4. Deletes the previous index.
+
+The first `rebuild()` of an alias creates it, so the same call works for the first build and for every refresh after it.
+
+```
+movies (alias) ──► movies_20260101   (live, searchable)
+                   movies_20260201   ◄── callback fills it
+
+movies (alias) ──► movies_20260201   (one _aliases request)
+                   movies_20260101   deleted
+```
+
+If the callback throws, Sigmie deletes the new index, keeps the alias where it was, and rethrows.
+
+An empty result usually means a failed import, so `rebuild()` refuses it. It throws `Sigmie\Index\EmptyIndexRebuild` and keeps the live index. To allow an empty index, pass `allowEmpty`:
+
+```php
+$sigmie->newIndex('movies')->rebuild(fn (AliveCollection $docs) => null, allowEmpty: true);
+```
+
+> **Note:** The callback's collection has no properties, the same as `$sigmie->collect()`. To validate documents or populate semantic fields while filling, call `$docs->properties($props)` first.
+
+> **Note:** `rebuild()` does not lock. If two processes can rebuild the same alias at once, serialise them yourself. Otherwise the slower rebuild fails at the swap and leaves its new index behind.
+
 ## Inspect an index
 
 ```php

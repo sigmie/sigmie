@@ -7,6 +7,8 @@ namespace Sigmie\Index;
 use Carbon\Carbon;
 use RuntimeException;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Document\AliveCollection;
+use Sigmie\Document\Contracts\CollectionHook;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Index\Analysis\Analysis;
@@ -27,6 +29,8 @@ use Sigmie\Languages\English\Filter\Stemmer;
 use Sigmie\Languages\English\Filter\Stopwords;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
+use Sigmie\Shared\UsesApis;
+use Throwable;
 
 class NewIndex
 {
@@ -38,6 +42,7 @@ class NewIndex
     use SearchSynonyms;
     use Shards;
     use Tokenizer;
+    use UsesApis;
 
     protected string $language = 'no_lang';
 
@@ -50,6 +55,9 @@ class NewIndex
     protected array $config = [];
 
     protected Properties $properties;
+
+    /** @var array<int, CollectionHook> */
+    protected array $collectionHooks = [];
 
     protected function autocompleteTokenFilters(): array
     {
@@ -103,8 +111,73 @@ class NewIndex
         $builder->alias($this->alias);
         $builder->shards($this->shards);
         $builder->replicas($this->replicas);
+        $builder->apis($this->apis);
+        $builder->collectionHooks($this->collectionHooks);
 
         return $builder;
+    }
+
+    /**
+     * @param  array<int, CollectionHook>  $hooks
+     */
+    public function collectionHooks(array $hooks): static
+    {
+        $this->collectionHooks = $hooks;
+
+        return $this;
+    }
+
+    /**
+     * Build a fresh physical index, let $fill write every document into it,
+     * then atomically point the alias at it and delete the previous index.
+     *
+     *   alias ──► movies_old            (searchable throughout)
+     *             movies_new  ◄── $fill
+     *   alias ──► movies_new            (one _aliases call)
+     *             movies_old  deleted
+     *
+     * The live index is untouched when $fill throws or writes nothing.
+     *
+     * The collection carries no properties, like Sigmie::collect(). Call
+     * $docs->properties($props) inside $fill to validate documents and
+     * populate semantic fields.
+     */
+    public function rebuild(callable $fill, bool $allowEmpty = false): AliasedIndex
+    {
+        $index = $this->make();
+
+        $this->createIndex($index->name, $index->settings, $index->mappings);
+
+        $collection = (new AliveCollection($index->name, $this->elasticsearchConnection))
+            ->apis($this->apis)
+            ->hooks($this->collectionHooks);
+
+        try {
+            $fill($collection);
+
+            $this->refreshIndex($index->name);
+
+            if (! $allowEmpty && $collection->count() === 0) {
+                throw EmptyIndexRebuild::forAlias($this->alias);
+            }
+        } catch (Throwable $throwable) {
+            $this->deleteIndex($index->name);
+
+            throw $throwable;
+        }
+
+        $previousIndices = $this->aliasIndices($this->alias);
+
+        $this->moveAlias($this->alias, $previousIndices, $index->name);
+
+        foreach ($previousIndices as $previousIndex) {
+            $this->deleteIndex($previousIndex);
+        }
+
+        $aliasedIndex = new AliasedIndex($index->name, $this->alias);
+        $aliasedIndex->setElasticsearchConnection($this->elasticsearchConnection);
+
+        return $aliasedIndex;
     }
 
     public function defaultAnalyzer(): DefaultAnalyzer
