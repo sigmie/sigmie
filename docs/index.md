@@ -243,15 +243,38 @@ movies (alias) ──► movies_20260201   (one _aliases request)
 
 If the callback throws, Sigmie deletes the new index, keeps the alias where it was, and rethrows.
 
-An empty result usually means a failed import, so `rebuild()` refuses it. It throws `Sigmie\Index\EmptyIndexRebuild` and keeps the live index. To allow an empty index, pass `allowEmpty`:
+An empty result usually means a failed import, so `rebuild()` refuses it. It throws `Sigmie\Index\RebuildTooSmall` and keeps the live index. Raise or lower the bar with `minDocuments`:
 
 ```php
-$sigmie->newIndex('movies')->rebuild(fn (AliveCollection $docs) => null, allowEmpty: true);
+$sigmie->newIndex('movies')->rebuild($fill, minDocuments: 1000);
+$sigmie->newIndex('movies')->rebuild($fill, minDocuments: 0);   // allow empty
 ```
 
 > **Note:** The callback's collection has no properties, the same as `$sigmie->collect()`. To validate documents or populate semantic fields while filling, call `$docs->properties($props)` first.
 
 > **Note:** `rebuild()` does not lock. If two processes can rebuild the same alias at once, serialise them yourself. Otherwise the slower rebuild fails at the swap and leaves its new index behind.
+
+### Rebuild across processes
+
+When one process can't write every document in time, split the rebuild into start, fill, and finish. Any process can resume the pending rebuild by its alias, so queued jobs need nothing but the name:
+
+```php
+// Once: create the new index. The alias stays on the live index.
+$sigmie->newIndex('movies')->properties($props)->startRebuild();
+
+// In each job: write one chunk.
+$sigmie->rebuilding('movies')->collect()->merge($chunk);
+
+// Once all jobs succeed: swap the alias and delete the old index.
+$sigmie->rebuilding('movies')->finish(minDocuments: 1);
+
+// If a job fails: drop the new index. Searches never saw it.
+$sigmie->rebuilding('movies')->abort();
+```
+
+`startRebuild()` turns refresh off and replicas to zero for fast bulk writes. `finish()` restores them before the swap. `count()` reports the documents written so far.
+
+`rebuilding()` returns the newest unattached index that `startRebuild()` created for the alias, or `null`. The state lives in the index's `_meta`, so it survives restarts and queue retries. `rebuild()` itself is `startRebuild()`, your callback, then `finish()`.
 
 ## Inspect an index
 

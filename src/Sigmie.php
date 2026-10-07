@@ -27,6 +27,7 @@ use Sigmie\Http\JSONClient;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Index;
+use Sigmie\Index\IndexRebuild;
 use Sigmie\Index\ListedIndex;
 use Sigmie\Index\NewIndex;
 use Sigmie\Mappings\NewProperties;
@@ -95,6 +96,33 @@ class Sigmie
             ->alias($name)
             ->apis($this->apis)
             ->collectionHooks($this->collectionHooks);
+    }
+
+    /**
+     * Resume the pending rebuild of an alias from any process, e.g. a queued
+     * job filling one chunk. Returns the newest unattached index started by
+     * NewIndex::startRebuild() for this alias, or null when none is pending.
+     */
+    public function rebuilding(string $alias): ?IndexRebuild
+    {
+        $pending = array_filter(
+            $this->indexAPICall($alias.'_*', 'GET')->json() ?? [],
+            fn (array $index): bool => ($index['aliases'] ?? []) === []
+                && ($index['mappings']['_meta'][IndexRebuild::META_KEY] ?? null) === $alias,
+        );
+
+        if ($pending === []) {
+            return null;
+        }
+
+        // Physical names end in a YmdHisu timestamp, so the highest is the newest.
+        krsort($pending);
+
+        $name = (string) array_key_first($pending);
+        $replicas = (int) $pending[$name]['mappings']['_meta'][IndexRebuild::META_REPLICAS];
+
+        return (new IndexRebuild($this->elasticsearchConnection, $alias, $name, $replicas, $this->collectionHooks))
+            ->apis($this->apis);
     }
 
     public function index(string $name): null|AliasedIndex|Index

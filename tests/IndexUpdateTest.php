@@ -17,8 +17,8 @@ use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Document;
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
-use Sigmie\Index\EmptyIndexRebuild;
 use Sigmie\Index\IndexUpdateTask;
+use Sigmie\Index\RebuildTooSmall;
 use Sigmie\Index\UpdateIndex as Update;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Testing\Assert;
@@ -863,7 +863,7 @@ class IndexUpdateTest extends TestCase
         $alias = uniqid();
 
         $index = $this->sigmie->newIndex($alias)
-            ->rebuild(fn (AliveCollection $docs) => $docs->merge([new Document(['name' => 'Cinderella'])]));
+            ->rebuild(fn (AliveCollection $docs): AliveCollection => $docs->merge([new Document(['name' => 'Cinderella'])]));
 
         $this->assertInstanceOf(AliasedIndex::class, $index);
         $this->assertCount(1, $this->sigmie->collect($alias));
@@ -877,10 +877,10 @@ class IndexUpdateTest extends TestCase
         $alias = uniqid();
 
         $old = $this->sigmie->newIndex($alias)
-            ->rebuild(fn (AliveCollection $docs) => $docs->merge([new Document(['name' => 'Cinderella'])]));
+            ->rebuild(fn (AliveCollection $docs): AliveCollection => $docs->merge([new Document(['name' => 'Cinderella'])]));
 
         $new = $this->sigmie->newIndex($alias)
-            ->rebuild(fn (AliveCollection $docs) => $docs->merge([
+            ->rebuild(fn (AliveCollection $docs): AliveCollection => $docs->merge([
                 new Document(['name' => 'Snow White']),
                 new Document(['name' => 'Sleeping Beauty']),
             ]));
@@ -899,7 +899,7 @@ class IndexUpdateTest extends TestCase
         $alias = uniqid();
 
         $this->sigmie->newIndex($alias)
-            ->rebuild(fn (AliveCollection $docs) => $docs->merge([new Document(['name' => 'Cinderella'])]));
+            ->rebuild(fn (AliveCollection $docs): AliveCollection => $docs->merge([new Document(['name' => 'Cinderella'])]));
 
         $this->sigmie->newIndex($alias)
             ->rebuild(function (AliveCollection $docs) use ($alias): void {
@@ -920,12 +920,12 @@ class IndexUpdateTest extends TestCase
         $alias = uniqid();
 
         $old = $this->sigmie->newIndex($alias)
-            ->rebuild(fn (AliveCollection $docs) => $docs->merge([new Document(['name' => 'Cinderella'])]));
+            ->rebuild(fn (AliveCollection $docs): AliveCollection => $docs->merge([new Document(['name' => 'Cinderella'])]));
 
         try {
-            $this->sigmie->newIndex($alias)->rebuild(fn (AliveCollection $docs) => null);
-            $this->fail('Expected EmptyIndexRebuild');
-        } catch (EmptyIndexRebuild) {
+            $this->sigmie->newIndex($alias)->rebuild(function (AliveCollection $docs): void {});
+            $this->fail('Expected RebuildTooSmall');
+        } catch (RebuildTooSmall) {
         }
 
         $this->assertIndexExists($old->name);
@@ -941,7 +941,7 @@ class IndexUpdateTest extends TestCase
         $alias = uniqid();
 
         $index = $this->sigmie->newIndex($alias)
-            ->rebuild(fn (AliveCollection $docs) => null, allowEmpty: true);
+            ->rebuild(function (AliveCollection $docs): void {}, minDocuments: 0);
 
         $this->assertIndexExists($index->name);
         $this->assertCount(0, $this->sigmie->collect($alias));
@@ -955,7 +955,7 @@ class IndexUpdateTest extends TestCase
         $alias = uniqid();
 
         $old = $this->sigmie->newIndex($alias)
-            ->rebuild(fn (AliveCollection $docs) => $docs->merge([new Document(['name' => 'Cinderella'])]));
+            ->rebuild(fn (AliveCollection $docs): AliveCollection => $docs->merge([new Document(['name' => 'Cinderella'])]));
 
         try {
             $this->sigmie->newIndex($alias)->rebuild(function (AliveCollection $docs): void {
@@ -964,8 +964,8 @@ class IndexUpdateTest extends TestCase
                 throw new RuntimeException('Import failed');
             });
             $this->fail('Expected RuntimeException');
-        } catch (RuntimeException $exception) {
-            $this->assertEquals('Import failed', $exception->getMessage());
+        } catch (RuntimeException $runtimeException) {
+            $this->assertEquals('Import failed', $runtimeException->getMessage());
         }
 
         $this->assertIndexExists($old->name);
@@ -985,8 +985,94 @@ class IndexUpdateTest extends TestCase
 
         $this->sigmie->newIndex($alias)
             ->properties($props)
-            ->rebuild(fn (AliveCollection $docs) => $docs->merge([new Document(['year' => 1950])]));
+            ->rebuild(fn (AliveCollection $docs): AliveCollection => $docs->merge([new Document(['year' => 1950])]));
 
         $this->assertIndex($alias, fn (Assert $index) => $index->assertPropertyIsInteger('year'));
+    }
+
+    /**
+     * @test
+     */
+    public function rebuild_fills_from_separate_handles_and_finishes_once(): void
+    {
+        $alias = uniqid();
+
+        $this->sigmie->newIndex($alias)
+            ->rebuild(fn (AliveCollection $docs): AliveCollection => $docs->merge([new Document(['name' => 'Cinderella'])]));
+
+        $started = $this->sigmie->newIndex($alias)->replicas(1)->startRebuild();
+
+        // Each queued job resumes the rebuild by alias alone.
+        $this->sigmie->rebuilding($alias)->collect()->merge([new Document(['name' => 'Snow White'])]);
+        $this->sigmie->rebuilding($alias)->collect()->merge([new Document(['name' => 'Sleeping Beauty'])]);
+
+        $this->assertEquals($started->name, $this->sigmie->rebuilding($alias)->name);
+        $this->assertEquals(2, $this->sigmie->rebuilding($alias)->count());
+        $this->assertCount(1, $this->sigmie->collect($alias));
+
+        $index = $this->sigmie->rebuilding($alias)->finish();
+
+        $this->assertEquals($started->name, $index->name);
+        $this->assertCount(2, $this->sigmie->collect($alias));
+        $this->assertCount(1, $this->sigmie->indices($alias.'_*'));
+        $this->assertNull($this->sigmie->rebuilding($alias));
+        $this->assertIndex($alias, fn (Assert $index) => $index->assertReplicas(1));
+    }
+
+    /**
+     * @test
+     */
+    public function rebuilding_returns_null_without_a_pending_rebuild(): void
+    {
+        $alias = uniqid();
+
+        $this->assertNull($this->sigmie->rebuilding($alias));
+
+        $this->sigmie->newIndex($alias)->create();
+
+        $this->assertNull($this->sigmie->rebuilding($alias));
+    }
+
+    /**
+     * @test
+     */
+    public function rebuild_abort_drops_new_index_and_keeps_alias(): void
+    {
+        $alias = uniqid();
+
+        $old = $this->sigmie->newIndex($alias)
+            ->rebuild(fn (AliveCollection $docs): AliveCollection => $docs->merge([new Document(['name' => 'Cinderella'])]));
+
+        $this->sigmie->newIndex($alias)->startRebuild();
+        $this->sigmie->rebuilding($alias)->collect()->merge([new Document(['name' => 'Snow White'])]);
+        $this->sigmie->rebuilding($alias)->abort();
+
+        $this->assertNull($this->sigmie->rebuilding($alias));
+        $this->assertEquals($old->name, $this->sigmie->index($alias)->name);
+        $this->assertCount(1, $this->sigmie->indices($alias.'_*'));
+    }
+
+    /**
+     * @test
+     */
+    public function rebuild_finish_refuses_fewer_than_min_documents(): void
+    {
+        $alias = uniqid();
+
+        $old = $this->sigmie->newIndex($alias)
+            ->rebuild(fn (AliveCollection $docs): AliveCollection => $docs->merge([new Document(['name' => 'Cinderella'])]));
+
+        $rebuild = $this->sigmie->newIndex($alias)->startRebuild();
+        $rebuild->collect()->merge([new Document(['name' => 'Snow White'])]);
+
+        try {
+            $rebuild->finish(minDocuments: 2);
+            $this->fail('Expected RebuildTooSmall');
+        } catch (RebuildTooSmall $rebuildTooSmall) {
+            $this->assertStringContainsString('produced 1 documents, fewer than the required 2', $rebuildTooSmall->getMessage());
+        }
+
+        $this->assertEquals($old->name, $this->sigmie->index($alias)->name);
+        $this->assertNull($this->sigmie->rebuilding($alias));
     }
 }

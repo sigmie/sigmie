@@ -7,7 +7,6 @@ namespace Sigmie\Index;
 use Carbon\Carbon;
 use RuntimeException;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
-use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Contracts\CollectionHook;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Alias\AliasAlreadyExists;
@@ -128,56 +127,55 @@ class NewIndex
     }
 
     /**
-     * Build a fresh physical index, let $fill write every document into it,
-     * then atomically point the alias at it and delete the previous index.
+     * Create a physical index for this alias without attaching the alias,
+     * tuned for bulk writes (no refresh, no replicas until finish()).
+     * Fill it from one or many processes, then finish() or abort() it.
+     *
+     * The rebuild's collection carries no properties, like Sigmie::collect().
+     * Call ->properties($props) on it to validate documents and populate
+     * semantic fields.
+     */
+    public function startRebuild(): IndexRebuild
+    {
+        $replicas = $this->replicas;
+
+        $this->meta([IndexRebuild::META_KEY => $this->alias, IndexRebuild::META_REPLICAS => $replicas]);
+        $this->config('refresh_interval', '-1');
+        $this->replicas(0);
+
+        $index = $this->make();
+
+        $this->createIndex($index->name, $index->settings, $index->mappings);
+
+        $rebuild = new IndexRebuild($this->elasticsearchConnection, $this->alias, $index->name, $replicas, $this->collectionHooks);
+
+        return $rebuild->apis($this->apis);
+    }
+
+    /**
+     * Rebuild in one process: start, let $fill write every document, finish.
      *
      *   alias ──► movies_old            (searchable throughout)
      *             movies_new  ◄── $fill
      *   alias ──► movies_new            (one _aliases call)
      *             movies_old  deleted
      *
-     * The live index is untouched when $fill throws or writes nothing.
-     *
-     * The collection carries no properties, like Sigmie::collect(). Call
-     * $docs->properties($props) inside $fill to validate documents and
-     * populate semantic fields.
+     * The live index is untouched when $fill throws or writes fewer than
+     * $minDocuments documents.
      */
-    public function rebuild(callable $fill, bool $allowEmpty = false): AliasedIndex
+    public function rebuild(callable $fill, int $minDocuments = 1): AliasedIndex
     {
-        $index = $this->make();
-
-        $this->createIndex($index->name, $index->settings, $index->mappings);
-
-        $collection = (new AliveCollection($index->name, $this->elasticsearchConnection))
-            ->apis($this->apis)
-            ->hooks($this->collectionHooks);
+        $rebuild = $this->startRebuild();
 
         try {
-            $fill($collection);
-
-            $this->refreshIndex($index->name);
-
-            if (! $allowEmpty && $collection->count() === 0) {
-                throw EmptyIndexRebuild::forAlias($this->alias);
-            }
+            $fill($rebuild->collect());
         } catch (Throwable $throwable) {
-            $this->deleteIndex($index->name);
+            $rebuild->abort();
 
             throw $throwable;
         }
 
-        $previousIndices = $this->aliasIndices($this->alias);
-
-        $this->moveAlias($this->alias, $previousIndices, $index->name);
-
-        foreach ($previousIndices as $previousIndex) {
-            $this->deleteIndex($previousIndex);
-        }
-
-        $aliasedIndex = new AliasedIndex($index->name, $this->alias);
-        $aliasedIndex->setElasticsearchConnection($this->elasticsearchConnection);
-
-        return $aliasedIndex;
+        return $rebuild->finish($minDocuments);
     }
 
     public function defaultAnalyzer(): DefaultAnalyzer
