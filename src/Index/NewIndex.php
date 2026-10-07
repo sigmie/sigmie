@@ -7,6 +7,7 @@ namespace Sigmie\Index;
 use Carbon\Carbon;
 use RuntimeException;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Document\Contracts\CollectionHook;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Index\Analysis\Analysis;
@@ -27,6 +28,8 @@ use Sigmie\Languages\English\Filter\Stemmer;
 use Sigmie\Languages\English\Filter\Stopwords;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
+use Sigmie\Shared\UsesApis;
+use Throwable;
 
 class NewIndex
 {
@@ -38,6 +41,7 @@ class NewIndex
     use SearchSynonyms;
     use Shards;
     use Tokenizer;
+    use UsesApis;
 
     protected string $language = 'no_lang';
 
@@ -50,6 +54,9 @@ class NewIndex
     protected array $config = [];
 
     protected Properties $properties;
+
+    /** @var array<int, CollectionHook> */
+    protected array $collectionHooks = [];
 
     protected function autocompleteTokenFilters(): array
     {
@@ -103,8 +110,72 @@ class NewIndex
         $builder->alias($this->alias);
         $builder->shards($this->shards);
         $builder->replicas($this->replicas);
+        $builder->apis($this->apis);
+        $builder->collectionHooks($this->collectionHooks);
 
         return $builder;
+    }
+
+    /**
+     * @param  array<int, CollectionHook>  $hooks
+     */
+    public function collectionHooks(array $hooks): static
+    {
+        $this->collectionHooks = $hooks;
+
+        return $this;
+    }
+
+    /**
+     * Create a physical index for this alias without attaching the alias,
+     * tuned for bulk writes (no refresh, no replicas until finish()).
+     * Fill it from one or many processes, then finish() or abort() it.
+     *
+     * The rebuild's collection carries no properties, like Sigmie::collect().
+     * Call ->properties($props) on it to validate documents and populate
+     * semantic fields.
+     */
+    public function startRebuild(): IndexRebuild
+    {
+        $replicas = $this->replicas;
+
+        $this->meta([IndexRebuild::META_KEY => $this->alias, IndexRebuild::META_REPLICAS => $replicas]);
+        $this->config('refresh_interval', '-1');
+        $this->replicas(0);
+
+        $index = $this->make();
+
+        $this->createIndex($index->name, $index->settings, $index->mappings);
+
+        $rebuild = new IndexRebuild($this->elasticsearchConnection, $this->alias, $index->name, $replicas, $this->collectionHooks);
+
+        return $rebuild->apis($this->apis);
+    }
+
+    /**
+     * Rebuild in one process: start, let $fill write every document, finish.
+     *
+     *   alias ──► movies_old            (searchable throughout)
+     *             movies_new  ◄── $fill
+     *   alias ──► movies_new            (one _aliases call)
+     *             movies_old  deleted
+     *
+     * The live index is untouched when $fill throws or writes fewer than
+     * $minDocuments documents.
+     */
+    public function rebuild(callable $fill, int $minDocuments = 1): AliasedIndex
+    {
+        $rebuild = $this->startRebuild();
+
+        try {
+            $fill($rebuild->collect());
+        } catch (Throwable $throwable) {
+            $rebuild->abort();
+
+            throw $throwable;
+        }
+
+        return $rebuild->finish($minDocuments);
     }
 
     public function defaultAnalyzer(): DefaultAnalyzer
