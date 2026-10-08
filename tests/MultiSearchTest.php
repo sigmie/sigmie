@@ -381,6 +381,59 @@ class MultiSearchTest extends TestCase
     /**
      * @test
      */
+    public function composite_multi_search_collects_named_buckets_across_after_pages(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('category');
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['category' => 'first', 'name' => 'Alpha']),
+            new Document(['category' => 'second', 'name' => 'Beta']),
+            new Document(['category' => 'third', 'name' => 'Alpha']),
+        ]);
+
+        $all = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('')
+            ->size(0);
+
+        $matching = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Alpha')
+            ->size(0);
+
+        $buckets = $this->sigmie->newMultiSearch()
+            ->composite('categories', [
+                [
+                    'category' => [
+                        'terms' => [
+                            'field' => 'category',
+                        ],
+                    ],
+                ],
+            ], 1)
+            ->search('all', $all)
+            ->search('matching', $matching)
+            ->buckets();
+
+        $this->assertSame(['first', 'second', 'third'], array_map(
+            fn (array $bucket): string => $bucket['key']['category'],
+            $buckets['all'],
+        ));
+        $this->assertSame(['first', 'third'], array_map(
+            fn (array $bucket): string => $bucket['key']['category'],
+            $buckets['matching'],
+        ));
+    }
+
+    /**
+     * @test
+     */
     public function add_methods_include_existing_searches_in_elasticsearch_multi_search(): void
     {
         $indexName = uniqid();
