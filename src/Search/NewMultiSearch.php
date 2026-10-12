@@ -100,7 +100,34 @@ class NewMultiSearch
         return $raw;
     }
 
+    public function composite(string $aggregation, array $sources, int $size = 10000): CompositeMultiSearch
+    {
+        return (new CompositeMultiSearch($this->elasticsearchConnection, $aggregation, $sources, $size))
+            ->apis($this->apis);
+    }
+
     public function get(): array
+    {
+        $responses = $this->queryResponses();
+        $results = [];
+        $responseIndex = 0;
+
+        foreach ($this->queries as $query) {
+            $searchResponses = array_slice($responses, $responseIndex, $query->multisearchResCount());
+
+            $result = $query->formatResponses(...$searchResponses, httpCode: $this->responseCode);
+
+            $results[] = $result;
+            $responseIndex += $query->multisearchResCount();
+        }
+
+        return $results;
+    }
+
+    /**
+     * @return list<array>
+     */
+    private function queryResponses(): array
     {
         $body = [];
 
@@ -122,20 +149,7 @@ class NewMultiSearch
 
         $this->responseCode = $response->code();
 
-        $responses = $response->json('responses') ?? [];
-        $results = [];
-        $responseIndex = 0;
-
-        foreach ($this->queries as $query) {
-            $searchResponses = array_slice($responses, $responseIndex, $query->multisearchResCount());
-
-            $result = $query->formatResponses(...$searchResponses, httpCode: $this->responseCode);
-
-            $results[] = $result;
-            $responseIndex += $query->multisearchResCount();
-        }
-
-        return $results;
+        return $response->json('responses') ?? [];
     }
 
     public function hits(): array
