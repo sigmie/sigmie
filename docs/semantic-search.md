@@ -163,6 +163,20 @@ $props->text('content')->semantic(api: 'embeddings', dimensions: 512, accuracy: 
 
 Reach for higher accuracy on important fields (titles, primary content). Use lower accuracy on long, less-critical fields (tags, supporting text).
 
+## Quantization
+
+Vectors are indexed as float `hnsw` by default. On Elasticsearch, pick a quantized index type to keep a compressed copy in memory:
+
+```php
+use Sigmie\Mappings\NewSemanticField;
+
+$props->text('content')->newSemantic(function (NewSemanticField $semantic): void {
+    $semantic->api('embeddings')->dimensions(768)->indexType('bbq_hnsw'); // [tl! highlight]
+});
+```
+
+Allowed types: `hnsw`, `int8_hnsw`, `int4_hnsw`, `bbq_hnsw`, `flat`, `int8_flat`, `int4_flat`, `bbq_flat`. Flat types skip the HNSW graph, so `m` and `ef_construction` are not sent. Each type gets its own vector field name (for example `bbq_hnsw_m64_efc300_dims768_cosine_concat`), so changing the type adds a new field and needs a reindex. OpenSearch supports only `hnsw`.
+
 ## Similarity functions
 
 ```php
