@@ -13,6 +13,7 @@ use Sigmie\Document\RerankedHit;
 use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\NewSemanticField;
 use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Parse\InputParser;
 use Sigmie\Parse\ParseException;
@@ -24,6 +25,7 @@ use Sigmie\Search\Formatters\RawElasticsearchFormat;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\VectorPool;
 use Sigmie\Shared\Collection;
+use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
 
 class SearchTest extends TestCase
@@ -393,6 +395,54 @@ class SearchTest extends TestCase
         $this->assertNotSame('', $this->embeddingApi->model());
         $this->assertGreaterThan(0, $this->embeddingApi->maxBatchSize());
         $this->assertSame(2, $this->embeddingApi->overrideMaxBatchSize(2)->maxBatchSize());
+    }
+
+    /**
+     * @test
+     */
+    public function quantized_semantic_fields_retrieve_the_nearest_document(): void
+    {
+        $this->forOpenSearch(fn () => $this->markTestSkipped('OpenSearch supports only the hnsw vector index type'));
+
+        foreach (['bbq_hnsw', 'int8_hnsw'] as $indexType) {
+            $indexName = uniqid();
+
+            $blueprint = new NewProperties;
+            $blueprint->text('title')->newSemantic(function (NewSemanticField $semantic) use ($indexType): void {
+                $semantic->api('test-embeddings')->dimensions(128)->indexType($indexType);
+            });
+
+            $this->sigmie->newIndex($indexName)
+                ->properties($blueprint)
+                ->create();
+
+            $this->assertIndex($indexName, function (Assert $assert) use ($indexType): void {
+                $field = $assert->data()['mappings']['properties']['_embeddings']['properties']['title']['properties'][$indexType.'_m64_efc300_dims128_cosine_concat'];
+
+                $this->assertSame($indexType, $field['index_options']['type']);
+            });
+
+            $this->sigmie->collect($indexName, refresh: true)
+                ->properties($blueprint)
+                ->merge([
+                    new Document(['title' => 'Alpha search manual'], _id: 'alpha'),
+                    new Document(['title' => 'Beta archive notes'], _id: 'beta'),
+                    new Document(['title' => 'Gamma cooking recipes'], _id: 'gamma'),
+                ]);
+
+            $hits = $this->sigmie->newSearch($indexName)
+                ->properties($blueprint)
+                ->semantic()
+                ->disableKeywordSearch()
+                ->queryString('Alpha search manual')
+                ->fields(['title'])
+                ->hits();
+
+            $ids = array_map(fn (Hit $hit): string => $hit->_id, $hits);
+
+            $this->assertSame('alpha', $ids[0], $indexType);
+            $this->assertGreaterThan(0, array_search('beta', $ids, true), $indexType);
+        }
     }
 
     /**

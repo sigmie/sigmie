@@ -41,11 +41,14 @@ class DenseVector extends AbstractType implements Type
 
         if ($this->index) {
             $raw[$this->name]['similarity'] = $this->similarity->value;
-            $raw[$this->name]['index_options'] = [
-                'type' => $this->indexType,
-                'm' => $this->m,
-                'ef_construction' => $this->efConstruction,
-            ];
+            // Flat types have no HNSW graph and reject m and ef_construction.
+            $raw[$this->name]['index_options'] = str_ends_with($this->indexType, 'flat')
+                ? ['type' => $this->indexType]
+                : [
+                    'type' => $this->indexType,
+                    'm' => $this->m,
+                    'ef_construction' => $this->efConstruction,
+                ];
         }
 
         return $raw;

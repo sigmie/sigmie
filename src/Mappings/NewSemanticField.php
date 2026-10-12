@@ -20,6 +20,8 @@ class NewSemanticField
 
     protected ?int $m = 64;
 
+    protected string $indexType = 'hnsw';
+
     protected bool $index = true;
 
     protected VectorStrategy $strategy = VectorStrategy::Concatenate;
@@ -160,6 +162,31 @@ class NewSemanticField
         return $this;
     }
 
+    /**
+     * Elasticsearch dense_vector index_options.type. Quantized types
+     * (int8, int4, bbq) keep a compressed copy in memory; flat types
+     * skip the HNSW graph and ignore m and ef_construction.
+     */
+    public function indexType(string $type): static
+    {
+        if (! in_array($type, [
+            'hnsw',
+            'int8_hnsw',
+            'int4_hnsw',
+            'bbq_hnsw',
+            'flat',
+            'int8_flat',
+            'int4_flat',
+            'bbq_flat',
+        ])) {
+            throw new Exception('Index type must be one of: hnsw, int8_hnsw, int4_hnsw, bbq_hnsw, flat, int8_flat, int4_flat, bbq_flat');
+        }
+
+        $this->indexType = $type;
+
+        return $this;
+    }
+
     public function dimensions(int $dims): static
     {
         $this->dims = $dims;
@@ -213,10 +240,14 @@ class NewSemanticField
             }
         }
 
-        $name = match ($this->index) {
-            true => 'm'.$this->m.'_efc'.$this->efConstruction.'_dims'.$this->dims.'_'.$this->similarity->value.'_'.$this->strategy->suffix(),
-            false => 'exact_dims'.$this->dims.'_'.$this->similarity->value.'_'.$this->strategy->suffix(),
-        };
+        // The name is the field path, so each index type gets its own field.
+        // Plain hnsw keeps the unprefixed name of existing indices.
+        $name = match (true) {
+            ! $this->index => 'exact_dims'.$this->dims,
+            $this->indexType === 'hnsw' => 'm'.$this->m.'_efc'.$this->efConstruction.'_dims'.$this->dims,
+            str_ends_with($this->indexType, 'flat') => $this->indexType.'_dims'.$this->dims,
+            default => $this->indexType.'_m'.$this->m.'_efc'.$this->efConstruction.'_dims'.$this->dims,
+        }.'_'.$this->similarity->value.'_'.$this->strategy->suffix();
 
         if (! $this->index) {
             return new NestedVector(
@@ -237,7 +268,7 @@ class NewSemanticField
             index: $this->index,
             similarity: $this->similarity,
             strategy: $this->strategy,
-            indexType: 'hnsw',
+            indexType: $this->indexType,
             m: $this->m,
             efConstruction: $this->efConstruction,
             apiName: $this->apiName,

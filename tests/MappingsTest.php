@@ -1994,6 +1994,62 @@ class MappingsTest extends TestCase
     /**
      * @test
      */
+    public function quantized_index_type_semantic_builder(): void
+    {
+        $this->forOpenSearch(function (): void {
+            $this->expectExceptionMessage('OpenSearch does not support the bbq_hnsw vector index type');
+        });
+
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $jobDescription = $blueprint->text('job_description');
+        $jobDescription->newSemantic(function (NewSemanticField $semantic): void {
+            $semantic->indexType('bbq_hnsw');
+        });
+        $jobDescription->newSemantic(function (NewSemanticField $semantic): void {
+            $semantic->indexType('int8_flat');
+        });
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->assertIndex($indexName, function (Assert $assert): void {
+            $fields = $assert->data()['mappings']['properties']['_embeddings']['properties']['job_description']['properties'];
+
+            $this->assertSame(
+                ['type' => 'bbq_hnsw', 'm' => 64, 'ef_construction' => 300],
+                array_intersect_key($fields['bbq_hnsw_m64_efc300_dims256_cosine_concat']['index_options'], array_flip(['type', 'm', 'ef_construction']))
+            );
+            $this->assertSame('int8_flat', $fields['int8_flat_dims256_cosine_concat']['index_options']['type']);
+            $this->assertArrayNotHasKey('m', $fields['int8_flat_dims256_cosine_concat']['index_options']);
+
+            $restored = Properties::create(
+                ['embedding' => $fields['bbq_hnsw_m64_efc300_dims256_cosine_concat']],
+                new DefaultAnalyzer,
+                [],
+                Properties::ROOT_NAME
+            )->get('embedding');
+
+            $this->assertSame('bbq_hnsw', $restored->indexType());
+            $this->assertSame('bbq_hnsw', $restored->toRaw()['embedding']['index_options']['type']);
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function semantic_builder_rejects_unknown_index_type(): void
+    {
+        $this->expectExceptionMessage('Index type must be one of');
+
+        (new NewSemanticField('job_description'))->indexType('bbq_disk');
+    }
+
+    /**
+     * @test
+     */
     public function dimensions_accuracy_1(): void
     {
         $indexName = uniqid();
