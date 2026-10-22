@@ -1,6 +1,6 @@
 ---
 title: Magic Tags
-short_description: LLM-generated taxonomy tags for Elasticsearch documents — classify with embeddings, dedup with vector similarity, share a tag registry across indices.
+short_description: The Magic Tags package adds LLM-generated tags to Elasticsearch documents, reuses existing tags through embeddings, and shares a tag registry across indices.
 keywords: [magic tags, taxonomy, llm, embeddings, sidecar, classification]
 category: Features
 order: 2
@@ -9,25 +9,13 @@ related_pages: [semantic-search, mappings, document, aggregations, extending]
 
 # Magic Tags
 
-Magic Tags adds a `keyword` field whose values come from an LLM: short, reusable labels (typically kebab-case) that describe another field's content. The pipeline favors **reusing** existing tags so your vocabulary stays stable for search, filtering, and downstream agent tooling.
+Magic Tags adds a `keyword` field whose values an LLM writes: short labels that describe another field's content. The package prefers existing tags over new ones, so the tag list stays stable for search, filters, and agent tools.
 
-> **Note:** Magic Tags is **not** part of this repository. It's a separate [Sigmie package](extending.md) that registers a `magicTags()` macro on `NewProperties` and a `CollectionHook` for indexing. This page documents the intended behavior. Examples assume the package is installed and registered.
+> **Note:** Magic Tags is a separate [Sigmie package](extending.md), not part of this repository. This page describes its intended behavior. The examples assume that you installed and registered the package.
 
-Behind the scenes, the package maintains a **sidecar index** of unique tags with semantic embeddings on the tag text. The sidecar uses the same embeddings API and dimensions as your source field, so vector operations on tags stay consistent with the rest of your data.
+## How the package stores tags
 
-## Install the package
-
-```php
-use Sigmie\Sigmie;
-use Vendor\MagicTags\MagicTagsPackage;
-
-$sigmie = new Sigmie($connection);
-$sigmie->extend(new MagicTagsPackage());
-```
-
-`extend()` registers the macro and hook on **this Sigmie instance**. See [Extending Sigmie](extending.md) for the package interface.
-
-## How it fits together
+The package writes tags to two indices:
 
 ```
 Main index documents                       Sidecar index (tag registry)
@@ -42,13 +30,29 @@ Main index documents                       Sidecar index (tag registry)
    classify-first                          the source field
 ```
 
-The **main index** stores tags as an array of strings on each document (mapped as `keyword` with `meta.type` `magic_tags`).
+The **main index** stores each document's tags as an array of strings. The mapping is `keyword` with `meta.type` set to `magic_tags`.
 
-The **sidecar index** name defaults to `{logicalName}__sigmie_magic_tags`. Each row is one `(magic_field_path, tag)` pair with a deterministic `_id` (`md5(path::tag)`) so repeated writes upsert rather than duplicate.
+The **sidecar index** holds one row for each unique `(magic_field_path, tag)` pair, with an embedding of the tag text. Its name defaults to `{logicalName}__sigmie_magic_tags`. Each row has the `_id` `md5(path::tag)`, so a repeated write updates the row and does not add a duplicate. The sidecar uses the same embeddings API and dimensions as the source field.
 
-## Define magic tags on a mapping
+The package runs as a `CollectionHook` during `merge()` and `add()`. `beforeBatch()` creates the sidecar index if it does not exist. `processBatch()` selects the tags for each document. `afterBatch()` upserts the new tags into the sidecar. For the hook lifecycle, see [Extending Sigmie](extending.md).
 
-The source field must be a **semantic** text field — the package reads its embeddings configuration to set up the sidecar:
+## Install the package
+
+Register the package on your `Sigmie` client:
+
+```php
+use Sigmie\Sigmie;
+use Vendor\MagicTags\MagicTagsPackage;
+
+$sigmie = new Sigmie($connection);
+$sigmie->extend(new MagicTagsPackage());
+```
+
+`extend()` adds the `magicTags()` macro to `NewProperties` for the whole PHP process. It adds the collection hook to this `Sigmie` instance only.
+
+## Add a magic tags field
+
+The source field must be a [semantic](semantic-search.md) text field, because the package reads its embeddings configuration to set up the sidecar.
 
 ```php
 use Sigmie\Mappings\NewProperties;
@@ -62,7 +66,7 @@ $props->magicTags('topic', fromField: 'content')
     ->api('my-llm');
 ```
 
-Register the same API names on the collection:
+Register both API names on the collection:
 
 ```php
 $collection = $sigmie->collect('kb', refresh: true)
@@ -73,7 +77,7 @@ $collection = $sigmie->collect('kb', refresh: true)
     ]);
 ```
 
-Now `merge()` and `add()` run the magic-tag pipeline:
+Index a document with `merge()` or `add()`:
 
 ```php
 use Sigmie\Document\Document;
@@ -83,17 +87,17 @@ $collection->merge([
 ]);
 ```
 
-The document gets a `topic` array populated by the LLM, with classification as a fast path when enough tags already exist.
+The stored document now has a `topic` array of tags.
 
-## Generation order
+## Tune classification and deduplication
 
-When you index a document:
+For each document, the package selects tags in this order:
 
-1. **Classify-first** (optional). If `classifyFirst(true)` and the sidecar has enough tags, the package embeds the source text and scores it against centroids built from sample passages per tag. Tags above the confidence threshold are applied without an LLM call.
-2. **LLM fallback.** If classification returns nothing, the LLM generates tags from the source text plus a prompt listing existing tags for reuse.
-3. **Dedup.** New tags are deduplicated against existing ones using embedding similarity.
+1. **Classify.** This step runs only when `classifyFirst(true)` is set and the sidecar has at least `minTagsForClassification` tags. The package embeds the source text and compares it with a centroid for each tag, built from sample passages. Tags with a similarity of at least `classifyConfidence` apply without an LLM call.
+2. **Generate.** If classification returns no tags, the LLM writes tags from the source text. The prompt lists existing tags so that the LLM can reuse them.
+3. **Deduplicate.** The package compares each new tag with existing tags by embedding similarity. A tag above `similarityThreshold` counts as a duplicate.
 
-## Configure classification and dedup
+Set these values on the field:
 
 ```php
 $props->magicTags('topic', fromField: 'content')
@@ -108,7 +112,7 @@ $props->magicTags('topic', fromField: 'content')
     ->maxTags(5);
 ```
 
-Disable classification entirely:
+To always call the LLM, turn classification off:
 
 ```php
 $props->magicTags('topic', fromField: 'content')
@@ -116,9 +120,9 @@ $props->magicTags('topic', fromField: 'content')
     ->classifyFirst(false);
 ```
 
-## Custom prompt
+## Replace the LLM prompt
 
-Override the default LLM instructions:
+`prompt()` replaces the default LLM instructions:
 
 ```php
 $props->magicTags('topic', fromField: 'content')
@@ -129,9 +133,9 @@ $props->magicTags('topic', fromField: 'content')
     );
 ```
 
-## Share one registry across indices
+## Share one tag registry across indices
 
-Point several mappings at the same `tagIndex()` logical name to share a single sidecar. Main index names stay different:
+To use one sidecar for several indices, give each field the same `tagIndex()` name. The main index names stay different.
 
 ```php
 $shared = 'property_app';
@@ -149,21 +153,21 @@ $memory->magicTags('topic', fromField: 'content')
     ->tagIndex($shared);
 ```
 
-Both collections write to `property_app__sigmie_magic_tags`. Tag rows record `magic_field_path` so you can tell which source field produced each tag.
+Both collections write to `property_app__sigmie_magic_tags`. The `magic_field_path` of each row shows which source field produced the tag.
 
-> **Note:** The "existing tags" list shown to the LLM during generation is fetched from the **current** main index only. If you want a global vocabulary across collections for the prompt, merge tag lists yourself before calling `merge()`.
+> **Note:** The LLM prompt lists existing tags from the **current** main index only. To show the LLM tags from all collections, merge the tag lists yourself before you call `merge()`.
 
-## Skip the pipeline for a batch
+## Index documents that already have tags
 
-When documents already carry final tag values:
+To skip the pipeline for a batch whose documents already have their final tags, call `withoutHooks()`:
 
 ```php
 $collection->withoutHooks()->merge($documents);
 ```
 
-## Use tags in an agent tool
+## List the tags for a filter or agent
 
-A chatbot or filter UI typically wants a list of available tags. Run a terms aggregation on the magic-tag field:
+To show the available tags in a filter menu or an agent tool, run a `terms` aggregation on the magic tags field:
 
 ```php
 use Sigmie\Query\Aggs;
@@ -184,27 +188,11 @@ $buckets = $response->json('aggregations.by_topic.buckets');
 // [['key' => 'returns', 'doc_count' => 42], ['key' => 'shipping', 'doc_count' => 18], ...]
 ```
 
-This is separate from the internal tag list used during generation (which uses a larger `size`, often 500, so the LLM sees a broad vocabulary).
-
-See [Aggregations](aggregations.md).
-
-## What the package contains
-
-A Magic Tags package typically registers:
-
-- **`NewProperties::macro('magicTags', ...)`** so mappings can call `magicTags()`.
-- **A `CollectionHook`** via `$sigmie->addCollectionHook(...)` implementing:
-  - `shouldRun()` — checks `Properties::fieldsOfType(MagicTags::class)` so unrelated collections skip the hook.
-  - `beforeBatch()` — ensures the sidecar index exists.
-  - `processBatch()` — LLM + classification + dedup.
-  - `afterBatch()` — upserts tag rows into the sidecar.
-
-See [Extending Sigmie](extending.md) for the `Package` interface and the hook lifecycle.
+This list is separate from the tag list that the package sends to the LLM, which is larger. For other bucket options, see [Aggregations](aggregations.md).
 
 ## See also
 
-- [Extending Sigmie](extending.md) — packages, macros, and collection hooks.
-- [Semantic Search](semantic-search.md) — semantic fields and embeddings.
-- [Mappings & Properties](mappings.md) — property builders.
-- [Documents](document.md) — collections, `add`, `merge`.
-- [Aggregations](aggregations.md) — terms buckets for tool selection.
+- [Extending Sigmie](extending.md): packages, macros, and collection hooks.
+- [Semantic Search](semantic-search.md): semantic fields and embeddings.
+- [Mappings & Properties](mappings.md): property builders.
+- [Documents](document.md): collections, `add()`, and `merge()`.

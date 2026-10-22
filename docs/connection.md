@@ -1,7 +1,7 @@
 ---
 title: Connection Setup
-short_description: Configure Elasticsearch and OpenSearch connections in Sigmie — basic auth, API keys, bearer tokens, SSL certificates, and multi-node clusters.
-keywords: [connection, authentication, ssl, tls, api key, basic auth, opensearch]
+short_description: Connect Sigmie to a secured Elasticsearch or OpenSearch cluster with basic auth, API keys, bearer tokens, custom CAs, timeouts, and several nodes.
+keywords: [connection, authentication, ssl, tls, api key, basic auth, opensearch, elastic cloud, aws]
 category: Configuration
 order: 1
 related_pages: [installation, opensearch, docker]
@@ -9,13 +9,22 @@ related_pages: [installation, opensearch, docker]
 
 # Connection Setup
 
-The [Installation](installation.md) guide covers basic local connections. This page covers everything else: production auth, SSL, multi-node clusters, and cloud providers.
+This page shows how to connect Sigmie to a production cluster: authentication, TLS, several nodes, and hosted services. For a first local connection, see [Installation](installation.md).
 
-Sigmie uses the same connection API for Elasticsearch and OpenSearch. Only the engine type and credentials change.
+Every connection goes through `Sigmie::create()`. It takes the hosts, the engine type, and a `config` array that Sigmie passes to the Guzzle HTTP client:
 
-## Authentication
+```php
+use Sigmie\Sigmie;
 
-### Basic auth
+$sigmie = Sigmie::create(
+    hosts: ['https://elasticsearch.example.com:9200'],
+    config: ['auth' => ['elastic', 'your-password']],
+);
+```
+
+## Authenticate with a username and password
+
+Pass the credentials in `auth`:
 
 ```php
 use Sigmie\Sigmie;
@@ -23,17 +32,18 @@ use Sigmie\Sigmie;
 $sigmie = Sigmie::create(
     hosts: ['https://elasticsearch.example.com:9200'],
     config: [
-        'auth' => ['elastic', 'your-password'],
+        'auth' => ['elastic', 'your-password'], // [tl! highlight]
     ]
 );
 ```
 
-For lower-level control, build the client manually:
+To build the client yourself, use `JSONClient::createWithBasic()` and wrap it in a connection:
 
 ```php
 use Sigmie\Http\JSONClient;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Base\Drivers\Elasticsearch;
+use Sigmie\Sigmie;
 
 $client = JSONClient::createWithBasic(
     hosts: ['https://elasticsearch.example.com:9200'],
@@ -45,57 +55,46 @@ $connection = new ElasticsearchConnection($client, new Elasticsearch);
 $sigmie = new Sigmie($connection);
 ```
 
-### API key
+## Authenticate with an API key
 
-Generate the key in Elasticsearch:
+Create the key in Elasticsearch:
 
 ```bash
-curl -X POST "localhost:9200/_security/api_key" \
+curl -X POST "https://elasticsearch.example.com:9200/_security/api_key" \
   -H 'Content-Type: application/json' \
   -u elastic:your-password \
   -d '{"name": "my-api-key", "expiration": "90d"}'
 ```
 
-Base64-encode `id:api_key` and pass it as the Authorization header:
+The response contains `id`, `api_key`, and `encoded`. The `encoded` value is the Base64 of `id:api_key`. Send it in the `Authorization` header:
 
 ```php
 $sigmie = Sigmie::create(
     hosts: ['https://elasticsearch.example.com:9200'],
     config: [
         'headers' => [
-            'Authorization' => 'ApiKey ' . base64_encode('id:api_key'),
+            'Authorization' => 'ApiKey ' . base64_encode('id:api_key'), // [tl! highlight]
         ],
     ]
 );
 ```
 
-### Bearer token
+## Authenticate with a bearer token
 
 ```php
 $sigmie = Sigmie::create(
     hosts: ['https://elasticsearch.example.com:9200'],
     config: [
         'headers' => [
-            'Authorization' => 'Bearer your-token-here',
+            'Authorization' => 'Bearer your-token-here', // [tl! highlight]
         ],
     ]
 );
 ```
 
-## SSL/TLS
+## Trust a custom CA certificate
 
-### Self-signed certificates (development)
-
-```php
-$sigmie = Sigmie::create(
-    hosts: ['https://localhost:9200'],
-    config: ['verify' => false],
-);
-```
-
-> **Warning:** Never disable SSL verification in production.
-
-### Custom CA certificates
+To verify the cluster against your own certificate authority, set `verify` to the path of the CA file:
 
 ```php
 $sigmie = Sigmie::create(
@@ -104,7 +103,20 @@ $sigmie = Sigmie::create(
 );
 ```
 
-## Multiple nodes
+For a local cluster with a self-signed certificate, turn verification off:
+
+```php
+$sigmie = Sigmie::create(
+    hosts: ['https://localhost:9200'],
+    config: ['verify' => false],
+);
+```
+
+> **Warning:** Never turn off certificate verification in production.
+
+## Connect to several nodes
+
+List every node in `hosts`:
 
 ```php
 $sigmie = Sigmie::create(
@@ -117,18 +129,20 @@ $sigmie = Sigmie::create(
 );
 ```
 
-Requests are distributed round-robin. If a node fails, Sigmie retries the next one.
+`hosts` also accepts one comma-separated string, such as `'10.0.0.1:9200,10.0.0.2:9200'`.
 
-## OpenSearch
+The transport sends requests to the nodes in round-robin order. When a node fails with a network error, the transport marks it dead and later requests skip it. Sigmie does not retry the request that failed.
 
-Specify the engine type:
+## Connect to OpenSearch
+
+Set `engine` to `SearchEngineType::OpenSearch`:
 
 ```php
 use Sigmie\Enums\SearchEngineType;
 
 $sigmie = Sigmie::create(
     hosts: ['https://localhost:9200'],
-    engine: SearchEngineType::OpenSearch,
+    engine: SearchEngineType::OpenSearch, // [tl! highlight]
     config: [
         'auth' => ['admin', 'MyStrongPass123!@#'],
         'verify' => false,
@@ -136,11 +150,11 @@ $sigmie = Sigmie::create(
 );
 ```
 
-See [OpenSearch](opensearch.md) for the full integration.
+See [OpenSearch](opensearch.md) for what changes on that engine.
 
-## Cloud providers
+## Connect to Elastic Cloud
 
-### Elastic Cloud
+With a username and password, use the deployment's Elasticsearch endpoint. Find it in the deployment dashboard under **Elasticsearch endpoint**:
 
 ```php
 $sigmie = Sigmie::create(
@@ -149,11 +163,27 @@ $sigmie = Sigmie::create(
 );
 ```
 
-Find your endpoint in the deployment dashboard under "Elasticsearch endpoint."
+With a Cloud ID and an API key, use `createForCloud()`:
 
-### AWS OpenSearch Service
+```php
+$sigmie = Sigmie::createForCloud(
+    cloudId: 'my-deployment:dXMtZWFzdC0xLmF3cy5mb3VuZC5pbyQ...',
+    apiKey: 'your-encoded-api-key',
+);
+```
 
-AWS requires IAM-signed requests. Build a Guzzle handler with the AWS SDK:
+For an Elasticsearch Serverless project, use `createForServerless()` with the project endpoint and an API key:
+
+```php
+$sigmie = Sigmie::createForServerless(
+    host: 'https://my-project.es.us-east-1.aws.elastic.cloud',
+    apiKey: 'your-encoded-api-key',
+);
+```
+
+## Connect to AWS OpenSearch Service with IAM
+
+AWS OpenSearch Service can require requests signed with AWS Signature Version 4. Install `aws/aws-sdk-php`, sign each request in a Guzzle handler, and pass the handler in `config`:
 
 ```php
 use Aws\Credentials\CredentialProvider;
@@ -163,8 +193,9 @@ use GuzzleHttp\Middleware;
 use Sigmie\Http\JSONClient;
 use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Base\Drivers\Opensearch;
+use Sigmie\Sigmie;
 
-$credentials = CredentialProvider::defaultProvider()();
+$credentials = CredentialProvider::defaultProvider()()->wait();
 $signer = new SignatureV4('es', 'us-east-1');
 $handler = HandlerStack::create();
 $handler->push(Middleware::mapRequest(fn ($request) =>
@@ -180,35 +211,27 @@ $connection = new ElasticsearchConnection($client, new Opensearch);
 $sigmie = new Sigmie($connection);
 ```
 
-## Configuration options
+For a domain with username and password access, see [OpenSearch](opensearch.md).
 
-The `config` array accepts any [Guzzle HTTP option](https://docs.guzzlephp.org/en/stable/request-options.html). Common ones:
+## Set timeouts
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `connect_timeout` | int | 10 | Seconds to wait for the connection. |
-| `timeout` | int | 30 | Seconds to wait for the response. |
-| `verify` | bool\|string | true | SSL verification (boolean or CA path). |
-| `auth` | array | null | Basic auth `['username', 'password']`. |
-| `headers` | array | [] | Custom HTTP headers. |
-
-### Timeouts
+Raise `timeout` for long bulk writes:
 
 ```php
 $sigmie = Sigmie::create(
     hosts: ['127.0.0.1:9200'],
     config: [
         'connect_timeout' => 15,
-        'timeout' => 120,           // long for bulk operations
+        'timeout' => 120, // [tl! highlight]
     ]
 );
 ```
 
-### Environment-based configuration
+## Read the connection from the environment
 
 ```php
 $sigmie = Sigmie::create(
-    hosts: explode(',', $_ENV['ELASTICSEARCH_HOSTS']),
+    hosts: $_ENV['ELASTICSEARCH_HOSTS'],
     config: [
         'auth' => [$_ENV['ES_USER'], $_ENV['ES_PASSWORD']],
         'verify' => $_ENV['ES_VERIFY_SSL'] === 'true',
@@ -216,7 +239,24 @@ $sigmie = Sigmie::create(
 );
 ```
 
+## Configuration options
+
+The `config` array accepts any [Guzzle request option](https://docs.guzzlephp.org/en/stable/request-options.html). Your values replace Sigmie's defaults. These options matter most:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `auth` | array | none | Basic auth credentials, `['username', 'password']`. |
+| `headers` | array | none | Extra HTTP headers, such as `Authorization`. |
+| `verify` | bool\|string | `true` | Verify the TLS certificate. A string is the path to a CA file. |
+| `connect_timeout` | int\|float | `15` | Seconds to wait for a connection. Sigmie sets this default. |
+| `timeout` | int\|float | `0` | Seconds to wait for the response. `0` waits without a limit. |
+| `allow_redirects` | bool | `false` | Follow HTTP redirects. Sigmie sets this default. |
+| `http_errors` | bool | `false` | Let Guzzle throw on 4xx and 5xx. Leave it off. Sigmie reads the status and throws its own `ElasticsearchException`. |
+| `handler` | callable | Guzzle default | A Guzzle handler stack, used for request signing. |
+
 ## Verify the connection
+
+`isConnected()` sends a request to the cluster root and returns `false` on any failure:
 
 ```php
 if ($sigmie->isConnected()) {
@@ -228,16 +268,12 @@ foreach ($sigmie->indices() as $index) {
 }
 ```
 
-## Troubleshooting
+## Fix common connection errors
 
-**`cURL error 7: Failed to connect`**
-The cluster isn't running, or your host/port is wrong. Try `curl http://localhost:9200`.
+**`cURL error 7: Failed to connect`.** The cluster is not running, or the host or port is wrong. Run `curl http://localhost:9200` to check.
 
-**`cURL error 60: SSL certificate problem`**
-Use `'verify' => false` in development, a valid certificate in production, or `'verify' => '/path/to/ca.pem'` for a custom CA.
+**`cURL error 60: SSL certificate problem`.** The client does not trust the certificate. Set `verify` to the CA file path. In local development only, set `verify` to `false`.
 
-**`401 Unauthorized`**
-Wrong credentials, or auth isn't configured the way you think. Check cluster security logs.
+**`401 Unauthorized`.** The cluster rejected the credentials. Check the username, password, or key, and check the cluster's security logs.
 
-**`cURL error 28: Operation timed out`**
-Increase `connect_timeout` and `timeout`. For bulk operations, 60–120 seconds is common.
+**`cURL error 28: Operation timed out`.** Raise `connect_timeout` and `timeout`. Bulk writes often need 60 to 120 seconds.

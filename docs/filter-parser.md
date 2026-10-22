@@ -1,6 +1,6 @@
 ---
 title: Filter Parser
-short_description: Filter Elasticsearch results with human-readable expressions — ranges, wildcards, AND/OR/NOT, nested fields, geo proximity. Full syntax reference.
+short_description: Sigmie filter syntax reference for Elasticsearch, covering exact values, ranges, wildcards, AND, OR, NOT, nested and object fields, and geo distance.
 keywords: [filter parser, filters, query parser, boolean queries, syntax]
 category: Utilities
 order: 1
@@ -9,11 +9,23 @@ related_pages: [search, sort-parser, facets]
 
 # Filter Parser
 
-The Filter Parser turns human-readable expressions into Elasticsearch boolean queries. You write `active:true AND price:100..500`; Sigmie compiles it into the right combination of `term`, `range`, and `bool` queries.
+The filter parser turns a filter string such as `active:true AND price:100..500` into an Elasticsearch `bool` query. It checks every field name against your properties.
+
+Pass a filter string to `filters()` on `newSearch()`, or to `parse()` on `newQuery()`:
 
 ```php
-use Sigmie\Parse\FilterParser;
+$sigmie->newSearch('products')
+    ->properties($props)
+    ->filters('active:true AND stock>0 AND price:100..500') // [tl! highlight]
+    ->queryString('laptop')
+    ->get();
+```
+
+To build the query without a search, create a `FilterParser`:
+
+```php
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Parse\FilterParser;
 
 $props = new NewProperties;
 $props->keyword('category');
@@ -24,36 +36,20 @@ $parser = new FilterParser($props());
 $query = $parser->parse('active:true AND category:"sports"');
 ```
 
-In `newSearch()` and `newQuery()`, you almost never instantiate the parser directly — you pass a filter string to `filters()` or `parse()`:
+`parse()` returns a `Boolean` query. An empty string returns a query that matches every document.
 
-```php
-$sigmie->newSearch('products')
-    ->properties($props)
-    ->filters('active:true AND stock>0 AND price:100..500')
-    ->queryString('laptop')
-    ->get();
-```
-
-## Why use the parser
-
-- **Reads like a sentence** — `active:true AND price:100..500` instead of nested `bool` arrays.
-- **Type-aware** — validated against your property definitions.
-- **Errors early** — invalid syntax raises a `ParseException` before hitting Elasticsearch.
-
-## Exact match
+## Exact values
 
 ```
 category:"sports"
 color:'red'
 name:'John Doe'
-name:"John Doe"
+status:active
 ```
 
-Single and double quotes are interchangeable.
+Single and double quotes are interchangeable. A value without spaces or special characters needs no quotes.
 
 ### Numbers
-
-Numbers don't need quotes:
 
 ```
 price:100
@@ -67,25 +63,33 @@ active:true
 published:false
 ```
 
-Boolean values are lowercase, no quotes.
+`true` and `false` are lowercase and have no quotes.
 
-### Field exists
+### Empty strings
+
+```
+database:""
+```
+
+`field:""` matches documents where the field holds an empty string.
+
+## Field exists
 
 ```
 email:*               # has any value
 NOT email:*           # has no value
 ```
 
-## Multiple values (IN)
+## Multiple values
 
-Match any value from an array:
+A list matches documents with any of its values:
 
 ```
 category:["sports", "action", "horror"]
 status:["active", "pending"]
 ```
 
-Whitespace inside an array is trimmed. Empty arrays match nothing.
+The parser trims spaces around each value. An empty list, `tags:[]`, matches no documents.
 
 ## Wildcards
 
@@ -94,6 +98,17 @@ phone:'*650'         # ends with 650
 phone:'2353*'        # starts with 2353
 title:'*manager*'    # contains "manager"
 ```
+
+To match a literal `*`, escape it: `category:'A\*B'` matches the value `A*B`.
+
+## Document IDs
+
+```
+_id:"dkKwMe4UBAUb2dMteRe2"
+_id:["dkKwMe4UBAUb2dMteRe2", "wd6Me4UBAUb2dMJT"]
+```
+
+`_id` needs no entry in the properties.
 
 ## Ranges
 
@@ -106,7 +121,7 @@ stock>0
 created_at>="2023-05-01"
 ```
 
-Operators: `>`, `<`, `>=`, `<=`.
+The operators are `>`, `<`, `>=`, and `<=`.
 
 ### Inclusive range
 
@@ -115,7 +130,7 @@ price:100..500
 created_at:"2023-01-01".."2023-12-31"
 ```
 
-`price:100..500` is equivalent to `price>=100 AND price<=500`.
+`price:100..500` is the same as `price>=100 AND price<=500`.
 
 ## Logical operators
 
@@ -126,22 +141,22 @@ NOT category:"sports"
 active:true AND NOT stock:0
 ```
 
-Group with parentheses:
+`AND`, `OR`, and `NOT` are case-insensitive. `AND` binds tighter than `OR`, so `a OR b AND c` means `a OR (b AND c)`. Use parentheses to group clauses:
 
 ```
 active:true AND (category:"action" OR category:"horror") AND stock>0
 ```
 
-> **Note:** Multiple clauses without an operator throw `ParseException`:
+> **Note:** Two clauses without an operator between them throw a `ParseException`:
 >
 > ```
 > color:'red' size:'large'             # error
 > color:'red' AND size:'large'         # OK
 > ```
 
-## Object properties
+## Object fields
 
-For flattened object fields, use dot notation:
+For fields inside an `object()` property, use dot notation:
 
 ```
 contact.active:true
@@ -159,9 +174,9 @@ $props->object('contact', function (NewProperties $p) {
 $parser->parse('contact.active:true AND contact.name:"Alice"');
 ```
 
-## Nested fields
+## Nested field filtering
 
-For arrays of objects (mapped as `nested()`), use curly braces. All conditions inside the braces must match the **same** array element:
+For a `nested()` property, put the conditions in curly braces. All conditions inside the braces must match the same item of the list:
 
 ```
 contact:{ active:true }
@@ -177,28 +192,26 @@ $props->nested('vehicles', function (NewProperties $p) {
 $parser->parse("vehicles:{ make:'Powell Motors' AND model:'Canyonero' }");
 ```
 
-This finds documents with a vehicle whose `make` is "Powell Motors" **and** model is "Canyonero" — not documents with one vehicle named "Powell Motors" and a separate vehicle modeled "Canyonero".
+This filter finds documents with one vehicle whose `make` is "Powell Motors" and whose `model` is "Canyonero". A document with a "Powell Motors" vehicle and a different "Canyonero" vehicle does not match.
 
-### Deep nesting
+Nested fields can hold nested fields:
 
 ```
 contact:{ address:{ city:"Berlin" AND marker:"X" } }
 ```
 
-### Object vs nested syntax
-
-Same data, different mappings — different syntax:
+The mapping decides the syntax:
 
 | Mapping | Syntax |
 |---------|--------|
 | `object()` | `contact.active:true AND contact.city:"Berlin"` |
 | `nested()` | `contact:{ active:true AND city:"Berlin" }` |
 
-`nested` preserves the relationship; `object` flattens everything to root.
+To return the nested items that matched the filter, see [inner hits](search.md#matching-nested-items-inner-hits).
 
-## Geo-location
+## Geo-location filtering
 
-Filter by proximity to a point:
+A `geoPoint()` field matches documents within a distance of a point:
 
 ```
 location:1km[51.49,13.77]
@@ -206,36 +219,26 @@ location:5mi[40.7128,-74.0060]
 contact:{ location:1km[51.16,13.49] AND active:true }
 ```
 
-The format is `field:distance[lat,lon]`. Supported units: `km`, `mi`, `m`, `yd`, `ft`, `nmi`, `cm`, `in`.
+The format is `field:distance[lat,lon]`. The distance is a number followed by a unit: `km`, `m`, `cm`, `mm`, `mi`, `yd`, `ft`, `in`, or `nmi`.
 
-> **Note:** Zero distance returns nothing, even on an exact coordinate match. Use a small positive distance:
+> **Note:** A distance of zero matches no documents, even on the exact coordinates. Use a small positive distance:
 >
 > ```
-> location:0km[51.16,13.49]       # returns nothing
+> location:0km[51.16,13.49]       # matches nothing
 > location:1m[51.16,13.49]        # OK
 > ```
 
-## Empty values
+## Quotes and special characters
 
-```
-database:""
-tags:[]
-```
-
-Empty arrays match no documents.
-
-## Escaping and special characters
-
-### Quotes inside strings
+Escape a quote inside a value with a backslash. A single quote inside double quotes needs no escape:
 
 ```
 description:"She said \"Hello World\""
 title:'It\'s working'
+team:"O'Brien"
 ```
 
-### Dashes, spaces, parentheses
-
-Values with spaces, dashes, or special characters need quotes:
+Quote values that contain spaces, dashes, or other special characters:
 
 ```
 status:'in-progress'
@@ -244,74 +247,70 @@ job_title:"Chief Executive Officer (CEO)"
 industry:["Renewables & Environment"]
 ```
 
-## Error handling
+## Field rules
 
-Invalid syntax raises `ParseException`:
+The parser checks each field against the properties:
 
-```php
-use Sigmie\Parse\ParseException;
+| Field | Rule |
+|-------|------|
+| Not in the properties | Error: `Field <name> does not exist.` |
+| `text` without `keyword()` | Error: `Field <name> is not filterable.` |
+| `text` with `keyword()` | Filters on the `.keyword` sub-field. |
+| `field:{...}` on a field that is not `nested()` | Error: `Field '<name>' isn't a nested field.` |
 
-try {
-    $query = $parser->parse('color:"red" color:"blue"');     // missing operator
-} catch (ParseException $e) {
-    // log, surface to the user, etc.
-}
-```
+## Errors
 
-Common causes:
+The parser reports errors in two ways.
 
-- Missing logical operator between clauses.
-- Referencing a field that isn't in your mappings.
-- Mismatched parentheses or brackets.
-- Excessive nesting (the parser has a depth limit).
+Syntax errors always throw a `ParseException`:
 
-### Field validation
+- Two clauses without an operator between them.
+- Unbalanced parentheses, brackets, braces, or quotes.
+- More than 32 levels of parentheses and `NOT`. `FilterParser::$maxNestingLevel` sets the limit.
 
-The parser validates field names against your property definitions:
+Field errors, and a clause the parser cannot read, follow the `throwOnError` setting. When it is `true`, they throw a `ParseException`. When it is `false`, the parser replaces the clause with a clause that matches nothing and adds the error to `errors()`:
 
 ```php
-$props = new NewProperties;
-$props->keyword('category');
+use Sigmie\Parse\FilterParser;
 
-$parser = new FilterParser($props());
+$parser = new FilterParser($props(), throwOnError: false);
 
-$parser->parse('category:"sports"');                  // OK
-$parser->parse('subject_service:{ id:"23" }');        // error — field unknown
+$parser->parse('subject_service:{ id:"23" }');
 
-if (!empty($parser->errors())) {
-    // handle errors
-}
+$parser->errors();   // [['message' => "Field 'subject_service' isn't a nested field."]]
 ```
 
-### Throwing vs collecting
+The default depends on the caller:
 
-Whether a bad filter throws or is collected depends on how the parser is invoked:
+| Caller | Default |
+|--------|---------|
+| `new FilterParser($props)` | Throws |
+| `newQuery()->parse()` | Throws |
+| `newSearch()->filters()` | Collects. The errors appear under the response's `errors` key. |
 
-- **Directly** (`new FilterParser(...)`) or via `newQuery()` — throws `ParseException` on the first error.
-- **Via `newSearch()`** — lenient by default: the bad clause is dropped, the search runs, and the error is collected under the response's `errors` key.
-
-Opt into throwing on the search builder with `throwOnError`:
+To make `filters()` throw, pass `throwOnError: true`:
 
 ```php
 $sigmie->newSearch('products')
     ->properties($props)
-    ->filters('nonexistent:"x"', throwOnError: true);   // throws instead of collecting
+    ->filters('nonexistent:"x"', throwOnError: true);   // throws ParseException
 ```
 
-When a silently-dropped clause would be unsafe — returning a broader result set than intended — pass `throwOnError: true` and treat a non-empty `errors` array as a failed request rather than a warning.
+A collected error still changes the results. If a broader or empty result set is unsafe, pass `throwOnError: true`, or treat a non-empty `errors` array as a failed request.
 
 The [Laravel AI tools](laravel-ai.md#errors) always parse with `throwOnError: true`, so an agent sees the error instead of an empty result.
 
-## Syntax cheatsheet
+## Syntax summary
 
 | Operation | Syntax | Example |
 |-----------|--------|---------|
-| Exact match | `field:"value"` | `category:"sports"` |
+| Exact value | `field:"value"` | `category:"sports"` |
 | Number | `field:123` | `price:100` |
 | Boolean | `field:true` | `active:true` |
 | Field exists | `field:*` | `email:*` |
-| IN | `field:[v1,v2]` | `status:["active","pending"]` |
+| Any of | `field:[v1,v2]` | `status:["active","pending"]` |
 | Wildcard | `field:'*pat*'` | `phone:'*650'` |
+| Document IDs | `_id:[id1,id2]` | `_id:["a1","b2"]` |
 | Range | `field:min..max` | `price:100..500` |
 | Greater than | `field>value` | `stock>0` |
 | Less than | `field<value` | `price<100` |
@@ -320,4 +319,4 @@ The [Laravel AI tools](laravel-ai.md#errors) always parse with `throwOnError: tr
 | NOT | `NOT a` | `NOT category:"books"` |
 | Object | `obj.field:value` | `contact.active:true` |
 | Nested | `field:{condition}` | `contact:{active:true}` |
-| Geo | `field:dist[lat,lon]` | `location:1km[51,13]` |
+| Geo distance | `field:dist[lat,lon]` | `location:1km[51,13]` |

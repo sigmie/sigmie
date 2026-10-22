@@ -1,6 +1,6 @@
 ---
 title: Tokenizers
-short_description: Split text into tokens with Elasticsearch tokenizers in Sigmie — word boundaries, whitespace, pattern, simple pattern, path hierarchy, non-letter.
+short_description: Sigmie tokenizer reference for splitting Elasticsearch text into tokens by word boundaries, whitespace, regex patterns, path levels, letters, or n-grams.
 keywords: [tokenizers, tokenization, tokens, text splitting, analysis]
 category: Text Analysis
 order: 2
@@ -9,38 +9,39 @@ related_pages: [analysis, token-filters, char-filters]
 
 # Tokenizers
 
-The tokenizer is the middle stage of the [analysis pipeline](analysis.md). It takes a string and produces tokens — typically words, but the rules depend on which tokenizer you pick.
+The tokenizer splits a string into tokens. It is the middle stage of the [analysis pipeline](analysis.md): it runs after the [char filters](char-filters.md) and before the [token filters](token-filters.md).
 
-For text like:
+An analyzer has exactly one tokenizer. Each tokenizer method replaces the previous one, so the last call wins. Without a tokenizer method, an analyzer uses word boundaries.
 
-```
-"Make your user's search experience great"
-```
+The index builder and `NewAnalyzer` have the same tokenizer methods. The examples call them on `$analyzer`, the `NewAnalyzer` that `withNewAnalyzer()` passes to its callback.
 
-A whitespace tokenizer produces:
+| Builder method | Class | Elasticsearch type | Token boundaries |
+|----------------|-------|--------------------|------------------|
+| `tokenizeOnWordBoundaries()` | `WordBoundaries` | `standard` | Unicode word boundaries |
+| `tokenizeOnWhitespaces()` | `Whitespace` | `whitespace` | Whitespace |
+| `dontTokenize()` | `Noop` | `keyword` | None. The whole input is one token. |
+| `tokenizeOnPattern($pattern, $flags)` | `Pattern` | `pattern` | Each match of a Java regex |
+| `tokenizeOnSimplePattern($pattern)` | `SimplePatternSplit` | `simple_pattern_split` | Each match of a Lucene regex |
+| `tokenizeOnPatternMatch($pattern)` | `SimplePattern` | `simple_pattern` | Each match becomes a token |
+| `tokenizePathHierarchy($delimiter)` | `PathHierarchy` | `path_hierarchy` | Each path level |
+| `tokenizeOnNonLetter()` | `NonLetter` | `letter` | Any character that is not a letter |
+| None | `Ngram` | `ngram` | Overlapping character sequences |
+| `tokenizer(Tokenizer $tokenizer)` | Any tokenizer instance | Set by the instance | Set by the instance |
 
-```
-"Make" "your" "user's" "search" "experience" "great"
-```
-
-Sigmie has tokenizers for word boundaries, whitespace, patterns, paths, non-letters, and a no-op that keeps the input as one token.
+Every builder method also takes an optional `$name` as its last argument. Without one, Sigmie generates a name from a prefix and a random suffix. The class constructors take the name as their first argument.
 
 ## Word boundaries
 
-Produces a token at every word boundary (handles punctuation):
+Splits on Unicode word boundaries and drops most punctuation. This is the default tokenizer.
 
 ```php
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 
+$analyzer->tokenizeOnWordBoundaries();
+
+// Or, with the class:
 $analyzer->tokenizer(new WordBoundaries(name: 'word_boundaries', maxTokenLength: 255));
-
-// Or via the builder shortcut:
-$analyzer->tokenizeOnWordBoundaries(maxTokenLength: 255);
 ```
-
-`maxTokenLength` defaults to 255.
-
-Example:
 
 ```
 "Aw shucks, pluto. I can't be mad at ya!"
@@ -56,40 +57,38 @@ Example:
 → "ya"
 ```
 
-Punctuation is absorbed into the boundary.
+`maxTokenLength` defaults to `255`. Elasticsearch splits a longer token into pieces of that length. Only the class accepts `maxTokenLength`. `tokenizeOnWordBoundaries()` always uses `255`.
 
 ## Whitespace
 
-Splits on whitespace characters only — punctuation stays attached to neighboring tokens:
+Splits on whitespace only. Punctuation stays attached to the word next to it.
 
 ```php
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 
-$analyzer->tokenizer(new Whitespace(name: 'whitespace_tokenizer'));
-
-// Or:
 $analyzer->tokenizeOnWhitespaces();
+
+// Or, with the class:
+$analyzer->tokenizer(new Whitespace(name: 'whitespace_tokenizer'));
 ```
 
-Same input as above:
-
 ```
-"Aw" "shucks," "pluto." "I" "can't" "be" "mad" "at" "ya!"
-```
+"Aw shucks, pluto. I can't be mad at ya!"
 
-`shucks,`, `pluto.`, and `ya!` keep their punctuation.
+→ "Aw" "shucks," "pluto." "I" "can't" "be" "mad" "at" "ya!"
+```
 
 ## No-op
 
-Treats the entire input as a single token. Useful when you want exact-match behavior on text fields:
+Keeps the whole input as one token. Use it for exact matches on a text field.
 
 ```php
 use Sigmie\Index\Analysis\Tokenizers\Noop;
 
-$analyzer->tokenizer(new Noop(name: 'noop_tokenizer'));
-
-// Or:
 $analyzer->dontTokenize();
+
+// Or, with the class:
+$analyzer->tokenizer(new Noop(name: 'noop_tokenizer'));
 ```
 
 ```
@@ -100,15 +99,15 @@ $analyzer->dontTokenize();
 
 ## Pattern
 
-Splits at every match of a regular expression. The matched text **is not** included in any token:
+Splits at each match of a Java regular expression. The matched text is not part of any token.
 
 ```php
 use Sigmie\Index\Analysis\Tokenizers\Pattern;
 
-$analyzer->tokenizer(new Pattern(name: 'pattern_tokenizer', ','));
-
-// Or:
 $analyzer->tokenizeOnPattern(',');
+
+// Or, with the class:
+$analyzer->tokenizer(new Pattern(name: 'comma_tokenizer', pattern: ','));
 ```
 
 ```
@@ -119,17 +118,46 @@ $analyzer->tokenizeOnPattern(',');
 → " for every day is a new day"
 ```
 
+The tokens keep their leading spaces. Add the [`trim()` token filter](token-filters.md#trim) to remove them.
+
+The optional `$flags` argument takes Java regex flags separated by `|`, for example `'CASE_INSENSITIVE|COMMENTS'`:
+
+```php
+$analyzer->tokenizeOnPattern('\s+and\s+', flags: 'CASE_INSENSITIVE');
+```
+
+## Simple pattern split
+
+Splits at each match of a Lucene regular expression. Lucene regex has fewer features than Java regex, and Elasticsearch runs it faster.
+
+```php
+use Sigmie\Index\Analysis\Tokenizers\SimplePatternSplit;
+
+$analyzer->tokenizeOnSimplePattern('_');
+
+// Or, with the class:
+$analyzer->tokenizer(new SimplePatternSplit(name: 'underscore_tokenizer', pattern: '_'));
+```
+
+```
+"alpha_beta_gamma"
+
+→ "alpha"
+→ "beta"
+→ "gamma"
+```
+
 ## Simple pattern
 
-Outputs each match of the pattern as a token (the inverse of `Pattern`):
+Turns each match of a Lucene regular expression into a token and drops the rest of the text. It does the opposite of simple pattern split.
 
 ```php
 use Sigmie\Index\Analysis\Tokenizers\SimplePattern;
 
-$analyzer->tokenizer(new SimplePattern(name: 'simple_pattern', "'.*'"));
-
-// Or:
 $analyzer->tokenizeOnPatternMatch("'.*'");
+
+// Or, with the class:
+$analyzer->tokenizer(new SimplePattern(name: 'quoted_tokenizer', pattern: "'.*'"));
 ```
 
 ```
@@ -138,22 +166,22 @@ $analyzer->tokenizeOnPatternMatch("'.*'");
 → "'Fairytales can come true'"
 ```
 
-Only the quoted phrase becomes a token.
+> **Note:** The two method names look alike. `tokenizeOnSimplePattern()` splits at matches. `tokenizeOnPatternMatch()` keeps only the matches.
+
+The `SimplePattern` class also takes a `$flags` argument. The `simple_pattern` tokenizer does not apply it: with `[A-Z]+` and `CASE_INSENSITIVE`, the input `abc ABC DEF 123` still produces only `ABC` and `DEF`.
 
 ## Path hierarchy
 
-Produces a token at every level of a hierarchical path:
+Produces one token for each level of a path.
 
 ```php
 use Sigmie\Index\Analysis\Tokenizers\PathHierarchy;
 
-$analyzer->tokenizer(new PathHierarchy(delimiter: '/'));
-
-// Or:
 $analyzer->tokenizePathHierarchy(delimiter: '/');
-```
 
-Default delimiter is `/`.
+// Or, with the class:
+$analyzer->tokenizer(new PathHierarchy(name: 'path_tokenizer', delimiter: '/'));
+```
 
 ```
 "Disney/Movies/Musical/Sleeping Beauty"
@@ -164,19 +192,19 @@ Default delimiter is `/`.
 → "Disney/Movies/Musical/Sleeping Beauty"
 ```
 
-Useful for filtering on path prefixes — searching "Disney/Movies" matches every nested entry.
+The delimiter defaults to `/`. Every path under `Disney/Movies` has the token `Disney/Movies`, so a term query for `Disney/Movies` matches all of them.
 
 ## Non-letter
 
-Splits on any character that isn't a letter:
+Splits at every character that is not a letter. Digits and punctuation are dropped.
 
 ```php
 use Sigmie\Index\Analysis\Tokenizers\NonLetter;
 
-$analyzer->tokenizer(new NonLetter);
-
-// Or:
 $analyzer->tokenizeOnNonLetter();
+
+// Or, with the class:
+$analyzer->tokenizer(new NonLetter(name: 'letter_tokenizer'));
 ```
 
 ```
@@ -188,8 +216,32 @@ $analyzer->tokenizeOnNonLetter();
 → "beyond"
 ```
 
+## N-gram
+
+Produces every character sequence between `minGram` and `maxGram` characters long. There is no builder method. Pass an instance to `tokenizer()`.
+
+```php
+use Sigmie\Index\Analysis\Tokenizers\Ngram;
+
+$analyzer->tokenizer(new Ngram(name: 'two_gram_tokenizer', minGram: 2, maxGram: 2));
+```
+
+```
+"abcd"
+
+→ "ab"
+→ "bc"
+→ "cd"
+```
+
+| Argument | Default | Elasticsearch setting |
+|----------|---------|-----------------------|
+| `minGram` | `3` | `min_gram` |
+| `maxGram` | `3` | `max_gram` |
+| `tokenChars` | `['letter']` | `token_chars` |
+
 ## See also
 
-- [Analysis](analysis.md) — the full pipeline.
-- [Token Filters](token-filters.md) — transforming tokens after tokenization.
-- [Character Filters](char-filters.md) — pre-processing before tokenization.
+- [Text Analysis](analysis.md): the full pipeline.
+- [Token Filters](token-filters.md): changes to tokens after the tokenizer.
+- [Character Filters](char-filters.md): changes to the string before the tokenizer.

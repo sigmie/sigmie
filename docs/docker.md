@@ -1,7 +1,7 @@
 ---
 title: Docker Setup
-short_description: Run Elasticsearch, OpenSearch, and local AI services — embeddings, reranker, CLIP — via Docker Compose for semantic search development with Sigmie.
-keywords: [docker, docker compose, local development, embeddings, llm]
+short_description: Run Elasticsearch or OpenSearch plus local Infinity embedding, reranking, and CLIP services with Docker Compose to build Sigmie semantic search for free.
+keywords: [docker, docker compose, local development, embeddings, reranker, infinity, llm]
 category: Configuration
 order: 2
 related_pages: [installation, connection, opensearch, semantic-search]
@@ -9,79 +9,62 @@ related_pages: [installation, connection, opensearch, semantic-search]
 
 # Docker
 
-Sigmie ships a `docker-compose.yml` that runs Elasticsearch (or OpenSearch) together with local embedding and reranking services. The Infinity-based services let you build semantic search without paid APIs in development.
+This page shows how to run a search engine and local AI services with Docker Compose. The [Infinity](https://github.com/michaelfeil/infinity) services give you embeddings and reranking in development without a paid API.
 
-## Start everything
+The `docker-compose.yml` file is in the root of the [Sigmie repository](https://github.com/sigmie/sigmie). The Composer package does not include it. Clone the repository, or copy the file into your project. The `llm` service also needs `scripts/ollama-entrypoint.sh` from the repository.
 
-```bash
-docker-compose up -d
-```
-
-The first start downloads models and takes 5–10 minutes. After that, restarts are quick.
-
-> **Note:** Elasticsearch and OpenSearch both bind port 9200. Start one or the other, not both.
-
-## Services
+## Services in the Compose file
 
 | Service | Port | Model | Purpose |
 |---------|------|-------|---------|
-| `elasticsearch` | 9200 | — | Elasticsearch 9.1.3, security disabled |
-| `opensearch` | 9200 | — | OpenSearch 3.0 with default admin auth |
-| `embeddings` | 7997 | BAAI/bge-small-en-v1.5 (384-dim) | Text embeddings |
-| `reranker` | 7998 | cross-encoder/ms-marco-MiniLM-L-6-v2 | Result reranking |
-| `image-embeddings` | 7996 | TinyCLIP ViT-8M-16 | Image/text embeddings |
-| `llm` | 7999 | Ollama (app-side only) | Optional; Sigmie has no LLM client |
+| `elasticsearch` | 9200 | none | Elasticsearch 9.1.3, single node, security off |
+| `opensearch` | 9200 | none | OpenSearch 3, single node, user `admin`, password `MyStrongPass123!@#` |
+| `embeddings` | 7997 | `BAAI/bge-small-en-v1.5` (384 dimensions) | Text embeddings |
+| `reranker` | 7998 | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Reranking |
+| `image-embeddings` | 7996 | `wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M` | Image and text embeddings |
+| `llm` | 7999 | Ollama, `tinyllama` by default | Text generation for your application. Sigmie has no LLM client. |
 
-## Start only what you need
+> **Note:** Elasticsearch and OpenSearch both bind port 9200. Start one of them, not both.
+
+## Start the services
+
+Start only the services you need:
 
 ```bash
-# Minimal: keyword search only
-docker-compose up -d elasticsearch
+# Keyword search
+docker compose up -d elasticsearch
 
-# Add semantic search
-docker-compose up -d elasticsearch embeddings
+# Semantic search
+docker compose up -d elasticsearch embeddings
 
-# Semantic search + reranking
-docker-compose up -d elasticsearch embeddings reranker
+# Semantic search with reranking
+docker compose up -d elasticsearch embeddings reranker
 
 # Image search
-docker-compose up -d elasticsearch image-embeddings
+docker compose up -d elasticsearch image-embeddings
 ```
 
-## Connect Sigmie to the local services
+The first start downloads the models, which takes several minutes. Later starts reuse the downloads.
 
-Register the local embeddings service with Sigmie:
+To use OpenSearch, replace `elasticsearch` with `opensearch` in these commands.
 
-```php
-use Sigmie\AI\APIs\InfinityEmbeddingsApi;
+## Check that the services are up
 
-$sigmie->registerApi('embeddings', new InfinityEmbeddingsApi(
-    baseUrl: 'http://localhost:7997',
-    model: 'BAAI/bge-small-en-v1.5',
-));
+```bash
+docker compose ps
+curl http://localhost:7997/health                  # embeddings
+curl http://localhost:7998/health                  # reranker
+curl http://localhost:7996/health                  # image embeddings
+curl http://localhost:9200/_cluster/health         # Elasticsearch
+curl -k -u 'admin:MyStrongPass123!@#' \
+    https://localhost:9200/_cluster/health         # OpenSearch
 ```
 
-Register the reranker:
+Each health endpoint returns HTTP 200 when the service is ready. Keep the OpenSearch credentials in single quotes, or the shell expands the `!` in the password.
 
-```php
-use Sigmie\AI\APIs\InfinityRerankApi;
+## Connect Sigmie to the engine
 
-$sigmie->registerApi('my-rerank', new InfinityRerankApi(
-    baseUrl: 'http://localhost:7998',
-    model: 'cross-encoder/ms-marco-MiniLM-L-6-v2',
-));
-
-$response = $sigmie->newSearch('docs')
-    ->properties($props)
-    ->queryString('return policy')
-    ->get();
-
-$reranked = $response->rerank('my-rerank', ['content']);
-```
-
-See [Semantic Search](semantic-search.md) for using these in mappings, and [Retrieval and Agents](rag.md) for combining them with generation.
-
-## Connect to Elasticsearch
+For Elasticsearch:
 
 ```php
 use Sigmie\Sigmie;
@@ -89,7 +72,7 @@ use Sigmie\Sigmie;
 $sigmie = Sigmie::create(hosts: ['127.0.0.1:9200']);
 ```
 
-## Connect to OpenSearch
+For OpenSearch:
 
 ```php
 use Sigmie\Sigmie;
@@ -105,9 +88,38 @@ $sigmie = Sigmie::create(
 );
 ```
 
-## Environment variables
+## Register the local AI services
 
-Copy `.env.example` to `.env` to customize service URLs:
+Register each service under a name. Mappings and searches refer to that name:
+
+```php
+use Sigmie\AI\APIs\InfinityClipApi;
+use Sigmie\AI\APIs\InfinityEmbeddingsApi;
+use Sigmie\AI\APIs\InfinityRerankApi;
+
+$sigmie->registerApi('embeddings', new InfinityEmbeddingsApi(
+    baseUrl: 'http://localhost:7997',
+    model: 'BAAI/bge-small-en-v1.5',
+));
+
+$sigmie->registerApi('rerank', new InfinityRerankApi(
+    baseUrl: 'http://localhost:7998',
+    model: 'cross-encoder/ms-marco-MiniLM-L-6-v2',
+));
+
+$sigmie->registerApi('clip', new InfinityClipApi(
+    baseUrl: 'http://localhost:7996',
+    model: 'wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M',
+));
+```
+
+These URLs and models are also the constructor defaults, so `new InfinityEmbeddingsApi()` gives the same client.
+
+To use the services, see [Semantic Search](semantic-search.md) for embeddings and reranking, and [Retrieval and Agents](rag.md) for retrieval with generation.
+
+## Set service URLs and API keys
+
+Copy `.env.example` to `.env` to change the service URLs:
 
 ```ini
 LOCAL_EMBEDDING_URL=http://localhost:7997
@@ -115,7 +127,9 @@ LOCAL_RERANK_URL=http://localhost:7998
 LOCAL_CLIP_URL=http://localhost:7996
 ```
 
-For cloud API keys:
+Sigmie's test base class, `Sigmie\Testing\TestCase`, reads these variables. The library does not. Your application reads its own settings and passes them to `registerApi()`.
+
+The same file holds keys for hosted providers:
 
 ```ini
 OPENAI_API_KEY=sk-...
@@ -124,78 +138,63 @@ COHERE_API_KEY=...
 MIXEDBREAD_API_KEY=...
 ```
 
-Sigmie itself doesn't read these — your application registers the API clients via `registerApi()`.
-
-## Health checks
+## Read the logs
 
 ```bash
-docker-compose ps                                  # all services
-curl http://localhost:7997/health                  # embeddings
-curl http://localhost:7998/health                  # reranker
-curl http://localhost:7996/health                  # image embeddings
-curl http://localhost:9200/_cluster/health         # Elasticsearch
-curl -u admin:MyStrongPass123!@# -k \
-    https://localhost:9200/_cluster/health         # OpenSearch
+docker compose logs -f                # all services, follow
+docker compose logs embeddings        # one service
 ```
 
-## Data persistence
+## Reset the data
 
-All data lives in `./data/`:
+The services store their data in `./data/`:
 
 ```
 ./data/
 ├── embeddings/         # downloaded model
 ├── reranker/           # downloaded model
 ├── image-embeddings/   # downloaded model
-├── llm/                # Ollama models (if used)
+├── llm/                # Ollama models
 ├── elasticsearch/      # indices and documents
 └── opensearch/         # indices and documents
 ```
 
-Reset everything:
-
-```bash
-docker-compose down -v
-rm -rf ./data/
-```
+To start from nothing, stop the services and delete the directory:
 
 > **Warning:** This deletes all indices, documents, and downloaded models.
 
-## Logs
-
 ```bash
-docker-compose logs -f                # all services, follow
-docker-compose logs embeddings        # one service
-docker-compose logs elasticsearch
+docker compose down
+rm -rf ./data/
 ```
 
-## Resource budget
+## Plan memory and disk
+
+These figures are approximate:
 
 | Service | RAM | Disk |
 |---------|-----|------|
 | Embeddings | 1–2 GB | ~500 MB |
 | Reranker | 1–2 GB | ~400 MB |
 | Image embeddings | 1–2 GB | ~300 MB |
-| Elasticsearch | 2–4 GB | varies |
-| OpenSearch | 2–4 GB | varies |
+| Elasticsearch | 2–4 GB | depends on your data |
+| OpenSearch | 2–4 GB | depends on your data |
 
-For Elasticsearch + embeddings + reranker, give Docker at least 8 GB.
+For Elasticsearch with embeddings and reranking, give Docker at least 8 GB of memory.
 
-## Troubleshooting
+## Fix common problems
 
-**Port 9200 already in use.** Stop the engine you're not using:
-
-```bash
-docker-compose stop elasticsearch
-docker-compose up -d opensearch
-```
-
-**Embeddings service won't start.** Check the logs — the first start downloads the model:
+**Port 9200 is already in use.** The other engine is running. Stop it, then start the one you want:
 
 ```bash
-docker-compose logs embeddings
+docker compose stop elasticsearch
+docker compose up -d opensearch
 ```
 
-Wait for "Model loaded successfully."
+**The embeddings service does not respond.** On the first start it is still downloading the model. Follow the logs and wait until `curl http://localhost:7997/health` returns HTTP 200:
 
-**Out of memory.** Allocate more RAM in Docker Desktop preferences.
+```bash
+docker compose logs -f embeddings
+```
+
+**A container stops with an out-of-memory error.** Give Docker more memory in the Docker Desktop settings.

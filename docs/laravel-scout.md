@@ -1,6 +1,6 @@
 ---
 title: Laravel Scout
-short_description: Use Sigmie as a Laravel Scout driver — index Eloquent models in Elasticsearch with typo tolerance, highlighting, facets, and custom analyzers.
+short_description: Index and search Eloquent models in Elasticsearch through the Sigmie Laravel Scout driver, with typed mappings, typo tolerance, highlighting, and analyzers.
 keywords: [laravel scout, laravel, eloquent, integration, scout driver]
 category: Integrations
 order: 1
@@ -9,70 +9,53 @@ related_pages: [installation, search, document]
 
 # Laravel Scout
 
-`sigmie/elasticsearch-scout` is a [Laravel Scout](https://laravel.com/docs/scout) driver. It plugs into Scout's model lifecycle so writes and deletes flow into Elasticsearch automatically, and `Model::search()` runs through Sigmie's search builder.
+`sigmie/elasticsearch-scout` is a [Laravel Scout](https://laravel.com/docs/scout) driver. Scout sends model writes and deletes to Elasticsearch, and `Model::search()` runs through Sigmie's [search builder](search.md).
 
-## Install
+The driver connects with the Elasticsearch driver only. It has no OpenSearch option.
 
-Install Scout first:
+## Install the driver
 
-```bash
-composer require laravel/scout
-```
+1. Install Scout:
 
-Publish its config:
+   ```bash
+   composer require laravel/scout
+   ```
 
-```bash
-php artisan vendor:publish --provider="Laravel\Scout\ScoutServiceProvider"
-```
+2. Publish the Scout config:
 
-Install the Sigmie driver:
+   ```bash
+   php artisan vendor:publish --provider="Laravel\Scout\ScoutServiceProvider"
+   ```
 
-```bash
-composer require sigmie/elasticsearch-scout
-```
+3. Install the Sigmie driver:
 
-Set the Scout driver in your `.env`:
+   ```bash
+   composer require sigmie/elasticsearch-scout
+   ```
 
-```ini
-SCOUT_DRIVER=elasticsearch
-```
+4. Set the Scout driver in `.env`:
 
-Publish the Sigmie config (optional, for customization):
+   ```ini
+   SCOUT_DRIVER=elasticsearch
+   ```
 
-```bash
-php artisan vendor:publish --provider="Sigmie\ElasticsearchScout\ElasticsearchScoutServiceProvider"
-```
+5. To change the connection or the index settings, publish the driver config:
 
-This creates `config/elasticsearch-scout.php`:
+   ```bash
+   php artisan vendor:publish --provider="Sigmie\ElasticsearchScout\ElasticsearchScoutServiceProvider"
+   ```
 
-```php
-return [
-    'hosts' => env('ELASTICSEARCH_HOSTS', '127.0.0.1:9200'),
-    'auth' => [
-        'type' => env('ELASTICSEARCH_AUTH_TYPE', 'none'),
-        'user' => env('ELASTICSEARCH_USER', ''),
-        'password' => env('ELASTICSEARCH_PASSWORD', ''),
-        'token' => env('ELASTICSEARCH_TOKEN', ''),
-        'headers' => [],
-    ],
-    'guzzle_config' => [
-        'allow_redirects' => false,
-        'http_errors' => false,
-        'connect_timeout' => 15,
-    ],
-    'index-settings' => [
-        'shards' => env('ELASTICSEARCH_INDEX_SHARDS', 1),
-        'replicas' => env('ELASTICSEARCH_INDEX_REPLICAS', 2),
-    ],
-];
-```
+   This creates `config/elasticsearch-scout.php`. See [Configuration reference](#configuration-reference) for its keys.
 
 ## Make a model searchable
 
-Use **Sigmie's** `Searchable` trait instead of Laravel Scout's. They have the same name; the Sigmie version adds the methods Sigmie needs:
+Use the `Searchable` trait from `Sigmie\ElasticsearchScout`, not the one from Laravel Scout. The Sigmie trait includes Scout's trait and adds the methods the driver calls.
+
+Define the index fields in `elasticsearchProperties()`. The trait declares it abstract, so every model must implement it:
 
 ```php
-use Sigmie\ElasticsearchScout\Searchable;
+use Illuminate\Database\Eloquent\Model;
+use Sigmie\ElasticsearchScout\Searchable; // [tl! highlight]
 use Sigmie\Mappings\NewProperties;
 
 class Movie extends Model
@@ -84,39 +67,28 @@ class Movie extends Model
         $properties->title('title');
         $properties->name('director');
         $properties->category('genre');
-        $properties->date('created_at');
-        $properties->date('updated_at');
+        $properties->datetime('created_at');
+        $properties->datetime('updated_at');
     }
 }
 ```
 
-`elasticsearchProperties()` is required — it defines the index schema for this model.
+For the field types you can use, see [Mappings](mappings.md).
 
-## Build the index
+## Create the index and import rows
+
+Create the index, then import the rows that already exist:
 
 ```bash
 php artisan scout:index "App\Models\Movie"
-```
-
-## Import existing rows
-
-```bash
 php artisan scout:import "App\Models\Movie"
 ```
 
-## Update the index settings
+Pass the model class to `scout:index`. The driver creates the model to read its properties. The index name is the Scout prefix (`scout.prefix`) followed by the model's table name, for example `movies`.
 
-Unlike other Scout drivers, Sigmie requires the model name when re-syncing:
+## Customize every search
 
-```bash
-php artisan scout:sync-index-settings "App\Models\Movie"
-```
-
-This re-applies your `elasticsearchProperties()` and `elasticsearchIndex()` configuration.
-
-## Customize the search
-
-Define `elasticsearchSearch()` to use any [`NewSearch`](search.md) feature:
+Define `elasticsearchSearch()` to configure the [`NewSearch`](search.md) builder for every search on the model:
 
 ```php
 use Sigmie\Search\NewSearch;
@@ -138,7 +110,7 @@ class Movie extends Model
         $search->typoTolerantAttributes(['title', 'director']);
         $search->retrieve(['title', 'director']);
         $search->fields(['title', 'director']);
-        $search->highlighting(
+        $search->highlighting( // [tl! highlight]
             ['title', 'director'],
             '<span class="font-bold">',
             '</span>',
@@ -147,7 +119,7 @@ class Movie extends Model
 }
 ```
 
-For one-off customization, pass a closure to `Model::search()`:
+To change one search, pass a closure to `Model::search()`. It runs after `elasticsearchSearch()`:
 
 ```php
 use Sigmie\Search\NewSearch;
@@ -157,7 +129,26 @@ Movie::search('Star Wars', function (NewSearch $search) {
 })->get();
 ```
 
-## Customize index analysis
+Without `take()`, a search returns 10 results.
+
+## Filter results
+
+Scout's `where()`, `whereIn()`, and `whereNotIn()` become a Sigmie [filter string](filter-parser.md):
+
+```php
+Movie::search('Star Wars')
+    ->where('genre', 'action')
+    ->whereIn('director', ['George Lucas', 'Irvin Kershner'])
+    ->get();
+
+// director:['George Lucas','Irvin Kershner'] AND genre:'action'
+```
+
+Map each field you filter on with a type that supports filters, such as `category()` or `keyword()`.
+
+## Customize the index analysis
+
+Define `elasticsearchIndex()` to configure the [`NewIndex`](index.md) builder. Return the builder. A language builder, such as `$index->language(new English)`, is a different object, and the driver uses the one you return:
 
 ```php
 use Sigmie\Index\NewIndex;
@@ -167,61 +158,94 @@ class Movie extends Model
     use Searchable;
 
     public function elasticsearchProperties(NewProperties $props): void { /* ... */ }
-    public function elasticsearchSearch(NewSearch $search): void { /* ... */ }
 
-    public function elasticsearchIndex(NewIndex $index): void
+    public function elasticsearchIndex(NewIndex $index): NewIndex
     {
-        $index->tokenizeOnWordBoundaries()
+        return $index->tokenizeOnWordBoundaries() // [tl! highlight]
             ->lowercase()
             ->trim()
             ->shards(3)
-            ->replicas(3);
+            ->replicas(2);
     }
 }
 ```
 
-If you don't define `elasticsearchIndex()`, Sigmie defaults to tokenizing on word boundaries, lowercase, trim.
+Without an override, the trait tokenizes on word boundaries, lowercases, trims, and sets 1 shard and 0 replicas.
 
-## Accessing hit metadata
+> **Note:** The driver applies the `index-settings` shards and replicas first, then calls `elasticsearchIndex()`. The default method sets 1 shard and 0 replicas, so it replaces `ELASTICSEARCH_INDEX_SHARDS` and `ELASTICSEARCH_INDEX_REPLICAS`. To use those values, override `elasticsearchIndex()` and leave out `shards()` and `replicas()`.
 
-Each model returned by Scout carries the raw Elasticsearch hit on `$model->hit`:
+## Apply changed settings to an existing index
+
+After you change `elasticsearchProperties()` or `elasticsearchIndex()`, run:
+
+```bash
+php artisan scout:sync-index-settings "App\Models\Movie"
+```
+
+The command takes the model class, not an index name. It builds a new index with the current properties and settings, copies the documents, moves the alias to it, and deletes the old index. The index must exist. Create it with `scout:index` first.
+
+## Read the score of each result
+
+Each model in the results carries Scout metadata from its hit:
 
 ```php
 $movie = Movie::search('Star Wars')->get()->first();
 
-$movie->hit['_score'];                          // 32.343453
-$movie->hit['highlight']['title'][0];           // <span class="font-bold">Star Wars</span>
+$movie->scoutMetadata()['_score'];    // 32.343453
+$movie->scoutMetadata()['_id'];       // "1"
+$movie->scoutMetadata()['_source'];   // the indexed document
 ```
 
-## Date formatting
+The models do not carry highlights. `Movie::search('Star Wars')->raw()` returns the search response as a `JsonResponse`, and each hit in it has a `highlight` key.
 
-Sigmie expects dates in `Y-m-d H:i:s.u`. Laravel's default `toSearchableArray` converts Eloquent timestamps automatically; if you override `toSearchableArray()`, do the conversion yourself:
+## Index dates
+
+The driver formats every `DateTime` and `Carbon` value in `toSearchableArray()` as `Y-m-d\TH:i:s.u\Z`. The default `toSearchableArray()` already returns Eloquent timestamps as strings in that form, such as `2023-04-07T12:38:29.000000Z`. Map timestamp columns with `datetime()`.
+
+If you override `toSearchableArray()`, return the `Carbon` values and let the driver format them:
 
 ```php
 public function toSearchableArray(): array
 {
-    $array = $this->toArray();
-
-    $array['created_at'] = $this->created_at?->format('Y-m-d H:i:s.u');
-    $array['updated_at'] = $this->updated_at?->format('Y-m-d H:i:s.u');
-
-    return $array;
+    return [
+        'title' => $this->title,
+        'created_at' => $this->created_at,
+        'updated_at' => $this->updated_at,
+    ];
 }
 ```
 
-Or use a different format and tell Sigmie about it:
+## Configuration reference
+
+`config/elasticsearch-scout.php` has these keys:
+
+| Key | Environment variable | Default | Description |
+|-----|----------------------|---------|-------------|
+| `hosts` | `ELASTICSEARCH_HOSTS` | `127.0.0.1:9200` | Hosts, separated by commas with no spaces. |
+| `auth.type` | `ELASTICSEARCH_AUTH_TYPE` | `none` | `none`, `basic`, `token`, or `headers`. |
+| `auth.user` | `ELASTICSEARCH_USER` | `''` | Username for `basic`. |
+| `auth.password` | `ELASTICSEARCH_PASSWORD` | `''` | Password for `basic`. |
+| `auth.token` | `ELASTICSEARCH_TOKEN` | `''` | Token for `token`, sent as `Authorization: Bearer <token>`. |
+| `auth.headers` | none | `[]` | Headers for `headers`. |
+| `guzzle_config` | none | see below | Guzzle options for the HTTP client. |
+| `index-settings.shards` | `ELASTICSEARCH_INDEX_SHARDS` | `1` | Shards for new indices. |
+| `index-settings.replicas` | `ELASTICSEARCH_INDEX_REPLICAS` | `2` | Replicas for new indices. |
+
+The default `guzzle_config` is:
 
 ```php
-public function elasticsearchProperties(NewProperties $props): void
-{
-    $props->date('created_at')->format('MM/dd/yyyy');
-    $props->date('updated_at')->format('MM/dd/yyyy');
-}
+'guzzle_config' => [
+    'allow_redirects' => false,
+    'http_errors' => false,
+    'connect_timeout' => 15,
+],
 ```
 
-## Authentication
+Add any [Guzzle option](connection.md#configuration-options) to it, such as `'timeout' => 30`.
 
-### Basic auth
+## Configure authentication
+
+For basic auth:
 
 ```ini
 ELASTICSEARCH_AUTH_TYPE=basic
@@ -229,48 +253,32 @@ ELASTICSEARCH_USER=elastic
 ELASTICSEARCH_PASSWORD=your-password
 ```
 
-### Bearer token
+For a bearer token:
 
 ```ini
 ELASTICSEARCH_AUTH_TYPE=token
 ELASTICSEARCH_TOKEN=your-token-here
 ```
 
-### Custom headers
+For an API key or other custom headers, set the type to `headers`:
 
-If you need API keys or custom auth headers, populate `'headers'` in `config/elasticsearch-scout.php`:
+```ini
+ELASTICSEARCH_AUTH_TYPE=headers
+```
+
+Then fill `auth.headers` in `config/elasticsearch-scout.php`:
 
 ```php
 'headers' => [
-    'X-App-Token' => env('APP_TOKEN'),
     'Authorization' => 'ApiKey ' . env('ELASTICSEARCH_API_KEY'),
 ],
 ```
 
-## Multiple hosts
-
-```ini
-ELASTICSEARCH_HOSTS=10.0.0.1:9200,10.0.0.2:9200,10.0.0.3:9200
-```
-
-## Guzzle configuration
-
-Tune the underlying HTTP client in `config/elasticsearch-scout.php`:
-
-```php
-'guzzle_config' => [
-    'allow_redirects' => false,
-    'http_errors' => false,
-    'connect_timeout' => 15,
-    'timeout' => 30,
-],
-```
-
-See [Connection Setup](connection.md) for the full list of Guzzle options Sigmie understands.
+The driver sends `auth.headers` only when the type is `headers`.
 
 ## See also
 
-- [Search](search.md) — every option available in `elasticsearchSearch()`.
-- [Mappings & Properties](mappings.md) — types available in `elasticsearchProperties()`.
-- [Indices](index.md) — analysis options for `elasticsearchIndex()`.
-- [Laravel AI SDK](laravel-ai.md) — expose Scout-indexed models as AI agent tools.
+- [Search](search.md) for every option in `elasticsearchSearch()`.
+- [Mappings](mappings.md) for the field types in `elasticsearchProperties()`.
+- [Indices](index.md) for the analysis options in `elasticsearchIndex()`.
+- [Laravel AI SDK](laravel-ai.md) to expose Scout models as AI agent tools.

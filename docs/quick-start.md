@@ -1,60 +1,81 @@
 ---
-title: Quick Start
-short_description: Build your first Sigmie search in five minutes — define a schema, index documents, and search with typo tolerance, filters, sorting, and weighting.
+title: Quick start
+short_description: Build a product search with Sigmie and Elasticsearch in one PHP script. Create an index, add products, then search with typos, filters, sorting, and facets.
 keywords: [quick start, tutorial, first search, getting started]
 category: Getting Started
 order: 3
 related_pages: [installation, introduction, search, document]
 ---
 
-# Quick Start
+# Quick start
 
-In five minutes you'll have a product search that handles typos, filters by stock and price, and returns relevance-ranked results.
+In this tutorial, we build a search for a catalog of three products. By the end, it finds a product from a misspelled word, filters by stock and price, sorts by price, and counts products per category.
 
-## Prerequisites
+All code goes in one file, `search.php`. Each step adds code to the end of the file, and you run the whole file again.
 
-- Sigmie [installed](installation.md)
-- Elasticsearch running on `127.0.0.1:9200`
+## Before you start
 
-Quick sanity check:
+You need:
+
+- Sigmie in a Composer project. See [Installation](installation.md).
+- Elasticsearch on `127.0.0.1:9200` with security off. The Docker command in [Start Elasticsearch locally](installation.md#start-elasticsearch-locally) gives you one.
+
+## Step 1: Connect
+
+Create `search.php` in your project root:
 
 ```php
+<?php
+
+require_once 'vendor/autoload.php';
+
+use Sigmie\Document\Document;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Sigmie;
 
 $sigmie = Sigmie::create(hosts: ['127.0.0.1:9200']);
 
-$sigmie->isConnected();   // true
+var_dump($sigmie->isConnected());
 ```
 
-## Step 1: Define a schema
+Run it:
 
-`NewProperties` is your schema builder. Use high-level types — they wire up the right analyzers and queries underneath.
+```bash
+php search.php
+```
+
+The output is:
+
+```
+bool(true)
+```
+
+If you see `bool(false)`, Elasticsearch is not reachable. Check that the node runs on port 9200.
+
+## Step 2: Create the index and add products
+
+First, we describe the fields. `NewProperties` holds the field types, and each type decides how Elasticsearch stores and searches the field. Add this to `search.php`:
 
 ```php
-use Sigmie\Mappings\NewProperties;
-
 $props = new NewProperties;
-$props->title('name');         // full-text searchable title
-$props->text('description');   // long-form searchable text
-$props->category('category');  // exact-match category
-$props->price();               // numeric, filterable by range
+$props->title('name');
+$props->text('description');
+$props->category('category');
+$props->price();
 $props->bool('in_stock');
 ```
 
-## Step 2: Create the index
+Now, we create the `products` index from those properties and add three products. `deleteIfExists()` removes the index from an earlier run, so you can run the script again:
 
 ```php
+$sigmie->deleteIfExists('products');
+
 $sigmie->newIndex('products')
     ->properties($props)
     ->create();
-```
-
-## Step 3: Index documents
-
-```php
-use Sigmie\Document\Document;
 
 $sigmie->collect('products', refresh: true)
+    ->properties($props)
     ->merge([
         new Document([
             'name' => 'Laptop Pro',
@@ -78,152 +99,159 @@ $sigmie->collect('products', refresh: true)
             'in_stock' => false,
         ]),
     ]);
+
+echo $sigmie->collect('products')->count(), "\n";
 ```
 
-`refresh: true` makes documents immediately searchable. Omit it in production for better bulk-indexing performance.
+`refresh: true` makes the products searchable as soon as `merge()` returns. Leave it out for large imports. See [Documents](document.md).
 
-## Step 4: Search
+Run the script. The output now ends with:
+
+```
+3
+```
+
+## Step 3: Search for a word
+
+We print product names in every step from here on. Add a small helper and the first search:
 
 ```php
-$results = $sigmie->newSearch('products')
-    ->properties($props)
-    ->queryString('laptop')
-    ->get();
-
-foreach ($results->hits() as $hit) {
-    echo $hit['name'] . "\n";
+function printNames($results): void
+{
+    foreach ($results->hits() as $hit) {
+        echo $hit['name'], "\n";
+    }
 }
-// Laptop Pro
-```
 
-## Step 5: Tolerate typos
+echo "-- laptop\n";
 
-```php
-$results = $sigmie->newSearch('products')
-    ->properties($props)
-    ->queryString('lapto')                        // typo
-    ->typoTolerance()                             // [tl! highlight]
-    ->get();
-// Laptop Pro
-```
-
-Defaults: one typo allowed for terms of 3+ characters, two typos for 6+. Override with `typoTolerance(oneTypoChars: 4, twoTypoChars: 8)`.
-
-## Step 6: Filter
-
-The [filter parser](filter-parser.md) reads like a sentence:
-
-```php
-$results = $sigmie->newSearch('products')
-    ->properties($props)
-    ->queryString('cable')
-    ->filters('in_stock:true')                    // [tl! highlight]
-    ->get();
-// (no results — USB-C Cable is out of stock)
-```
-
-Combine clauses with `AND`, `OR`, and `NOT`:
-
-```php
-->filters('category:"accessories" AND price:<=100')
-->filters('price:100..500 AND in_stock:true')
-->filters('NOT category:"books"')
-```
-
-## Step 7: Sort and paginate
-
-```php
-$results = $sigmie->newSearch('products')
-    ->properties($props)
-    ->queryString('mouse cable')
-    ->sort('_score:desc price:asc')
-    ->from(0)
-    ->size(10)
-    ->get();
-```
-
-`_score:desc` is the default. `_score:asc` is not allowed — Elasticsearch always sorts relevance highest-first.
-
-## Step 8: Weight fields
-
-```php
-$results = $sigmie->newSearch('products')
+printNames($sigmie->newSearch('products')
     ->properties($props)
     ->queryString('laptop')
-    ->weight(['name' => 3, 'description' => 1])   // [tl! highlight]
-    ->get();
+    ->get());
 ```
 
-A match in `name` now scores 3× higher than the same match in `description`.
+Run the script. The new output is:
 
-## Putting it together
-
-```php
-$results = $sigmie->newSearch('products')
-    ->properties($props)
-    ->queryString('wireless laptop')
-    ->typoTolerance()
-    ->filters('category:"electronics" AND price:100..2000 AND in_stock:true')
-    ->weight(['name' => 3, 'description' => 1])
-    ->sort('_score:desc price:asc')
-    ->size(20)
-    ->get();
-
-echo "Found {$results->total()} products\n";
-
-foreach ($results->hits() as $hit) {
-    printf("%s — $%d\n", $hit['name'], $hit['price']);
-}
+```
+-- laptop
+Laptop Pro
 ```
 
-## Add facets
+## Step 4: Find a misspelled word
 
-Faceted navigation is one method away:
+Users mistype. Search for `laptp`, with typo tolerance on the `name` field:
 
 ```php
-$props->category('brand')->facetDisjunctive();   // enable faceting
+echo "-- laptp\n";
+
+printNames($sigmie->newSearch('products')
+    ->properties($props)
+    ->queryString('laptp')
+    ->typoTolerance()                    // [tl! highlight]
+    ->typoTolerantAttributes(['name'])   // [tl! highlight]
+    ->get());
+```
+
+Run the script. The new output is:
+
+```
+-- laptp
+Laptop Pro
+```
+
+Without the two highlighted lines, this search finds nothing. `typoTolerance()` sets the rules: one typo in words of 3 or more characters, two typos in words of 6 or more. `typoTolerantAttributes()` names the fields the rules apply to.
+
+## Step 5: Filter by stock and price
+
+A filter string limits the results without changing their order. An empty query string matches every product:
+
+```php
+echo "-- in stock, 100 or less\n";
+
+printNames($sigmie->newSearch('products')
+    ->properties($props)
+    ->queryString('')
+    ->filters('in_stock:true AND price<=100')   // [tl! highlight]
+    ->get());
+```
+
+Run the script. The new output is:
+
+```
+-- in stock, 100 or less
+Wireless Mouse
+```
+
+The cable costs less than 100, but it is out of stock. The [filter parser](filter-parser.md) page lists every operator.
+
+## Step 6: Sort by price
+
+```php
+echo "-- cheapest first\n";
+
+printNames($sigmie->newSearch('products')
+    ->properties($props)
+    ->queryString('')
+    ->sort('price:asc')   // [tl! highlight]
+    ->get());
+```
+
+Run the script. The new output is:
+
+```
+-- cheapest first
+USB-C Cable
+Wireless Mouse
+Laptop Pro
+```
+
+Without `sort()`, Sigmie sorts by `_score`, highest first. Sigmie rejects `_score:asc`. The [sort parser](sort-parser.md) page lists the sort syntax.
+
+## Step 7: Count products per category
+
+Facets return counts for a filter sidebar. Ask for category counts and the price range:
+
+```php
+echo "-- facets\n";
 
 $results = $sigmie->newSearch('products')
     ->properties($props)
-    ->queryString('laptop')
-    ->facets('brand category price:100')         // [tl! highlight]
+    ->queryString('')
+    ->facets('category price:100')   // [tl! highlight]
     ->get();
 
 $facets = $results->json('facets');
-// ['brand' => ['Apple' => 5, ...], 'price' => ['min' => 999, 'max' => 2499, ...]]
+
+print_r((array) $facets['category']);
+
+$price = (array) $facets['price'];
+
+echo "Price: {$price['min']} to {$price['max']}\n";
 ```
 
-See [Facets](facets.md) for the full reference.
+Run the script. The new output is:
 
-## Add semantic search
-
-When you want results by meaning, not just keywords:
-
-```php
-use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
-
-$sigmie->registerApi('embeddings', new OpenAIEmbeddingsApi('sk-...'));
-
-$props = new NewProperties;
-$props->title('name');
-$props->text('description')->semantic(            // [tl! highlight]
-    api: 'embeddings',
-    dimensions: 1536,
-);
-
-$results = $sigmie->newSearch('products')
-    ->properties($props)
-    ->semantic()
-    ->queryString('portable computer for work')   // matches "laptop", "notebook"
-    ->get();
+```
+-- facets
+Array
+(
+    [accessories] => 2
+    [electronics] => 1
+)
+Price: 15 to 1299
 ```
 
-See [Semantic Search](semantic-search.md) for embeddings setup, accuracy levels, and similarity functions.
+`price:100` sets a histogram interval of 100. The price facet also holds that histogram under `histogram`.
 
-## Where to go next
+## What we built
 
-- [Filter Parser](filter-parser.md) — every operator and clause.
-- [Facets](facets.md) — sidebar filters with conjunctive/disjunctive logic.
-- [Search](search.md) — every `NewSearch` method.
-- [Mappings & Properties](mappings.md) — all field types.
-- [Laravel Scout](laravel-scout.md) — Eloquent integration.
+`search.php` now creates an index, adds three products, and runs a word search, a typo-tolerant search, a filtered search, a sorted search, and a facet count. Every step used the same `newSearch()` chain, with one more method each time.
+
+## Next steps
+
+- [Search](search.md) covers field weights, highlighting, pagination, and every other `newSearch()` method.
+- [Facets](facets.md) explains facets that keep counts for other values after a user selects one.
+- [Semantic search](semantic-search.md) finds products by meaning with an embeddings API.
+- [Mappings and properties](mappings.md) lists every field type.
+- [Laravel Scout](laravel-scout.md) connects Sigmie to Eloquent models.

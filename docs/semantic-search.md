@@ -1,6 +1,6 @@
 ---
 title: Semantic Search
-short_description: Build semantic vector search with Sigmie — semantic fields, accuracy levels, similarity metrics, and embeddings from OpenAI, Cohere, or Infinity.
+short_description: Add semantic vector search to Elasticsearch with Sigmie. Register an embeddings API, define semantic fields, tune accuracy and index type, then rerank.
 keywords: [semantic search, vector search, embeddings, ai, similarity]
 category: Features
 order: 1
@@ -9,41 +9,83 @@ related_pages: [search, rag, recommendations, opensearch, magic-tags]
 
 # Semantic Search
 
-Semantic search matches documents by **meaning**, not just keywords. "Portable computer for work" can match documents containing "laptop", "notebook", or "MacBook" — none of which share a word with the query.
+Semantic search matches documents by meaning. The query "portable computer for work" finds a document about a "laptop" even though the two share no word.
 
-Sigmie does this by:
+Sigmie embeds the text of each semantic field when you index a document, embeds the query when you search, and returns the documents whose vectors are closest to the query vector. This page shows how to set that up and tune it.
 
-1. Generating vector embeddings from your text at index time.
-2. Generating an embedding for the query at search time.
-3. Returning the documents whose vectors are most similar.
+## Register an embeddings API
 
-You bring an embeddings API (OpenAI, Cohere, Voyage, Infinity, or anything implementing `EmbeddingsApi`) and register it with the client:
+Register a client for your embeddings provider under a name of your choice:
 
 ```php
 use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 
-$sigmie->registerApi('embeddings', new OpenAIEmbeddingsApi('sk-...'));
+$sigmie->registerApi('embeddings', new OpenAIEmbeddingsApi('sk-...')); // [tl! highlight]
 ```
 
-The name `'embeddings'` is yours to choose — refer to it from your field definitions.
+Your field definitions refer to the API by this name. Sigmie ships these clients, and all of them implement `Sigmie\AI\Contracts\EmbeddingsApi`:
 
-## Define a semantic field
+```php
+use Sigmie\AI\APIs\CohereEmbeddingsApi;
+use Sigmie\AI\APIs\InfinityEmbeddingsApi;
+use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
+use Sigmie\AI\APIs\VoyageEmbeddingsApi;
+use Sigmie\Enums\CohereInputType;
+
+$sigmie->registerApi('embeddings', new OpenAIEmbeddingsApi('sk-...'));
+$sigmie->registerApi('embeddings', new CohereEmbeddingsApi('co-...', CohereInputType::SearchDocument));
+$sigmie->registerApi('embeddings', new VoyageEmbeddingsApi('pa-...'));
+
+// Local Infinity service (see Docker docs)
+$sigmie->registerApi('embeddings', new InfinityEmbeddingsApi(
+    baseUrl: 'http://localhost:7997',
+    model: 'BAAI/bge-small-en-v1.5',
+));
+```
+
+To run a local Infinity service, see [Docker](docker.md).
+
+### Use another provider
+
+To use a provider that Sigmie has no client for, implement `EmbeddingsApi` and register your class:
+
+```php
+use GuzzleHttp\Promise\Promise;
+use Sigmie\AI\Contracts\EmbeddingsApi;
+
+class MyEmbeddings implements EmbeddingsApi
+{
+    public function embed(string $text, int $dimensions): array { /* ... */ }
+    public function batchEmbed(array $payload): array { /* ... */ }
+    public function promiseEmbed(string $text, int $dimensions): Promise { /* ... */ }
+    public function model(): string { /* ... */ }
+    public function maxBatchSize(): int { /* ... */ }
+}
+
+$sigmie->registerApi('embeddings', new MyEmbeddings());
+```
+
+`maxBatchSize()` returns the number of texts your provider accepts in one `batchEmbed()` call.
+
+## Define semantic fields
+
+Call `semantic()` on a text field. Set `api` to the registered name and `dimensions` to the vector size of your model:
 
 ```php
 use Sigmie\Mappings\NewProperties;
 
 $props = new NewProperties;
-$props->title('title')->semantic(api: 'embeddings', dimensions: 1536);
+$props->title('title')->semantic(api: 'embeddings', dimensions: 1536); // [tl! highlight]
 $props->text('description')->semantic(api: 'embeddings', dimensions: 1536);
 
 $sigmie->newIndex('articles')->properties($props)->create();
 ```
 
-Match the `dimensions` to the model you registered. OpenAI's `text-embedding-3-small` outputs 1536-dim vectors; Infinity's `bge-small-en-v1.5` outputs 384-dim.
+OpenAI's `text-embedding-3-small` returns 1536 dimensions. Infinity's `bge-small-en-v1.5` returns 384. `dimensions` defaults to 256. `semantic()` accepts 128, 256, 384, 512, 1024, 1536, 2048, or 3072 and throws for any other value. For another size, set it with `dimensions()` in [`newSemantic()`](#fine-tune-the-vector-field).
 
 ## Index documents
 
-When a property has `->semantic()`, Sigmie generates embeddings automatically as documents flow through `merge()` and `add()`:
+Add documents with `merge()` or `add()`. Sigmie calls the embeddings API for every semantic field before it writes the documents:
 
 ```php
 use Sigmie\Document\Document;
@@ -62,179 +104,92 @@ $sigmie->collect('articles', refresh: true)
     ]);
 ```
 
-## Search
+`merge()` sends the texts of many documents in batched requests, not one request per document. Sigmie groups texts that share the same API, dimensions, and input type (text or image), then splits each group into chunks of `min(100, maxBatchSize())` texts:
 
-Enable semantic matching with `->semantic()`:
+```php
+$articles->merge($thirtyDocs);     // 1 request of 30
+$articles->merge($twoHundredDocs); // 2 requests: 100 + 100
+```
+
+The provider limits are 2048 for OpenAI and Jina, 512 for Infinity, 128 for Voyage, and 96 for Cohere.
+
+> **Warning:** If one chunk fails, the whole `merge()` fails. Sigmie does not retry or write part of the batch. Keep each `merge()` call to a size your provider serves reliably.
+
+## Search by meaning
+
+Call `semantic()` on the search:
 
 ```php
 $response = $sigmie->newSearch('articles')
     ->properties($props)
-    ->semantic()
+    ->semantic() // [tl! highlight]
     ->queryString('artificial intelligence basics')
     ->get();
 ```
 
-By default this combines semantic and keyword matching. Documents matched by both rank higher than documents matched by only one.
+The search runs the keyword query and the vector query together. A document that matches both ranks above a document that matches only one.
 
-### Pure semantic search
-
-Drop keyword matching entirely:
+To rank by vectors only, turn off the keyword query:
 
 ```php
 $sigmie->newSearch('articles')
     ->properties($props)
     ->semantic()
-    ->disableKeywordSearch()
+    ->disableKeywordSearch() // [tl! highlight]
     ->queryString('machine learning algorithms')
     ->get();
 ```
 
-### Score multipliers
-
-Bias the blend between keyword and semantic scores:
+To give one side more weight, multiply its score. Both multipliers default to `1.0`:
 
 ```php
 $sigmie->newSearch('articles')
     ->properties($props)
     ->semantic()
     ->textScoreMultiplier(1.0)
-    ->semanticScoreMultiplier(2.0)        // emphasize semantic matches
+    ->semanticScoreMultiplier(2.0) // [tl! highlight]
     ->queryString('quantum computing')
     ->get();
 ```
 
-## Embedding providers
-
-Sigmie ships clients for several providers — all implement `Sigmie\AI\Contracts\EmbeddingsApi`:
-
-```php
-use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
-use Sigmie\AI\APIs\CohereEmbeddingsApi;
-use Sigmie\AI\APIs\VoyageEmbeddingsApi;
-use Sigmie\AI\APIs\InfinityEmbeddingsApi;
-
-$sigmie->registerApi('embeddings', new OpenAIEmbeddingsApi('sk-...'));
-$sigmie->registerApi('embeddings', new CohereEmbeddingsApi('co-...'));
-$sigmie->registerApi('embeddings', new VoyageEmbeddingsApi('pa-...'));
-
-// Local Infinity service (see Docker docs)
-$sigmie->registerApi('embeddings', new InfinityEmbeddingsApi(
-    baseUrl: 'http://localhost:7997',
-    model: 'BAAI/bge-small-en-v1.5',
-));
-```
-
-### Custom provider
-
-Implement `EmbeddingsApi`:
-
-```php
-use Sigmie\AI\Contracts\EmbeddingsApi;
-use GuzzleHttp\Promise\Promise;
-
-class MyEmbeddings implements EmbeddingsApi
-{
-    public function embed(string $text, int $dimensions): array { /* ... */ }
-    public function batchEmbed(array $payload): array { /* ... */ }
-    public function promiseEmbed(string $text, int $dimensions): Promise { /* ... */ }
-    public function model(): string { /* ... */ }
-}
-
-$sigmie->registerApi('embeddings', new MyEmbeddings());
-```
-
-## Accuracy
-
-The `accuracy` parameter controls the HNSW index parameters under the hood. Higher accuracy means better recall at the cost of more memory and slower indexing:
-
-```php
-$props->text('content')->semantic(api: 'embeddings', dimensions: 512, accuracy: 1);
-// Fast: m=16, ef_construction=80
-
-$props->text('content')->semantic(api: 'embeddings', dimensions: 512, accuracy: 3);
-// Balanced (default): m=64, ef_construction=300
-
-$props->text('content')->semantic(api: 'embeddings', dimensions: 512, accuracy: 5);
-// High quality: m=128, ef_construction=800
-
-$props->text('content')->semantic(api: 'embeddings', dimensions: 512, accuracy: 7);
-// Script-score: exact vectors, slowest, highest quality
-```
-
-Reach for higher accuracy on important fields (titles, primary content). Use lower accuracy on long, less-critical fields (tags, supporting text).
-
-## Quantization
-
-Vectors are indexed as float `hnsw` by default. On Elasticsearch, pick a quantized index type to keep a compressed copy in memory:
-
-```php
-use Sigmie\Mappings\NewSemanticField;
-
-$props->text('content')->newSemantic(function (NewSemanticField $semantic): void {
-    $semantic->api('embeddings')->dimensions(768)->indexType('bbq_hnsw'); // [tl! highlight]
-});
-```
-
-Allowed types: `hnsw`, `int8_hnsw`, `int4_hnsw`, `bbq_hnsw`, `flat`, `int8_flat`, `int4_flat`, `bbq_flat`. Flat types skip the HNSW graph, so `m` and `ef_construction` are not sent. Each type gets its own vector field name (for example `bbq_hnsw_m64_efc300_dims768_cosine_concat`), so changing the type adds a new field and needs a reindex. OpenSearch supports only `hnsw`.
-
-## Similarity functions
-
-```php
-use Sigmie\Enums\VectorSimilarity;
-
-$props->text('content')->semantic(
-    api: 'embeddings',
-    dimensions: 512,
-    similarity: VectorSimilarity::Cosine,            // default
-);
-
-// Other options:
-VectorSimilarity::DotProduct;
-VectorSimilarity::Euclidean;
-VectorSimilarity::MaxInnerProduct;
-```
-
-- **Cosine** — standard for text similarity, handles different lengths.
-- **Dot product** — efficient when your vectors are pre-normalized.
-- **Euclidean** — distance-based, sensitive to magnitude.
-- **Max inner product** — optimized for IP-similarity workloads.
-
-## Multiple vectors per field
-
-Index the same text with different similarity functions or accuracies:
-
-```php
-$props->text('job_description')
-    ->semantic(
-        api: 'embeddings',
-        accuracy: 3,
-        dimensions: 512,
-        similarity: VectorSimilarity::Cosine,
-    )
-    ->semantic(
-        api: 'embeddings',
-        accuracy: 5,
-        dimensions: 512,
-        similarity: VectorSimilarity::Euclidean,
-    );
-```
-
-## Field-specific semantic search
-
-Restrict semantic matching to specific fields:
+To search some semantic fields and skip the others, list them with `fields()`:
 
 ```php
 $sigmie->newSearch('articles')
     ->properties($props)
     ->semantic()
-    ->fields(['title'])
+    ->fields(['title']) // [tl! highlight]
     ->queryString('deep learning neural networks')
     ->get();
 ```
 
-## Working with arrays
+Filters, sorting, and facets work with semantic search the same way they work with keyword search. See [Search](search.md). A multilingual embedding model also matches across languages, so the query "machine learning" finds "apprentissage automatique".
 
-Semantic fields work with array values — each entry is embedded independently:
+## Choose an accuracy level
+
+`accuracy` goes from 1 to 7 and defaults to 3. It sets how Sigmie embeds a field and the HNSW graph parameters `m` and `ef_construction`. A higher level gives better recall and costs more memory and indexing time:
+
+```php
+$props->text('content')->semantic(api: 'embeddings', dimensions: 512, accuracy: 5); // [tl! highlight]
+```
+
+| Accuracy | Embedding | `m` at 256 dims | `ef_construction` at 256 dims |
+|----------|-----------|-----------------|-------------------------------|
+| 1 | One vector for all values joined | 12 | 60 |
+| 2 | One vector per value, averaged | 16 | 100 |
+| 3 (default) | One vector per value, averaged | 24 | 150 |
+| 4 | One vector per value, averaged | 32 | 200 |
+| 5 | One vector per value, averaged | 40 | 300 |
+| 6 | One vector per value, averaged | 48 | 400 |
+| 7 | One vector per value, exact script score, no HNSW graph | none | none |
+
+For other dimensions, Sigmie multiplies both values by `sqrt(dimensions / 256)`, then caps `m` at 64 and `ef_construction` at 500. Accuracy 3 at 1536 dimensions gives `m` 59 and `ef_construction` 367.
+
+Use a high level on the fields that carry the meaning, such as titles and main content. Use a low level on long supporting text.
+
+## Search array values
+
+A semantic field can hold an array. At accuracy 2 and above, Sigmie embeds each value on its own. At accuracy 1, it joins the values into one string and embeds that:
 
 ```php
 new Document([
@@ -245,60 +200,97 @@ new Document([
     ],
 ]);
 
-// "drawing illustration" matches "Artist" semantically
+// "drawing illustration" matches "Artist"
 $sigmie->newSearch('professionals')
-    ->semantic()
     ->properties($props)
+    ->semantic()
     ->queryString('drawing illustration')
     ->get();
 ```
 
-## Pre-computed embeddings
+## Fine-tune the vector field
 
-To skip Sigmie's embedding pipeline (for backfills or batched offline embedding), include vectors directly in the document:
+For settings that `semantic()` does not take, call `newSemantic()` and configure a `NewSemanticField`:
+
+```php
+use Sigmie\Enums\VectorSimilarity;
+use Sigmie\Mappings\NewSemanticField;
+
+$props->text('content')->newSemantic(function (NewSemanticField $semantic): void {
+    $semantic->api('embeddings')
+        ->accuracy(3, 1024)
+        ->similarity(VectorSimilarity::DotProduct); // [tl! highlight]
+});
+```
+
+`semantic()` returns the same `NewSemanticField`, so you can also chain onto it: `->semantic(api: 'embeddings', dimensions: 512)->euclideanSimilarity()`.
+
+### Similarity
+
+Similarity defaults to cosine. Set it with `similarity()` or a shortcut method:
+
+| `VectorSimilarity` case | Shortcut | Elasticsearch value |
+|-------------------------|----------|---------------------|
+| `Cosine` | `cosineSimilarity()` | `cosine` |
+| `DotProduct` | `dotProductSimilarity()` | `dot_product` |
+| `Euclidean` | `euclideanSimilarity()` | `l2_norm` |
+| `MaxInnerProduct` | `maxInnerProductSimilarity()` | `max_inner_product` |
+
+Cosine fits most text models. Dot product needs normalized vectors, and Sigmie normalizes vectors by default.
+
+### Index type
+
+Sigmie indexes vectors as float `hnsw` by default. On Elasticsearch, a quantized index type keeps a compressed copy of each vector in memory:
+
+```php
+$props->text('content')->newSemantic(function (NewSemanticField $semantic): void {
+    $semantic->api('embeddings')->dimensions(768)->indexType('bbq_hnsw'); // [tl! highlight]
+});
+```
+
+The allowed types are `hnsw`, `int8_hnsw`, `int4_hnsw`, `bbq_hnsw`, `flat`, `int8_flat`, `int4_flat`, and `bbq_flat`. Flat types skip the HNSW graph, so Sigmie does not send `m` and `ef_construction`.
+
+Each index type gets its own vector field name, for example `bbq_hnsw_m64_efc300_dims768_cosine_concat`. A new type adds a new field, so reindex your documents after you change it. OpenSearch supports only `hnsw`. See [OpenSearch](opensearch.md).
+
+### Several vectors on one field
+
+Call `semantic()` or `newSemantic()` more than once on the same field. Each call adds one vector:
+
+```php
+$jobDescription = $props->text('job_description');
+
+$jobDescription->semantic(api: 'embeddings', dimensions: 512, accuracy: 3);
+$jobDescription->semantic(api: 'embeddings', dimensions: 512, accuracy: 5)
+    ->euclideanSimilarity();
+```
+
+## Supply your own embeddings
+
+To skip the embeddings API, for example in a backfill, put the vectors in the document under `_embeddings`. Key them by field path, then by vector field name:
 
 ```php
 new Document([
     'title' => 'AI Research Paper',
-    'content' => 'Artificial intelligence has evolved significantly...',
     '_embeddings' => [
-        'title_vector' => [0.1, 0.2, 0.3, /* ... */],
-        'content_vector' => [0.4, 0.5, 0.6, /* ... */],
+        'title' => [
+            'm24_efc150_dims256_cosine_avg' => [0.1, 0.2, 0.3, /* ... */],
+        ],
     ],
 ]);
 ```
 
-## Batched embedding calls
-
-When you pass many documents to `merge()`, Sigmie collects the texts from every doc and sends them to your embedding provider in batched requests — not one request per document.
-
-### What gets batched together
-
-Sigmie groups texts by `(api, dimensions, modality)`. Two docs whose `title` field uses the same provider and the same vector dimensions share a single request. Text and image inputs are never mixed in the same request, even when the same provider can handle both.
-
-### Chunk size
-
-Each group is split into chunks of `min(100, $provider->maxBatchSize())`. The provider cap reflects what each backend accepts in one call — OpenAI and Jina allow 2048, Voyage 128, Cohere 96, Infinity 512.
+Sigmie skips a field only when the document has a vector for every vector field of that field. It embeds the other fields as usual. To list the vector field names of a field:
 
 ```php
-$movies->merge($thirtyDocs);   // 1 request of 30
-$movies->merge($twoHundredDocs); // 2 requests: 100 + 100
+$props->get()->get('title')->vectorFields()
+    ->map(fn ($vector) => $vector->name)
+    ->toArray();
+// ['m24_efc150_dims256_cosine_avg']
 ```
 
-`add()` and `replace()` go through the same code path, so a single document is just a one-item batch.
+## Rerank the top results
 
-### What stays per-document
-
-- Docs that already carry an `_embeddings` block for a field (see [Pre-computed embeddings](#pre-computed-embeddings)) are excluded from the batch for that field.
-- After vectors come back, strategy formatting (concatenate / average / script-score) and [score multipliers](#score-multipliers) still run on each doc individually.
-
-### Tradeoffs
-
-The win is fewer roundtrips and less rate-limit pressure when indexing in bulk. The cost: if a chunk fails, the whole `merge()` fails — Sigmie does not split-and-retry, because partial upserts produce inconsistent indexes. Keep merge batches at a size your provider can serve reliably.
-
-## Reranking
-
-For higher-quality top-K results, rerank with a cross-encoder after retrieval:
+A cross-encoder reranker scores each hit against the query and gives a better order for the top results. Register a rerank API, fetch more hits than you need, then call `rerank()` on the response:
 
 ```php
 use Sigmie\AI\APIs\InfinityRerankApi;
@@ -315,76 +307,17 @@ $response = $sigmie->newSearch('articles')
     ->size(20)
     ->get();
 
-$top5 = $response->rerank('my-rerank', ['content'], topK: 5);
+$top5 = $response->rerank('my-rerank', ['content'], topK: 5); // [tl! highlight]
 ```
 
-See [Retrieval and Agents](rag.md) for the full retrieval-then-generate pattern.
+[Retrieval and Agents](rag.md) covers rerankers and passing results to a language model.
 
-## Empty queries
+To find documents similar to documents you already have, use [Recommendations](recommendations.md).
 
-By default, an empty query string returns every document. To return nothing instead:
+## Troubleshoot
 
-```php
-->noResultsOnEmptySearch()
-```
+**No results.** Fetch one document with `$sigmie->collect('articles')->get($id)` and check that it has an `_embeddings` key. If it does not, check that the `api` name on the field matches the name you registered.
 
-## Multilingual
+**Slow searches.** Lower the accuracy or the dimensions. Add filters so that fewer documents reach vector ranking.
 
-Embeddings handle most languages automatically. A query in English finds documents in French if the embedding model supports both:
-
-```php
-$sigmie->newSearch('documents')
-    ->semantic()
-    ->properties($props)
-    ->queryString('machine learning')
-    // matches "apprentissage automatique", "机器学习", etc.
-    ->get();
-```
-
-## Patterns
-
-### E-commerce search
-
-```php
-$props = new NewProperties;
-$props->name('name')->semantic(api: 'embeddings', dimensions: 512);
-$props->text('description')->semantic(api: 'embeddings', dimensions: 512);
-$props->category('category');
-$props->price();
-
-$sigmie->newSearch('products')
-    ->properties($props)
-    ->semantic()
-    ->queryString('comfortable running shoes')
-    ->filters('price<=100')
-    ->get();
-```
-
-### Content recommendation
-
-```php
-$sigmie->newSearch('articles')
-    ->semantic()
-    ->disableKeywordSearch()
-    ->properties($props)
-    ->queryString('machine learning deep learning neural networks')
-    ->size(5)
-    ->get();
-```
-
-For "similar items" using existing documents as seeds, see [Recommendations](recommendations.md) — it gives you RRF fusion and MMR diversification out of the box.
-
-## Troubleshooting
-
-**No results.** Check that documents have embeddings — index a sample and inspect with `$collection->get($id)`. If they don't, verify your `api:` name matches the registered API.
-
-**Slow search.** Drop to lower accuracy or smaller dimensions. Add filters to narrow the candidate pool before vector ranking.
-
-**Memory pressure.** Lower accuracy and dimensions. High accuracy with 1536-dim vectors needs serious RAM at scale.
-
-## See also
-
-- [Recommendations](recommendations.md) — "similar items" via vector retrieval with RRF and MMR.
-- [Retrieval and Agents](rag.md) — combining retrieval, reranking, and generation.
-- [Magic Tags](magic-tags.md) — LLM-generated taxonomy tags backed by embeddings.
-- [Docker](docker.md) — running local Infinity embeddings and reranker.
+**High memory use.** Lower the accuracy or the dimensions, or use a quantized index type.

@@ -1,83 +1,71 @@
 ---
 title: Aggregations
-short_description: Run Elasticsearch metric and bucket aggregations with Sigmie — sum, avg, stats, terms, histogram, date histogram, geohash grid, and pipeline aggregations.
+short_description: Reference for Sigmie's raw Elasticsearch aggregations. Metrics, terms, ranges, date histograms, geohash grids, sub-aggregations, and pipeline aggregations.
 keywords: [aggregations, facets, analytics, bucket aggregations, union terms, metrics]
 category: Features
 order: 2
-related_pages: [facets, search]
+related_pages: [facets, analytics, query]
 ---
 
 # Aggregations
 
-Aggregations summarize and analyze your indexed data. Use them to power analytics dashboards, statistical summaries, and the underlying data for filter UIs.
+`aggregate()` on a query adds Elasticsearch aggregations to the request. Each method on the `Aggs` builder adds one aggregation and returns it, so you can configure it further.
 
-Sigmie has two paths into aggregations:
+For filter sidebars, use [Facets](facets.md). For dashboards built from KPIs, trends, and breakdowns, use [Analytics](analytics.md).
 
-1. **[Facets](facets.md)** — high-level, integrated with properties. The right choice for filter sidebars.
-2. **Raw aggregations** — direct access to all Elasticsearch aggregation types. The right choice for analytics.
+## Run aggregations
 
-This page covers the raw aggregations API.
-
-## Basic usage
+Pass a callback to `aggregate()`. Read each result from the response with `aggregation()` and a dot path that starts with the aggregation name:
 
 ```php
 use Sigmie\Query\Aggs;
 
 $response = $sigmie->newQuery('orders')
     ->matchAll()
-    ->aggregate(function (Aggs $agg) {
+    ->aggregate(function (Aggs $agg) { // [tl! highlight]
         $agg->sum(name: 'turnover', field: 'price');
     })
     ->get();
 
-$response->aggregation('turnover.value');     // 54.403
+$response->aggregation('turnover.value'); // 54.403
 ```
+
+To return only the aggregations and no hits, set `size(0)`:
+
+```php
+$sigmie->newQuery('sales')
+    ->matchAll()
+    ->aggregate(function (Aggs $agg) {
+        $agg->terms('top_products', 'product_id')->size(10);
+    })
+    ->size(0) // [tl! highlight]
+    ->get();
+```
+
+To aggregate over a subset of documents, replace `matchAll()` with a query. See [Advanced Queries](query.md).
 
 ## Metric aggregations
 
-Metrics return a single value across the matched documents.
+A metric aggregation computes values over the documents in its scope.
 
-### Sum
-
-```php
-$agg->sum(name: 'stock_sum', field: 'stock');
-$response->aggregation('stock_sum.value');
-```
-
-SQL equivalent: `SELECT SUM(stock)`.
-
-### Max / Min / Avg
-
-```php
-$agg->max(name: 'max_price', field: 'price');
-$agg->min(name: 'min_price', field: 'price');
-$agg->avg(name: 'avg_rating', field: 'rating');
-```
-
-Access with `$response->aggregation('max_price.value')`.
-
-### Value count
-
-Count of distinct values:
-
-```php
-$agg->valueCount(name: 'categories_count', field: 'category');
-```
-
-### Cardinality
-
-Approximate distinct-value count — much cheaper than `valueCount` on large fields:
-
-```php
-$agg->cardinality(name: 'unique_users', field: 'user_id');
-```
-
-### Stats
-
-A quick statistical summary:
+| Method | Elasticsearch type | Result |
+|--------|--------------------|--------|
+| `sum(name, field)` | `sum` | `value` |
+| `avg(name, field)` | `avg` | `value` |
+| `min(name, field)` | `min` | `value` |
+| `max(name, field)` | `max` | `value` |
+| `stats(name, field)` | `stats` | `count`, `min`, `max`, `avg`, `sum` |
+| `valueCount(name, field)` | `value_count` | `value`: the number of values, duplicates included |
+| `cardinality(name, field)` | `cardinality` | `value`: the approximate number of distinct values |
+| `percentiles(name, field, percents)` | `percentiles` | `values` keyed by percent. `percents` defaults to `[1, 5, 25, 50, 75, 95, 99]` |
+| `percentileRanks(name, field, values)` | `percentile_ranks` | `values` keyed by value |
+| `rate(name, field)` | `rate` | `value`. Only inside a date histogram |
+| `topHits(name, size, sourceIncludes, sort, sourceExcludes)` | `top_hits` | `hits`. `size` defaults to 1 |
+| `scriptedMetric(name, initScript, mapScript, combineScript, reduceScript, params)` | `scripted_metric` | `value` |
 
 ```php
 $agg->stats(name: 'sales_stats', field: 'amount');
+
 $response->aggregation('sales_stats');
 // [
 //     'count' => 133,
@@ -88,35 +76,66 @@ $response->aggregation('sales_stats');
 // ]
 ```
 
+`cardinality()` accepts `precisionThreshold()`. Below the threshold, counts are close to exact. Above it, they are estimates:
+
+```php
+$agg->cardinality(name: 'unique_users', field: 'user_id')->precisionThreshold(1000);
+```
+
 ## Bucket aggregations
 
-Bucket aggregations group documents by criteria — each bucket holds the documents that match.
+A bucket aggregation groups documents. Each bucket has a `key` and a `doc_count`, plus the results of its [sub-aggregations](#sub-aggregations).
+
+| Method | Elasticsearch type |
+|--------|--------------------|
+| `terms(name, field)` | `terms` |
+| `multiTerms(name, fields)` | `multi_terms` |
+| `unionTerms(name, fields)` | `terms` with a script |
+| `range(name, field, ranges)` | `range` |
+| `histogram(name, field, interval, minDocCount, extendedBounds)` | `histogram` |
+| `dateHistogram(name, field, interval, minDocCount, extendedBounds, format, timeZone)` | `date_histogram` |
+| `autoDateHistogram(name, field, buckets, minimumInterval, timeZone)` | `auto_date_histogram` |
+| `geoHashGrid(name, field, precision, size)` | `geohash_grid` |
+| `significantText(name, field)` | `significant_text` |
+| `composite(name, sources, size, after)` | `composite` |
+| `missing(name, field)` | `missing` |
+| `global(name)` | `global` |
+| `nested(name, path, callable)` | `nested` |
+| `filter(name, query)` | `filter` |
+| `rangeFilter(name, field, ranges)` | `filter` with a `range` query |
 
 ### Terms
 
-Group by the unique values of a field. Use a `keyword` field (or `text` field with a `.keyword` sub-field):
+`terms()` groups documents by the values of a field. Use a `keyword` field, or a `text` field with a keyword sub-field.
 
 ```php
-$agg->terms(name: 'category_terms', field: 'category')->missing('N/A');
+$agg->terms(name: 'category_terms', field: 'category')
+    ->size(10)
+    ->missing('N/A');
 
 $response->aggregation('category_terms.buckets');
 // [
+//     ['key' => 'Fantasy', 'doc_count' => 20],
 //     ['key' => 'Musical', 'doc_count' => 18],
 //     ['key' => 'Adventure', 'doc_count' => 13],
-//     ['key' => 'Fantasy', 'doc_count' => 20],
 //     ['key' => 'N/A', 'doc_count' => 7],
 // ]
 ```
 
-`missing('N/A')` puts documents without the field into a bucket of that key.
+| Method | Effect |
+|--------|--------|
+| `size(int)` | Number of buckets to return. Elasticsearch defaults to 10. |
+| `order(string $key, string $direction)` | Sort buckets by `_count`, `_key`, or a sub-aggregation name. |
+| `missing(value)` | Put documents without the field into a bucket with this key. |
+| `exclude(array\|string)` | Leave these values out. |
 
 ### Union terms
 
-`unionTerms()` combines the same label from several role fields into one terms bucket. This is useful when one logical dimension is stored in fields such as `champion_country` and `runner_up_country`:
+`unionTerms()` counts one label across several fields as one terms aggregation. Use it when one dimension lives in fields such as `champion_country` and `runner_up_country`:
 
 ```php
-use Sigmie\Query\Aggs;
 use Sigmie\Query\Aggregations\Metrics\Sum;
+use Sigmie\Query\Aggs;
 
 $agg->unionTerms('countries', ['champion_country', 'runner_up_country'])
     ->size(10)
@@ -130,14 +149,14 @@ $response->aggregation('countries.buckets');
 // ]
 ```
 
-Field names are passed to a fixed aggregation script as parameters. A document that contains the same label in multiple configured fields contributes to that label once. Use the higher-level [`unionBreakdown()`](analytics.md#union-breakdown) API when you also want mapping validation, time windows, filters, and normalized rows.
+A fixed Painless script reads the field names as parameters. A document with the same label in several of the fields counts once for that label. The [`unionBreakdown()`](analytics.md#union-breakdown) widget adds mapping validation, time windows, filters, and normalized rows.
 
 ### Range
 
-Group by explicit numeric ranges:
+`range()` groups a numeric field into the ranges you give. `from` is inclusive and `to` is exclusive:
 
 ```php
-$agg->range(name: 'price_ranges', field: 'price', [
+$agg->range('price_ranges', 'price', [
     ['key' => '0-100', 'to' => 100],
     ['key' => '100-200', 'from' => 100, 'to' => 200],
     ['key' => '200+', 'from' => 200],
@@ -145,15 +164,15 @@ $agg->range(name: 'price_ranges', field: 'price', [
 
 $response->aggregation('price_ranges.buckets');
 // [
-//     '0-100'   => ['to' => 100, 'doc_count' => 803],
-//     '100-200' => ['from' => 100, 'to' => 200, 'doc_count' => 422],
-//     '200+'    => ['from' => 200, 'doc_count' => 343],
+//     ['key' => '0-100', 'to' => 100.0, 'doc_count' => 803],
+//     ['key' => '100-200', 'from' => 100.0, 'to' => 200.0, 'doc_count' => 422],
+//     ['key' => '200+', 'from' => 200.0, 'doc_count' => 343],
 // ]
 ```
 
 ### Histogram
 
-Fixed-width buckets across a numeric field:
+`histogram()` groups a numeric field into buckets of a fixed width. `minDocCount` defaults to `0`, so empty buckets are included:
 
 ```php
 $agg->histogram(name: 'price_histogram', field: 'price', interval: 50);
@@ -161,15 +180,20 @@ $agg->histogram(name: 'price_histogram', field: 'price', interval: 50);
 
 ### Date histogram
 
-Time-bucket documents:
+`dateHistogram()` groups a date field by time. A `CalendarInterval` case sends a calendar interval. A string such as `'15d'` sends a fixed interval:
 
 ```php
-$agg->dateHistogram(name: 'sales_over_time', field: 'created_at', interval: 'month');
+use Sigmie\Query\Aggregations\Enums\CalendarInterval;
+
+$agg->dateHistogram(name: 'sales_over_time', field: 'created_at', interval: CalendarInterval::Month); // [tl! highlight]
+$agg->dateHistogram(name: 'fortnights', field: 'created_at', interval: '15d');
 ```
+
+The `CalendarInterval` cases are `Minute`, `Hour`, `Day`, `Week`, `Month`, `Quarter`, and `Year`. `format` sets the format of each bucket's `key_as_string`, for example `'yyyy-MM'`.
 
 ### Auto date histogram
 
-Let Elasticsearch pick the bucket interval:
+`autoDateHistogram()` lets Elasticsearch pick the interval that fits the number of buckets you ask for:
 
 ```php
 $agg->autoDateHistogram(name: 'timeline', field: 'created_at', buckets: 12);
@@ -177,7 +201,7 @@ $agg->autoDateHistogram(name: 'timeline', field: 'created_at', buckets: 12);
 
 ### Geohash grid
 
-Bucket a `geo_point` field into geohash cells — the basis of a map heatmap. Higher `precision` (1–12) means smaller, more granular cells; `size` caps the number of returned cells:
+`geoHashGrid()` groups a `geo_point` field into geohash cells, for example to draw a map heatmap. `precision` goes from 1 to 12 and defaults to 5. A higher precision gives smaller cells. `size` caps the number of cells:
 
 ```php
 $agg->geoHashGrid(name: 'areas', field: 'location', precision: 5);
@@ -185,105 +209,79 @@ $agg->geoHashGrid(name: 'areas', field: 'location', precision: 5);
 
 ## Sub-aggregations
 
-Nest aggregations to compute metrics per bucket:
+Call `aggregate()` on a bucket aggregation to compute more aggregations inside each bucket:
 
 ```php
 $agg->terms(name: 'category_terms', field: 'category')
-    ->subAggregation(function (Aggs $sub) {
+    ->aggregate(function (Aggs $sub) { // [tl! highlight]
         $sub->avg(name: 'avg_price', field: 'price');
         $sub->max(name: 'max_price', field: 'price');
     });
+
+$response->aggregation('category_terms.buckets.0.avg_price.value');
 ```
 
-Each category bucket now carries `avg_price` and `max_price` alongside `doc_count`.
-
-## Pipeline aggregations
-
-Operate on the output of other aggregations:
-
-```php
-$agg->terms(name: 'monthly_sales', field: 'month')
-    ->subAggregation(function (Aggs $sub) {
-        $sub->sum(name: 'total_sales', field: 'amount');
-    })
-    ->pipelineAggregation(function (Aggs $pipe) {
-        $pipe->avgBucket(name: 'avg_monthly_sales', bucketsPath: 'monthly_sales>total_sales');
-    });
-```
+Each category bucket holds `avg_price` and `max_price` next to `doc_count`.
 
 ## Filtered aggregations
 
-Run an aggregation over a filtered subset of the query results:
+`rangeFilter()` limits its sub-aggregations to documents in a range. Keys are range operators:
 
 ```php
-$agg->filter(name: 'expensive_products', filter: ['range' => ['price' => ['gte' => 100]]])
-    ->subAggregation(function (Aggs $sub) {
+$agg->rangeFilter('expensive_products', 'price', ['>=' => 100])
+    ->aggregate(function (Aggs $sub) {
         $sub->terms(name: 'expensive_categories', field: 'category');
     });
 ```
 
-## Combined with the query builder
+`filter()` takes any query object, for example `new Term('status', 'active')` from `Sigmie\Query\Queries\Term\Term`.
+
+## Pipeline aggregations
+
+A pipeline aggregation reads the output of other aggregations through a `buckets_path`. Add one with `add()`:
 
 ```php
-$response = $sigmie->newQuery('products')
-    ->properties($props)
-    ->matchAll()
-    ->facets('category price:50')
-    ->scriptScore(
-        source: "Math.log(2 + doc['popularity'].value)",
-        boostMode: 'replace',
-    )
-    ->get();
+use Sigmie\Query\Aggregations\Enums\CalendarInterval;
+use Sigmie\Query\Aggregations\Pipeline\AvgBucket;
 
-$hits = $response->json('hits.hits');
-$facets = $response->json('facets');
-$rawAggs = $response->json('aggregations');
+$agg->dateHistogram('sales_per_month', 'created_at', CalendarInterval::Month)
+    ->aggregate(function (Aggs $sub) {
+        $sub->sum('total_sales', 'amount');
+    });
+
+$agg->add(new AvgBucket('avg_monthly_sales', 'sales_per_month>total_sales')); // [tl! highlight]
+
+$response->aggregation('avg_monthly_sales.value');
 ```
 
-## Analytics-only requests
+| Class in `Sigmie\Query\Aggregations\Pipeline` | Elasticsearch type | Place it |
+|-----------------------------------------------|--------------------|----------|
+| `AvgBucket(name, path)` | `avg_bucket` | Next to the bucket aggregation |
+| `SumBucket(name, path)` | `sum_bucket` | Next to the bucket aggregation |
+| `MinBucket(name, path)` | `min_bucket` | Next to the bucket aggregation |
+| `MaxBucket(name, path)` | `max_bucket` | Next to the bucket aggregation |
+| `CumulativeSum(name, path)` | `cumulative_sum` | Inside a histogram. Also `$sub->cumulativeSum(name, path)` |
+| `SortBucket(name, path, order)` | `bucket_sort` | Inside the bucket aggregation |
 
-For pure analytics (no documents needed), set `size(0)`:
+`SortBucket` sorts the buckets of its parent by a sub-aggregation:
 
 ```php
-$response = $sigmie->newQuery('sales')
-    ->matchAll()
-    ->aggregate(function (Aggs $agg) {
-        $agg->dateHistogram('sales_over_time', 'date', 'month')
-            ->subAggregation(function (Aggs $sub) {
-                $sub->sum('monthly_revenue', 'amount');
-            });
+use Sigmie\Query\Aggregations\Pipeline\SortBucket;
 
-        $agg->terms('top_products', 'product_id')
-            ->size(10)
-            ->subAggregation(function (Aggs $sub) {
-                $sub->sum('product_revenue', 'amount');
-            });
-    })
-    ->size(0)
-    ->get();
+$agg->terms('products', 'product')
+    ->aggregate(function (Aggs $sub) {
+        $sub->sum('revenue', 'amount');
+        $sub->add(new SortBucket('sort_by_revenue', 'revenue', 'desc'));
+    });
 ```
 
-## Performance
+## Missing values
 
-- Use `keyword` fields for term aggregations — `text` fields require `.keyword` sub-fields.
-- Limit bucket size — `terms(...)->size(10)` for top 10.
-- Aggregate inside a `filter()` boolean clause to enable Elasticsearch's filter cache.
-- Cardinality aggregations on high-cardinality fields use significant memory.
+`missing()` sets the value used for documents that do not have the field. Terms, date histogram, and auto date histogram aggregations accept it, and so do the `avg`, `min`, `max`, `sum`, `stats`, `cardinality`, `percentiles`, and `percentile_ranks` metrics:
 
 ```php
-$sigmie->newQuery('products')
-    ->properties($props)
-    ->bool(function ($bool) {
-        $bool->filter()->term('status', 'active');     // cached
-        $bool->must()->match('title', $searchTerm);
-    })
-    ->facets('category:10 brand:10')                   // top 10 per facet
-    ->size(20)
-    ->get();
+$agg->dateHistogram('histogram', 'date', CalendarInterval::Year)
+    ->missing('2021-01-01');
+
+$agg->max('count_max', 'count')->missing(0);
 ```
-
-## See also
-
-- [Facets](facets.md) — high-level facets for filter UIs.
-- [Mappings & Properties](mappings.md) — choosing the right field type for aggregation.
-- [Advanced Queries](query.md) — combining aggregations with custom queries.
