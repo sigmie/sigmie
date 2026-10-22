@@ -1,6 +1,6 @@
 ---
 title: Facets
-short_description: Build faceted navigation with Sigmie — term, price histogram, stats, and date range facets, with disjunctive and conjunctive logic for e-commerce sidebars.
+short_description: Reference for Sigmie facets on Elasticsearch. Facet string syntax, facet filters, conjunctive and disjunctive logic, and the result shape per field type.
 keywords: [facets, filters, faceted search, navigation, refinement]
 category: Features
 order: 3
@@ -9,7 +9,7 @@ related_pages: [aggregations, search, filter-parser]
 
 # Facets
 
-Facets are the aggregated counts that drive filter sidebars: "Brand: Apple (12), Dell (8)" or "Price: $0–$100 (124), $100–$500 (89)". Sigmie generates them automatically from your property definitions — define a `category('brand')`, request `facets('brand')`, and you get back the counts.
+Facets are the counts and ranges beside search results, such as "Brand: Apple (12), Dell (8)". `facets()` on a search builds them from your property definitions and returns them under the response's `facets` key.
 
 ```php
 use Sigmie\Mappings\NewProperties;
@@ -21,19 +21,117 @@ $props->price();
 $response = $sigmie->newSearch('products')
     ->properties($props)
     ->queryString('laptop')
-    ->facets('brand price:100')
+    ->facets('brand price:100') // [tl! highlight]
     ->get();
 
-$facets = $response->json('facets');
-// ['brand' => ['Apple' => 5, 'Dell' => 3], 'price' => [...]]
+$response->json('facets');
+// ['brand' => ['Apple' => 5, 'Dell' => 3], 'price' => ['min' => 299, 'max' => 1499, 'histogram' => [...]]]
 ```
 
-## Term facets
+With an empty query string, the facets cover every document that the filters allow.
 
-Category and keyword fields produce term counts:
+## The facets() method
 
 ```php
-$props = new NewProperties;
+facets(string $facets, string $filters = '', bool $throwOnError = false)
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `$facets` | Space-separated list of fields to facet. See [Facet string](#facet-string). |
+| `$filters` | The values the user selected. See [Facet filter string](#facet-filter-string). |
+| `$throwOnError` | `false` drops an invalid clause and records it under the response's `errors` key. `true` throws a `ParseException`. |
+
+```php
+->facets('brand category', "brand:'Apple'", throwOnError: true)
+```
+
+## Facet string
+
+Each entry is a field path with an optional parameter after `:`.
+
+| Entry | Field types | Meaning |
+|-------|-------------|---------|
+| `brand` | All | Facet with default parameters. |
+| `brand:20` | Term fields | Return the top 20 values. Default 10. |
+| `brand:20,asc` | Term fields | Return the top 20 values, sorted by value. Also `desc`. |
+| `price:100` | `price` | Histogram bucket width of 100. Default 10. |
+| `attributes.color` | Nested | Facet a field inside a nested object. |
+
+`number`, `date`, and `datetime` facets take no parameter.
+
+## Facet filter string
+
+The facet filter string holds the values the user selected. It uses [filter parser](filter-parser.md) clauses separated by spaces:
+
+```php
+->facets('color size', "color:'red' color:'blue' size:'lg' price:100..200")
+```
+
+Sigmie groups the clauses by field. It joins the clauses of one field with the field's [facet logic](#facet-logic), then joins the fields with `AND`. When `color` is disjunctive, the string above becomes:
+
+```
+(color:'red' OR color:'blue') AND (size:'lg') AND (price:100..200)
+```
+
+When `color` is conjunctive, the first group is `(color:'red' AND color:'blue')`.
+
+The facet filter string does not accept `AND`, `OR`, `AND NOT`, or parentheses. If it contains one, Sigmie drops the whole facet filter string and records the error, or throws when `$throwOnError` is `true`.
+
+### How facet filters apply
+
+The facet filter narrows the hits. For the counts, each facet ignores the clauses on its own field and applies the clauses on every other field. A user who selects `color:'green'` still sees every color with its count, and the size facet shows only the sizes that exist in green:
+
+```php
+$sigmie->newSearch('products')
+    ->properties($props)
+    ->filters('stock>0')
+    ->facets('color size', "color:'green'")
+    ->get();
+```
+
+| | `filters()` | Facet filter string |
+|-|-------------|---------------------|
+| Narrows the hits | Yes | Yes |
+| Narrows the counts of the same field | Yes | No |
+| Narrows the counts of other fields | Yes | Yes |
+| Accepts `AND`, `OR`, parentheses | Yes | No |
+
+Use `filters()` for constraints the user does not pick in the sidebar, such as `stock>0`. See [Search](search.md#filter).
+
+## Facet logic
+
+Facet logic sets how several selected values of one field combine. Set it on the property:
+
+```php
+$props->category('color')->facetDisjunctive(); // [tl! highlight]
+$props->category('material')->facetConjunctive();
+```
+
+| Logic | Values of one field | Use for |
+|-------|---------------------|---------|
+| Conjunctive (default) | Joined with `AND`. A hit must have every selected value. | Multi-value fields, such as tags. |
+| Disjunctive | Joined with `OR`. A hit must have one of the selected values. | Single-value fields, such as brand or size. |
+
+Different fields always combine with `AND`.
+
+## Results by field type
+
+| Field type | Facet result |
+|------------|--------------|
+| `keyword`, `category`, `tags`, `caseSensitiveKeyword` | Value counts |
+| `text()->keyword()` | Value counts of the keyword sub-field |
+| `number` | `count`, `min`, `max`, `avg`, `sum` |
+| `price` | `min`, `max`, `histogram` |
+| `date`, `datetime` | `count`, `min`, `max` as date strings |
+
+A `text` field without `->keyword()` cannot be faceted.
+
+### Term fields
+
+`keyword`, `category`, and `tags` fields return each value with its count:
+
+```php
 $props->category('brand');
 $props->keyword('color');
 
@@ -47,9 +145,7 @@ $response->json('facets');
 // ['brand' => ['Nike' => 15, 'Adidas' => 12], 'color' => ['black' => 10, ...]]
 ```
 
-Use `category()` for categorical data (brand, department, genre). Use `keyword()` for exact-match strings (SKU, status).
-
-`caseSensitiveKeyword()` fields count each spelling separately:
+A `caseSensitiveKeyword` field counts each spelling on its own:
 
 ```php
 $props->caseSensitiveKeyword('tag');
@@ -58,9 +154,18 @@ $response->facet('tag');
 // ['sport' => 2, 'Sport' => 1]
 ```
 
-## Price facets
+A `text` field with a keyword sub-field returns the counts of that sub-field:
 
-Price fields return min, max, and a histogram. The argument after `:` is the bucket size:
+```php
+$props->text('author')->keyword();
+
+$response->facet('author');
+// ['Jane Doe' => 14, 'John Smith' => 9]
+```
+
+### Price fields
+
+A `price` field returns the lowest price, the highest price, and a histogram. Each histogram key is the lower bound of a bucket:
 
 ```php
 $props->price();
@@ -68,15 +173,15 @@ $props->price();
 $response = $sigmie->newSearch('products')
     ->properties($props)
     ->queryString('laptop')
-    ->facets('price:100')        // $100 buckets
+    ->facets('price:100') // [tl! highlight]
     ->get();
 
-$price = $response->facet('price');
+$response->facet('price');
 // [
 //     'min' => 299,
 //     'max' => 1499,
 //     'histogram' => [
-//         200 => 3,    // 3 in $200–$299
+//         200 => 3,    // 3 products from 200 to 299.99
 //         300 => 8,
 //         400 => 5,
 //         ...
@@ -84,22 +189,14 @@ $price = $response->facet('price');
 // ]
 ```
 
-Pick interval size to match your data range — $10 for cheap items, $100 for big-ticket.
+### Number fields
 
-## Number facets
-
-Number fields return statistics:
+A `number` field returns statistics:
 
 ```php
 $props->number('rating');
 
-$response = $sigmie->newSearch('products')
-    ->properties($props)
-    ->queryString('laptop')
-    ->facets('rating')
-    ->get();
-
-$stats = $response->facet('rating');
+$response->facet('rating');
 // [
 //     'count' => 127,
 //     'min' => 1.0,
@@ -109,9 +206,9 @@ $stats = $response->facet('rating');
 // ]
 ```
 
-## Date facets
+### Date fields
 
-Date fields (`date` and `datetime`) return the range they cover: the document `count` and the earliest and latest date. Use them to answer "which period does this data cover?":
+A `date` or `datetime` field returns the period it covers: the document `count`, the earliest date, and the latest date.
 
 ```php
 $props->date('published_at');
@@ -143,109 +240,11 @@ $response->facet('published_at');
 // ['count' => 2, 'min' => '2023-01-04T00:00:00.000Z', 'max' => '2024-06-18T00:00:00.000Z']
 ```
 
-A date facet is a range, not a list of values. For counts per day, month, or year, use [analytics](analytics.md) `trend` or a `date_histogram` [aggregation](aggregations.md).
-
-## Text facets
-
-Text fields need a `.keyword` sub-field for faceting:
-
-```php
-$props->text('author')->keyword();
-
-$response = $sigmie->newSearch('articles')
-    ->properties($props)
-    ->queryString('technology')
-    ->facets('author')
-    ->get();
-
-$response->facet('author');
-// ['Jane Doe' => 14, 'John Smith' => 9]
-```
-
-## Filtering with facets
-
-### Global filters
-
-`filters()` applies to both results and facet counts:
-
-```php
-$sigmie->newSearch('products')
-    ->properties($props)
-    ->queryString('laptop')
-    ->filters("brand:'Apple' AND price:500..1500")
-    ->facets('brand category price:100')
-    ->get();
-```
-
-### Facet-specific filters
-
-Pass a filter string as the second argument to `facets()`:
-
-```php
-$sigmie->newSearch('products')
-    ->properties($props)
-    ->queryString('laptop')
-    ->facets('brand category color', "brand:'Apple' AND category:'electronics'")
-    ->get();
-```
-
-Like `filters()`, the facet filter string is parsed leniently — an invalid clause is dropped and recorded under the response's `errors` key. Pass `throwOnError: true` as the third argument to raise a `ParseException` instead:
-
-```php
-->facets('brand category', "brand:'Apple'", throwOnError: true)
-```
-
-## Disjunctive vs conjunctive
-
-E-commerce facets usually want **disjunctive** logic: selecting two brands should show items from either brand, and both brand options should remain visible in the sidebar.
-
-### Disjunctive (OR within a field)
-
-```php
-$props->category('color')->facetDisjunctive();
-$props->category('size')->facetDisjunctive();
-
-$sigmie->newSearch('products')
-    ->properties($props)
-    ->queryString('shirt')
-    ->facets('color size', "color:'red' color:'blue' size:'lg'")
-    ->get();
-```
-
-- Multiple values for the same field combine with **OR**: `color:red OR color:blue`.
-- Different fields combine with **AND**: `(color) AND (size)`.
-- Both red and blue stay visible in color facets.
-
-### Conjunctive (AND within a field)
-
-```php
-$props->category('color')->facetConjunctive();
-$props->category('material')->facetConjunctive();
-```
-
-Multiple values combine with **AND**: only items matching every selected value are returned. Use this when filters narrow a set of multi-valued documents (a product with multiple tags).
-
-### Self-exclusion
-
-With disjunctive facets, a field's own filter doesn't affect that field's facet counts — so selecting "Apple" still shows you how many Dell, HP, Lenovo items exist:
-
-```php
-$sigmie->newSearch('products')
-    ->properties($props)
-    ->filters("stock>0")
-    ->facets('color size', "color:'green'")
-    ->get();
-```
-
-- Color facets show **every** color available (not just green).
-- Size facets reflect sizes available for green items.
-- Results contain only green items.
-
-This is the standard pattern for filter UIs.
+A date facet is a range, not a list of values. For counts per day, month, or year, use the [analytics](analytics.md) `trend` widget or a `dateHistogram` [aggregation](aggregations.md).
 
 ## Nested fields
 
-Use dot notation. Nested facets return the same shape as root facets:
+Facet a field inside a `nested` property with its dot path. The result has the same shape as a root field of the same type:
 
 ```php
 $props->nested('attributes', function (NewProperties $p) {
@@ -266,94 +265,23 @@ $response->facet('attributes.price');
 // ['min' => 20, 'max' => 180, 'histogram' => [0 => 4, 50 => 9, 100 => 6, 150 => 2]]
 ```
 
-`json('facets')` keys nested facets by their full path, `attributes.color`.
+Nesting can go deeper, for example `product.variants.size`.
 
-Multi-level nesting works too:
+## Read facet results
 
-```php
-$props->nested('product', function (NewProperties $p) {
-    $p->nested('variants', function (NewProperties $p) {
-        $p->keyword('size');
-        $p->price();
-    });
-});
-
-->facets('product.variants.size product.variants.price:25')
-```
-
-## Reading facet data
-
-`facet()` returns one field's facet as an array, for root and nested fields alike:
+`facet()` returns the facet of one field, root or nested. It returns `null` for a field that is not in the properties or cannot be faceted.
 
 ```php
-$price = $response->facet('price');                // ['min' => ..., 'max' => ..., 'histogram' => [...]]
-$rating = $response->facet('rating');              // ['count' => ..., 'min' => ..., 'max' => ..., 'avg' => ..., 'sum' => ...]
-$colors = $response->facet('attributes.color');    // ['red' => 12, 'blue' => 7]
+$response->facet('price');            // ['min' => ..., 'max' => ..., 'histogram' => [...]]
+$response->facet('rating');           // ['count' => ..., 'min' => ..., 'max' => ..., 'avg' => ..., 'sum' => ...]
+$response->facet('attributes.color'); // ['red' => 12, 'blue' => 7]
 ```
 
 `json('facets')` returns every requested facet, keyed by field path:
 
 ```php
-$allFacets = $response->json('facets');
-$brand = $response->json('facets.brand');
+$response->json('facets');       // ['brand' => [...], 'attributes.color' => [...]]
+$response->json('facets.brand');
 ```
 
-| Field type | Facet |
-|------------|-------|
-| `keyword`, `category`, `tags`, `caseSensitiveKeyword` | Value counts |
-| `text()->keyword()` | Value counts of the keyword sub-field |
-| `number` | `count`, `min`, `max`, `avg`, `sum` |
-| `price` | `min`, `max`, `histogram` |
-| `date`, `datetime` | `count`, `min`, `max` (date strings) |
-
-> **Note:** `json('facets.attributes.color')` reads `.` as a path separator. Use `facet('attributes.color')` for nested fields.
-
-## Combined example
-
-A realistic e-commerce facet setup:
-
-```php
-$props = new NewProperties;
-$props->category('category')->facetDisjunctive();
-$props->category('brand')->facetDisjunctive();
-$props->category('color')->facetDisjunctive();
-$props->category('size')->facetDisjunctive();
-$props->price();
-$props->number('rating');
-$props->number('stock');
-
-$response = $sigmie->newSearch('products')
-    ->properties($props)
-    ->queryString($searchTerm)
-    ->filters("stock>0")
-    ->facets(
-        'category brand color size price:50 rating',
-        "category:'electronics' brand:'apple' price:500..1500"
-    )
-    ->get();
-
-$brand = $response->facet('brand');
-$color = $response->facet('color');
-$price = $response->facet('price');
-$rating = $response->facet('rating');
-```
-
-## Empty search with facets
-
-Browsing without a query string:
-
-```php
-$response = $sigmie->newSearch('products')
-    ->properties($props)
-    ->queryString('')
-    ->facets('category brand price:100')
-    ->get();
-```
-
-Returns facets across the entire dataset.
-
-## See also
-
-- [Aggregations](aggregations.md) — raw `terms`, `range`, `histogram`, `stats` aggregations.
-- [Filter Parser](filter-parser.md) — the syntax used in `filters()` and `facets()`.
-- [Mappings & Properties](mappings.md) — `facetDisjunctive()` / `facetConjunctive()` on field definitions.
+> **Note:** `json()` reads `.` as a path separator, so `json('facets.attributes.color')` does not find a nested facet. Use `facet('attributes.color')`.

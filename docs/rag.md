@@ -1,6 +1,6 @@
 ---
 title: Retrieval and Agents
-short_description: Combine Sigmie retrieval and reranking with text generation in RAG workflows — search, rerank, then call your LLM client of choice from app code.
+short_description: Answer questions over your Elasticsearch data with Sigmie. Retrieve with semantic search, rerank the top hits, then pass them to the LLM client you choose.
 keywords: [rag, retrieval, llm, agents, elasticsearch, search]
 category: Advanced Features
 order: 45
@@ -9,40 +9,34 @@ related_pages: [semantic-search, search, magic-tags]
 
 # Retrieval and Agents
 
-Sigmie is a **retrieval and indexing** library. It gives you:
+This guide builds a retrieval-augmented generation (RAG) flow: retrieve documents with Sigmie, rerank them, and pass the best ones to a language model. Sigmie handles retrieval and reranking. It ships no LLM client, prompt builder, or single "question to answer" API, so the generation step is your own code.
 
-- Indices and mappings.
-- Keyword and semantic search.
-- Reranking on search responses.
-- Embeddings as a first-class field type.
+| Step | Owner | API |
+|------|-------|-----|
+| Retrieve | Sigmie | `newSearch()` with `->semantic()` |
+| Rerank | Sigmie | `$response->rerank(...)` with a registered `RerankApi` |
+| Generate | Your code | Any HTTP client, vendor SDK, or the [Laravel AI SDK](laravel-ai.md) |
 
-It does **not** ship:
+## Before you start
 
-- An LLM client.
-- A prompt builder.
-- A RAG orchestrator (no single "search → context → model → answer" API).
+You need an index with a semantic field. [Semantic search](semantic-search.md) shows how to define one and index documents. The examples below search a `docs` index whose `content` field holds the text.
 
-For text generation, use your preferred HTTP client, vendor SDK, or framework. The application code below shows the pattern.
+## Register the APIs
 
-## What stays in Sigmie
-
-| Area | Sigmie API |
-|------|------------|
-| Retrieval | `newSearch()`, `newMultiSearch()`, `newQuery()`, `newRecommend()` |
-| Reranking | `$response->rerank(...)` with a registered `RerankApi` |
-| Embeddings | `EmbeddingsApi` + `->semantic()` on text fields |
-| Taxonomy tags | Optional [Magic Tags](magic-tags.md) package |
-
-## The pattern: retrieve, rerank, generate
+Register an embeddings API for semantic retrieval and a rerank API for reranking:
 
 ```php
-use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 use Sigmie\AI\APIs\CohereRerankApi;
+use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
 
 $sigmie->registerApi('embeddings', new OpenAIEmbeddingsApi('sk-...'));
 $sigmie->registerApi('reranker', new CohereRerankApi('co-...'));
+```
 
-// 1. Retrieve.
+## Retrieve, rerank, and generate
+
+```php
+// 1. Retrieve 20 candidates.
 $response = $sigmie->newSearch('docs')
     ->properties($props)
     ->semantic()
@@ -50,10 +44,10 @@ $response = $sigmie->newSearch('docs')
     ->size(20)
     ->get();
 
-// 2. Rerank.
-$top5 = $response->rerank('reranker', ['content'], topK: 5);
+// 2. Keep the 5 best by reranker score.
+$top5 = $response->rerank('reranker', ['content'], topK: 5); // [tl! highlight]
 
-// 3. Generate (your code, not Sigmie's).
+// 3. Generate with your own client. $yourOpenAiClient is a placeholder.
 $context = collect($top5)->pluck('_source.content')->implode("\n\n");
 
 $answer = $yourOpenAiClient->chat([
@@ -62,33 +56,31 @@ $answer = $yourOpenAiClient->chat([
 ]);
 ```
 
-## Reranking
+`rerank()` returns an array of `RerankedHit` objects, best first. Each holds the original `_id` and `_source`, plus `_rerank_score`.
 
-`$response->rerank()` accepts either a registered API name or a concrete `RerankApi`:
+## Adjust the rerank step
 
-```php
-$response->rerank('reranker', ['content']);
-$response->rerank('reranker', ['title', 'content'], topK: 3);
-$response->rerank('reranker', ['content'], 'return policy');
-```
-
-The signature is:
+`rerank()` takes a registered API name or a `RerankApi` instance:
 
 ```php
 rerank(
     RerankApi|string $reranker,
     array $fields,
-    ?string $query = null,        // defaults to the search's query string
-    ?int $topK = null,            // defaults to the search's size
+    ?string $query = null,
+    ?int $topK = null,
 ): array;
 ```
 
-For advanced cases, build a rerank manually with `Sigmie\Search\NewRerank`.
+- To send more than one field to the reranker, list them: `rerank('reranker', ['title', 'content'])`. Sigmie sends each hit's fields as a YAML snippet.
+- To rerank against a different text than the search query, pass `$query`: `rerank('reranker', ['content'], 'return policy')`. By default it uses the search's query string.
+- To change how many hits come back, pass `topK`. By default it uses the search's `size`, or 10 when the size is 0.
+
+With no hits or an empty query, `rerank()` calls no API and returns the hits unchanged. A name that is not a registered `RerankApi` throws an `InvalidArgumentException`. To rerank hits outside a search response, use `Sigmie\Search\NewRerank` directly.
 
 ## See also
 
-- [Semantic Search](semantic-search.md) — embeddings and similarity.
-- [Recommendations](recommendations.md) — RRF and MMR for similar-item retrieval.
-- [Magic Tags](magic-tags.md) — taxonomy tags backed by embeddings.
-- [Laravel AI SDK](laravel-ai.md) — expose Sigmie indices as tools for an AI agent.
-- [MCP Server](mcp.md) — Sigmie's docs as an MCP tool for AI coding assistants.
+- [Semantic search](semantic-search.md) for embeddings, providers, and similarity.
+- [Recommendations](recommendations.md) for RRF and MMR in similar-item retrieval.
+- [Magic Tags](magic-tags.md) for taxonomy tags backed by embeddings.
+- [Laravel AI SDK](laravel-ai.md) to let an agent search an index through tools.
+- [MCP server](mcp.md) to connect a coding assistant to the Sigmie documentation.

@@ -1,180 +1,133 @@
 ---
 title: Text Analysis
-short_description: How Elasticsearch transforms text at index and query time — the char filter, tokenizer, and token filter pipeline explained with worked examples.
+short_description: How Elasticsearch turns text into tokens with char filters, a tokenizer, and token filters, and why Sigmie runs one analyzer on documents and queries.
 keywords: [analysis, analyzers, text processing, tokenization]
 category: Text Analysis
 order: 1
-related_pages: [tokenizers, token-filters, char-filters, language]
+related_pages: [tokenizers, token-filters, char-filters, language, mappings]
 ---
 
 # Text Analysis
 
-Analysis is how Elasticsearch transforms text into searchable tokens. Every text field is analyzed at index time, and every query string is analyzed the same way at search time. When both sides apply identical transformations, matching becomes a fast set operation.
+Analysis turns a string into the tokens that Elasticsearch stores and compares. It runs twice: on each text field when you index a document, and on the query string when you search. A query matches a document when both sides produce the same tokens. That is why Sigmie runs one analyzer on both sides.
 
-## The pipeline
-
-Every analyzer has three stages:
+## An analyzer has three stages
 
 ```
 input text
    │
    ▼
-[Char filters]    pre-process raw characters (strip HTML, map symbols)
+[Char filters]    change the raw string (strip HTML, map symbols)
    │
    ▼
-[Tokenizer]       split into tokens
+[Tokenizer]       split the string into tokens
    │
    ▼
-[Token filters]   transform tokens (lowercase, remove stopwords, stem)
+[Token filters]   change, add, or remove tokens (lowercase, stopwords)
    │
    ▼
-indexed tokens
+tokens
 ```
 
-Each stage is optional but tokenization. The tokenizer is the one required component — char filters and token filters are added as needed.
+An analyzer has exactly one tokenizer. Char filters and token filters are optional, and an analyzer can have many of each.
 
-## A worked example
+| Stage | Works on | Example | Reference |
+|-------|----------|---------|-----------|
+| Char filters | The whole string, before it is split | Strip HTML tags | [Character Filters](char-filters.md) |
+| Tokenizer | The whole string, once | Split on whitespace | [Tokenizers](tokenizers.md) |
+| Token filters | Each token, one filter after another | Lowercase every token | [Token Filters](token-filters.md) |
 
-Index this HTML text:
+## Follow one string through the pipeline
+
+This index builds an analyzer with one stage of each kind:
 
 ```php
+$sigmie->newIndex('quotes')
+    ->stripHTML()
+    ->tokenizeOnWhitespaces()
+    ->lowercase()
+    ->stopwords(['are', 'for'])
+    ->create();
+```
+
+Here is what happens to a field value:
+
+```
 "<span>Some people are worth melting for</span>"
-```
-
-With this analyzer:
-
-```
-Analyzer
-├─ Char filters
-│  └─ Strip HTML
-├─ Tokenizer
-│  └─ Whitespace
-└─ Token filters
-   ├─ Lowercase
-   └─ Stopwords (drop "are", "for")
-```
-
-### Step 1: Char filters
-
-The HTML strip removes tags:
-
-```
-"<span>Some people are worth melting for</span>"   →   "Some people are worth melting for"
-```
-
-### Step 2: Tokenize
-
-Whitespace tokenizer splits on spaces:
-
-```
+   │
+   ▼ Char filter: strip HTML
 "Some people are worth melting for"
-
-→ "Some"
-→ "people"
-→ "are"
-→ "worth"
-→ "melting"
-→ "for"
-```
-
-### Step 3: Token filters
-
-Lowercase normalizes case; stopwords drops common words:
-
-```
-"Some"    → "some"
-"people"  → "people"
-"are"     → (dropped)
-"worth"   → "worth"
-"melting" → "melting"
-"for"     → (dropped)
-```
-
-The indexed tokens are:
-
-```
+   │
+   ▼ Tokenizer: whitespace
+"Some" "people" "are" "worth" "melting" "for"
+   │
+   ▼ Token filter: lowercase
+"some" "people" "are" "worth" "melting" "for"
+   │
+   ▼ Token filter: stopwords ("are", "for")
 "some" "people" "worth" "melting"
 ```
 
-## Query analysis
+Elasticsearch stores the four tokens at the bottom. It does not store the HTML, the capital letters, or the stopwords.
 
-A query string goes through the **same** analyzer. Query "Some people worth melting":
+## Queries go through the same analyzer
+
+At search time, the query string takes the same path:
 
 ```
-"Some people worth melting"
+"People Worth Melting"
    │
-   ▼ (no HTML to strip)
+   ▼ no HTML to strip
+   ▼ whitespace tokenizer
+"People" "Worth" "Melting"
    │
-   ▼ Whitespace tokenizer
-"Some" "people" "worth" "melting"
-   │
-   ▼ Lowercase + stopwords
-"some" "people" "worth" "melting"
+   ▼ lowercase, stopwords
+"people" "worth" "melting"
 ```
 
-Now Elasticsearch can match tokens against the index:
+All three query tokens exist in the document, so the document matches. If only the document side were lowercased, `People` would never equal `people`, and the same search would find nothing.
+
+## Filter order changes the result
+
+Token filters run in the order you add them. The `stop` filter compares tokens case-sensitively, so a stopword list in lowercase only works after `lowercase()`:
 
 ```
-Query Term    Document 1    Document 2
-"some"           ✓             ✓
-"people"         ✓             ✓
-"worth"                        ✓
-"melting"        ✓             ✓
+lowercase(), then stopwords()        stopwords(), then lowercase()
+
+"For" → "for" → (dropped)            "For" → "For" (kept) → "for"
 ```
 
-Document 2 matches more terms, so it scores higher.
+Add normalizing filters such as `lowercase()` and `asciiFolding()` before the filters that compare against a word list.
 
-## Configure analysis in Sigmie
+## Where Sigmie attaches an analyzer
 
-Index-level analysis runs on every text field unless a field overrides it:
+Sigmie builds analyzers at two levels:
+
+```
+newIndex('movies')
+├─ analyzer "default"            built from the index builder methods
+│                                 used by every text field without its own
+└─ properties
+   ├─ description  → "default"
+   └─ email        → "email_field_analyzer"
+                      built in withNewAnalyzer(), used only by this field
+```
+
+The analysis methods on the index builder, such as `lowercase()` or `tokenizeOnWhitespaces()`, build the analyzer named `default`. Elasticsearch uses `default` for every text field that has no analyzer of its own. With no analysis methods, `default` uses the word boundaries tokenizer and no filters.
+
+`withNewAnalyzer()` on a text property builds an analyzer for that field only. Sigmie names it after the field path with a `_field_analyzer` suffix and uses it for both indexing and search on that field. Some property types, such as `title()`, `email()`, and `path()`, build their own field analyzer. See [Mappings](mappings.md) for per-field analyzers.
+
+`language()` swaps the index builder for one with language-specific filters. See [Languages](language.md).
+
+## Inspect the tokens an analyzer produces
+
+`analyze()` sends text through one of the index's analyzers and returns the tokens. The second argument names the analyzer and defaults to `default`:
 
 ```php
-$sigmie->newIndex('movies')
-    ->tokenizeOnWhitespaces()        // tokenizer
-    ->lowercase()                    // token filter
-    ->trim()                         // token filter
-    ->stripHTML()                    // char filter
-    ->create();
+$sigmie->index('quotes')->analyze('<b>Worth</b> melting for');
+// ["worth", "melting"]
+
+$sigmie->index('contacts')->analyze('nico@sigmie.com', 'email_field_analyzer');
 ```
 
-See [Tokenizers](tokenizers.md), [Token Filters](token-filters.md), and [Character Filters](char-filters.md) for every option.
-
-## Per-field analysis
-
-Override analysis on a single field:
-
-```php
-use Sigmie\Index\NewAnalyzer;
-
-$props->text('email')
-    ->withNewAnalyzer(function (NewAnalyzer $analyzer) {
-        $analyzer->tokenizeOnPattern('(@|\.)');
-        $analyzer->lowercase();
-    });
-```
-
-## Test the analyzer
-
-`analyze()` runs text through the index's analyzer and returns the resulting tokens:
-
-```php
-$sigmie->index('movies')->analyze('The Matrix Reloaded');
-// ["matrix", "reloaded"]
-```
-
-Use this to verify a field is being tokenized the way you expect before re-indexing the world.
-
-## Language-specific analysis
-
-English, German, and Greek have purpose-built analyzers with stemmers, stopwords, and normalizers — see [Languages](language.md).
-
-```php
-use Sigmie\Languages\English\English;
-
-$sigmie->newIndex('articles')
-    ->language(new English)
-    ->englishStemmer()
-    ->englishStopwords()
-    ->englishLowercase()
-    ->create();
-```
+Check the tokens before you reindex. A document token that differs from the query token never matches.

@@ -1,6 +1,6 @@
 ---
 title: Recommendations
-short_description: Build similar-item recommendations with Sigmie's newRecommend() API — multi-seed retrieval, field weighting, RRF fusion, and MMR diversification.
+short_description: Recommend similar documents with Sigmie's newRecommend() on Elasticsearch. Pick seed documents, weight semantic fields, filter, then diversify with MMR.
 keywords: [recommendations, similar items, rrf, mmr, semantic similarity]
 category: Features
 order: 4
@@ -9,7 +9,15 @@ related_pages: [semantic-search, search, rag]
 
 # Recommendations
 
-`newRecommend()` finds documents similar to one or more **seed documents** you already have. It's the right call for "You might also like…", "Related articles", and "Customers who viewed this also viewed…" widgets.
+`newRecommend()` returns documents similar to one or more documents you already have, the **seed documents**. Use it for "You might also like", "Related articles", and "Customers who viewed this also viewed" lists.
+
+It searches with the vectors stored on the seeds, so it calls no embeddings API. When the user types a query, use [semantic search](semantic-search.md) instead.
+
+## Before you start
+
+You need an index with [semantic fields](semantic-search.md#define-semantic-fields). Index the documents with embeddings, which is the default. A collection with `populateEmbeddings(false)` stores no vectors, and its documents cannot be seeds.
+
+The examples on this page use these properties:
 
 ```php
 use Sigmie\Mappings\NewProperties;
@@ -17,265 +25,125 @@ use Sigmie\Mappings\NewProperties;
 $props = new NewProperties;
 $props->text('name')->semantic(api: 'embeddings', dimensions: 384);
 $props->text('category')->semantic(api: 'embeddings', dimensions: 384);
+$props->text('brand')->semantic(api: 'embeddings', dimensions: 384);
 $props->text('description')->semantic(api: 'embeddings', dimensions: 384);
 $props->number('price');
-
-$recommendations = $sigmie->newRecommend('products')
-    ->properties($props)
-    ->seedIds(['product-123', 'product-456'])
-    ->field('category', weight: 2.0)
-    ->field('name', weight: 1.0)
-    ->filter('price<=100')
-    ->topK(5)
-    ->hits();
+$props->number('rating');
+$props->bool('in_stock');
 ```
 
-## How it works
+## Recommend from one document
 
-1. **Fetch seeds.** Sigmie loads the documents you reference by ID.
-2. **Extract vectors.** For each field you weighted, it pulls the stored embeddings off the seed documents.
-3. **Multi-search.** It runs a semantic search per (seed × field) using those vectors.
-4. **Fuse.** Results are combined with Reciprocal Rank Fusion (RRF).
-5. **Diversify (optional).** Maximal Marginal Relevance (MMR) spreads results across the result space.
+Pass the properties, the seed ID, and at least one semantic field, then call `hits()`:
 
-No new embeddings are generated — you're searching with the vectors you already indexed.
+```php
+$hits = $sigmie->newRecommend('products')
+    ->properties($props)
+    ->seedIds(['product-42']) // [tl! highlight]
+    ->field('category')
+    ->field('name')
+    ->topK(5)
+    ->hits();
 
-## Use `newSearch()` instead when
+foreach ($hits as $hit) {
+    echo "{$hit->_id}: {$hit['name']}\n";
+}
+```
 
-- The user types a search query (no seed IDs).
-- You need keyword search alongside semantic.
-- You want highlighting, facets, autocomplete.
+`hits()` returns up to `topK` hits, best first. `topK` defaults to 10. The seed documents never appear in the results. `hits()` returns an empty array when no seed ID exists in the index or when you call no `field()`.
 
-Use `newRecommend()` when:
+`seedIds()` fetches the seed documents when you call it.
 
-- You have an existing document and want similar ones.
-- Different fields should contribute different amounts to similarity.
-- You want to fuse multiple seeds (browse history, multi-item carts).
-- You want diversity in the results.
+## Weight the fields
 
-## Field weighting
-
-Each `field()` call specifies a semantic field on the seed documents and how much it should influence the final ranking:
+Each `field()` call adds one semantic field and its weight. The default weight is `1.0`. A field with a higher weight has more influence on the ranking:
 
 ```php
 $sigmie->newRecommend('products')
     ->properties($props)
     ->seedIds(['product-42'])
-    ->field('category', weight: 3.0)
+    ->field('category', weight: 3.0) // [tl! highlight]
     ->field('brand', weight: 2.0)
     ->field('description', weight: 1.0)
     ->topK(10)
     ->hits();
 ```
 
-| Weight | Meaning |
-|--------|---------|
-| 1.0 | Baseline. |
-| 2.0–3.0 | Important — should strongly drive results. |
-| 0.5 | Refinement field. |
-| 5.0+ | Dominant — overrides everything else. |
+Pass only semantic fields. `field()` reads the vectors that the seed stores for that field, and a non-semantic field has none.
 
-> **Note:** Only semantic fields participate. A non-semantic field passed to `field()` is silently skipped.
+## Recommend from several documents
 
-## API methods
-
-### `properties()`
-
-Required. Sigmie uses your property definitions to determine which fields are semantic.
+Pass several seed IDs, for example the items in a cart or the user's recent views:
 
 ```php
-$recommendations->properties($props);
-```
-
-### `seedIds()`
-
-Documents must exist in the index and must have been indexed with `populateEmbeddings()` (the default) so their vectors are stored.
-
-```php
-$recommendations->seedIds(['product-123']);                       // single seed
-$recommendations->seedIds(['product-123', 'product-456']);        // RRF across seeds
-```
-
-### `field()`
-
-```php
-$recommendations->field('category', weight: 2.0);
-$recommendations
-    ->field('category', weight: 3.0)
-    ->field('brand', weight: 2.0)
-    ->field('description', weight: 1.0);
-```
-
-### `filter()`
-
-[Filter parser](filter-parser.md) syntax — narrow the candidate pool:
-
-```php
-$recommendations->filter('price>=50 AND price<=200');
-$recommendations->filter('in_stock:true AND rating>=4');
-```
-
-### `topK()`
-
-```php
-$recommendations->topK(5);     // default 10
-```
-
-### `rrf()`
-
-Configure Reciprocal Rank Fusion:
-
-```php
-$recommendations->rrf(rankConstant: 60);
-```
-
-Higher `rankConstant` makes the fusion more forgiving of lower-ranked results.
-
-### `mmr()`
-
-Enable Maximal Marginal Relevance for result diversity:
-
-```php
-$recommendations->mmr(lambda: 0.5);     // balanced (default)
-$recommendations->mmr(lambda: 0.8);     // favor relevance
-$recommendations->mmr(lambda: 0.2);     // favor diversity
-```
-
-### `make()` / `get()` / `hits()`
-
-```php
-$search = $recommendations->make();        // get the Search object without running it
-$rawDsl = $search->toRaw();                // inspect the Elasticsearch query
-
-$response = $recommendations->get();       // full Elasticsearch response
-$hits = $recommendations->hits();          // just the hits array
-```
-
-## Reciprocal Rank Fusion
-
-RRF combines multiple ranked lists into one. For each document, its RRF score is:
-
-```
-score = Σ (1 / (k + rank))
-```
-
-…summed across every result list where the document appears.
-
-If a document appears at rank 1 in seed A's results and rank 3 in seed B's results, with default `k = 60`:
-
-```
-score = 1 / (60 + 1) + 1 / (60 + 3) = 0.0164 + 0.0159 = 0.0323
-```
-
-RRF is robust to outliers, needs no score normalization, and rewards documents that appear in multiple result sets.
-
-## Maximal Marginal Relevance
-
-Without MMR, you can get ten near-duplicate results (ten blue Nike sneakers with slightly different SKUs). MMR diversifies the list by penalizing each candidate's similarity to results already selected.
-
-```
-mmr_score = λ × relevance − (1 − λ) × similarity_to_selected
-```
-
-- `λ = 1.0` — pure relevance, no diversity.
-- `λ = 0.5` — balanced (default).
-- `λ = 0.0` — pure diversity.
-
-Use MMR for product recommendations and content discovery. Skip it when precision is critical (medical, legal) or when you need very similar matches.
-
-```php
-// Without MMR — risks 10 identical-looking blue Nike sneakers
 $sigmie->newRecommend('products')
-    ->seedIds(['blue-nike-running-shoe'])
+    ->properties($props)
+    ->seedIds(['product-123', 'product-456']) // [tl! highlight]
     ->field('category', weight: 2.0)
-    ->field('color', weight: 1.0)
-    ->topK(10)
-    ->hits();
-
-// With MMR — same starting point, more varied results
-$sigmie->newRecommend('products')
-    ->seedIds(['blue-nike-running-shoe'])
-    ->field('category', weight: 2.0)
-    ->field('color', weight: 1.0)
-    ->mmr(lambda: 0.5)
-    ->topK(10)
+    ->field('name')
     ->hits();
 ```
 
-MMR is applied per-field before the final RRF fusion, so each field contributes diverse candidates that then get blended.
+Sigmie runs one vector search for each seed and fetches `topK × 10` candidates from each. It merges the lists with Reciprocal Rank Fusion (RRF). Each list adds `1 / (k + rank)` to the score of every document in it, so a document that ranks well for several seeds rises to the top. A document at rank 1 for one seed and rank 3 for another scores `1/61 + 1/63` with the default `k` of 60.
 
-> **Note:** MMR is O(n²) over candidates. Sigmie retrieves `topK × 10` before running MMR, so very large `topK` values are expensive. Filters help by shrinking the candidate pool.
-
-## End-to-end example
+To change `k`, call `rrf()`. A higher `k` gives lower-ranked candidates more influence:
 
 ```php
-use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
-use Sigmie\Mappings\NewProperties;
+->rrf(rrfRankConstant: 80)
+```
 
-$sigmie->registerApi('embeddings', new OpenAIEmbeddingsApi(getenv('OPENAI_API_KEY')));
+## Filter the candidates
 
-$props = new NewProperties;
-$props->text('name')->semantic(api: 'embeddings', dimensions: 1536);
-$props->text('category')->semantic(api: 'embeddings', dimensions: 1536, accuracy: 4);
-$props->text('description')->semantic(api: 'embeddings', dimensions: 1536);
-$props->text('brand')->semantic(api: 'embeddings', dimensions: 1536);
-$props->number('price');
-$props->number('rating');
-$props->bool('in_stock');
+To limit the candidates, pass a [filter parser](filter-parser.md) string to `filter()`:
 
-$recommendations = $sigmie->newRecommend('products')
+```php
+$sigmie->newRecommend('products')
     ->properties($props)
     ->seedIds(['macbook-pro-16-2023'])
     ->field('category', weight: 3.0)
     ->field('brand', weight: 2.0)
-    ->field('name', weight: 1.5)
-    ->field('description', weight: 1.0)
-    ->mmr(lambda: 0.6)
-    ->filter('in_stock:true AND price<=2000 AND rating>=4')
+    ->filter('in_stock:true AND price<=2000 AND rating>=4') // [tl! highlight]
     ->topK(10)
     ->hits();
-
-foreach ($recommendations as $hit) {
-    $p = $hit['_source'];
-    echo "{$p['name']} — {$p['brand']} | \${$p['price']} | {$p['rating']}/5\n";
-}
 ```
 
-## Debugging
+## Diversify the results
 
-Inspect the generated query:
+Without diversity, ten results can be ten near-copies of the seed, such as one sneaker in ten colors. To spread the results, call `mmr()`. It turns on Maximal Marginal Relevance (MMR):
 
 ```php
-$search = $sigmie->newRecommend('products')
+$sigmie->newRecommend('products')
     ->properties($props)
-    ->seedIds(['running-shoes-nike-pegasus'])
+    ->seedIds(['blue-nike-running-shoe'])
     ->field('category', weight: 2.0)
-    ->topK(5)
-    ->make();
-
-print_r($search->toRaw());
+    ->field('name')
+    ->mmr(lambda: 0.5) // [tl! highlight]
+    ->topK(10)
+    ->hits();
 ```
 
-List your semantic fields:
+MMR picks results one at a time. Each pick has the highest score for:
 
-```php
-$semanticFields = $props->get()
-    ->nestedSemanticFields()
-    ->filter(fn ($f) => $f->isSemantic())
-    ->map(fn ($f) => $f->fullPath)
-    ->toArray();
+```
+lambda × similarity_to_seeds − (1 − lambda) × similarity_to_already_picked
 ```
 
-## Troubleshooting
+| `lambda` | Effect |
+|----------|--------|
+| `1.0` | Relevance only, no diversity |
+| `0.5` | Default. Balanced |
+| `0.0` | Diversity only |
 
-**No results.** Filters too restrictive, or seeds don't have stored embeddings (re-index with `populateEmbeddings()`).
+Sigmie runs MMR on each field, then merges the per-field lists with RRF, weighted by the field weights.
 
-**Poor quality.** Verify the fields you're weighting are actually semantic. Tune weights and accuracy. Try seeds from different parts of your dataset.
+> **Note:** MMR compares every candidate with every picked result, and the pool holds `topK × 10` candidates. A large `topK` makes it slow. Filters make the pool smaller.
 
-**Slow.** Reduce `topK`, narrow with filters, drop semantic accuracy, or disable MMR if you don't need diversity.
+Skip MMR when you need the closest matches, for example for duplicate detection.
 
-## See also
+## Troubleshoot
 
-- [Semantic Search](semantic-search.md) — semantic fields and embeddings.
-- [Filter Parser](filter-parser.md) — filter syntax used in `filter()`.
-- [Mappings & Properties](mappings.md) — defining semantic fields.
+**No results.** Check that the seed IDs exist and that the filter does not exclude every candidate. Check that the seeds were indexed with embeddings.
+
+**Poor matches.** Check that every field you pass to `field()` is semantic. Raise the weight of the field that best describes similarity in your data, such as `category`.
+
+**Slow requests.** Lower `topK`, add filters, or turn off MMR.
