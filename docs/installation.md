@@ -23,6 +23,8 @@ Install the package, point it at a cluster, and confirm that the connection work
 composer require sigmie/sigmie
 ```
 
+The `v2` in the documentation URL identifies the guide. Composer installs the library from its own release series. The [hybrid search example](https://github.com/sigmie/sigmie#run-a-hybrid-search) uses `sigmie/sigmie` v1.8.4.
+
 Outside a framework, load the Composer autoloader once in your entry script:
 
 ```php
