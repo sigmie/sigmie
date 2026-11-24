@@ -9,6 +9,8 @@ use Sigmie\Mappings\Properties;
 use Sigmie\Query\BooleanQueryBuilder;
 use Sigmie\Query\Queries\Query;
 
+use function Sigmie\Functions\merge_named;
+
 class Boolean extends Query
 {
     public BooleanQueryBuilder $must;
@@ -56,26 +58,15 @@ class Boolean extends Query
 
     public function toRaw(): array
     {
-        $res = [];
-
-        if ($this->must->toRaw() !== []) {
-            $res['must'] = $this->must->toRaw();
-        }
-
-        if ($this->mustNot->toRaw() !== []) {
-            $res['must_not'] = $this->mustNot->toRaw();
-        }
-
-        if ($this->should->toRaw() !== []) {
-            $res['should'] = $this->should->toRaw();
-        }
-
-        if ($this->filter->toRaw() !== []) {
-            $res['filter'] = $this->filter->toRaw();
-        }
+        $res = array_filter([
+            'must' => $this->must->toRaw(),
+            'must_not' => $this->mustNot->toRaw(),
+            'should' => $this->should->toRaw(),
+            'filter' => $this->filter->toRaw(),
+        ]);
 
         $res['boost'] = $this->boost;
 
-        return ['bool' => [...$res, ...$this->raw]];
+        return ['bool' => merge_named($res, $this->raw)];
     }
 }

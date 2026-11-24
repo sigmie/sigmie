@@ -23,6 +23,31 @@ class AggregationTest extends TestCase
     use Index;
     use Search;
 
+    public function test_rate_without_a_unit_uses_the_date_histogram_interval(): void
+    {
+        $index = uniqid('.rate-interval-');
+        $properties = new NewProperties;
+        $properties->date('date');
+        $properties->number('amount');
+        $this->sigmie->newIndex($index)->properties($properties)->create();
+
+        try {
+            $this->sigmie->collect($index, refresh: true)->add(new Document([
+                'date' => '2024-01-01',
+                'amount' => 75,
+            ]));
+
+            $response = $this->sigmie->newQuery($index)->matchAll()->size(0)
+                ->aggregate(fn (SearchAggregation $aggs) => $aggs->dateHistogram('dates', 'date', CalendarInterval::Day)
+                    ->aggregate(fn (SearchAggregation $days) => $days->rate('sales', 'amount')))
+                ->get();
+
+            $this->assertEquals(75, $response->aggregation('dates.buckets.0.sales.value'));
+        } finally {
+            $this->sigmie->deleteIfExists($index);
+        }
+    }
+
     /**
      * @test
      */
@@ -558,6 +583,8 @@ class AggregationTest extends TestCase
         $collection->merge([
             new Document(['type' => 'common']),
             new Document(['type' => 'common']),
+            new Document(['type' => 'common']),
+            new Document(['type' => 'rare']),
             new Document(['type' => 'rare']),
             new Document(['name' => 'missing type']),
         ]);
@@ -566,8 +593,8 @@ class AggregationTest extends TestCase
             ->matchAll()
             ->aggregate(function (SearchAggregation $aggregation): void {
                 $rareTerms = (new RareTerms('rare_types', 'type'))
-                    ->missing('N/A');
-                $rareTerms->size(10);
+                    ->missing('N/A')
+                    ->maxDocCount(2);
 
                 $aggregation->add($rareTerms);
             })
@@ -584,7 +611,7 @@ class AggregationTest extends TestCase
 
         $this->assertSame([
             'N/A' => 1,
-            'rare' => 1,
+            'rare' => 2,
         ], $bucketCounts);
     }
 
@@ -1024,7 +1051,7 @@ class AggregationTest extends TestCase
             ['status' => ['terms' => ['field' => 'status']]],
         ], 5, ['status' => 'active']);
         $aggregation->cumulativeSum('running_total', 'total_count');
-        $aggregation->rate('yearly_rate', 'count');
+        $aggregation->rate('yearly_rate', 'count', unit: 'year');
 
         $raw = $aggregation->toRaw();
 
@@ -1064,8 +1091,8 @@ class AggregationTest extends TestCase
 
         $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
 
-        $this->expectException(TypeError::class);
+        $raw = (new SearchAggregation)->termFilter('status_filter', 'status', 'active')->toRaw();
 
-        (new SearchAggregation)->termFilter('status_filter', 'status', 'active');
+        $this->assertSame('active', $raw['status_filter']['filter']['term']['status']['value']);
     }
 }

@@ -11,6 +11,11 @@ use Sigmie\Base\APIs\Search as SearchAPI;
 use Sigmie\Base\APIs\Template as TemplateAPI;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\ElasticsearchException;
+use Sigmie\Enums\SearchEngineType;
+
+use function Sigmie\Functions\fold_text;
+use function Sigmie\Functions\lowercase_term;
+use function Sigmie\Functions\trim_text;
 
 class ExistingScript
 {
@@ -31,9 +36,7 @@ class ExistingScript
     {
         $body = [
             'id' => $this->id,
-            'params' => (object) [
-                ...$params,
-            ],
+            'params' => (object) $this->templateParams($params),
         ];
 
         return $this->searchTemplateRequest($index, $body);
@@ -42,7 +45,7 @@ class ExistingScript
     public function render(array $params = []): ?array
     {
         try {
-            $res = $this->renderAPICall($this->id, $params);
+            $res = $this->renderAPICall($this->id, $this->templateParams($params));
 
             return $res->json('template_output');
         } catch (ElasticsearchException $elasticsearchException) {
@@ -56,6 +59,44 @@ class ExistingScript
             throw $elasticsearchException;
             // @codeCoverageIgnoreEnd
         }
+    }
+
+    private function templateParams(array $params): array
+    {
+        if (is_string($params['sort'] ?? null) && $params['sort'] !== '') {
+            $params['_sigmie_sort_field'] = true;
+        }
+
+        if (is_array($params['facets'] ?? null)) {
+            $params['facets'] = (object) $params['facets'];
+        }
+
+        $isOpenSearch = $this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch;
+        $dimensions = [];
+        $lowercase = [];
+        foreach ($params as $name => $value) {
+            $isEmbedding = str_starts_with((string) $name, '_embeddings_');
+            if (($name === 'query_string' || $isEmbedding) && is_string($value)) {
+                $params[$name] = trim_text($value) === '' ? '' : $value;
+                $lowercase[$name] = lowercase_term($params[$name]);
+            }
+            if ($isOpenSearch && $isEmbedding && is_array($value) && array_is_list($value)) {
+                $dimensions[$name] = (object) [count($value) => true];
+            }
+        }
+
+        if ($dimensions !== []) {
+            $params['_sigmie_embedding_dimensions'] = $dimensions;
+        }
+
+        if ($lowercase !== []) {
+            $params['_sigmie_lowercase'] = $lowercase;
+        }
+        if (($lowercase['query_string'] ?? '') !== '') {
+            $params['_sigmie_boolean_field'] = (object) [bin2hex(fold_text($params['query_string'])) => true];
+        }
+
+        return $params;
     }
 
     public function get(): ?string

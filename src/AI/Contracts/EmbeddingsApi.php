@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\AI\Contracts;
 
-use GuzzleHttp\Promise\Promise;
+use GuzzleHttp\Promise\PromiseInterface;
 
 interface EmbeddingsApi
 {
@@ -21,7 +21,7 @@ interface EmbeddingsApi
     /**
      * Generate embeddings asynchronously
      */
-    public function promiseEmbed(string $text, int $dimensions): Promise;
+    public function promiseEmbed(string $text, int $dimensions): PromiseInterface;
 
     public function model(): string;
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Base\Drivers\Elasticsearch;
 use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Enums\VectorStrategy;
 use Sigmie\Mappings\Types\Type as AbstractType;
@@ -27,7 +28,21 @@ class BaseVector extends AbstractType
         public readonly ?string $boostedByField = null,
         public readonly bool $autoNormalizeVector = true,
         public readonly ?string $queryApiName = null,
-    ) {}
+    ) {
+        parent::__construct($name);
+
+        $this->type = 'dense_vector';
+    }
+
+    public function validate(string $key, mixed $value): array
+    {
+        return (new Elasticsearch)->vectorField($this)->validate($key, $value);
+    }
+
+    public function toRaw(): array
+    {
+        return (new Elasticsearch)->vectorField($this)->toRaw();
+    }
 
     public function strategy(): VectorStrategy
     {

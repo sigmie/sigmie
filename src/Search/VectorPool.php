@@ -4,14 +4,22 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use Sigmie\AI\APIs\CohereEmbeddingsApi;
+use Sigmie\AI\APIs\VoyageEmbeddingsApi;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Support\VectorMath;
+use UnexpectedValueException;
 
 class VectorPool
 {
     protected array $pool = [];
 
-    public function __construct(protected EmbeddingsApi $embeddingsApi, protected bool $ensureNormalized = true) {}
+    public function __construct(protected EmbeddingsApi $embeddingsApi, protected bool $ensureNormalized = true)
+    {
+        if ($embeddingsApi instanceof CohereEmbeddingsApi) {
+            $this->embeddingsApi = $embeddingsApi->forSearchQueries();
+        }
+    }
 
     public function get(string $text, int $dimensions): array
     {
@@ -21,14 +29,11 @@ class VectorPool
                 $this->pool[$text] = [];
             }
 
-            $vector = $this->embeddingsApi->embed($text, $dimensions);
+            $vector = $this->embeddingsApi instanceof VoyageEmbeddingsApi
+                ? $this->embeddingsApi->embedQuery($text, $dimensions)
+                : $this->embeddingsApi->embed($text, $dimensions);
 
-            // Ensure vector is normalized (critical for dot_product and max_inner_product)
-            if ($this->ensureNormalized && ! VectorMath::isNormalized($vector)) {
-                $vector = VectorMath::normalize($vector);
-            }
-
-            $this->pool[$text][$dimensions] = $vector;
+            $this->pool[$text][$dimensions] = $this->prepareVector($vector);
         }
 
         return $this->pool[$text][$dimensions];
@@ -36,33 +41,43 @@ class VectorPool
 
     public function getMany(array $items): static
     {
-        // $items format: [['text' => 'foo', 'dims' => 256], ...]
-        // Filter out items that are already in the pool
-        $missing = array_filter($items, fn ($item): bool => ! $this->has($item['text'], $item['dims']));
+        $missing = [];
+        $seen = [];
+        foreach ($items as $item) {
+            $text = $item['text'];
+            $dims = $item['dims'];
+            if ($this->has($text, $dims) || isset($seen[$text][$dims])) {
+                continue;
+            }
+
+            $missing[] = $item;
+            $seen[$text][$dims] = true;
+        }
 
         if ($missing === []) {
             return $this;
         }
 
-        // Use batchEmbed to generate all missing embeddings at once
-        $results = $this->embeddingsApi->batchEmbed($missing);
-
-        // Store results in pool
-        foreach ($results as $result) {
-            $text = $result['text'];
-            $dims = (int) $result['dims'];
-            $vector = $result['vector'];
-
-            // Ensure vector is normalized (critical for dot_product and max_inner_product)
-            if ($this->ensureNormalized && ! VectorMath::isNormalized($vector)) {
-                $vector = VectorMath::normalize($vector);
+        foreach (array_chunk($missing, $this->embeddingsApi->maxBatchSize()) as $batch) {
+            $results = $this->embeddingsApi instanceof VoyageEmbeddingsApi
+                ? $this->embeddingsApi->batchEmbedQueries($batch)
+                : $this->embeddingsApi->batchEmbed($batch);
+            if (count($results) !== count($batch)) {
+                throw new UnexpectedValueException('The query embedding batch returned the wrong number of vectors.');
             }
 
-            if (! isset($this->pool[$text])) {
-                $this->pool[$text] = [];
+            $vectors = [];
+            foreach ($results as $result) {
+                $vectors[$result['text']][(int) $result['dims']] = $result['vector'];
             }
 
-            $this->pool[$text][$dims] = $vector;
+            foreach ($batch as $item) {
+                if (! isset($vectors[$item['text']][$item['dims']])) {
+                    throw new UnexpectedValueException('The query embedding batch omitted a requested vector.');
+                }
+            }
+
+            $this->setPool($vectors);
         }
 
         return $this;
@@ -88,11 +103,18 @@ class VectorPool
             foreach ($dimensions as $dim => $vector) {
                 // Only add if not already present
                 if (! isset($this->pool[$text][$dim])) {
-                    $this->pool[$text][$dim] = $vector;
+                    $this->pool[$text][$dim] = $this->prepareVector($vector);
                 }
             }
         }
 
         return $this;
+    }
+
+    private function prepareVector(array $vector): array
+    {
+        return $this->ensureNormalized && ! VectorMath::isNormalized($vector)
+            ? VectorMath::normalize($vector)
+            : $vector;
     }
 }

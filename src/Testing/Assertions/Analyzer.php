@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing\Assertions;
 
+use PHPUnit\Framework\Assert;
+
+use function Sigmie\Functions\analysis_list;
+
 trait Analyzer
 {
     use Contracts;
@@ -16,7 +20,7 @@ trait Analyzer
     {
         $this->assertContains(
             $charFilter,
-            $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['char_filter'],
+            $this->analyzerComponents($analyzer, 'char_filter'),
             sprintf("Failed to assert that analyzer '%s' has the char_filter '%s' in '%s' index.", $analyzer, $charFilter, $this->name)
         );
     }
@@ -25,7 +29,7 @@ trait Analyzer
     {
         $this->assertNotContains(
             $charFilter,
-            $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['char_filter'],
+            $this->analyzerComponents($analyzer, 'char_filter'),
             sprintf("Failed to assert that analyzer '%s' has not the char_filter '%s' in '%s' index.", $analyzer, $charFilter, $this->name)
         );
     }
@@ -34,7 +38,7 @@ trait Analyzer
     {
         $this->assertContains(
             $filter,
-            $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['filter'],
+            $this->analyzerComponents($analyzer, 'filter'),
             sprintf("Failed to assert that analyzer '%s' has the filter '%s' in '%s' index.", $analyzer, $filter, $this->name)
         );
     }
@@ -43,16 +47,16 @@ trait Analyzer
     {
         $this->assertNotContains(
             $filter,
-            $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['filter'],
+            $this->analyzerComponents($analyzer, 'filter'),
             sprintf("Failed to assert that analyzer '%s' has not the filter '%s' in '%s' index.", $analyzer, $filter, $this->name)
         );
     }
 
     public function assertAnalyzerHasTokenizer(string $analyzer, string $tokenizer): void
     {
-        $this->assertEquals(
+        Assert::assertSame(
             $tokenizer,
-            $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['tokenizer'],
+            $this->analysisComponent('analyzer', $analyzer)['tokenizer'] ?? null,
             sprintf("Failed to assert that analyzer '%s' has the tokenizer '%s' in '%s' index.", $analyzer, $tokenizer, $this->name)
         );
     }
@@ -70,7 +74,7 @@ trait Analyzer
     public function assertAnalyzerCharFilterIsEmpty(string $analyzer): void
     {
         $this->assertEmpty(
-            $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['char_filter'],
+            $this->analyzerComponents($analyzer, 'char_filter'),
             sprintf("Failed to assert that analyzer '%s' has not any char_filter in '%s' index.", $analyzer, $this->name)
         );
     }
@@ -78,8 +82,13 @@ trait Analyzer
     public function assertAnalyzerFilterIsEmpty(string $analyzer): void
     {
         $this->assertEmpty(
-            $this->data['settings']['index']['analysis']['analyzer'][$analyzer]['filter'],
+            $this->analyzerComponents($analyzer, 'filter'),
             sprintf("Failed to assert that analyzer '%s' has not any filter in '%s' index.", $analyzer, $this->name)
         );
+    }
+
+    private function analyzerComponents(string $analyzer, string $component): array
+    {
+        return analysis_list($this->analysisComponent('analyzer', $analyzer)[$component] ?? []);
     }
 }

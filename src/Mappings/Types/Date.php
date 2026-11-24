@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use DateTime;
 use Sigmie\Mappings\Traits\HasDateFacets;
+use Sigmie\Mappings\Traits\HasDateFormats;
 
 class Date extends Type
 {
     use HasDateFacets;
+    use HasDateFormats;
 
     protected string $type = 'date';
 
@@ -21,47 +22,24 @@ class Date extends Type
         parent::__construct($name);
     }
 
-    public function format(string $format): void
-    {
-        $this->formats[] = $format;
-    }
-
-    public function toRaw(): array
-    {
-        $raw = parent::toRaw();
-
-        $raw[$this->name]['format'] = implode('|', $this->formats);
-
-        return $raw;
-    }
-
     public function validate(string $key, mixed $value): array
     {
-        if (! is_string($value)) {
+        $accepted = $this->acceptsEngineDateFormat($value);
+        if ($accepted !== null) {
+            return $accepted ? [true, ''] : [false, sprintf('The field %s does not match its configured date formats', $key)];
+        }
+
+        if (! is_string($value) || str_contains($value, "\0")) {
             return [false, sprintf('The field %s mapped as date must be a date string', $key)];
         }
 
-        $dateFormats = [
-            'Y-m-d',
-        ];
-
-        $isValid = false;
-        foreach ($dateFormats as $format) {
-
-            $dateTime = DateTime::createFromFormat($format, $value);
-
-            if ($dateTime && $dateTime->format($format) === $value) {
-
-                $isValid = true;
-
-                break;
+        if (preg_match('/\A(?!-0000)-?\d{4}-\d{2}-\d{2}\z/', $value) === 1) {
+            $date = date_parse($value);
+            if ($date['warning_count'] === 0 && $date['error_count'] === 0) {
+                return [true, ''];
             }
         }
 
-        if (! $isValid) {
-            return [false, sprintf('The field %s mapped as %s must be a string in one of the following formats: ', $key, $this->typeName()).implode(', ', $dateFormats)];
-        }
-
-        return [true, ''];
+        return [false, sprintf('The field %s mapped as %s must be a string in one of the following formats: Y-m-d', $key, $this->typeName())];
     }
 }

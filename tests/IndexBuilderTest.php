@@ -35,6 +35,41 @@ use Sigmie\Testing\TestCase;
 
 class IndexBuilderTest extends TestCase
 {
+    public function test_audit_index_create_returns_the_created_schema(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('genre');
+
+        $index = $this->sigmie->newIndex(uniqid('audit-index-base-schema-'))
+            ->replicas(0)
+            ->shards(2)
+            ->properties($properties)
+            ->create();
+
+        try {
+            $this->assertSame(2, $index->settings->primaryShards());
+            $this->assertSame(0, $index->settings->replicaShards());
+            $this->assertNotNull($index->mappings->properties()->get('genre'));
+        } finally {
+            $index->delete();
+        }
+    }
+
+    public function test_audit_index_create_rejects_a_concrete_name_without_leaving_an_index(): void
+    {
+        $name = uniqid('audit-index-base-taken-');
+        $this->indexAPICall($name, 'PUT', ['settings' => ['number_of_replicas' => 0]]);
+
+        try {
+            $this->sigmie->newIndex($name)->replicas(0)->create();
+            $this->fail('The alias name already belongs to a concrete index.');
+        } catch (AliasAlreadyExists $exception) {
+            $this->assertNull($this->sigmie->index($name.'_*'));
+        } finally {
+            $this->indexAPICall($name, 'DELETE');
+        }
+    }
+
     /**
      * @test
      */

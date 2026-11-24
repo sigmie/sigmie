@@ -6,13 +6,16 @@ namespace Sigmie\Search;
 
 use Closure;
 use Generator;
+use InvalidArgumentException;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\PointInTimeRequests;
 use Sigmie\Document\Hit;
 use Sigmie\Enums\SearchEngineType;
+use Sigmie\Query\Search;
 use Sigmie\Search\Contracts\LazyIterableQuery;
 use Sigmie\Search\Contracts\MultiSearchable;
+use stdClass;
 
 class RawQuery implements LazyIterableQuery, MultiSearchable
 {
@@ -22,12 +25,14 @@ class RawQuery implements LazyIterableQuery, MultiSearchable
         private ElasticsearchConnection $httpConnection,
         private string $index,
         private array $body,
-    ) {}
+    ) {
+        $this->body = Search::normalizeBody($body);
+    }
 
     public function toMultiSearch(): array
     {
         return [
-            ['index' => $this->index],
+            isset($this->body['pit']) ? new stdClass : ['index' => $this->index],
             $this->body,
         ];
     }
@@ -75,41 +80,47 @@ class RawQuery implements LazyIterableQuery, MultiSearchable
         $body = $this->body;
 
         $hasCollapse = array_key_exists('collapse', $this->body);
-        $userSort = is_array($this->body['sort'] ?? null) ? $this->body['sort'] : [];
+        $sort = $this->body['sort'] ?? null;
+        $userSort = match (true) {
+            is_string($sort) && $sort !== '' => [$sort],
+            $sort instanceof stdClass => [$sort],
+            is_array($sort) => $sort,
+            default => [],
+        };
 
         unset(
             $body['from'],
             $body['size'],
             $body['aggs'],
-            $body['highlight'],
             $body['suggest'],
             $body['track_total_hits'],
             $body['sort'],
-            $body['post_filter'],
         );
 
         $body['size'] = $this->pitIterationChunkSize;
-        $body['sort'] = PitSortPlanner::plan($userSort, $isOpenSearch, $hasCollapse);
+        $body['sort'] = PitSortPlanner::plan($userSort, $isOpenSearch, $hasCollapse, preserveSingleSort: true);
 
-        $keepAlive = '1m';
-        $open = $pit->open($this->index, $keepAlive);
-        $pitId = PointInTimeIterator::pitIdFromOpenResponse($open, $isOpenSearch);
+        $ownsSnapshot = ! isset($body['pit']);
+        if ($ownsSnapshot) {
+            $keepAlive = '1m';
+            $pitId = PointInTimeIterator::pitIdFromOpenResponse($pit->open($this->index, $keepAlive), $isOpenSearch);
+        } else {
+            $snapshot = (array) $body['pit'];
+            $keepAlive = $snapshot['keep_alive'] ?? null;
+            $pitId = $snapshot['id'] ?? throw new InvalidArgumentException('A supplied point in time requires an id.');
+        }
 
         yield from PointInTimeIterator::iterate(
             $pitId,
             $keepAlive,
             $body,
             fn (array $requestBody): ElasticsearchResponse => $pit->search($requestBody),
-            function (string $id) use ($pit): void {
-                $pit->close($id);
+            function (string $id) use ($pit, $ownsSnapshot): void {
+                if ($ownsSnapshot) {
+                    $pit->close($id);
+                }
             },
-            fn (array $data): Hit => new Hit(
-                $data['_source'] ?? [],
-                $data['_id'],
-                isset($data['_score']) ? (float) $data['_score'] : null,
-                $data['_index'] ?? null,
-                $data['sort'] ?? null,
-            ),
+            Hit::fromRaw(...),
         );
     }
 }

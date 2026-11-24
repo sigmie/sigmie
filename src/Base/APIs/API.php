@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\APIs;
 
+use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
+use Sigmie\Base\ElasticsearchException;
 
 trait API
 {
@@ -22,8 +24,46 @@ trait API
         return $this->elasticsearchConnection;
     }
 
-    protected function elasticsearchCall(ElasticsearchRequest $request): ElasticsearchResponse
+    protected function elasticsearchCall(ElasticsearchRequest $request, ?string $responseType = null): ElasticsearchResponse
     {
-        return ($this->elasticsearchConnection)($request);
+        $response = ($this->elasticsearchConnection)($request);
+
+        return $responseType === null ? $response : $this->typedResponse($request, $response, $responseType);
+    }
+
+    /** @param class-string<ElasticsearchResponse> $type */
+    protected function typedResponse(ElasticsearchRequest $request, ElasticsearchResponse $response, string $type): ElasticsearchResponse
+    {
+        if (! $response instanceof $type) {
+            $response = $request->response($response->psr());
+        }
+
+        if ($response->failed()) {
+            throw $response->exception($request);
+        }
+
+        return $response;
+    }
+
+    protected function assertNoFailedShards(ElasticsearchResponse $response): void
+    {
+        if ($response->json('_shards.failed') > 0) {
+            throw new ElasticsearchException($response->json(), $response->code());
+        }
+    }
+
+    /**
+     * @return array{0: string, 1: ?string}
+     */
+    protected function encodedPath(string $value): array
+    {
+        return \Sigmie\Functions\encoded_index_path($value);
+    }
+
+    protected function indexUri(string $index, string $endpoint): Uri
+    {
+        $path = str_replace(['%2C', '%2A'], [',', '*'], rawurlencode($index));
+
+        return new Uri(($path === '' ? '' : '/'.$path).'/'.$endpoint);
     }
 }

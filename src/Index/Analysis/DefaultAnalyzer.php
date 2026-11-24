@@ -15,12 +15,16 @@ class DefaultAnalyzer extends Analyzer
         Tokenizer $tokenizer = new WordBoundaries,
         array $filters = [],
         array $charFilters = [],
+        int|string|null $positionIncrementGap = null,
+        int|string|null $offsetGap = null,
     ) {
         parent::__construct(
             self::name,
             $tokenizer,
             $filters,
-            $charFilters
+            $charFilters,
+            $positionIncrementGap,
+            $offsetGap,
         );
     }
 }

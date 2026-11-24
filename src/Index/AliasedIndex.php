@@ -13,6 +13,9 @@ use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Alias\Actions as AliasActions;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Contracts\Settings as SettingsInterface;
+use Throwable;
+
+use function Sigmie\Functions\response_value;
 
 class AliasedIndex extends Index
 {
@@ -21,6 +24,9 @@ class AliasedIndex extends Index
     use IndexActions;
     use IndexAPI;
     use Reindex;
+
+    /** @var array{alias: string, destination: string, sourceDeleted: bool}|null */
+    private ?array $pendingCutover = null;
 
     public function __construct(
         string $name,
@@ -32,12 +38,30 @@ class AliasedIndex extends Index
         parent::__construct($name, $settings, $mappings, $raw);
     }
 
+    public static function fromRaw(string $name, array $raw): static
+    {
+        $aliases = $raw['aliases'] ?? [];
+        $alias = is_array($aliases) ? array_key_first($aliases) : null;
+
+        if (! is_string($alias) && ! is_int($alias)) {
+            throw new RuntimeException('An aliased index payload needs an alias name.');
+        }
+
+        $settings = Settings::fromRaw($raw);
+        $analysis = $settings->analysis();
+        $mappings = Mappings::create($raw['mappings'], $analysis->analyzers(), $analysis->normalizers());
+
+        // The class stores one alias. A payload with several keeps the first name.
+        return new static($name, (string) $alias, $settings, $mappings, $raw);
+    }
+
     public function collect(bool $refresh = false): AliveCollection
     {
         return new AliveCollection(
-            $this->name,
+            $this->alias,
             $this->elasticsearchConnection,
-            $refresh ? 'true' : 'false'
+            $refresh ? 'true' : 'false',
+            requireAlias: true,
         );
     }
 
@@ -50,105 +74,169 @@ class AliasedIndex extends Index
 
     public function update(callable $newUpdate): AliasedIndex
     {
-        $oldAlias = $this->name;
+        if ($this->pendingCutover !== null) {
+            return $this->finishUpdate(retry: true);
+        }
 
-        $update = new UpdateIndex($this->elasticsearchConnection);
-
-        $update->alias($this->alias);
-        $update->config('refresh_interval', '-1');
-
-        $update = $newUpdate($update);
-
-        $blueprint = $update->make();
-        $requestedReplicas = $blueprint->settings->replicaShards();
-
-        $newAlias = $update->getAlias();
-        $update->replicas(0);
-
-        // Build the index structure without creating an alias yet
+        [$update, $requestedReplicas, $requestedRefresh, $deferredBlocks, $sourceWasWriteBlocked] = $this->preparedUpdate($newUpdate);
         $index = $update->make();
-        $this->createIndex($index->name, $index->settings, $index->mappings);
+        $newAlias = $update->getAlias();
+        $this->claimUpdate($index);
 
-        $newIndex = new AliasedIndex($index->name, $newAlias);
-        $newIndex->setElasticsearchConnection($this->elasticsearchConnection);
+        try {
+            $finalPipeline = $this->suspendFinalPipeline($index->name);
+            $this->blockWrites($this->updateSourceAlias($index->name));
+            $this->refreshIndex($this->name);
+            $result = $this->reindexAPICall($this->name, $index->name, pipeline: '_none');
+            $this->assertReindexSucceeded($result->json());
 
-        $this->disableWrite();
-
-        $this->reindexAPICall($this->name, $newIndex->name);
-
-        $connection = $this->getElasticsearchConnection();
-        // Serverless: refresh_interval must be -1 or ≥5s (not 1s).
-        $afterReindexSettings = [
-            'refresh_interval' => $connection->isServerless() ? '5s' : '1s',
-        ];
-        if (! $connection->isServerless()) {
-            $afterReindexSettings['number_of_replicas'] = $requestedReplicas;
+            $this->restoreReindexSettings($index->name, $requestedReplicas, $requestedRefresh, $deferredBlocks, $finalPipeline);
+            $this->moveAlias($newAlias, [$this->name], $index->name, $this->alias, pendingAlias: $this->updateLock($this->name),
+                markRetired: true, sourceMarker: $this->updateSourceAlias($index->name));
+        } catch (Throwable $exception) {
+            $this->rollbackWriteBlock($exception, $sourceWasWriteBlocked, $index->name);
         }
 
-        $this->indexAPICall($newIndex->name.'/_settings', 'PUT', $afterReindexSettings);
+        $this->pendingCutover = ['alias' => $newAlias, 'destination' => $index->name, 'sourceDeleted' => false];
 
-        // @codeCoverageIgnoreStart
-        if ($oldAlias === $newAlias) {
-            $this->switchAlias($newAlias, $this->name, $newIndex->name);
-            // @codeCoverageIgnoreEnd
-        } else {
-            $this->createAlias($newIndex->name, $newAlias);
+        return $this->finishUpdate(retry: false);
+    }
+
+    private function finishUpdate(bool $retry): AliasedIndex
+    {
+        ['alias' => $alias, 'destination' => $destination] = $this->pendingCutover;
+
+        if (! $this->pendingCutover['sourceDeleted']) {
+            $this->deleteRetiredIndices([$this->name], $destination, $retry);
+            $this->pendingCutover['sourceDeleted'] = true;
         }
 
-        $this->deleteIndex($this->name);
+        $updated = $this->promotedIndex($alias, $destination);
+        $this->pendingCutover = null;
 
-        $index = $this->getIndex($newAlias);
-
-        if ($index instanceof AliasedIndex) {
-            return $index;
-        }
-
-        // @codeCoverageIgnoreStart
-        throw new RuntimeException('Something went wrong while updating index.');
-        // @codeCoverageIgnoreEnd
+        return $updated;
     }
 
     public function asyncUpdate(callable $newUpdate): IndexUpdateTask
     {
-        $oldAlias = $this->name;
+        [$update, $requestedReplicas, $requestedRefresh, $deferredBlocks, $sourceWasWriteBlocked] = $this->preparedUpdate($newUpdate);
+        $index = $update->make();
+        $this->claimUpdate($index);
 
+        try {
+            $finalPipeline = $this->suspendFinalPipeline($index->name);
+            $this->blockWrites($this->updateSourceAlias($index->name));
+            $this->refreshIndex($this->name);
+
+            return new IndexUpdateTask(
+                $this->elasticsearchConnection,
+                $this->name,
+                $index->name,
+                $this->alias,
+                $update->getAlias(),
+                $requestedReplicas,
+                $requestedRefresh,
+                deferredBlocks: $deferredBlocks,
+                sourceWasWriteBlocked: $sourceWasWriteBlocked,
+                finalPipeline: $finalPipeline,
+                ownsUpdateLock: true,
+            );
+        } catch (Throwable $exception) {
+            $this->rollbackWriteBlock($exception, $sourceWasWriteBlocked, $index->name);
+        }
+    }
+
+    private function claimUpdate(Index $destination): void
+    {
+        $this->createIndex($destination->name, $destination->settings, $destination->mappings);
+
+        // Elasticsearch permits one write index per alias. Acquire the lock
+        // and its attempt-specific rollback target in one cluster-state update.
+        $this->applyAliasActions($this->alias, [
+            ['add' => ['index' => $this->name, 'alias' => $this->updateSourceAlias($destination->name), 'is_hidden' => true]],
+            ['add' => ['index' => $destination->name, 'alias' => $this->updateLock($this->name), 'is_hidden' => true, 'is_write_index' => true]],
+        ]);
+    }
+
+    private function rollbackWriteBlock(Throwable $cause, bool $sourceWasWriteBlocked, string $destination): never
+    {
+        try {
+            $this->releaseUpdate($this->name, $destination, $sourceWasWriteBlocked);
+        } catch (Throwable $rollbackError) {
+            throw new RuntimeException(
+                "Could not restore writes to '{$this->name}' after the update failed. ".$rollbackError->getMessage(),
+                previous: $cause,
+            );
+        }
+
+        throw $cause;
+    }
+
+    /**
+     * The callback runs before the temporary refresh of -1. That -1 is only
+     * the build setting, so it is written when the callback omitted
+     * refresh_interval. A value the callback set, including -1, stays on the
+     * created index and is restored after reindex. An omitted value becomes
+     * 1s, or 5s when the connection is serverless.
+     *
+     * @return array{0: UpdateIndex, 1: ?int, 2: ?string, 3: list<string>, 4: bool}
+     */
+    private function preparedUpdate(callable $newUpdate): array
+    {
+        $sources = $this->checkRetirementSources([$this->name], $this->alias, copyDocuments: true);
+        $sourceWasWriteBlocked = in_array(
+            response_value($sources[$this->name] ?? [], 'settings.index.blocks.write'),
+            [true, 'true'],
+            true,
+        );
         $update = new UpdateIndex($this->elasticsearchConnection);
-
         $update->alias($this->alias);
-        $update->config('refresh_interval', '-1');
-
         $update = $newUpdate($update);
 
         $blueprint = $update->make();
         $requestedReplicas = $blueprint->settings->replicaShards();
+        $refresh = $blueprint->settings->toRaw()['refresh_interval'] ?? null;
+        $requestedRefresh = is_string($refresh) || is_int($refresh) ? (string) $refresh : null;
 
-        $newAlias = $update->getAlias();
-        $update->replicas(0);
+        // The callback can retain its builder. Apply temporary settings to our copy.
+        $build = clone $update;
+        if ($requestedRefresh === null) {
+            $build->config('refresh_interval', '-1');
+        }
 
-        // Build the index structure without creating an alias yet
-        $index = $update->make();
-        $this->createIndex($index->name, $index->settings, $index->mappings);
+        $build->useBulkReplicas();
 
-        $newIndex = new AliasedIndex($index->name, $newAlias);
-        $newIndex->setElasticsearchConnection($this->elasticsearchConnection);
+        return [$build, $requestedReplicas, $requestedRefresh, $build->deferAccessBlocks(), $sourceWasWriteBlocked];
+    }
 
-        $this->disableWrite();
+    private function suspendFinalPipeline(string $destination): ?string
+    {
+        // Also read inherited templates. A reindex request only skips the default pipeline.
+        $path = $destination.'/_settings';
+        $settings = $this->indexAPICall($path.'?filter_path=*.settings.index.final_pipeline', 'GET')->json();
+        $pipeline = $settings[$destination]['settings']['index']['final_pipeline'] ?? null;
+        if ($pipeline === null || $pipeline === '_none') {
+            return null;
+        }
 
-        return new IndexUpdateTask(
-            $this->elasticsearchConnection,
-            $this->name,
-            $newIndex->name,
-            $oldAlias,
-            $newAlias,
-            $requestedReplicas
-        );
+        $this->indexAPICall($path, 'PUT', ['final_pipeline' => '_none']);
+
+        return $pipeline;
     }
 
     public function disableWrite(): void
     {
-        $this->indexAPICall($this->name.'/_settings', 'PUT', [
-            'index' => ['blocks.write' => true],
-        ]);
+        $this->blockWrites($this->name);
+    }
+
+    private function blockWrites(string $target): void
+    {
+        $response = $this->indexAPICall($target.'/_block/write', 'PUT');
+
+        $alreadyBlocked = $response->json('acknowledged') === true && $response->json('indices') === [];
+        if ($response->json('shards_acknowledged') !== true && ! $alreadyBlocked) {
+            throw new RuntimeException("Write block for '{$this->name}' was not acknowledged by all shards.");
+        }
     }
 
     public function enableWrite(): void
@@ -163,8 +251,8 @@ class AliasedIndex extends Index
         return $this->deleteIndex($this->name);
     }
 
-    public function get(?string $path = null): array
+    public function get(?string $path = null): mixed
     {
-        return dot($this->raw)->get($path);
+        return $path === null ? ($this->raw ?? []) : response_value($this->raw ?? [], $path);
     }
 }

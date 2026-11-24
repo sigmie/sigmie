@@ -6,13 +6,8 @@ namespace Sigmie\Index\Analysis\TokenFilter;
 
 use function Sigmie\Functions\name_configs;
 
-class Lowercase extends TokenFilter
+class Lowercase extends Generic
 {
-    public function __construct(string $name)
-    {
-        parent::__construct($name, []);
-    }
-
     public function type(): string
     {
         return 'lowercase';
@@ -20,13 +15,10 @@ class Lowercase extends TokenFilter
 
     public static function fromRaw(array $raw): static
     {
-        [$name, $configs] = name_configs($raw);
+        [$name, $settings] = name_configs($raw);
+        $filter = new static($name);
+        $filter->settings($settings);
 
-        return new static($name);
-    }
-
-    protected function getValues(): array
-    {
-        return [];
+        return $filter;
     }
 }

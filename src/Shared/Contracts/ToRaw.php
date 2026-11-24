@@ -6,5 +6,5 @@ namespace Sigmie\Shared\Contracts;
 
 interface ToRaw
 {
-    public function toRaw(): array;
+    public function toRaw(): array|\stdClass;
 }

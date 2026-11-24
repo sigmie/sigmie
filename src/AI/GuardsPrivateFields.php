@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\AI;
 
 use InvalidArgumentException;
+use Sigmie\Parse\Parser;
 
 /**
  * Keeps the fields of {@see \Sigmie\SigmieIndex::exceptFromTools()} filter-only for the agent.
@@ -41,9 +42,16 @@ trait GuardsPrivateFields
      */
     protected function expressionFields(?string $expression): array
     {
-        $tokens = preg_split('/\s+/', trim((string) $expression), flags: PREG_SPLIT_NO_EMPTY) ?: [];
+        $tokens = preg_split('/\s+/u', trim((string) $expression), flags: PREG_SPLIT_NO_EMPTY) ?: [];
 
-        return array_map(static fn (string $token): string => (string) preg_replace('/[:\[].*$/', '', $token), $tokens);
+        return array_map(static function (string $token): string {
+            // Also check a geo clause after a colon before forwarding the sort.
+            if (preg_match('/(?P<field>'.Parser::FIELD_PATH.')\[-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?\]:\w+:\w+/u', $token, $matches) === 1) {
+                return $matches['field'];
+            }
+
+            return (string) preg_replace('/[:\[].*$/', '', $token);
+        }, $tokens);
     }
 
     protected function isPrivateField(string $field): bool

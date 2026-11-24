@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Sigmie\Search\Formatters;
 
 use InvalidArgumentException;
@@ -7,9 +9,17 @@ use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Document\Hit;
 use Sigmie\Document\RerankedHit;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\HTML;
 use Sigmie\Search\NewRerank;
 use Sigmie\Search\QueryString;
 use Sigmie\Search\SearchContext;
+
+use function Sigmie\Functions\object_map;
+use function Sigmie\Functions\response_value;
+use function Sigmie\Functions\search_hits;
+use function Sigmie\Functions\search_summary;
+use function Sigmie\Functions\search_total;
+use function Sigmie\Functions\trim_text;
 
 class SigmieSearchResponse extends AbstractFormatter
 {
@@ -18,28 +28,40 @@ class SigmieSearchResponse extends AbstractFormatter
         protected bool $semantic = false
     ) {}
 
-    public function json(?string $key = null): array
+    public function json(?string $key = null): mixed
     {
-        return (array) dot($this->format())->get($key);
+        return response_value($this->format(), $key);
     }
 
     public function format(): array
     {
+        $summary = search_summary($this->queryResponseRaw, $this->formatHit(...));
+        $size = $this->search->size;
+
         return [
+            ...$summary,
             'code' => $this->code(),
             'semantic' => $this->semantic,
-            'hits' => $this->formattedHits(),
-            'processing_time_ms' => $this->queryResponseRaw['took'] ?? 0,
-            'total' => $this->queryResponseRaw['hits']['total']['value'] ?? 0,
             'query_strings' => array_map(fn ($qs): string => (string) $qs, $this->search->queryStrings ?? []),
             'filter_string' => $this->search->filterString ?? '',
             'facets_string' => $this->search->facetString ?? '',
             'sort_string' => $this->search->sortString ?? '',
-            'page' => $this->search->size > 0 ? intval($this->search->from / $this->search->size) + 1 : 1,
-            'per_page' => $this->search->size,
-            'total_pages' => $this->search->size > 0 ? intval(($this->queryResponseRaw['hits']['total']['value'] ?? 0) / $this->search->size) : 1,
+            'page' => match (true) {
+                $this->search->searchAfter !== null => null,
+                $size > 0 => intdiv($this->search->from, $size) + 1,
+                default => 1,
+            },
+            'per_page' => $size,
+            'total_pages' => match (true) {
+                $this->search->collapseField !== null,
+                $summary['total'] === null,
+                $summary['total_relation'] === 'gte',
+                $summary['terminated_early'] ?? false => null,
+                $size > 0 => intdiv($summary['total'], $size) + (int) ($summary['total'] % $size !== 0),
+                default => 1,
+            },
 
-            'facets' => $this->formatFacets(),
+            'facets' => object_map($this->formatFacets()),
             'errors' => $this->errors,
 
             'autocomplete' => $this->queryResponseRaw['suggest']['autocompletion'] ?? [],
@@ -52,7 +74,7 @@ class SigmieSearchResponse extends AbstractFormatter
      */
     protected function formattedHits(): array
     {
-        return array_map($this->formatHit(...), $this->queryResponseRaw['hits']['hits'] ?? []);
+        return array_map($this->formatHit(...), search_hits($this->queryResponseRaw));
     }
 
     /**
@@ -61,42 +83,53 @@ class SigmieSearchResponse extends AbstractFormatter
      */
     protected function formatHit(array $hit): array
     {
-        if (! $this->search->innerHits->requested()) {
+        $hit = $this->search->innerHits->formatRawHit($hit);
+
+        return Hit::formatHighlights($this->formatHtmlHighlights($hit));
+    }
+
+    protected function formatHtmlHighlights(array $hit): array
+    {
+        $tags = $this->search->highlightTags;
+        if ($tags === null || $tags[0] === '' || $tags[1] === '') {
             return $hit;
         }
 
-        $nested = array_filter($hit['inner_hits'] ?? [], fn (string $name): bool => str_contains($name, '#'), ARRAY_FILTER_USE_KEY);
+        foreach ($hit['highlight'] ?? [] as $field => $fragments) {
+            $type = $this->properties->get((string) $field);
+            if ($type instanceof HTML) {
+                $hit['highlight'][$field] = array_map(
+                    fn (string $fragment): string => $type->formatHighlight($fragment, ...$tags),
+                    $fragments,
+                );
+            }
+        }
 
-        $hit['_matches'] = $this->search->innerHits->matches($nested);
-        $hit['inner_hits'] = array_diff_key($hit['inner_hits'] ?? [], $nested);
-
-        if ($hit['inner_hits'] === []) {
-            unset($hit['inner_hits']);
+        foreach ($hit['inner_hits'] ?? [] as $name => $group) {
+            if (isset($group['hits']['hits'])) {
+                $hit['inner_hits'][$name]['hits']['hits'] = array_map($this->formatHtmlHighlights(...), $group['hits']['hits']);
+            }
         }
 
         return $hit;
     }
 
-    public function autocompletion()
+    public function autocompletion(): array
     {
         return $this->queryResponseRaw['suggest']['autocompletion'] ?? [];
     }
 
     public function hits(): array
     {
-        return array_map(fn (array $hit): Hit => new Hit(
-            $hit['_source'],
-            $hit['_id'],
-            $hit['_score'],
-            $hit['_index'],
-            $hit['sort'] ?? null,
-            $hit['_matches'] ?? [],
-        ), $this->formattedHits());
+        return array_map(Hit::fromRaw(...), $this->formattedHits());
     }
 
-    public function total()
+    /**
+     * rest_total_hits_as_int sends the count. The object shape is {value, relation}.
+     */
+    public function total(): ?int
     {
-        return $this->queryResponseRaw['hits']['total']['value'] ?? 0;
+        return search_total($this->queryResponseRaw['hits']['total'] ?? null);
     }
 
     public function getContext(): ?SearchContext
@@ -105,7 +138,7 @@ class SigmieSearchResponse extends AbstractFormatter
     }
 
     /**
-     * Rerank this response's hits using the search query (first `queryString`) unless you pass an explicit query.
+     * Rerank this response's hits using the first nonblank search query unless you pass an explicit query.
      *
      * @param  array<int, string>  $fields  Source fields to send to the reranker (YAML snippets)
      * @return array<int, RerankedHit>
@@ -146,7 +179,7 @@ class SigmieSearchResponse extends AbstractFormatter
     protected function defaultRerankQuery(): string
     {
         foreach ($this->search->queryStrings as $qs) {
-            if ($qs instanceof QueryString && $qs->text() !== '') {
+            if ($qs instanceof QueryString && trim_text($qs->text()) !== '') {
                 return $qs->text();
             }
         }
@@ -154,7 +187,7 @@ class SigmieSearchResponse extends AbstractFormatter
         return '';
     }
 
-    public function formatFacets(): object
+    public function formatFacets(): array
     {
         $facets = [];
 
@@ -162,19 +195,19 @@ class SigmieSearchResponse extends AbstractFormatter
             $facet = $this->facet($field);
 
             if (! is_null($facet)) {
-                $facets[$field] = (object) $facet;
+                $facets[$field] = $facet;
             }
         }
 
-        return (object) $facets;
+        return $facets;
     }
 
     /**
      * FacetParser wraps each facet as `filter[name] -> field aggs`, and nested
-     * fields as `nested[name] -> filter[name] -> field aggs`. Unwrap here so
-     * each type reads only the aggregations it added.
+     * fields as `nested[name] -> filter[name] -> field aggs`. Additional
+     * ancestor scopes wrap that path under `_nested`.
      */
-    public function facet(string $field): ?array
+    public function facet(string $field): array|\stdClass|null
     {
         $type = $this->properties->get($field);
 
@@ -182,12 +215,27 @@ class SigmieSearchResponse extends AbstractFormatter
             return null;
         }
 
+        if (isset($this->search) && ! in_array($type->name(), $this->search->facetFields, true)) {
+            return null;
+        }
+
         $aggregations = $this->facetAggregations()[$type->name()] ?? [];
 
         if (! is_null($type->nestedPath())) {
+            while (isset($aggregations['_nested'])) {
+                $aggregations = $aggregations['_nested'];
+            }
+
             $aggregations = $aggregations[$type->name()] ?? [];
         }
 
-        return $type->facets($aggregations);
+        $counts = $type->facets($aggregations);
+
+        // A term "0" is the only key, so the map is a PHP list.
+        if (is_array($counts) && $counts !== [] && array_is_list($counts)) {
+            return (object) $counts;
+        }
+
+        return $counts;
     }
 }

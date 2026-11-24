@@ -38,8 +38,8 @@ class GroupedTrend extends Widget
             $aggs->terms('groups', $this->groupBy)
                 ->size($this->limit)
                 ->aggregate(function (Aggs $sub): void {
-                    $sub->dateHistogram('series', $this->dateField, $this->interval, extendedBounds: $this->extendedBounds(), timeZone: $this->timeZone)
-                        ->aggregate(fn (Aggs $m) => $this->metric->apply($m, 'metric', $this->field));
+                    $this->windowHistogram($sub, 'series', $this->interval, $this->timeZone)
+                        ->aggregate(fn (Aggs $m) => $this->metric->apply($m, 'metric', $this->field, $this->countedField()));
                 });
         })->toRaw();
     }
@@ -51,11 +51,11 @@ class GroupedTrend extends Widget
         return [
             'type' => 'grouped_trend',
             'metric' => $this->metric->value,
-            'field' => $this->field,
+            'field' => $this->metric->resultField($this->field, $this->countedField()),
             'group_by' => $this->groupBy,
             'interval' => $this->interval instanceof CalendarInterval ? $this->interval->name : $this->interval,
             'groups' => $groups->map(fn (array $group): array => [
-                'group' => $group['key'],
+                'group' => self::termsKey($group),
                 'series' => array_map(fn (array $bucket): array => [
                     'label' => $bucket['key_as_string'],
                     'value' => $this->metric->extract($bucket['metric'] ?? []),

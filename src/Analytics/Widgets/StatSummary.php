@@ -35,14 +35,17 @@ class StatSummary extends Widget
     {
         $stats = $aggregations[$this->name]['stats'] ?? [];
 
-        return [
+        $summary = [
             'type' => 'stats',
             'field' => $this->field,
             'count' => $stats['count'] ?? 0,
-            'min' => $stats['min'] ?? null,
-            'max' => $stats['max'] ?? null,
-            'avg' => $stats['avg'] ?? null,
-            'sum' => $stats['sum'] ?? null,
         ];
+
+        foreach (['min', 'max', 'avg', 'sum'] as $name) {
+            $value = $stats[$name] ?? null;
+            $summary[$name] = (is_int($value) || is_float($value)) && is_finite($value) ? $value : null;
+        }
+
+        return $summary;
     }
 }

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Sigmie\AI\APIs;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Promise\Promise;
+use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\RequestOptions;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Enums\CohereInputType;
+
+use function Sigmie\Functions\batch_slots;
 
 class CohereEmbeddingsApi implements EmbeddingsApi
 {
@@ -29,6 +31,16 @@ class CohereEmbeddingsApi implements EmbeddingsApi
         ]);
     }
 
+    public function forSearchQueries(): static
+    {
+        $api = clone $this;
+        if ($api->inputType === CohereInputType::SearchDocument) {
+            $api->inputType = CohereInputType::SearchQuery;
+        }
+
+        return $api;
+    }
+
     public function model(): string
     {
         return $this->model;
@@ -36,28 +48,11 @@ class CohereEmbeddingsApi implements EmbeddingsApi
 
     public function embed(string $text, int $dimensions): array
     {
-        $response = $this->client->post('/v1/embed', [
-            RequestOptions::JSON => [
-                'model' => $this->model,
-                'texts' => [$text],
-                'input_type' => $this->inputType->value,
-                'embedding_types' => ['float'],
-            ],
+        $response = $this->client->post($this->embedEndpoint(), [
+            RequestOptions::JSON => $this->requestBody([$text], $dimensions),
         ]);
 
-        $data = json_decode($response->getBody()->getContents(), true);
-
-        $embedding = $data['_embeddings']['float'][0];
-
-        if ($dimensions > 0 && count($embedding) !== $dimensions) {
-            if (count($embedding) > $dimensions) {
-                $embedding = array_slice($embedding, 0, $dimensions);
-            } else {
-                $embedding = array_pad($embedding, $dimensions, 0.0);
-            }
-        }
-
-        return $embedding;
+        return ApiResponse::resizeEmbedding(ApiResponse::cohereEmbeddings($response, 1)[0], $dimensions);
     }
 
     public function batchEmbed(array $payload): array
@@ -66,47 +61,55 @@ class CohereEmbeddingsApi implements EmbeddingsApi
             return [];
         }
 
-        $texts = array_map(fn ($item) => $item['text'] ?? '', $payload);
+        foreach (batch_slots($payload, null, $this->maxBatchSize()) as $group) {
+            $dimensions = $group['dims'];
+            $response = $this->client->post('/v2/embed', [
+                RequestOptions::JSON => $this->requestBody($group['texts'], $dimensions),
+            ]);
 
-        $dimensions = (int) ($payload[0]['dims'] ?? 0);
-
-        $response = $this->client->post('/v2/embed', [
-            RequestOptions::JSON => [
-                'model' => $this->model,
-                'texts' => $texts,
-                'input_type' => $this->inputType->value,
-                'embedding_types' => ['float'],
-                ...($this->model === 'embed-v4.0' ? ['output_dimension' => $dimensions] : []),
-            ],
-        ]);
-
-        $data = json_decode($response->getBody()->getContents(), true);
-
-        foreach ($data['embeddings']['float'] as $index => $embedding) {
-            if ($dimensions > 0 && count($embedding) !== $dimensions) {
-                if (count($embedding) > $dimensions) {
-                    $embedding = array_slice($embedding, 0, $dimensions);
-                } else {
-                    $embedding = array_pad($embedding, $dimensions, 0.0);
-                }
+            foreach (ApiResponse::cohereEmbeddings($response, count($group['keys'])) as $index => $vector) {
+                $payload[$group['keys'][$index]]['vector'] = ApiResponse::resizeEmbedding($vector, $dimensions);
             }
-
-            $payload[$index]['vector'] = $embedding;
         }
 
         return $payload;
     }
 
-    public function promiseEmbed(string $text, int $dimensions): Promise
+    public function promiseEmbed(string $text, int $dimensions): PromiseInterface
     {
-        return $this->client->postAsync('/v1/embed', [
-            RequestOptions::JSON => [
-                'model' => $this->model,
-                'texts' => [$text],
-                'input_type' => $this->inputType->value,
-                'embedding_types' => ['float'],
-            ],
+        return $this->client->postAsync($this->embedEndpoint(), [
+            RequestOptions::JSON => $this->requestBody([$text], $dimensions),
         ]);
+    }
+
+    private function embedEndpoint(): string
+    {
+        return $this->supportedDimensions() === [] ? '/v1/embed' : '/v2/embed';
+    }
+
+    public function supportedDimensions(): array
+    {
+        return match ($this->model) {
+            'embed-v4.0' => [256, 512, 1024, 1536],
+            'embed-v5.0-fast', 'embed-v5.0-pro' => [256, 512, 768, 1024, 1536, 2048],
+            default => [],
+        };
+    }
+
+    private function requestBody(array $texts, ?int $dimensions): array
+    {
+        $body = [
+            'model' => $this->model,
+            'texts' => $texts,
+            'input_type' => $this->inputType->value,
+            'embedding_types' => ['float'],
+        ];
+
+        if (in_array($dimensions, $this->supportedDimensions(), true)) {
+            $body['output_dimension'] = $dimensions;
+        }
+
+        return $body;
     }
 
     public function maxBatchSize(): int

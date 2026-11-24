@@ -20,10 +20,9 @@ class Filter extends Bucket
      */
     protected function value(): array
     {
+        // Spread renumbers a query key "1" to 0, then json_encode drops it.
         return [
-            'filter' => [
-                ...$this->query->toRaw(),
-            ],
+            'filter' => $this->query->toRaw(),
         ];
     }
 }

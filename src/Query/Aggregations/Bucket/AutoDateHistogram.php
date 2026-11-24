@@ -34,7 +34,7 @@ class AutoDateHistogram extends Bucket
         }
 
         if (isset($this->missing)) {
-            $value['date_histogram']['missing'] = $this->missing;
+            $value['auto_date_histogram']['missing'] = $this->missing;
         }
 
         return $value;

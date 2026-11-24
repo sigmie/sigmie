@@ -8,6 +8,8 @@ use GuzzleHttp\Client;
 use GuzzleHttp\RequestOptions;
 use Sigmie\AI\Contracts\RerankApi;
 
+use function Sigmie\Functions\rerank_batches;
+
 class InfinityRerankApi implements RerankApi
 {
     protected Client $client;
@@ -17,7 +19,7 @@ class InfinityRerankApi implements RerankApi
         protected string $model = 'cross-encoder/ms-marco-MiniLM-L-6-v2'
     ) {
         $this->client = new Client([
-            'base_uri' => $baseUrl,
+            'base_uri' => rtrim($baseUrl, '/').'/',
             'headers' => [
                 'Content-Type' => 'application/json',
             ],
@@ -27,32 +29,17 @@ class InfinityRerankApi implements RerankApi
 
     public function rerank(array $newIndexes, string $query, ?int $topK = null): array
     {
-        $documents = array_map(
-            static fn (mixed $doc): string => is_array($doc) ? (string) ($doc['text'] ?? '') : (string) $doc,
-            $newIndexes,
-        );
+        return rerank_batches($newIndexes, $topK, 2048, function (array $documents, ?int $limit) use ($query): array {
+            $response = $this->client->post('rerank', [
+                RequestOptions::JSON => [
+                    'model' => $this->model,
+                    'query' => $query,
+                    'documents' => $documents,
+                    ...($limit === null ? [] : ['top_n' => $limit]),
+                ],
+            ]);
 
-        $payload = [
-            'model' => $this->model,
-            'query' => $query,
-            'documents' => $documents,
-        ];
-
-        if ($topK !== null) {
-            $payload['top_n'] = $topK;
-        }
-
-        $response = $this->client->post('/rerank', [
-            RequestOptions::JSON => $payload,
-        ]);
-
-        $json = json_decode($response->getBody()->getContents(), true);
-
-        $data = $json['results'] ?? $json['data'] ?? [];
-
-        return array_map(fn ($result): array => [
-            'index' => $result['index'],
-            'score' => $result['relevance_score'] ?? $result['score'],
-        ], $data);
+            return ApiResponse::rerank($response, 'results', count($documents));
+        });
     }
 }

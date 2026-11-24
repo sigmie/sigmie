@@ -10,10 +10,15 @@ use Sigmie\Document\Document;
 use Sigmie\Enums\RecommendationStrategy;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\Text;
+use Sigmie\Query\Queries\Compound\Boolean;
+use Sigmie\Query\Queries\MatchNone;
 use Sigmie\Query\Search;
 
 class NewRecommendations
 {
+    private const DEFAULT_MAX_RESULT_WINDOW = 10_000;
+
     protected Properties $properties;
 
     protected array $fields = [];
@@ -22,13 +27,10 @@ class NewRecommendations
 
     protected string $filters = '';
 
-    protected NewSearch $search;
-
     protected RecommendationStrategy $strategy = RecommendationStrategy::Centroid;
 
-    protected int $rankWindowSize = 0;
+    protected ?int $rankWindowSize = null;
 
-    // Auto-calculated as 10x topK by default
     protected int $rrfRankConstant = 60;
 
     protected bool $excludeSeeds = true;
@@ -46,16 +48,11 @@ class NewRecommendations
     public function __construct(
         protected string $indexName,
         protected ElasticsearchConnection $elasticsearchConnection
-    ) {
-        $this->search = new NewSearch($this->elasticsearchConnection);
-        $this->search->index($this->indexName);
-    }
+    ) {}
 
     public function properties(Properties|NewProperties $properties): static
     {
         $this->properties = $properties instanceof NewProperties ? $properties->get() : $properties;
-
-        $this->search->properties($properties);
 
         return $this;
     }
@@ -65,7 +62,6 @@ class NewRecommendations
         $this->fields[] = [
             'name' => $fieldName,
             'weight' => $weight,
-            'vectors' => null,
         ];
 
         return $this;
@@ -90,7 +86,6 @@ class NewRecommendations
     public function topK(int $topK): static
     {
         $this->topK = $topK;
-        $this->search->size($topK);
 
         return $this;
     }
@@ -102,21 +97,17 @@ class NewRecommendations
         return $this;
     }
 
+    /**
+     * Build one vector search across all seeds. hits() fuses separate per-seed rankings.
+     */
     public function make(): Search
     {
-        $newSearch = $this->search
-            ->semantic()
-            ->retrieveEmbeddingsField()
-            ->disableKeywordSearch();
+        $search = $this->seedSearch($this->docs, $this->topK);
 
-        foreach ($this->fields as $fieldConfig) {
-
-            $newSearch->queryString($fieldConfig['seed'], $fieldConfig['weight'], [$fieldConfig['name']]);
-        }
-
-        $newSearch->filters($this->filters);
-
-        return $newSearch->makeSearch();
+        return $search?->makeSearch() ?? (new Search($this->elasticsearchConnection))
+            ->index($this->indexName)
+            ->size($this->topK)
+            ->query(new MatchNone);
     }
 
     public function hits(): array
@@ -124,7 +115,7 @@ class NewRecommendations
         return $this->getFusionResults();
     }
 
-    public function rrf(int $rrfRankConstant = 60, int $rankWindowSize = 10): static
+    public function rrf(int $rrfRankConstant = 60, ?int $rankWindowSize = null): static
     {
         $this->strategy = RecommendationStrategy::Fusion;
         $this->rrfRankConstant = $rrfRankConstant;
@@ -146,89 +137,122 @@ class NewRecommendations
         return $this;
     }
 
+    /** @param array<Document> $docs */
+    protected function seedSearch(array $docs, int $size): ?NewSearch
+    {
+        $clauses = [];
+        foreach ($docs as $doc) {
+            foreach ($this->fields as $field) {
+                $groups = MMR::documentVectors($doc, $field['name']);
+                if ($groups === []) {
+                    continue;
+                }
+
+                $text = $this->properties->get($field['name']);
+                if (! $text instanceof Text) {
+                    continue;
+                }
+
+                $multiple = $text->vectorFields()->count() > 1;
+                foreach ($groups as $space => $vectors) {
+                    foreach ($vectors as $vector) {
+                        $clauses[] = [$field, $vector, $multiple ? $space : null];
+                    }
+                }
+            }
+        }
+
+        if ($clauses === []) {
+            return null;
+        }
+
+        $exclusion = new Boolean;
+        $exclusion->mustNot()->ids(array_values($this->seedIds));
+
+        $search = (new NewSearch($this->elasticsearchConnection))
+            ->index($this->indexName)
+            ->properties($this->properties)
+            ->semantic()
+            ->size($size)
+            ->filters($this->filters)
+            ->filterQuery($exclusion)
+            ->retrieveEmbeddingsField()
+            ->noResultsOnEmptySearch()
+            ->disableKeywordSearch();
+
+        foreach ($clauses as [$field, $vector, $space]) {
+            $search->queryString(
+                query: '',
+                weight: $field['weight'],
+                fields: [$field['name']],
+                dimension: count($vector),
+                vector: $vector,
+                vectorField: $space,
+            );
+        }
+
+        return $search;
+    }
+
     protected function getFusionResults(): array
     {
-        if ($this->docs === [] || $this->fields === []) {
+        $window = $this->rankWindowSize ?? min($this->topK * 10, self::DEFAULT_MAX_RESULT_WINDOW);
+        if ($window === 0) {
             return [];
         }
 
-        $filterString = implode(' AND ', [
-            'NOT _id:['.implode(',', array_map(fn ($id): string => sprintf("'%s'", $id), $this->seedIds)).']',
-            ...($this->filters === '' ? [] : [$this->filters]),
-        ]);
-
-        // Use MultiSearch to execute all kNN queries
+        $hasSearches = false;
         $multi = new NewMultiSearch($this->elasticsearchConnection);
 
-        /** @var Document $doc */
         foreach ($this->docs as $doc) {
-
-            $newSearch = $multi
-                ->newSearch($this->indexName)
-                ->properties($this->properties)
-                ->semantic()
-                ->size($this->topK * 10)
-                ->retrieveEmbeddingsField()
-                ->disableKeywordSearch();
-
-            foreach ($this->fields as $field) {
-
-                $fieldName = $field['name'];
-
-                $vectors = dot($doc->_source['_embeddings'])->get($fieldName);
-
-                foreach ($vectors as $vector) {
-                    $newSearch->queryString(
-                        query: '',
-                        weight: $field['weight'],
-                        dimension: count($vector),
-                        vector: $vector,
-                        fields: [$fieldName],
-                    );
-                }
+            $search = $this->seedSearch([$doc], $window);
+            if ($search !== null) {
+                $multi->add($search);
+                $hasSearches = true;
             }
+        }
 
-            $newSearch->filters($filterString);
+        if (! $hasSearches) {
+            return [];
         }
 
         // Execute all searches and get grouped hits
         $groupedHits = $multi->groupedHits();
         $rankedLists = array_values($groupedHits);
 
-        // Build weights array matching the order of rankedLists
-        // Each seed document creates one ranked list, weighted by sum of all field weights
-        $weights = [];
-        foreach ($this->docs as $doc) {
-            $totalWeight = array_sum(array_column($this->fields, 'weight'));
-            $weights[] = $totalWeight;
-        }
-
         // Apply per-field MMR if enabled
         if ($this->mmrEnabled) {
-            // Fuse with larger pool for MMR
+            // Fuse with larger pool for MMR. Field weights rank inside a search.
+            // Each seed list still adds 1 / (k + rank).
             $rrf = new RRF($this->rrfRankConstant, $this->topK * 10);
-            $fusedHits = $rrf->fuse($rankedLists, $weights);
+            $fusedHits = $rrf->fuse($rankedLists);
 
             $perFieldResults = [];
+            $fieldWeights = [];
 
             // Loop over each field and apply MMR
             foreach ($this->fields as $field) {
                 $fieldName = $field['name'];
 
+                $seeds = array_filter($this->docs, fn (Document $doc): bool => MMR::documentVectors($doc, $fieldName) !== []);
+                if ($seeds === []) {
+                    continue;
+                }
+
+                $fieldWeights[] = $field['weight'];
                 $mmr = new MMR($this->mmrLambda);
-                $perFieldResults[] = $mmr->diversify($fusedHits, $this->docs, $fieldName, $this->topK * 2);
+                $perFieldResults[] = $mmr->diversify($fusedHits, $seeds, $fieldName, $this->topK * 2);
             }
 
             // Final fusion: fuse all per-field reranked lists with field weights
             $finalRrf = new RRF($this->rrfRankConstant, $this->topK);
-            $fieldWeights = array_column($this->fields, 'weight');
 
             return $finalRrf->fuse($perFieldResults, $fieldWeights);
         }
 
-        // No MMR: just fuse and return topK with weights
+        // No MMR: each seed list adds 1 / (k + rank).
         $rrf = new RRF($this->rrfRankConstant, $this->topK);
 
-        return $rrf->fuse($rankedLists, $weights);
+        return $rrf->fuse($rankedLists);
     }
 }

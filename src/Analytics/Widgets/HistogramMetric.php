@@ -31,8 +31,8 @@ class HistogramMetric extends Widget
     public function toRaw(): array
     {
         return $this->scoped($this->name, $this->from, $this->to, function (Aggs $aggs): void {
-            $aggs->histogram('buckets', $this->bucketField, $this->interval)
-                ->aggregate(fn (Aggs $sub) => $this->metric->apply($sub, 'metric', $this->field));
+            $aggs->histogram('buckets', $this->bucketField, $this->interval, minDocCount: 1)
+                ->aggregate(fn (Aggs $sub) => $this->metric->apply($sub, 'metric', $this->field, $this->countedField()));
         })->toRaw();
     }
 
@@ -41,18 +41,16 @@ class HistogramMetric extends Widget
         $buckets = (new Collection($aggregations[$this->name]['buckets']['buckets'] ?? []))
             ->map(fn (array $bucket): array => [
                 'label' => $bucket['key'],
-                'value' => $this->metric === Metric::Count
-                    ? ($bucket['doc_count'] ?? 0)
-                    : $this->metric->extract($bucket['metric'] ?? []),
+                'value' => $this->metric->extract($bucket['metric'] ?? []),
                 'count' => $bucket['doc_count'] ?? 0,
             ])
-            ->filter(fn (array $bucket): bool => (int) ($bucket['count'] ?? 0) > 0 && ($bucket['value'] ?? null) !== null)
+            ->filter(fn (array $bucket): bool => $bucket['count'] > 0)
             ->values();
 
         return [
             'type' => 'histogram_metric',
             'metric' => $this->metric->value,
-            'field' => $this->field,
+            'field' => $this->metric->resultField($this->field, $this->countedField()),
             'bucket_field' => $this->bucketField,
             'interval' => $this->interval,
             'series' => array_map(fn (array $bucket): array => [

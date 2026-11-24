@@ -16,7 +16,7 @@ trait Settings
     {
         $this->assertEquals(
             (string) $number,
-            $this->data['settings']['index']['number_of_shards'],
+            $this->data['settings']['index']['number_of_shards'] ?? null,
             sprintf("Failed to assert that index %s has '%d' shards.", $this->name, $number)
         );
     }
@@ -25,7 +25,7 @@ trait Settings
     {
         $this->assertEquals(
             (string) $number,
-            $this->data['settings']['index']['number_of_replicas'],
+            $this->data['settings']['index']['number_of_replicas'] ?? null,
             sprintf("Failed to assert that index %s has '%d' replicas.", $this->name, $number)
         );
     }

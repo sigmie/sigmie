@@ -20,6 +20,21 @@ use Sigmie\Testing\TestCase;
 
 class FromRawTest extends TestCase
 {
+    /** @test */
+    public function a_builtin_default_analyzer_is_read_from_elasticsearch(): void
+    {
+        $name = uniqid('analyzer_');
+
+        $this->indexAPICall($name, 'PUT', [
+            'settings' => ['analysis' => ['analyzer' => ['default' => ['type' => 'english']]]],
+            'mappings' => ['properties' => ['title' => ['type' => 'text']]],
+        ]);
+
+        $index = $this->getIndex($name);
+        $this->assertSame(['default' => ['type' => 'english']], $index->settings->analysis()->defaultAnalyzer()->toRaw());
+        $this->assertSame('default', $index->mappings->properties()->get('title')->searchAnalyzer());
+    }
+
     /**
      * @test
      */
@@ -126,7 +141,11 @@ class FromRawTest extends TestCase
 
         $title = new Text('title');
         $title->setPath('title');
-        $this->assertEquals($title->searchAsYouType($defaultAnalyzer), $properties['title']);
+        // The restored field also keeps the native options Elasticsearch stored.
+        $this->assertEquals(
+            [...$title->searchAsYouType($defaultAnalyzer)->toRaw()['title'], 'doc_values' => false, 'max_shingle_size' => 3],
+            $properties['title']->toRaw()['title'],
+        );
 
         $this->assertArrayHasKey('content', $properties);
         $this->assertInstanceOf(Text::class, $properties['content']);
@@ -134,7 +153,7 @@ class FromRawTest extends TestCase
         $content = (new Text('content'))
             ->unstructuredText($customFieldAnalyzer);
         $content->setPath('content');
-        $this->assertEquals($content, $properties['content']);
+        $this->assertEquals(($content)->toRaw(), $properties['content']->toRaw());
     }
 
     /**
@@ -175,42 +194,46 @@ class FromRawTest extends TestCase
 
         $title = new Text('title');
         $title->setPath('title');
-        $this->assertEquals($title->searchAsYouType($defaultAnalyzer), $properties['title']);
+        // The restored field also keeps the native options Elasticsearch stored.
+        $this->assertEquals(
+            [...$title->searchAsYouType($defaultAnalyzer)->toRaw()['title'], 'doc_values' => false, 'max_shingle_size' => 3],
+            $properties['title']->toRaw()['title'],
+        );
 
         $this->assertArrayHasKey('content', $properties);
         $this->assertInstanceOf(Text::class, $properties['content']);
 
         $content = new Text('content');
         $content->setPath('content');
-        $this->assertEquals($content->unstructuredText($defaultAnalyzer), $properties['content']);
+        $this->assertEquals(($content->unstructuredText($defaultAnalyzer))->toRaw(), $properties['content']->toRaw());
 
         $this->assertArrayHasKey('adults', $properties);
         $this->assertInstanceOf(Number::class, $properties['adults']);
 
         $adults = new Number('adults');
         $adults->setPath('adults');
-        $this->assertEquals($adults->integer(), $properties['adults']);
+        $this->assertEquals(($adults->integer())->toRaw(), $properties['adults']->toRaw());
 
         $this->assertArrayHasKey('price', $properties);
         $this->assertInstanceOf(Number::class, $properties['price']);
 
         $price = new Number('price');
         $price->setPath('price');
-        $this->assertEquals($price->float(), $properties['price']);
+        $this->assertEquals(($price->float())->toRaw(), $properties['price']->toRaw());
 
         $this->assertArrayHasKey('created_at', $properties);
         $this->assertInstanceOf(Date::class, $properties['created_at']);
 
         $createdAt = new Date('created_at');
         $createdAt->setPath('created_at');
-        $this->assertEquals($createdAt, $properties['created_at']);
+        $this->assertEquals(($createdAt)->toRaw(), $properties['created_at']->toRaw());
 
         $this->assertArrayHasKey('is_valid', $properties);
         $this->assertInstanceOf(Boolean::class, $properties['is_valid']);
 
         $isValid = new Boolean('is_valid');
         $isValid->setPath('is_valid');
-        $this->assertEquals($isValid, $properties['is_valid']);
+        $this->assertEquals(($isValid)->toRaw(), $properties['is_valid']->toRaw());
     }
 
     /**
@@ -304,10 +327,12 @@ class FromRawTest extends TestCase
 
         $settings = $index->settings;
 
-        $this->assertEquals([
+        $expected = [
             'number_of_shards' => 1,
             'number_of_replicas' => 2,
             'analysis' => $settings->analysis()->toRaw(),
-        ], $settings->toRaw());
+        ];
+
+        $this->assertEquals($expected, array_intersect_key($settings->toRaw(), $expected));
     }
 }

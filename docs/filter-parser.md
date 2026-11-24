@@ -171,6 +171,7 @@ $props->object('contact', function (NewProperties $p) {
     $p->email('email');
 });
 
+$parser = new FilterParser($props());
 $parser->parse('contact.active:true AND contact.name:"Alice"');
 ```
 
@@ -189,6 +190,7 @@ $props->nested('vehicles', function (NewProperties $p) {
     $p->keyword('model');
 });
 
+$parser = new FilterParser($props());
 $parser->parse("vehicles:{ make:'Powell Motors' AND model:'Canyonero' }");
 ```
 

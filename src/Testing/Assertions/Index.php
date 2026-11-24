@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing\Assertions;
 
+use PHPUnit\Framework\Assert;
 use Sigmie\Base\APIs\Index as IndexAPICall;
 
 trait Index
@@ -17,25 +18,25 @@ trait Index
 
     public function assertIndexHasPipeline(string $pipeline): void
     {
-        $this->assertArrayHasKey('default_pipeline', $this->data['settings']['index'], sprintf('Failed to assert that index %s has a default pipeline.', $this->name));
+        $this->assertArrayHasKey('default_pipeline', $this->data['settings']['index'] ?? [], sprintf('Failed to assert that index %s has a default pipeline.', $this->name));
         $this->assertEquals($pipeline, $this->data['settings']['index']['default_pipeline'], sprintf('Failed to assert that index %s has %s pipeline.', $this->name, $pipeline));
     }
 
     public function assertIndexHasNotPipeline(): void
     {
-        $this->assertArrayNotHasKey('default_pipeline', $this->data['settings']['index'], sprintf('Failed to assert that index %s has a default pipeline.', $this->name));
+        $this->assertEquals('_none', $this->data['settings']['index']['default_pipeline'] ?? '_none', sprintf('Failed to assert that index %s has a default pipeline.', $this->name));
     }
 
     public function assertIndexHasMappings(): void
     {
-        $this->assertArrayHasKey('mappings', $this->data, sprintf('Failed to assert that index %s has mappings.', $this->name));
+        Assert::assertNotEmpty($this->data['mappings'] ?? [], sprintf('Failed to assert that index %s has mappings.', $this->name));
     }
 
     public function assertAnalyzerExists(string $analyzer): void
     {
         $this->assertArrayHasKey(
             $analyzer,
-            $this->data['settings']['index']['analysis']['analyzer'],
+            $this->data['settings']['index']['analysis']['analyzer'] ?? [],
             sprintf('Failed to assert that the %s exists in index %s.', $analyzer, $this->name)
         );
     }
@@ -44,7 +45,7 @@ trait Index
     {
         $this->assertArrayHasKey(
             $normalizer,
-            $this->data['settings']['index']['analysis']['normalizer'],
+            $this->data['settings']['index']['analysis']['normalizer'] ?? [],
             sprintf('Failed to assert that the %s normalizer exists in index %s.', $normalizer, $this->name)
         );
     }
@@ -53,7 +54,7 @@ trait Index
     {
         $this->assertArrayNotHasKey(
             $analyzer,
-            $this->data['settings']['index']['analysis']['analyzer'],
+            $this->data['settings']['index']['analysis']['analyzer'] ?? [],
             sprintf('Failed to assert that the %s not exists in index %s.', $analyzer, $this->name)
         );
     }

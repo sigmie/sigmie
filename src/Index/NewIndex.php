@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace Sigmie\Index;
 
 use Carbon\Carbon;
+use InvalidArgumentException;
 use RuntimeException;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Base\ElasticsearchException;
 use Sigmie\Document\Contracts\CollectionHook;
 use Sigmie\Index\Actions as IndexActions;
 use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Index\Analysis\Analysis;
-use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
+use Sigmie\Index\Contracts\Analyzer;
+use Sigmie\Index\Contracts\CustomAnalyzer;
 use Sigmie\Index\Contracts\Language;
 use Sigmie\Index\Mappings as IndexMappings;
 use Sigmie\Index\Shared\CharFilters;
@@ -26,8 +29,10 @@ use Sigmie\Index\Shared\Tokenizer;
 use Sigmie\Languages\English\Filter\Lowercase;
 use Sigmie\Languages\English\Filter\Stemmer;
 use Sigmie\Languages\English\Filter\Stopwords;
+use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
-use Sigmie\Mappings\Properties as MappingsProperties;
+
+use function Sigmie\Functions\merge_named;
 use Sigmie\Shared\UsesApis;
 use Throwable;
 
@@ -47,13 +52,13 @@ class NewIndex
 
     protected string $alias;
 
-    protected DefaultAnalyzer $defaultAnalyzer;
-
     protected AnalysisInterface $analysis;
 
     protected array $config = [];
 
     protected Properties $properties;
+
+    protected Analysis $fieldAnalysis;
 
     /** @var array<int, CollectionHook> */
     protected array $collectionHooks = [];
@@ -72,11 +77,11 @@ class NewIndex
     ) {
         $this->setElasticsearchConnection($connection);
 
-        $this->tokenizer = new WordBoundaries;
-
         $this->analysis = new Analysis;
+        $this->analysis->defaultAnalyzer();
+        $this->fieldAnalysis = new Analysis;
 
-        $this->properties = new MappingsProperties;
+        $this->properties = new Properties;
     }
 
     public function getAlias(): string
@@ -89,9 +94,50 @@ class NewIndex
         return $this->analysis;
     }
 
-    public function config(string $name, string|array|bool|int $value): static
+    public function properties(NewProperties $props): static
     {
-        $this->config[$name] = $value;
+        $analysis = new Analysis;
+        $this->properties = $props->get(analysis: $analysis);
+        $this->fieldAnalysis = $analysis;
+
+        return $this;
+    }
+
+    public function config(string $name, string|array|bool|int|float|null $value): static
+    {
+        if ($name === 'index' && is_array($value)) {
+            foreach ($value as $setting => $configured) {
+                $this->config('index.'.$setting, $configured);
+            }
+
+            return $this;
+        }
+
+        $key = str_starts_with($name, 'index.') ? substr($name, 6) : $name;
+        if (in_array($key, ['blocks', 'write'], true) && is_array($value)) {
+            foreach ($value as $setting => $configured) {
+                $this->config($key.'.'.$setting, $configured);
+            }
+
+            return $this;
+        }
+
+        if ($key === 'number_of_shards' || $key === 'number_of_replicas') {
+            if ($value === null) {
+                return $this;
+            }
+
+            if (! is_int($value) && (! is_string($value) || ! preg_match('/^[+-]?\d+$/D', $value))) {
+                throw new InvalidArgumentException("The index setting '$name' requires an integer.");
+            }
+
+            return $key === 'number_of_shards'
+                ? $this->shards((int) $value)
+                : $this->replicas((int) $value);
+        }
+
+        unset($this->config[$key], $this->config['index.'.$key]);
+        $this->config[in_array($key, ['refresh_interval', 'analysis', 'blocks.read', 'blocks.write', 'write.wait_for_active_shards'], true) ? $key : $name] = $value;
 
         return $this;
     }
@@ -107,11 +153,40 @@ class NewIndex
     {
         $builder = $language->builder($this->getElasticsearchConnection());
 
-        $builder->alias($this->alias);
+        if (isset($this->alias)) {
+            $builder->alias($this->alias);
+        }
+
+        if ($builder instanceof self) {
+            $builder->config = array_replace($builder->config, $this->config);
+            $builder->meta($this->customMeta);
+            if ($this->properties->hasFields()) {
+                $builder->properties = $this->properties->copy();
+                $builder->fieldAnalysis = clone $this->fieldAnalysis;
+            }
+            $builder->searchSynonyms = $this->searchSynonyms ?? $builder->searchSynonyms;
+
+            $analysis = clone $this->analysis;
+            $defaultAnalyzer = $analysis->defaultAnalyzer();
+            $builder->analysis->registerFieldComponents($analysis);
+            $languageAnalyzer = $builder->defaultAnalyzer();
+            if ($defaultAnalyzer instanceof CustomAnalyzer && $languageAnalyzer instanceof CustomAnalyzer) {
+                $defaultAnalyzer->addFilters($languageAnalyzer->filters());
+                $defaultAnalyzer->addCharFilters($languageAnalyzer->charFilters());
+                $tokenizer = $languageAnalyzer->tokenizer();
+                if ($tokenizer !== null && $tokenizer != new WordBoundaries) {
+                    $defaultAnalyzer->setTokenizer($tokenizer);
+                }
+            }
+            $analysis->addAnalyzer($defaultAnalyzer);
+            $builder->analysis = $analysis;
+        }
+
         $builder->shards($this->shards);
         $builder->replicas($this->replicas);
         $builder->apis($this->apis);
         $builder->collectionHooks($this->collectionHooks);
+        $builder->serverless($this->serverless);
 
         return $builder;
     }
@@ -128,7 +203,7 @@ class NewIndex
 
     /**
      * Create a physical index for this alias without attaching the alias,
-     * tuned for bulk writes (no refresh, no replicas until finish()).
+     * tuned for bulk writes (refresh disabled, replicas kept only when required).
      * Fill it from one or many processes, then finish() or abort() it.
      *
      * The rebuild's collection carries no properties, like Sigmie::collect().
@@ -138,16 +213,44 @@ class NewIndex
     public function startRebuild(): IndexRebuild
     {
         $replicas = $this->replicas;
+        $requestedReplicas = $this->usesServerlessSettings() ? null : $replicas;
+        $refresh = (string) ($this->config['refresh_interval'] ?? ($this->elasticsearchConnection->isServerless() ? '5s' : '1s'));
+        $sources = $this->aliasSources($this->alias);
+        $targets = array_map('strval', array_keys($sources));
+        $routing = $sources[array_key_first($sources)]['aliases'][$this->alias]['index_routing'] ?? null;
+        $pendingSettings = ['is_hidden' => true];
+        if ($routing !== null) {
+            $pendingSettings['index_routing'] = $routing;
+        }
+        $config = $this->config;
+        $meta = $this->customMeta;
 
-        $this->meta([IndexRebuild::META_KEY => $this->alias, IndexRebuild::META_REPLICAS => $replicas]);
-        $this->config('refresh_interval', '-1');
-        $this->replicas(0);
+        try {
+            $deferredBlocks = $this->deferAccessBlocks();
+            $this->meta([
+                IndexRebuild::META_KEY => $this->alias,
+                IndexRebuild::META_REPLICAS => $requestedReplicas,
+                IndexRebuild::META_REFRESH => $refresh,
+                IndexRebuild::META_TARGETS => $targets,
+                IndexRebuild::META_BLOCKS => $deferredBlocks,
+            ]);
+            $this->config('refresh_interval', '-1');
+            $this->useBulkReplicas();
 
-        $index = $this->make();
+            $index = $this->make();
+            $this->createIndex($index->name, $index->settings, $index->mappings, [
+                IndexRebuild::pendingAlias($index->name) => $pendingSettings,
+            ]);
+        } finally {
+            $this->replicas($replicas);
+            $this->config = $config;
+            $this->customMeta = $meta;
+        }
 
-        $this->createIndex($index->name, $index->settings, $index->mappings);
-
-        $rebuild = new IndexRebuild($this->elasticsearchConnection, $this->alias, $index->name, $replicas, $this->collectionHooks);
+        $rebuild = new IndexRebuild(
+            $this->elasticsearchConnection, $this->alias, $index->name, $requestedReplicas,
+            $this->collectionHooks, $targets, $refresh, deferredBlocks: $deferredBlocks, fillRouting: $routing,
+        );
 
         return $rebuild->apis($this->apis);
     }
@@ -170,7 +273,14 @@ class NewIndex
         try {
             $fill($rebuild->collect());
         } catch (Throwable $throwable) {
-            $rebuild->abort();
+            try {
+                $rebuild->abort();
+            } catch (Throwable $abortError) {
+                throw new RuntimeException(
+                    "Rebuild fill failed and abort of '{$rebuild->name}' also failed. ".$abortError->getMessage(),
+                    previous: $throwable,
+                );
+            }
 
             throw $throwable;
         }
@@ -178,26 +288,34 @@ class NewIndex
         return $rebuild->finish($minDocuments);
     }
 
-    public function defaultAnalyzer(): DefaultAnalyzer
+    public function defaultAnalyzer(): Analyzer
     {
-        $this->defaultAnalyzer ?? $this->defaultAnalyzer = new DefaultAnalyzer;
+        return $this->analysis()->defaultAnalyzer();
+    }
 
-        return $this->defaultAnalyzer;
+    protected function pipeline(): CustomAnalyzer
+    {
+        $analyzer = $this->defaultAnalyzer();
+        if (! $analyzer instanceof CustomAnalyzer) {
+            throw new InvalidArgumentException('The default analyzer must be custom to configure its pipeline.');
+        }
+
+        return $analyzer;
     }
 
     public function create(): AliasedIndex
     {
-        if ($this->aliasExists($this->alias)) {
+        if ($this->indexExists($this->alias)) {
             throw AliasAlreadyExists::forAlias($this->alias);
         }
 
         $index = $this->make();
 
-        $this->createIndex($index->name, $index->settings, $index->mappings);
+        $this->createIndex($index->name, $index->settings, $index->mappings, [
+            $this->alias => ['is_write_index' => true],
+        ]);
 
-        $this->createAlias($index->name, $this->alias);
-
-        $index = new AliasedIndex($index->name, $this->alias);
+        $index = new AliasedIndex($index->name, $this->alias, $index->settings, $index->mappings);
         $index->setElasticsearchConnection($this->elasticsearchConnection);
 
         return $index;
@@ -215,7 +333,24 @@ class NewIndex
             throw new RuntimeException(sprintf("Index '%s' exists but is not an aliased index", $this->alias));
         }
 
-        return $this->create();
+        try {
+            return $this->create();
+        } catch (AliasAlreadyExists|ElasticsearchException $exception) {
+            if ($exception instanceof ElasticsearchException && ! in_array(
+                $exception->json('type'),
+                ['illegal_state_exception', 'resource_already_exists_exception'],
+                true,
+            )) {
+                throw $exception;
+            }
+
+            $existingIndex = $this->getIndex($this->alias);
+            if ($existingIndex instanceof AliasedIndex) {
+                return $existingIndex;
+            }
+
+            throw $exception;
+        }
     }
 
     public function save(string $name, array $patterns): IndexTemplate
@@ -232,45 +367,88 @@ class NewIndex
 
     public function make(): Index
     {
-        $defaultAnalyzer = $this->defaultAnalyzer();
-        $defaultAnalyzer->addCharFilters($this->charFilters());
-        $defaultAnalyzer->addFilters($this->filters());
-        $defaultAnalyzer->setTokenizer($this->tokenizer);
+        $analysis = clone $this->analysis();
+        $defaultAnalyzer = $analysis->defaultAnalyzer();
 
         /** @var IndexMappings $mappings */
         $mappings = $this->createMappings($defaultAnalyzer);
 
         $analyzers = $mappings->analyzers();
 
-        $this->analysis()->addAnalyzers($analyzers);
-
-        if ($this->searchSynonyms) {
-            $this->analysis()->addAnalyzer($this->makeSearchSynonymsAnalyzer());
-        }
+        $this->fieldAnalysis->registerFieldComponents($analysis);
+        $analysis->addAnalyzers($analyzers);
 
         // Apply engine-specific index settings for semantic fields
         $driver = $this->elasticsearchConnection->driver();
         $engineSettings = $driver->indexSettings();
-        $this->config = [...$this->config, ...$engineSettings];
+        foreach (array_keys($this->config) as $setting) {
+            unset($engineSettings['index.'.$setting]);
+        }
 
-        $useServerless = $this->serverless || $this->elasticsearchConnection->isServerless();
+        $useServerless = $this->usesServerlessSettings();
 
         $settings = new Settings(
             primaryShards: $useServerless ? null : $this->shards,
             replicaShards: $useServerless ? null : $this->replicas,
-            analysis: $this->analysis,
-            configs: $this->config
+            analysis: $analysis,
+            configs: merge_named($engineSettings, $this->config)
         );
+
+        if ($this->searchSynonyms !== null) {
+            $effectiveDefault = $settings->analysis()->defaultAnalyzer();
+            if (! $effectiveDefault instanceof CustomAnalyzer) {
+                throw new InvalidArgumentException('Search synonyms require a custom default analyzer.');
+            }
+
+            $analysis->addAnalyzer($this->makeSearchSynonymsAnalyzer($analysis, $effectiveDefault));
+        }
 
         $name = $this->createIndexName();
 
         return new Index($name, $settings, $mappings);
     }
 
+    public function useBulkReplicas(): void
+    {
+        $required = $this->config['write.wait_for_active_shards'] ?? 1;
+        if ($required !== 'all' && (int) $required <= 1) {
+            $this->replicas(0);
+        }
+    }
+
+    /** @return list<string> Settings to restore after copying and counting documents. */
+    public function deferAccessBlocks(): array
+    {
+        $blocks = [];
+        foreach (['blocks.read', 'blocks.write'] as $block) {
+            if (in_array($this->config[$block] ?? false, [true, 'true'], true)) {
+                $this->config($block, false);
+                $blocks[] = $block;
+            }
+        }
+
+        return $blocks;
+    }
+
+    private function usesServerlessSettings(): bool
+    {
+        return $this->serverless || $this->elasticsearchConnection->isServerless();
+    }
+
+    public static function physicalNamePrefix(string $alias): string
+    {
+        // The separator and timestamp use 21 of the 255 bytes in an index name.
+        if (strlen($alias) > 234 || mb_strtolower($alias, 'UTF-8') !== $alias) {
+            return 'sigmie-'.hash('sha256', $alias);
+        }
+
+        return $alias;
+    }
+
     protected function createIndexName(): string
     {
-        $timestamp = Carbon::now()->format('YmdHisu');
+        $timestamp = Carbon::now('UTC')->format('YmdHisu');
 
-        return sprintf('%s_%s', $this->alias, $timestamp);
+        return sprintf('%s_%s', self::physicalNamePrefix($this->alias), $timestamp);
     }
 }

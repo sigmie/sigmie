@@ -12,14 +12,25 @@ class PathHierarchy implements Tokenizer
 {
     public function __construct(
         protected readonly string $name,
-        protected string $delimiter = '/'
+        protected string $delimiter = '/',
+        protected bool|string|null $reverse = null,
+        protected ?string $replacement = null,
+        protected int|string|null $skip = null,
+        protected int|string|null $bufferSize = null,
     ) {}
 
     public static function fromRaw(array $raw): static
     {
         [$name, $config] = name_configs($raw);
 
-        return new static($name, $config['delimiter']);
+        return new static(
+            $name,
+            $config['delimiter'] ?? '/',
+            $config['reverse'] ?? null,
+            $config['replacement'] ?? null,
+            $config['skip'] ?? null,
+            $config['buffer_size'] ?? null,
+        );
     }
 
     public function name(): string
@@ -30,10 +41,14 @@ class PathHierarchy implements Tokenizer
     public function toRaw(): array
     {
         return [
-            $this->name() => [
+            $this->name() => array_filter([
                 'type' => 'path_hierarchy',
                 'delimiter' => $this->delimiter,
-            ],
+                'reverse' => $this->reverse,
+                'replacement' => $this->replacement,
+                'skip' => $this->skip,
+                'buffer_size' => $this->bufferSize,
+            ], fn ($value): bool => $value !== null),
         ];
     }
 }

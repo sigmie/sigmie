@@ -61,12 +61,10 @@ use Sigmie\Index\Analysis\TokenFilter\Unique;
 use Sigmie\Index\Analysis\TokenFilter\Uppercase;
 use Sigmie\Index\Analysis\Tokenizers\NonLetter;
 use Sigmie\Index\Analysis\Tokenizers\PathHierarchy;
-use Sigmie\Index\Contracts\Analysis as AnalysisContract;
 use Sigmie\Index\Mappings as IndexMappings;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Index\NewIndex;
 use Sigmie\Index\Settings;
-use Sigmie\Index\Shared\Tokenizer as TokenizerTrait;
 use Sigmie\Languages\English\Filter\LightStemmer as EnglishLightStemmer;
 use Sigmie\Languages\English\Filter\LovinsStemmer as EnglishLovinsStemmer;
 use Sigmie\Languages\English\Filter\MinimalStemmer as EnglishMinimalStemmer;
@@ -225,6 +223,7 @@ class UtilityCoverageTest extends TestCase
         $this->assertSame([
             'yearly_rate' => [
                 'rate' => [
+                    'field' => 'created_at',
                     'unit' => 'year',
                 ],
             ],
@@ -277,22 +276,17 @@ class UtilityCoverageTest extends TestCase
             ],
         ], $simpleAnalyzer->toRaw());
 
-        $shingle = Shingle::fromRaw([
+        $shingleRaw = [
             'phrase_shingles' => [
                 'type' => 'shingle',
                 'min_shingle_size' => 2,
                 'max_shingle_size' => 3,
             ],
-        ]);
+        ];
+        $shingle = Shingle::fromRaw($shingleRaw);
 
         $this->assertSame('shingle', $shingle->type());
-        $this->assertSame([
-            'phrase_shingles' => [
-                'min_shingle_size' => 2,
-                'max_shingle_size' => 3,
-                'type' => 'shingle',
-            ],
-        ], $shingle->toRaw());
+        $this->assertSame($shingleRaw, $shingle->toRaw());
 
         $stemmer = new class extends LanguageStemmer
         {
@@ -441,7 +435,7 @@ class UtilityCoverageTest extends TestCase
 
         $this->assertSame('POST', $connection->requests[0]['method']);
         $this->assertSame('/products/_search/point_in_time', $connection->requests[0]['path']);
-        $this->assertSame('keep_alive=2m', $connection->requests[0]['query']);
+        $this->assertSame('keep_alive=2m&allow_partial_pit_creation=false', $connection->requests[0]['query']);
         $this->assertSame('DELETE', $connection->requests[1]['method']);
         $this->assertSame('/_search/point_in_time', $connection->requests[1]['path']);
         $this->assertSame(['pit_id' => ['pit-id']], $connection->requests[1]['body']);
@@ -455,9 +449,9 @@ class UtilityCoverageTest extends TestCase
         $this->assertUtilitySearchHit();
 
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Dimensions must be one of: 128, 256, 384, 512, 1024, 1536, 2048, 3072');
+        $this->expectExceptionMessage('Dimensions must be positive');
 
-        (new NewSemanticField('title'))->accuracy(1, 42);
+        (new NewSemanticField('title'))->accuracy(1, 0);
     }
 
     /**
@@ -565,10 +559,8 @@ class UtilityCoverageTest extends TestCase
             ['text' => 'plain text', 'dims' => 8],
         ]);
 
-        $imageEmbedCalls = new ReflectionProperty($this->clipApi, 'imageEmbedCalls');
-        $imageEmbedCalls->setAccessible(true);
-        $imageEmbedCalls->setValue($this->clipApi, []);
-
+        $this->assertSame([['source' => $imageSource, 'dimensions' => 8]], $this->clipApi->getImageEmbedCalls());
+        $this->clipApi->assertBatchContainedMix(1, 1);
         $this->clipApi->assertImageSourceWasEmbedded($imageSource);
     }
 
@@ -725,10 +717,11 @@ class UtilityCoverageTest extends TestCase
         $analysis->addCharFilters([$charFilter]);
 
         $this->assertSame($nonLetterTokenizer, $analysis->tokenizers()['non_letter_tokenizer']);
-        $this->assertIsArray($analysis->filters());
-        $this->assertIsArray($analysis->charFilters());
+        $this->assertSame($pathTokenizer, $analysis->tokenizers()['path_tokenizer']);
+        $this->assertSame($filter, $analysis->filters()['lowercase_filter']);
+        $this->assertSame($charFilter, $analysis->charFilters()['dash_filter']);
         $this->assertTrue($analysis->hasTokenizer('non_letter_tokenizer'));
-        $this->assertFalse($analysis->hasFilter('lowercase_filter'));
+        $this->assertTrue($analysis->hasFilter('lowercase_filter'));
         $this->assertFalse($analysis->hasAnalyzer('missing_analyzer'));
 
         $charFilter->settings([
@@ -744,25 +737,13 @@ class UtilityCoverageTest extends TestCase
             ],
         ], $charFilter->toRaw());
 
-        $tokenizerHost = new class
-        {
-            use TokenizerTrait;
+        $nonLetters = new NewAnalyzer(new Analysis, 'non_letters_analyzer');
+        $paths = new NewAnalyzer(new Analysis, 'paths_analyzer');
 
-            public function analysis(): AnalysisContract
-            {
-                return new Analysis;
-            }
-
-            public function rawTokenizer(): array
-            {
-                return $this->tokenizer->toRaw();
-            }
-        };
-
-        $this->assertSame($tokenizerHost, $tokenizerHost->tokenizeOnNonLetter('non_letters'));
-        $this->assertSame(['non_letters' => ['type' => 'letter']], $tokenizerHost->rawTokenizer());
-        $this->assertSame($tokenizerHost, $tokenizerHost->tokenizePathHierarchy('.', 'paths'));
-        $this->assertSame(['paths' => ['type' => 'path_hierarchy', 'delimiter' => '.']], $tokenizerHost->rawTokenizer());
+        $this->assertSame($nonLetters, $nonLetters->tokenizeOnNonLetter('non_letters'));
+        $this->assertSame(['non_letters' => ['type' => 'letter']], $nonLetters->create()->tokenizer()->toRaw());
+        $this->assertSame($paths, $paths->tokenizePathHierarchy('.', 'paths'));
+        $this->assertSame(['paths' => ['type' => 'path_hierarchy', 'delimiter' => '.']], $paths->create()->tokenizer()->toRaw());
 
         $mappingProperties = new NewProperties;
         $mappingProperties->text('title');
@@ -901,7 +882,7 @@ class UtilityCoverageTest extends TestCase
         ], $pipeline->toRaw());
         $this->assertSame([
             [
-                '{"term":{"status":"active"}}',
+                'term' => ['status' => 'active'],
             ],
         ], $boolean->toRaw());
         $this->assertSame('sigmie', $suggest->toRaw()['text']);
@@ -915,7 +896,6 @@ class UtilityCoverageTest extends TestCase
                 'title' => [
                     'query' => 'sigmie',
                     'boost' => 1.0,
-                    'analyzer' => 'default',
                     'fuzziness' => 'AUTO',
                     'fuzzy_transpositions' => true,
                     'prefix_length' => 0,
@@ -1018,7 +998,7 @@ class UtilityCoverageTest extends TestCase
         ]));
         $this->assertStringContainsString('yyyy-MM-dd', $date->toRaw()['published_at']['format']);
         $this->assertStringContainsString('yyyy-MM-dd HH:mm:ss', $dateTime->toRaw()['created_at']['format']);
-        $this->assertSame([false, 'The field location mapped as geo_point must have lat and lon keys.'], $geoPoint->validate('location', [['lat' => 1.0]]));
+        $this->assertSame([false, 'The field location mapped as geo_point must have valid lat and lon coordinates.'], $geoPoint->validate('location', [['lat' => 1.0]]));
         $image->semantic('test-clip');
 
         $this->assertSame([false, 'The field photo contains an invalid image source: missing. Must be a URL, base64 string, or existing file path.'], $image->validate('photo', ['missing']));
@@ -1109,18 +1089,20 @@ class UtilityCoverageTest extends TestCase
             ],
         ])['rows'][0]['key']);
         $this->assertSame('_count', $grouped->toRaw()['grouped']['filter']['aggs']['groups']['terms']['order']['_count'] ?? '_count');
-        $this->assertSame(2, $histogram->extract([
+        $this->assertSame(['label' => 10, 'value' => 2, 'count' => 5], $histogram->extract([
             'histogram' => [
                 'buckets' => [
                     'buckets' => [
-                        ['key' => 10, 'doc_count' => 2],
+                        ['key' => 10, 'doc_count' => 5, 'metric' => ['doc_count' => 2]],
                     ],
                 ],
             ],
-        ])['series'][0]['value']);
+        ])['series'][0]);
         $this->assertSame(50.0, $kpiDelta->extract([
-            'revenue_current' => ['metric' => ['value' => 150]],
-            'revenue_previous' => ['metric' => ['value' => 100]],
+            'revenue' => [
+                'current' => ['metric' => ['value' => 150]],
+                'previous' => ['metric' => ['value' => 100]],
+            ],
         ])['change_pct']);
         $this->assertSame(12.5, AnalyticsMetric::Median->extract(['values' => ['50.0' => 12.5]]));
     }
@@ -1191,10 +1173,12 @@ class UtilityCoverageTest extends TestCase
             ],
         ])['rows'][0]['key']);
         $this->assertNull($kpiDelta->extract([
-            'flat_current' => ['metric' => ['value' => 150]],
-            'flat_previous' => ['metric' => ['value' => 0]],
+            'flat' => [
+                'current' => ['metric' => ['value' => 150]],
+                'previous' => ['metric' => ['value' => 0]],
+            ],
         ])['change_pct']);
-        $this->assertSame(0, (new AutoDateHistogram('by_date', 'created_at', 10))->missing(0)->toRaw()['by_date']['date_histogram']['missing']);
+        $this->assertSame(0, (new AutoDateHistogram('by_date', 'created_at', 10))->missing(0)->toRaw()['by_date']['auto_date_histogram']['missing']);
 
         $classifier = new class($embeddings) extends NewClassification
         {
@@ -1252,7 +1236,7 @@ class UtilityCoverageTest extends TestCase
 
         $aggregation = $parser->parse('broken_facet');
 
-        $this->assertSame([], $aggregation->toRaw()['broken_facet']['aggs']);
+        $this->assertSame([], $aggregation->toRaw());
         $this->assertSame([
             [
                 'message' => 'Broken facet aggregation',
@@ -1319,7 +1303,7 @@ class UtilityCoverageTest extends TestCase
         $mappingCharFilter = new MappingCharFilter('mapping');
         $mappingCharFilter->settings(['a=>b']);
 
-        $this->assertSame(['mapping' => ['type' => 'mapping', 'mappings' => ['0 => a=>b']]], $mappingCharFilter->toRaw());
+        $this->assertSame(['mapping' => ['type' => 'mapping', 'mappings' => ['0 => a\u003d>b']]], $mappingCharFilter->toRaw());
 
         $analyzer = new Analyzer('custom');
         $analyzer->addFilters(['trim' => new Trim('trim')]);
@@ -1360,11 +1344,10 @@ class UtilityCoverageTest extends TestCase
                 'title' => [
                     'query' => 'prefix',
                     'boost' => 1.0,
-                    'analyzer' => 'default',
                 ],
             ],
         ], (new MatchPhrasePrefix('title', 'prefix'))->fuzziness('AUTO')->toRaw());
-        $this->assertSame(1.0, (new FunctionScore(new MatchAll, 'return 1;'))->boost(2)->toRaw()['function_score']['boost']);
+        $this->assertSame(2.0, (new FunctionScore(new MatchAll, 'return 1;'))->boost(2)->toRaw()['function_score']['boost']);
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Reranking is only available on SigmieSearchResponse.');
@@ -1512,10 +1495,13 @@ class UtilityCoverageTest extends TestCase
         $this->assertSame(['ok' => true], $rawQuery->formatResponses(['ok' => true]));
 
         $this->assertSame([['_shard_doc' => 'asc']], PitSortPlanner::plan([], false));
-        $this->assertSame([['_id' => 'asc']], PitSortPlanner::plan(['_score'], true));
+        $this->assertSame([['_id' => 'asc'], ['_index' => 'asc']], PitSortPlanner::plan(['_score'], true));
         $this->assertSame(['name'], PitSortPlanner::plan(['name'], false, hasCollapse: true));
         $this->assertSame([['rank' => ['order' => 'asc']], ['_shard_doc' => 'asc']], PitSortPlanner::plan([['rank' => ['order' => 'asc']]], false));
-        $this->assertSame([['rank' => ['order' => 'asc']], ['_id' => 'asc']], PitSortPlanner::plan([['rank' => ['order' => 'asc']], ['_id' => 'asc']], true));
+        $this->assertSame(
+            [['rank' => ['order' => 'asc']], ['_id' => 'asc'], ['_index' => 'asc']],
+            PitSortPlanner::plan([['rank' => ['order' => 'asc']], ['_id' => 'asc']], true),
+        );
 
         $openSearchPit = HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, [], '{"pit_id":"open-pit"}'));
         $elasticPit = HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, [], '{"id":"elastic-pit"}'));
@@ -1615,9 +1601,15 @@ class UtilityCoverageTest extends TestCase
             }
         };
 
-        $this->expectException(ElasticsearchException::class);
+        $updated = $wrapper->update($indexName, 'matching', ['doc' => ['title' => 'Updated']]);
 
-        $wrapper->update($indexName, 'matching', ['doc' => ['title' => 'Updated']]);
+        $this->assertSame('updated', $updated->json('result'));
+        $this->assertSame('Updated', $this->sigmie->collect($indexName)->get('matching')['title']);
+
+        $this->expectException(ElasticsearchException::class);
+        $this->expectExceptionCode(404);
+
+        $wrapper->update($indexName, 'missing', ['doc' => ['title' => 'Updated']]);
     }
 
     private function assertUtilitySearchHit(): void

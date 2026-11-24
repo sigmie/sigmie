@@ -7,6 +7,7 @@ namespace Sigmie\AI;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
+use Sigmie\Document\Document;
 use Sigmie\SigmieIndex;
 
 /**
@@ -18,6 +19,7 @@ use Sigmie\SigmieIndex;
 class SigmieSampleDocumentsTool implements Tool
 {
     use HandlesToolErrors;
+    use NamesIndexTools;
     use ScopesToBaseFilters;
     use SelectsOutputFields;
 
@@ -28,7 +30,7 @@ class SigmieSampleDocumentsTool implements Tool
 
     public function name(): string
     {
-        return 'sample_documents';
+        return $this->toolName('sample_documents');
     }
 
     public function description(): string
@@ -44,7 +46,7 @@ class SigmieSampleDocumentsTool implements Tool
         // `limit` is `nullable()->required()` so the schema is valid under OpenAI's strict
         // function-calling. Callers that want the default simply pass null.
         return [
-            'limit' => $schema->integer()->description('Number of example documents to return (1-20, default 5)')->default(5)->nullable()->required(),
+            'limit' => $schema->integer()->min(1)->max(20)->description('Number of example documents to return (1-20, default 5)')->default(5)->nullable()->required(),
             'fields' => $this->outputFieldsSchema($schema),
         ];
     }
@@ -70,6 +72,8 @@ class SigmieSampleDocumentsTool implements Tool
         $this->applyBaseFilters($collection);
 
         // Documents serialise to {_id, _source} via their JsonSerializable.
-        return $collection->random($limit)->toArray();
+        return $collection->random($limit)
+            ->map(fn (Document $document): Document => new Document($document->_source, $document->_id))
+            ->toArray();
     }
 }

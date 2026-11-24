@@ -7,14 +7,13 @@ namespace Sigmie\Index;
 use Carbon\Carbon;
 use RuntimeException;
 use Sigmie\Base\APIs\Reindex;
-use Sigmie\Base\APIs\Tasks;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Base\ElasticsearchException;
 
 class IndexUpdateTask
 {
     use Actions;
     use Reindex;
-    use Tasks;
 
     protected string $task;
 
@@ -24,79 +23,168 @@ class IndexUpdateTask
         public readonly string $dest,
         public readonly string $oldAlias,
         public readonly string $newAlias,
-        public readonly int $requestedReplicas
+        public readonly ?int $requestedReplicas,
+        public readonly ?string $requestedRefresh = null,
+        ?string $task = null,
+        private readonly array $deferredBlocks = [],
+        private readonly bool $sourceWasWriteBlocked = false,
+        private readonly ?string $finalPipeline = null,
+        private readonly bool $ownsUpdateLock = false,
     ) {
         $this->setElasticsearchConnection($elasticsearchConnection);
 
-        $res = $this->reindexAPICall($source, $dest, waitForCompletion: false);
+        $task ??= $this->reindexAPICall($source, $dest, waitForCompletion: false, pipeline: '_none')->json('task');
 
-        $this->task = $res->json('task');
+        if (! is_string($task) || $task === '') {
+            throw new RuntimeException('Reindex did not return a task ID.');
+        }
+
+        $this->task = $task;
     }
 
     public function pack(): array
     {
-        return [
+        $packed = [
             'source' => $this->source,
             'dest' => $this->dest,
             'old_alias' => $this->oldAlias,
             'new_alias' => $this->newAlias,
             'requested_replicas' => $this->requestedReplicas,
+            'task' => $this->task,
         ];
+
+        if ($this->requestedRefresh !== null) {
+            $packed['requested_refresh'] = $this->requestedRefresh;
+        }
+
+        if ($this->deferredBlocks !== []) {
+            $packed['deferred_blocks'] = $this->deferredBlocks;
+        }
+
+        if ($this->sourceWasWriteBlocked) {
+            $packed['source_was_write_blocked'] = true;
+        }
+
+        if ($this->finalPipeline !== null) {
+            $packed['final_pipeline'] = $this->finalPipeline;
+        }
+
+        if ($this->ownsUpdateLock) {
+            $packed['owns_update_lock'] = true;
+        }
+
+        return $packed;
     }
 
     public static function unpack(ElasticsearchConnection $connection, array $packed): static
     {
-        return new static($connection, $packed['source'], $packed['dest'], $packed['old_alias'], $packed['new_alias'], $packed['requested_replicas']);
+        $task = $packed['task'] ?? null;
+        if (! is_string($task) || $task === '') {
+            throw new RuntimeException('Packed index update is missing its task ID.');
+        }
+
+        return new static(
+            $connection,
+            $packed['source'],
+            $packed['dest'],
+            $packed['old_alias'],
+            $packed['new_alias'],
+            $packed['requested_replicas'],
+            $packed['requested_refresh'] ?? null,
+            $task,
+            $packed['deferred_blocks'] ?? [],
+            $packed['source_was_write_blocked'] ?? false,
+            $packed['final_pipeline'] ?? null,
+            $packed['owns_update_lock'] ?? false,
+        );
     }
 
-    protected function runningTasks(): array
+    private function taskStatus(): array
     {
-        $nodes = $this->tasksAPICall()->json('nodes');
-        $res = [];
+        try {
+            $status = $this->indexAPICall('_tasks/'.$this->task, 'GET')->json();
+        } catch (ElasticsearchException $exception) {
+            // A missing result can reappear on retry. Reopening writes before
+            // then would let finish() promote a copy made before those writes.
+            if ($exception->json('completed') === true || $exception->json('json.completed') === true) {
+                $this->restoreSourceWrites();
+            }
 
-        foreach ($nodes as $node) {
-            foreach ($node['tasks'] as $id => $task) {
-                $res[] = $id;
+            throw $exception;
+        }
+
+        if (! is_array($status) || ! is_bool($status['completed'] ?? null)) {
+            throw new RuntimeException('Reindex task status did not report whether it completed.');
+        }
+
+        if ($status['completed']) {
+            try {
+                $this->assertReindexSucceeded($status['response'] ?? null);
+            } catch (RuntimeException $exception) {
+                $this->restoreSourceWrites();
+
+                throw $exception;
             }
         }
 
-        return $res;
+        return $status;
+    }
+
+    private function restoreSourceWrites(): void
+    {
+        if ($this->ownsUpdateLock) {
+            $this->releaseUpdate($this->source, $this->dest, $this->sourceWasWriteBlocked);
+
+            return;
+        }
+
+        // A competing successful update may already have removed the source.
+        if (! $this->sourceWasWriteBlocked && $this->indexExists($this->source)) {
+            $source = new AliasedIndex($this->source, $this->oldAlias);
+            $source->setElasticsearchConnection($this->elasticsearchConnection);
+            $source->enableWrite();
+        }
     }
 
     public function isCompleted(): bool
     {
-        return ! in_array($this->task, $this->runningTasks());
+        return $this->taskStatus()['completed'];
     }
 
-    public function finish()
+    public function finish(): AliasedIndex
     {
-        $connection = $this->getElasticsearchConnection();
-        $afterReindexSettings = [
-            'refresh_interval' => $connection->isServerless() ? '5s' : '1s',
-        ];
-        if (! $connection->isServerless()) {
-            $afterReindexSettings['number_of_replicas'] = $this->requestedReplicas;
+        return $this->finishUpdate();
+    }
+
+    private function finishUpdate(bool $completed = false): AliasedIndex
+    {
+        $alreadyPromoted = $this->aliasIndices($this->newAlias) === [$this->dest];
+        if (! $alreadyPromoted) {
+            if (! $completed && ! $this->isCompleted()) {
+                throw new RuntimeException('Index update is not completed.');
+            }
+
+            // A promotion retry must still have the original write block.
+            $this->restoreReindexSettings($this->dest, $this->requestedReplicas, $this->requestedRefresh, $this->deferredBlocks, $this->finalPipeline);
+            $marker = $this->ownsUpdateLock ? $this->updateSourceAlias($this->dest) : null;
+            try {
+                $this->moveAlias(
+                    $this->newAlias, [$this->source], $this->dest, $this->oldAlias,
+                    pendingAlias: $this->ownsUpdateLock ? $this->updateLock($this->source) : null,
+                    markRetired: true, sourceMarker: $marker,
+                );
+            } catch (ElasticsearchException $exception) {
+                if ($marker !== null && $exception->getCode() === 404 && ! $this->indexExists($marker)) {
+                    $this->releaseUpdate($this->source, $this->dest, $this->sourceWasWriteBlocked);
+                }
+
+                throw $exception;
+            }
         }
 
-        $this->indexAPICall($this->dest.'/_settings', 'PUT', $afterReindexSettings);
+        $this->deleteRetiredIndices([$this->source], $this->dest, retry: $alreadyPromoted);
 
-        if ($this->oldAlias === $this->newAlias) {
-            $this->switchAlias($this->newAlias, $this->source, $this->dest);
-        } else {
-            $this->createAlias($this->dest, $this->newAlias);
-        }
-
-        $this->deleteIndex($this->source);
-
-        $index = $this->getIndex($this->newAlias);
-
-        if ($index instanceof AliasedIndex) {
-            return $index;
-        }
-
-        // @codeCoverageIgnoreStart
-        throw new RuntimeException('Something went wrong while updating index.');
-        // @codeCoverageIgnoreEnd
+        return $this->promotedIndex($this->newAlias, $this->dest);
     }
 
     public function waitAndFinish(
@@ -117,9 +205,23 @@ class IndexUpdateTask
 
             // @codeCoverageIgnoreEnd
 
-            if ($this->isCompleted()) {
-                $this->finish();
-                break;
+            try {
+                $completed = $this->isCompleted();
+            } catch (ElasticsearchException $exception) {
+                if ($exception->getCode() !== 404 || $exception->json('type') !== 'resource_not_found_exception'
+                    || $this->aliasIndices($this->newAlias) !== [$this->dest]) {
+                    throw $exception;
+                }
+
+                $this->deleteRetiredIndices([$this->source], $this->dest, retry: true);
+
+                return;
+            }
+
+            if ($completed) {
+                $this->finishUpdate(completed: true);
+
+                return;
             }
 
             $tries++;
@@ -127,6 +229,8 @@ class IndexUpdateTask
             if ($tries > $maxTries) {
                 throw new RuntimeException('Index update is not completed. Tried '.$tries.' times.');
             }
+
+            sleep(1);
         }
     }
 }

@@ -13,6 +13,8 @@ use Sigmie\AI\APIs\CohereRerankApi;
 use Sigmie\AI\APIs\InfinityRerankApi;
 use Sigmie\AI\APIs\VoyageRerankApi;
 use Sigmie\AI\Contracts\RerankApi;
+use Sigmie\AI\Rerankers\NoopReranker;
+use Sigmie\Base\Http\Responses\Search;
 use Sigmie\Document\Document;
 use Sigmie\Document\RerankedHit;
 use Sigmie\Mappings\Contracts\Type;
@@ -23,9 +25,226 @@ use Sigmie\Semantic\Contracts\AIProvider;
 use Sigmie\Semantic\Reranker;
 use Sigmie\Testing\TestCase;
 use Symfony\Component\Yaml\Yaml;
+use UnexpectedValueException;
 
 class RerankerTest extends TestCase
 {
+    public function test_custom_reranker_cannot_return_the_same_hit_twice(): void
+    {
+        $api = $this->createStub(RerankApi::class);
+        $api->method('rerank')->willReturn([['index' => 1, 'score' => 0.9], ['index' => 1, 'score' => 0.5]]);
+        $this->expectException(UnexpectedValueException::class);
+
+        (new NewRerank($api))->query('guide')->rerank([['_id' => 'first'], ['_id' => 'second']]);
+    }
+
+    public function test_nested_numeric_rerank_field_reads_each_record(): void
+    {
+        $props = new NewProperties;
+        $props->nested('rows', function (NewProperties $row): void {
+            $row->text('0')->semantic(api: 'e');
+            $row->text('other');
+        });
+        $response = new Search(200, [], '{"hits":{"hits":[{"_source":{"rows":[{"0":"first","other":"secret"},{"0":"second"}]}}]}}');
+        $provider = $this->semanticProvider([0.9]);
+
+        (new Reranker($provider, $props->get()))->rerank($response, 'second');
+
+        $this->assertSame(['rows.0: first | second | '], $provider->documents);
+    }
+
+    public function test_top_k_is_limited_to_the_number_of_hits_sent(): void
+    {
+        $api = $this->createMock(RerankApi::class);
+        $api->expects($this->once())->method('rerank')->with($this->isType('array'), 'guide', 1)
+            ->willReturn([['index' => 0, 'score' => 0.9]]);
+
+        $hits = (new NewRerank($api))->query('guide')->topK(5)->rerank([['_id' => 'one']]);
+
+        $this->assertSame(['one'], array_column($hits, '_id'));
+    }
+
+    public function test_zero_top_k_returns_no_hits_without_calling_the_provider(): void
+    {
+        $api = $this->createMock(RerankApi::class);
+        $api->expects($this->never())->method('rerank');
+
+        $this->assertSame([], (new NewRerank($api))->query('guide')->topK(0)->rerank([['_id' => 'one']]));
+    }
+
+    public function test_rerank_returns_the_highest_provider_scores_first(): void
+    {
+        $api = $this->createStub(RerankApi::class);
+        $api->method('rerank')->willReturn([
+            ['index' => 0, 'score' => 0.1],
+            ['index' => 1, 'score' => 0.9],
+            ['index' => 2, 'score' => 0.5],
+        ]);
+        $hits = [
+            ['_id' => 'one', '_score' => 3.0],
+            ['_id' => 'two', '_score' => 2.0],
+            ['_id' => 'three', '_score' => 1.0],
+        ];
+
+        $reranked = (new NewRerank($api))->query('guide')->topK(2)->rerank($hits);
+
+        $this->assertSame(['two', 'three'], array_column($reranked, '_id'));
+        $this->assertSame([0.9, 0.5], array_column($reranked, '_rerank_score'));
+        $this->assertSame([2.0, 1.0], array_column($reranked, '_score'));
+    }
+
+    public function test_a_blank_query_leaves_hits_unchanged(): void
+    {
+        $api = $this->createMock(RerankApi::class);
+        $api->expects($this->never())->method('rerank');
+        $hits = [['_id' => 'one']];
+
+        $this->assertSame($hits, (new NewRerank($api))->query(" \t\u{00a0}")->rerank($hits));
+    }
+
+    public function test_rerank_adapters_send_sparse_document_arrays_as_lists(): void
+    {
+        foreach ($this->realRerankApis() as $api) {
+            $results = $api->rerank([3 => 'title: Laravel', 8 => 'title: Django'], 'best framework');
+
+            $this->assertSame([1, 0], array_column($results, 'index'));
+        }
+    }
+
+    public function test_semantic_reranked_hits_expose_both_scores(): void
+    {
+        $props = new NewProperties;
+        $props->text('title')->semantic(api: 'e', dimensions: 128);
+        $response = new Search(200, [], json_encode(['hits' => ['hits' => [[
+            '_id' => 'a', '_score' => 2.0, '_source' => ['title' => 'Guide'],
+        ]]]], JSON_THROW_ON_ERROR));
+
+        [$hit] = (new Reranker($this->semanticProvider([0.75]), $props->get()))->rerank($response, 'guide')->hits();
+
+        $this->assertInstanceOf(RerankedHit::class, $hit);
+        $this->assertSame(2.0, $hit->_score);
+        $this->assertSame(0.75, $hit->_rerank_score);
+    }
+
+    public function test_semantic_rerank_does_not_invent_scores_for_missing_results(): void
+    {
+        $props = new NewProperties;
+        $props->text('title')->semantic(api: 'e', dimensions: 128);
+        $response = new Search(200, [], json_encode(['hits' => ['total' => ['value' => 8], 'hits' => [
+            ['_id' => 'unscored', '_source' => ['title' => 'A']],
+            ['_id' => 'scored', '_source' => ['title' => 'B']],
+        ]]], JSON_THROW_ON_ERROR));
+
+        $reranked = (new Reranker($this->semanticProvider([1 => 0.0]), $props->get()))->rerank($response, 'B');
+
+        $this->assertSame(8, $reranked->total());
+        $this->assertSame(['scored'], array_column($reranked->json('hits.hits'), '_id'));
+        $this->assertSame(0.0, $reranked->json('hits.hits.0._rerank_score'));
+    }
+
+    protected function setUp(): void
+    {
+        if ($this->runsWithoutCluster()) {
+            return;
+        }
+
+        parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->runsWithoutCluster()) {
+            return;
+        }
+
+        parent::tearDown();
+    }
+
+    private function runsWithoutCluster(): bool
+    {
+        return in_array($this->getName(false), [
+            'test_nested_numeric_rerank_field_reads_each_record',
+            'test_custom_reranker_cannot_return_the_same_hit_twice',
+            'test_top_k_is_limited_to_the_number_of_hits_sent',
+            'test_zero_top_k_returns_no_hits_without_calling_the_provider',
+            'test_rerank_returns_the_highest_provider_scores_first',
+            'test_a_blank_query_leaves_hits_unchanged',
+            'test_rerank_adapters_send_sparse_document_arrays_as_lists',
+            'test_semantic_reranked_hits_expose_both_scores',
+            'test_semantic_rerank_does_not_invent_scores_for_missing_results',
+            'reranking_accepts_nested_arrays_of_text',
+            'noop_honors_the_requested_result_limit',
+            'reranking_preserves_highlights_and_stored_fields',
+            'rerank_sends_plain_strings_from_a_semantic_array',
+            'rerank_keeps_sort_and_matches',
+            'rerank_scores_returned_hits_without_a_total',
+            'rerank_reads_text_through_a_nested_list',
+            'test_legacy_rerank_reads_scalar_values_from_text_arrays',
+        ], true);
+    }
+
+    public function test_legacy_rerank_reads_scalar_values_from_text_arrays(): void
+    {
+        $props = new NewProperties;
+        $props->text('tags')->semantic(api: 'e', dimensions: 128);
+        $response = new Search(200, [], '{"hits":{"hits":[{"_id":"a","_index":"docs","_source":{"tags":[42,false,"book"]}}]}}');
+        $provider = $this->semanticProvider([0.9]);
+
+        (new Reranker($provider, $props->get()))->rerank($response, 'book');
+
+        $this->assertSame(['tags: 42 | false | book | '], $provider->documents);
+        $this->assertSame('a', $response->hits()[0]->_id);
+    }
+
+    /** @test */
+    public function reranking_accepts_nested_arrays_of_text(): void
+    {
+        $props = new NewProperties;
+        $props->text('tags')->semantic(api: 'e', dimensions: 128);
+        $response = new Search(200, [], json_encode(['hits' => ['hits' => [[
+            '_id' => 'a', '_index' => 'docs', '_score' => 1, '_source' => ['tags' => ['A', ['B', 'C']]],
+        ]]]], JSON_THROW_ON_ERROR));
+        $provider = $this->semanticProvider([0.9]);
+        (new Reranker($provider, $props->get()))->rerank($response, 'B');
+        $this->assertSame(['tags: A | B | C | '], $provider->documents);
+    }
+
+    /** @test */
+    public function noop_honors_the_requested_result_limit(): void
+    {
+        $reranker = new NoopReranker;
+        $this->assertSame(['a'], $reranker->rerank(['a', 'b'], 'query', 1));
+    }
+
+    /** @test */
+    public function reranking_preserves_highlights_and_stored_fields(): void
+    {
+        $props = new NewProperties;
+        $props->text('title')->semantic(api: 'e', dimensions: 128);
+        $raw = ['_id' => 'a', '_index' => 'docs', '_score' => 1, '_source' => ['title' => 'A'],
+            'highlight' => ['title' => ['<em>A</em>']], 'fields' => ['edition' => [2]]];
+        $response = new Search(200, [], json_encode(['hits' => ['hits' => [$raw]]], JSON_THROW_ON_ERROR));
+        (new Reranker($this->semanticProvider([0.9]), $props->get()))->rerank($response, 'A');
+        $this->assertSame($raw['highlight'], $response->json('hits.hits.0.highlight'));
+        $this->assertSame($raw['fields'], $response->json('hits.hits.0.fields'));
+    }
+
+    /** @test */
+    public function rerank_scores_returned_hits_without_a_total(): void
+    {
+        $props = new NewProperties;
+        $props->text('title')->semantic(api: 'e', dimensions: 128);
+        $response = new Search(200, [], json_encode(['hits' => ['hits' => [
+            ['_index' => 'docs', '_id' => 'a', '_source' => ['title' => 'A'], '_score' => 1],
+            ['_index' => 'docs', '_id' => 'b', '_source' => ['title' => 'B'], '_score' => 1],
+        ]]], JSON_THROW_ON_ERROR));
+
+        $reranked = (new Reranker($this->semanticProvider([0.2, 0.9]), $props->get()))
+            ->rerank($response, 'B');
+
+        $this->assertSame(['b', 'a'], array_column($reranked->json('hits.hits'), '_id'));
+    }
+
     /**
      * @test
      */
@@ -341,6 +560,37 @@ class RerankerTest extends TestCase
     /**
      * @test
      */
+    public function rerank_sends_plain_strings_from_a_semantic_array(): void
+    {
+        $blueprint = new NewProperties;
+        $blueprint->longText('experience')->semantic(dimensions: 384, api: 'test-embeddings');
+
+        $provider = $this->semanticProvider([0.9]);
+        $search = new Search(200, ['Content-Type' => 'application/json'], json_encode([
+            'hits' => [
+                'total' => ['value' => 1],
+                'hits' => [[
+                    '_index' => 'professionals',
+                    '_id' => '1',
+                    '_score' => 1,
+                    '_source' => [
+                        'experience' => ['Artist', 'Graphic Design', 'Creative Director'],
+                    ],
+                ]],
+            ],
+        ]));
+
+        (new Reranker($provider, $blueprint->get()))->rerank($search, 'drawing');
+
+        $this->assertSame(
+            'experience: Artist | Graphic Design | Creative Director | ',
+            $provider->documents[0]
+        );
+    }
+
+    /**
+     * @test
+     */
     public function real_rerank_apis_reorder_elasticsearch_hits(): void
     {
         foreach ($this->realRerankApis() as $apiName => $api) {
@@ -473,8 +723,8 @@ class RerankerTest extends TestCase
             $promise = new Promise;
             $promise->resolve(new Response(200, [], json_encode(
                 match ($provider) {
-                    'cohere' => ['results' => $results],
-                    default => ['data' => $results],
+                    'voyage' => ['data' => $results],
+                    default => ['results' => $results],
                 },
                 JSON_THROW_ON_ERROR
             )));
@@ -488,5 +738,109 @@ class RerankerTest extends TestCase
         $property->setValue($api, new Client(['handler' => $handler]));
 
         return $api;
+    }
+
+    /**
+     * @test
+     */
+    public function rerank_keeps_sort_and_matches(): void
+    {
+        $props = new NewProperties;
+        $props->text('title')->semantic(api: 'e', dimensions: 128);
+        $search = new Search(200, ['Content-Type' => 'application/json'], json_encode([
+            'hits' => [
+                'total' => ['value' => 1],
+                'hits' => [[
+                    '_index' => 'docs',
+                    '_id' => '1',
+                    '_score' => 1.5,
+                    'sort' => [1.5, '1'],
+                    '_matches' => [
+                        'comments' => [
+                            'total' => 2,
+                            'items' => [
+                                ['body' => 'kept match'],
+                            ],
+                        ],
+                    ],
+                    '_source' => ['title' => 'Hello'],
+                ]],
+            ],
+        ]));
+
+        $hit = (new Reranker($this->scoringProvider(), $props->get()))->rerank($search, 'Hello')->hits()[0];
+
+        $this->assertSame([1.5, '1'], $hit->sort);
+        $this->assertSame([['body' => 'kept match']], $hit->matches('comments'));
+    }
+
+    /**
+     * @test
+     */
+    public function rerank_reads_text_through_a_nested_list(): void
+    {
+        $props = new NewProperties;
+        $props->text('title')->semantic(api: 'e', dimensions: 128);
+        $props->nested('comments', function (NewProperties $props): void {
+            $props->text('body')->semantic(api: 'e', dimensions: 128);
+        });
+        $provider = $this->scoringProvider();
+        $search = new Search(200, ['Content-Type' => 'application/json'], json_encode([
+            'hits' => [
+                'total' => ['value' => 1],
+                'hits' => [[
+                    '_index' => 'docs',
+                    '_id' => '1',
+                    '_score' => 1,
+                    '_source' => [
+                        'title' => 'Hello',
+                        'comments' => [
+                            ['body' => 'First nested body'],
+                            ['body' => 'Second nested body'],
+                        ],
+                    ],
+                ]],
+            ],
+        ]));
+
+        (new Reranker($provider, $props->get()))->rerank($search, 'nested');
+
+        $this->assertStringContainsString('First nested body', $provider->documents[0]);
+        $this->assertStringContainsString('Second nested body', $provider->documents[0]);
+    }
+
+    private function scoringProvider(): AIProvider
+    {
+        return new class implements AIProvider
+        {
+            public array $documents = [];
+
+            public function embed(string $text, Text $originalType): array
+            {
+                return [];
+            }
+
+            public function batchEmbed(array $payload): array
+            {
+                return [];
+            }
+
+            public function type(Text $originalType): Type
+            {
+                return $originalType;
+            }
+
+            public function queries(array|string $text, Text $originalType): array
+            {
+                return [];
+            }
+
+            public function rerank(array $documents, string $queryString): array
+            {
+                $this->documents = $documents;
+
+                return [0 => 0.9];
+            }
+        };
     }
 }

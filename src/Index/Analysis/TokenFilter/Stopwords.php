@@ -10,36 +10,30 @@ use Sigmie\Languages\Greek\Filter\Stopwords as GreekStopwords;
 
 use function Sigmie\Functions\name_configs;
 
-class Stopwords extends TokenFilter
+class Stopwords extends WordListFilter
 {
+    protected const WORD_LIST = 'stopwords';
+
     public function type(): string
     {
         return 'stop';
     }
 
-    public static function fromRaw(array $raw): TokenFilter
+    public static function fromRaw(array $raw): static
     {
         [$name, $configs] = name_configs($raw);
 
-        if ($configs['stopwords'] === '_greek_') {
-            return new GreekStopwords($name);
-        }
+        $preset = static::class === self::class ? ($configs['stopwords'] ?? null) : null;
+        $filter = match ($preset) {
+            '_greek_' => new GreekStopwords($name),
+            '_german_' => new GermanStopwords($name),
+            '_english_' => new EnglishStopwords($name),
+            default => new static($name),
+        };
 
-        if ($configs['stopwords'] === '_german_') {
-            return new GermanStopwords($name);
-        }
+        $defaults = $filter::class === self::class || isset($configs['stopwords_path']) ? [] : $filter->settings;
+        $filter->settings = array_diff_key($configs, ['type' => true]) + $defaults;
 
-        if ($configs['stopwords'] === '_english_') {
-            return new EnglishStopwords($name);
-        }
-
-        return new static($name, $configs['stopwords']);
-    }
-
-    protected function getValues(): array
-    {
-        return [
-            'stopwords' => $this->settings,
-        ];
+        return $filter;
     }
 }

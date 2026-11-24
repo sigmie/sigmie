@@ -52,43 +52,58 @@ class ImageHelper
         $height = imagesy($image);
 
         // Calculate new dimensions maintaining aspect ratio
-        if ($width > $maxDimension || $height > $maxDimension) {
-            if ($width > $height) {
-                $newWidth = $maxDimension;
-                $newHeight = (int) ($height * ($maxDimension / $width));
+        try {
+            if ($width > $maxDimension || $height > $maxDimension) {
+                // A 1px side scaled by (int) becomes 0. GD rejects a 0 dimension.
+                if ($width > $height) {
+                    $newWidth = $maxDimension;
+                    $newHeight = max(1, (int) ($height * ($maxDimension / $width)));
+                } else {
+                    $newHeight = $maxDimension;
+                    $newWidth = max(1, (int) ($width * ($maxDimension / $height)));
+                }
+
+                // Create new image with new dimensions
+                $resized = imagecreatetruecolor($newWidth, $newHeight);
+
+                // Preserve transparency for PNG/GIF images
+                imagealphablending($resized, false);
+                imagesavealpha($resized, true);
+                $transparent = imagecolorallocatealpha($resized, 255, 255, 255, 127);
+                imagefilledrectangle($resized, 0, 0, $newWidth, $newHeight, $transparent);
+
+                // Resize the image
+                imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+                $imageContent = self::jpegBytes($resized);
             } else {
-                $newHeight = $maxDimension;
-                $newWidth = (int) ($width * ($maxDimension / $height));
+                $imageContent = self::jpegBytes($image);
+            }
+        } finally {
+            if (isset($resized) && $resized instanceof \GdImage) {
+                imagedestroy($resized);
             }
 
-            // Create new image with new dimensions
-            $resized = imagecreatetruecolor($newWidth, $newHeight);
-
-            // Preserve transparency for PNG/GIF images
-            imagealphablending($resized, false);
-            imagesavealpha($resized, true);
-            $transparent = imagecolorallocatealpha($resized, 255, 255, 255, 127);
-            imagefilledrectangle($resized, 0, 0, $newWidth, $newHeight, $transparent);
-
-            // Resize the image
-            imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-
-            // Convert to JPEG format for consistency with lower quality for smaller size
-            ob_start();
-            imagejpeg($resized, null, 60); // Reduced quality for smaller base64
-            $imageContent = ob_get_clean();
-
-            imagedestroy($resized);
-        } else {
-            // Convert to JPEG even if not resizing for consistency
-            ob_start();
-            imagejpeg($image, null, 60); // Reduced quality for smaller base64
-            $imageContent = ob_get_clean();
+            imagedestroy($image);
         }
 
-        imagedestroy($image);
-
         return $imageContent;
+    }
+
+    /**
+     * JPEG refuses a side above 65500 and then writes nothing.
+     */
+    private static function jpegBytes(\GdImage $image): string
+    {
+        ob_start();
+        $wrote = @imagejpeg($image, null, 60);
+        $bytes = ob_get_clean();
+
+        if ($wrote !== true || ! is_string($bytes) || $bytes === '') {
+            throw new Exception('Failed to create image from content');
+        }
+
+        return $bytes;
     }
 
     /**
@@ -112,25 +127,42 @@ class ImageHelper
      */
     public static function isBase64(string $source): bool
     {
-        // Check for data URL scheme
-        if (preg_match('/^data:image\/[a-z]+;base64,/', $source)) {
-            return true;
+        return self::base64ImageMimeType($source) !== null;
+    }
+
+    public static function base64ImageUri(string $source): ?string
+    {
+        $mime = self::base64ImageMimeType($source);
+        if ($mime === null) {
+            return null;
         }
 
-        // Check if it's pure base64 (no data URL prefix)
-        if (preg_match('/^[a-zA-Z0-9\/+]+={0,2}$/', $source) && strlen($source) > 100) {
-            // Try to decode and check if it's valid image data
-            $decoded = @base64_decode($source, true);
-            if ($decoded !== false) {
-                $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                $mimeType = finfo_buffer($finfo, $decoded);
-                finfo_close($finfo);
+        $header = strncasecmp($source, 'data:', 5) === 0
+            ? substr($source, 0, strpos($source, ',') + 1)
+            : 'data:'.$mime.';base64,';
 
-                return str_starts_with($mimeType, 'image/');
-            }
+        return $header.self::base64ImagePayload($source);
+    }
+
+    public static function base64ImageMimeType(string $source): ?string
+    {
+        $payload = self::base64ImagePayload($source);
+
+        if ($payload === null) {
+            return null;
         }
 
-        return false;
+        $decoded = base64_decode($payload, true);
+
+        if ($decoded === false || $decoded === '') {
+            return null;
+        }
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_buffer($finfo, $decoded);
+        finfo_close($finfo);
+
+        return is_string($mimeType) && str_starts_with($mimeType, 'image/') ? $mimeType : null;
     }
 
     /**
@@ -152,13 +184,24 @@ class ImageHelper
      */
     private static function extractBase64Content(string $source): string
     {
-        // If it's a data URL, extract the base64 part
-        if (preg_match('/^data:image\/[a-z]+;base64,(.+)$/i', $source, $matches)) {
-            return base64_decode($matches[1]);
+        $decoded = base64_decode(self::base64ImagePayload($source) ?? '', true);
+
+        return $decoded === false ? '' : $decoded;
+    }
+
+    private static function base64ImagePayload(string $source): ?string
+    {
+        if (preg_match('/^data:image\/[a-z0-9.+-]+(?:;[^;,]*)*;base64,(.*)$/is', $source, $matches) === 1) {
+            $source = rawurldecode($matches[1]);
         }
 
-        // If it's pure base64, decode it
-        return base64_decode($source);
+        $source = preg_replace('/\s+/', '', $source) ?? '';
+
+        if ($source === '' || preg_match('/^[a-zA-Z0-9\/+]+={0,2}$/', $source) !== 1) {
+            return null;
+        }
+
+        return $source;
     }
 
     /**
@@ -185,10 +228,10 @@ class ImageHelper
 
         // Verify it's actually an image
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mimeType = finfo_buffer($finfo, $content);
+        $mimeType = @finfo_buffer($finfo, $content);
         finfo_close($finfo);
 
-        if (! str_starts_with($mimeType, 'image/')) {
+        if (! is_string($mimeType) || ! str_starts_with($mimeType, 'image/')) {
             throw new Exception('URL does not point to a valid image: '.$url);
         }
 
@@ -219,10 +262,10 @@ class ImageHelper
 
         // Verify it's actually an image
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mimeType = finfo_file($finfo, $path);
+        $mimeType = @finfo_file($finfo, $path);
         finfo_close($finfo);
 
-        if (! str_starts_with($mimeType, 'image/')) {
+        if (! is_string($mimeType) || ! str_starts_with($mimeType, 'image/')) {
             throw new Exception('File is not a valid image: '.$path);
         }
 

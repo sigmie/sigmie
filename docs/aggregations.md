@@ -125,7 +125,7 @@ $response->aggregation('category_terms.buckets');
 | Method | Effect |
 |--------|--------|
 | `size(int)` | Number of buckets to return. Elasticsearch defaults to 10. |
-| `order(string $key, string $direction)` | Sort buckets by `_count`, `_key`, or a sub-aggregation name. |
+| `order(string $subaggregation, string $direction)` | Sort buckets by `_count`, `_key`, or a sub-aggregation name. |
 | `missing(value)` | Put documents without the field into a bucket with this key. |
 | `exclude(array\|string)` | Leave these values out. |
 

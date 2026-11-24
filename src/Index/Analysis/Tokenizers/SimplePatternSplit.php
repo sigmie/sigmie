@@ -21,7 +21,7 @@ class SimplePatternSplit extends Tokenizer
     {
         [$name, $config] = name_configs($raw);
 
-        return new static($name, $config['pattern']);
+        return new static($name, $config['pattern'] ?? '');
     }
 
     public function toRaw(): array

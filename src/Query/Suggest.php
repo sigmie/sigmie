@@ -53,12 +53,35 @@ class Suggest
     public function toRaw(): array
     {
         $suggesters = (new Collection($this->suggest))
-            ->mapToDictionary(fn (Suggester $value): array => $value->toRaw())
+            ->mapToDictionary(fn (Suggester $value): array => $value instanceof Completion
+                ? $value->toRaw($this->text ?? '')
+                : $value->toRaw())
             ->toArray();
 
-        if ($this->text ?? false) {
-            $suggesters['text'] = $this->text;
+        if (! isset($this->text)) {
+            return $suggesters;
         }
+
+        // `text` is both the global text and a legal suggester name.
+        // A string would replace the suggester, so the text moves onto each
+        // term and phrase that does not already carry its own.
+        if (isset($suggesters['text']) && is_array($suggesters['text'])) {
+            foreach ($suggesters as $name => $body) {
+                if (! is_array($body) || array_key_exists('text', $body)) {
+                    continue;
+                }
+
+                if (! isset($body['term']) && ! isset($body['phrase'])) {
+                    continue;
+                }
+
+                $suggesters[$name]['text'] = $this->text;
+            }
+
+            return $suggesters;
+        }
+
+        $suggesters['text'] = $this->text;
 
         return $suggesters;
     }

@@ -38,13 +38,13 @@ High-level types bundle a mapping with the queries that suit one kind of data.
 | `title()` | `title` | `text`, word tokens, lowercase. Sub-fields `.keyword`, `.sortable`. | `match_phrase_prefix`, `match` | string |
 | `name()` | `name` | `text`, 4 to 5 character n-grams, index prefixes. Sub-fields `.keyword`, `.sortable`, and `.{name}_text` for prefixes. | `match` on n-grams, `match_phrase_prefix` and `match_bool_prefix` on `.{name}_text` | string |
 | `category()` | `category` | `text`. Sub-fields `.keyword`, `.sortable`. | `match`, `term` on `.keyword`, `match_phrase_prefix` | string |
-| `tags()` | `tags` | `text`, `#` removed, word tokens, lowercase. | `match`, `match_phrase_prefix` | string |
+| `tags()` | `tags` | `text`, `#` removed, word tokens, lowercase. Sub-field `.keyword`. | `match`, `match_phrase_prefix` | string |
 | `price()` | `price` | `scaled_float`, scaling factor 100. | none | number |
 | `longText()` | none | `text`, no sub-fields. | `match` | string |
 | `shortText()` | none | Same as `longText()`. | `match` | string |
 | `html()` | none | `text`, HTML tags stripped, word tokens, trimmed, lowercase, repeated tokens removed. | `match` | string |
 | `searchableNumber()` | none | `text`, every non-digit removed. Sub-fields `.keyword`, `.sortable`. | `match`, `match_phrase_prefix` | string |
-| `id()` | none | `keyword`, case-sensitive. Sub-field `.sortable` (integer). | `term`, `prefix` | integer |
+| `id()` | none | `keyword`, case-sensitive. Sub-field `.sortable` (64-bit integer). | `term`, `prefix` | integer |
 | `email()` | `email` | `text`, split on `@` and `.`, lowercase, index prefixes. Sub-fields `.keyword`, `.sortable`. | `match`, `prefix`, `term` on `.keyword` | string |
 | `address()` | `address` | `text`, word tokens, lowercase, index prefixes. Sub-fields `.keyword`, `.sortable`. | `match_bool_prefix` | string |
 | `caseSensitiveKeyword()` | none | `keyword`, no lowercase normalizer. | `term`, `prefix` | string |
@@ -96,7 +96,7 @@ Native types map one to one to an Elasticsearch field type.
 | `date()` | `date`, format `strict_date_optional_time_nanos`. | none | `Y-m-d` string |
 | `datetime()` | `date`, format `strict_date_optional_time_nanos`. | none | timestamp string, see [Date and datetime](#date-and-datetime) |
 | `geoPoint()` | `geo_point` | none | `['lat' => …, 'lon' => …]`, or a list of them |
-| `range()` | `integer_range` until you call a type modifier. | none | array with at least one of `gte`, `gt`, `lte`, `lt` |
+| `range()` | `integer_range` until you call a type modifier. | none | nonempty array with bounds named `gte`, `gt`, `lte`, or `lt` |
 
 To filter by distance from a `geoPoint()` field, see [Geo-location filtering](filter-parser.md#geo-location-filtering).
 
@@ -114,7 +114,7 @@ $props->text('description')->unstructuredText();        // text mapping, the def
 
 `keyword()` works only on a `text` mapping. On a `search_as_you_type` or `completion` field it throws an exception. `makeSortable()` returns nothing, so call it last.
 
-A `searchAsYouType()` field runs `multi_match` over the field and its `._2gram` and `._3gram` sub-fields. A `completion()` field feeds [completion suggestions](search.md#suggest-completions).
+A `searchAsYouType()` field runs a `bool_prefix` multi-match query over the field and its `._2gram` and `._3gram` sub-fields. A `completion()` field feeds [completion suggestions](search.md#suggest-completions).
 
 ### Number modifiers
 
@@ -241,6 +241,8 @@ $props->text('email')
         $analyzer->lowercase();
     });
 ```
+
+For nested fields, the analyzer name encodes each dot as `%2E`. The analyzer for `contact.email` is `contact%2Eemail_field_analyzer`.
 
 ## Custom queries for one field
 

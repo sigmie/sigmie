@@ -6,12 +6,21 @@ namespace Sigmie\Parse;
 
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
-use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\Contracts\Parser as ParserInterface;
 
 abstract class Parser implements ParserInterface
 {
+    // ASCII punctuation belongs to the DSL. Unicode names may include symbols and joining marks.
+    public const FIELD_PATH = '(?:[a-zA-Z0-9_@.-]|[^\x00-\x7f\s])++';
+
+    protected const DECIMAL = '(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?';
+
+    // Consume runs of ordinary characters without a backtracking frame for each character.
+    protected const QUOTED_VALUE = <<<'REGEX'
+        "(?:\\.|[^"\\]++)*+"|'(?:\\.|[^'\\]++)*+'
+        REGEX;
+
     protected array $errors = [];
 
     protected Properties $properties;
@@ -65,15 +74,9 @@ abstract class Parser implements ParserInterface
 
         $fieldType = $this->properties->get($fieldName);
 
-        if (! $this->isTextOrKeywordField($fieldName)) {
-            return $fieldType->sortableName();
-        }
+        $sortableName = $fieldType->sortableName();
 
-        if ($fieldType instanceof Keyword) {
-            return $fieldName;
-        }
-
-        if (! $fieldType->isSortable()) {
+        if ($sortableName === null || ($fieldType instanceof Text && ! $fieldType->isSortable())) {
             $this->handleError(sprintf('Field %s is not sortable.', $fieldName), [
                 'field' => $fieldName,
             ]);
@@ -81,7 +84,7 @@ abstract class Parser implements ParserInterface
             return null;
         }
 
-        return $fieldType->sortableName();
+        return $sortableName;
     }
 
     protected function handleFieldName(string $name): ?string
@@ -94,17 +97,10 @@ abstract class Parser implements ParserInterface
             return null;
         }
 
-        if (! $this->isTextOrKeywordField($name)) {
-            return $name;
-        }
-
         $field = $this->properties->get($name);
 
-        if ($field instanceof Keyword) {
-            return $name;
-        }
-
-        if (! $field->isFilterable()) {
+        $fieldName = $field->filterableName();
+        if ($fieldName === null || ($field instanceof Text && ! $field->isFilterable())) {
             $this->handleError(sprintf('Field %s is not filterable.', $name), [
                 'field' => $name,
             ]);
@@ -112,7 +108,7 @@ abstract class Parser implements ParserInterface
             return null;
         }
 
-        return $field->filterableName();
+        return $fieldName;
     }
 
     public function errors(): array
@@ -123,12 +119,5 @@ abstract class Parser implements ParserInterface
     protected function fieldExists(string $field): bool
     {
         return $this->properties->get($field) !== null;
-    }
-
-    protected function isTextOrKeywordField(string $field): bool
-    {
-        $field = $this->properties->get($field);
-
-        return $field instanceof Text || $field instanceof Keyword;
     }
 }

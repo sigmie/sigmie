@@ -8,7 +8,7 @@ use Sigmie\Query\Suggesters\Enums\SuggesterType;
 
 class Completion extends Suggester
 {
-    protected string $prefix = '';
+    protected ?string $prefix = null;
 
     protected string $analyzer;
 
@@ -58,12 +58,12 @@ class Completion extends Suggester
         return $this;
     }
 
-    public function toRaw(): array
+    public function toRaw(string $defaultPrefix = ''): array
     {
         $res = parent::toRaw();
 
         $res[$this->name][$this->type()->value]['skip_duplicates'] = true;
-        $res[$this->name]['prefix'] = $this->prefix;
+        $res[$this->name]['prefix'] = $this->prefix ?? $defaultPrefix;
 
         if ($this->fuzzy ?? false) {
             $res[$this->name][$this->type()->value]['fuzzy'] = [
@@ -73,8 +73,8 @@ class Completion extends Suggester
             ];
         }
 
-        if ($this->analyzer ?? false) {
-            $res[$this->name][$this->type()->value]['analyzer'] = 'autocomplete_analyzer';
+        if (isset($this->analyzer)) {
+            $res[$this->name][$this->type()->value]['analyzer'] = $this->analyzer;
         }
 
         return $res;

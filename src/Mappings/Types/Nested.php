@@ -4,78 +4,24 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Mappings\Contracts\FieldContainer;
 use Sigmie\Mappings\Contracts\PropertiesField;
-use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Shared\Properties as SharedProperties;
 
 class Nested extends Type implements FieldContainer, PropertiesField
 {
-    use SharedProperties {
-        properties as traitProperties;
-    }
+    use SharedProperties;
 
     protected string $type = 'nested';
-
-    public function __construct(
-        string $name,
-        Properties|NewProperties $properties = new NewProperties,
-    ) {
-        parent::__construct($name);
-
-        $this->properties($properties);
-    }
-
-    public function properties(Properties|NewProperties $props): static
-    {
-        $this->traitProperties($props);
-
-        // Set paths with > marker to indicate nested boundary
-        $nestedPath = $this->fullPath();
-
-        foreach ($this->properties->toArray() as $field) {
-            $field->setPath($nestedPath.'>'.$field->name);
-        }
-
-        return $this;
-    }
-
-    public function toRaw(?SearchEngine $driver = null): array
-    {
-        $raw = parent::toRaw();
-
-        $raw[$this->name]['properties'] = (object) $this->properties->toRaw($driver);
-
-        return $raw;
-    }
 
     public function queries(array|string $queryString): array
     {
         return [];
     }
 
-    public function validate(string $key, mixed $value): array
-    {
-        if (! is_array($value)) {
-            return [false, sprintf('Nested field %s must be an object.', $key)];
-        }
-
-        if (count($value) === count($value, COUNT_RECURSIVE)) {
-            return [false, sprintf('Nested field %s must be an array of objects.', $key)];
-        }
-
-        return [true, ''];
-    }
-
     public function getProperties(): Properties
     {
         return $this->properties;
-    }
-
-    public function hasFields(): bool
-    {
-        return isset($this->properties);
     }
 }

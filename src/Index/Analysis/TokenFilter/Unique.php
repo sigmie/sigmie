@@ -26,7 +26,7 @@ class Unique extends TokenFilter
 
         $onlyOnSamePosition = $configs['only_on_same_position'] ?? false;
 
-        return new static($name, $onlyOnSamePosition);
+        return new static($name, filter_var($onlyOnSamePosition, FILTER_VALIDATE_BOOLEAN));
     }
 
     protected function getValues(): array

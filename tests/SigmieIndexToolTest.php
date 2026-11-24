@@ -4,27 +4,475 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\AI\SigmieAnalyticsTool;
+use Sigmie\Analytics\AnalyticsRequest;
+use Sigmie\Mappings\Types\FlatObject;
 use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Mappings\Types\Object_;
 use Sigmie\Parse\ParseException;
 use Sigmie\Tests\Stubs\FakeJsonSchema;
 
 require_once __DIR__.'/Stubs/LaravelAiStubs.php';
 
+use Http\Promise\Promise;
+use InvalidArgumentException;
 use Laravel\Ai\Tools\Request;
+use RuntimeException;
 use Sigmie\AI\AsTool;
 use Sigmie\AI\SigmieFilterValuesTool;
 use Sigmie\AI\SigmieGetDocumentsTool;
 use Sigmie\AI\SigmieIndexSchemaTool;
 use Sigmie\AI\SigmieIndexTool;
 use Sigmie\AI\SigmieSampleDocumentsTool;
+use Sigmie\Base\Contracts\ElasticsearchRequest;
+use Sigmie\Base\Contracts\ElasticsearchResponse;
+use Sigmie\Base\Contracts\SearchEngine;
+use Sigmie\Base\Drivers\Elasticsearch;
+use Sigmie\Base\ElasticsearchException;
+use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Document\Document;
+use Sigmie\Index\Analysis\Analysis;
+use Sigmie\Mappings\Field;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Parse\FacetParser;
+use Sigmie\Parse\FilterParser;
+use Sigmie\Search\Contracts\ResponseFormater;
+use Sigmie\Search\Formatters\SigmieSearchResponse;
+use Sigmie\Search\NewSearch;
 use Sigmie\Sigmie;
 use Sigmie\SigmieIndex;
 use Sigmie\Testing\TestCase;
 
 class SigmieIndexToolTest extends TestCase
 {
+    /** @withoutCluster */
+    public function test_histogram_metric_schema_requests_a_bucket_size(): void
+    {
+        $schema = (new SigmieAnalyticsTool($this->schemaIndex(new NewProperties)))->schema(new FakeJsonSchema);
+
+        $this->assertStringContainsString('histogram_metric', $schema['bucket_size']->descriptionText);
+    }
+
+    /** @withoutCluster */
+    public function test_nested_presence_is_filterable_without_keyword_children(): void
+    {
+        $props = new NewProperties;
+        $props->nested('lines', fn (NewProperties $line) => $line->longText('note'));
+        $schema = new SigmieIndexSchemaTool($this->schemaIndex($props));
+        $field = $schema->result(new Request)['fields'][0];
+
+        $this->assertSame('lines:*', $field['filter']);
+        $this->assertTrue($field['filterable']);
+    }
+
+    /** @withoutCluster */
+    public function test_identifier_filter_examples_use_integer_ids(): void
+    {
+        $props = new NewProperties;
+        $props->id('customer_id');
+        $schema = new SigmieIndexSchemaTool($this->schemaIndex($props));
+
+        $this->assertSame('customer_id:42 customer_id:[1,2] customer_id>10', $schema->result(new Request)['fields'][0]['filter']);
+    }
+
+    /** @withoutCluster */
+    public function test_unique_metric_field_description_accepts_keywords(): void
+    {
+        $schema = (new SigmieAnalyticsTool($this->schemaIndex(new NewProperties)))->schema(new FakeJsonSchema);
+
+        $this->assertStringContainsString('keyword or numeric field for unique', $schema['field']->descriptionText);
+    }
+
+    /** @withoutCluster */
+    public function test_date_nanos_is_an_analytics_timeline(): void
+    {
+        $props = new NewProperties;
+        $props->type(new Field('recorded', 'date_nanos'));
+        $index = $this->schemaIndex($props);
+
+        $this->assertStringContainsString('Timeline fields for `date_field`: recorded', (new SigmieAnalyticsTool($index))->description());
+        $this->assertSame('date', (new SigmieIndexSchemaTool($index))->result(new Request)['fields'][0]['type']);
+    }
+
+    /** @withoutCluster */
+    public function test_field_names_with_spaces_do_not_advertise_dsl_operations(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('part label');
+        $index = $this->schemaIndex($props);
+        $field = (new SigmieIndexSchemaTool($index))->result(new Request)['fields'][0];
+
+        $this->assertFalse($field['filterable']);
+        $this->assertFalse($field['sortable']);
+        $this->assertFalse($field['facetable']);
+        $this->assertStringNotContainsString("part label:'value'", (new SigmieIndexTool($index))->description());
+    }
+
+    /** @withoutCluster */
+    public function test_a_timed_out_search_returns_a_timeout_message(): void
+    {
+        $index = $this->createStub(SigmieIndex::class);
+        $index->method('newSearch')->willThrowException(new ElasticsearchException([
+            'json' => ['timed_out' => true], 'request' => ['size' => 10],
+        ], 200));
+
+        $error = json_decode((new SigmieIndexTool($index))->handle(new Request(['query' => ''])), true)['error'];
+
+        $this->assertStringContainsString('timed out', $error);
+        $this->assertStringNotContainsString('request', $error);
+    }
+
+    /** @withoutCluster */
+    public function test_range_filter_examples_use_the_mapped_bound_type(): void
+    {
+        $props = new NewProperties;
+        $props->range('dates')->date();
+        $props->range('network')->ip();
+        $tool = new SigmieIndexSchemaTool($this->schemaIndex($props));
+
+        $this->assertSame(["dates>'2024-01-01'", "network:'192.0.2.1'"], array_column($tool->result(new Request)['fields'], 'filter'));
+    }
+
+    /** @withoutCluster */
+    public function test_search_names_the_value_discovery_filter_argument(): void
+    {
+        $tool = new SigmieIndexTool($this->schemaIndex(new NewProperties));
+
+        $this->assertStringContainsString('field name and optional `filters`', $tool->description());
+    }
+
+    /** @withoutCluster */
+    public function test_disabled_object_children_are_absent_from_queryable_fields(): void
+    {
+        $children = new NewProperties;
+        $children->date('day');
+        $props = new NewProperties;
+        $props->type(new Object_('archive', $children, ['enabled' => false]));
+        $index = $this->schemaIndex($props);
+
+        $this->assertSame([], (new SigmieIndexSchemaTool($index))->result(new Request)['fields']);
+        $this->assertStringNotContainsString('archive.day', (new SigmieIndexTool($index))->description());
+        $this->assertStringNotContainsString('archive.day', (new SigmieAnalyticsTool($index))->description());
+    }
+
+    /** @withoutCluster */
+    public function test_flat_object_fields_appear_in_the_queryable_schema(): void
+    {
+        $props = new NewProperties;
+        $props->type(new FlatObject('attributes'));
+        $schema = new SigmieIndexSchemaTool($this->schemaIndex($props));
+
+        $this->assertSame([[
+            'name' => 'attributes', 'type' => 'flat_object', 'filterable' => true,
+            'sortable' => true, 'facetable' => false, 'filter' => "attributes:'value'",
+        ]], $schema->result(new Request)['fields']);
+    }
+
+    /** @withoutCluster */
+    public function test_document_id_schema_matches_the_retrieval_limit(): void
+    {
+        $tool = new SigmieGetDocumentsTool($this->schemaIndex(new NewProperties));
+        $ids = $tool->schema(new FakeJsonSchema)['ids'];
+
+        $this->assertSame([1, 100, 1], [$ids->minimum, $ids->maximum, $ids->itemsType->minimum]);
+    }
+
+    /** @withoutCluster */
+    public function test_sample_schema_matches_the_sample_limits(): void
+    {
+        $tool = new SigmieSampleDocumentsTool($this->schemaIndex(new NewProperties));
+        $limit = $tool->schema(new FakeJsonSchema)['limit'];
+
+        $this->assertSame([1, 20], [$limit->minimum, $limit->maximum]);
+    }
+
+    /** @withoutCluster */
+    public function test_search_schema_uses_one_based_pages_and_nonnegative_sizes(): void
+    {
+        $schema = (new SigmieIndexTool($this->schemaIndex(new NewProperties)))->schema(new FakeJsonSchema);
+
+        $this->assertSame(1, $schema['page']->minimum);
+        $this->assertSame(0, $schema['per_page']->minimum);
+    }
+
+    /** @withoutCluster */
+    public function test_value_discovery_schema_bounds_the_terms_size(): void
+    {
+        $tool = new SigmieFilterValuesTool($this->schemaIndex(new NewProperties));
+        $limit = $tool->schema(new FakeJsonSchema)['limit'];
+
+        $this->assertSame([0, 2147483647], [$limit->minimum, $limit->maximum]);
+    }
+
+    /** @withoutCluster */
+    public function test_analytics_schema_advertises_the_request_bounds(): void
+    {
+        $schema = (new SigmieAnalyticsTool($this->schemaIndex(new NewProperties)))->schema(new FakeJsonSchema);
+
+        foreach ([
+            'limit' => [1, 100], 'hit_limit' => [1, 100], 'precision' => [1, 12],
+            'timezone_offset' => [-840, 840], 'include_hits' => [0, 1], 'bucket_aliases_only' => [0, 1],
+            'bucket_size' => [1, null], 'min_count' => [0, null], 'min_doc_count' => [0, null],
+        ] as $key => $bounds) {
+            $this->assertSame($bounds, [$schema[$key]->minimum, $schema[$key]->maximum], $key);
+        }
+    }
+
+    /** @withoutCluster */
+    public function test_analytics_schema_lists_supported_choices(): void
+    {
+        $schema = (new SigmieAnalyticsTool($this->schemaIndex(new NewProperties)))->schema(new FakeJsonSchema);
+
+        $this->assertSame(AnalyticsRequest::WIDGETS, $schema['widget']->choices);
+        $this->assertContains('unique', $schema['metric']->choices);
+        $this->assertContains(null, $schema['metric']->choices);
+        $this->assertContains('today', $schema['range']->choices);
+        $this->assertContains(null, $schema['range']->choices);
+    }
+
+    /** @withoutCluster */
+    public function test_deeply_nested_value_discovery_reports_omitted_buckets(): void
+    {
+        $props = new NewProperties;
+        $props->nested('orders', function (NewProperties $orders): void {
+            $orders->nested('items', fn (NewProperties $items) => $items->keyword('sku'));
+        });
+        $field = 'orders.items.sku';
+        $index = $this->capturingIndex($props, rawAggregations: [
+            $field => ['_nested' => ['_nested' => [
+                $field => [$field => [
+                    'sum_other_doc_count' => 2,
+                    'buckets' => [['key' => 'book', 'doc_count' => 3]],
+                ]],
+            ]]],
+        ]);
+
+        $result = (new SigmieFilterValuesTool($index))->result(new Request(['field' => $field, 'limit' => 1]));
+
+        $this->assertSame([
+            'field' => $field,
+            'values' => ['book' => 3],
+            'truncated' => true,
+            'other_documents' => 2,
+        ], $result);
+    }
+
+    /** @withoutCluster */
+    public function test_nested_search_description_uses_the_mapped_filter_fields(): void
+    {
+        $props = new NewProperties;
+        $props->nested('orders', function (NewProperties $orders): void {
+            $orders->keyword('status');
+            $orders->nested('items', fn (NewProperties $items) => $items->keyword('sku'));
+        });
+
+        $description = (new SigmieIndexTool($this->schemaIndex($props)))->description();
+
+        $this->assertStringContainsString("orders:{status:'value' AND items:{sku:'value'}}", $description);
+    }
+
+    /** @withoutCluster */
+    public function test_search_tool_registers_the_name_used_by_companion_tools(): void
+    {
+        $index = $this->capturingIndex(new NewProperties);
+        $tool = new SigmieIndexTool($index);
+        $this->assertStringContainsString($tool->name(), (new SigmieGetDocumentsTool($index))->description());
+    }
+
+    public function test_sample_returns_the_document_id_and_source(): void
+    {
+        $index = $this->createScopedProductIndex();
+        [, , $sample] = $index->tools();
+
+        $row = json_decode($sample->handle(new Request(['limit' => 1, 'fields' => 'name'])), true, flags: JSON_THROW_ON_ERROR)[0];
+
+        $this->assertSame(['_id', '_source'], array_keys($row));
+        $this->assertSame(['name'], array_keys($row['_source']));
+    }
+
+    public static array $facetRaw = [];
+
+    public static string $sentSort = '';
+
+    public static string $sentFacets = '';
+
+    protected function setUp(): void
+    {
+        if ($this->runsWithoutCluster()) {
+            return;
+        }
+
+        parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->runsWithoutCluster()) {
+            return;
+        }
+
+        parent::tearDown();
+    }
+
+    private function runsWithoutCluster(): bool
+    {
+        $comment = (new \ReflectionMethod($this, $this->getName(false)))->getDocComment();
+
+        return is_string($comment) && str_contains($comment, '@withoutCluster');
+    }
+
+    /** @test */
+    public function facet_filters_narrow_hits_without_requesting_buckets(): void
+    {
+        $index = $this->createProductIndex();
+        $index->merge([
+            new Document(['brand' => 'One']),
+            new Document(['brand' => 'Two']),
+        ], refresh: true);
+
+        $result = (new SigmieIndexTool($index))->result(new Request([
+            'query' => '',
+            'facet_filters' => "brand:'Two'",
+        ]));
+
+        $this->assertSame(1, $result['total']);
+        $this->assertSame('Two', $result['hits'][0]['brand']);
+        $this->assertArrayNotHasKey('facets', $result);
+    }
+
+    /**
+     * @test
+     * @withoutCluster
+     */
+    public function a_public_geo_sort_uses_the_entire_field_name(): void
+    {
+        $props = new NewProperties;
+        $props->geoPoint('store-location');
+        $props->geoPoint('location');
+        $tool = new SigmieIndexTool($this->capturingIndex($props, except: ['location']));
+        $sort = 'store-location[40,-74]:km:asc';
+
+        $tool->result(new Request(['query' => '', 'sort' => $sort]));
+
+        $this->assertSame($sort, self::$sentSort);
+    }
+
+    /**
+     * @test
+     * @withoutCluster
+     */
+    public function nested_filter_examples_preserve_child_groups(): void
+    {
+        $props = new NewProperties;
+        $props->nested('orders', function (NewProperties $orders): void {
+            $orders->nested('items', function (NewProperties $items): void {
+                $items->keyword('sku');
+                $items->keyword('color');
+            });
+        });
+        $schema = (new SigmieIndexSchemaTool($this->schemaIndex($props)))->result(new Request([]));
+
+        $this->assertSame("orders:{items:{sku:'value' AND color:'value'}}", $schema['fields'][0]['filter']);
+    }
+
+    /**
+     * @test
+     * @withoutCluster
+     */
+    public function value_discovery_validates_filters_at_zero_limit(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('brand');
+        $tool = new SigmieFilterValuesTool($this->capturingIndex($props));
+        $output = json_decode($tool->handle(new Request(['field' => 'brand', 'filters' => 'absent:red', 'limit' => 0])), true);
+
+        $this->assertStringContainsString('Field absent does not exist', $output['error'] ?? '');
+    }
+
+    /**
+     * @test
+     * @withoutCluster
+     */
+    public function a_retrieved_document_preserves_a_source_field_named_zero(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('0');
+        $index = $this->capturingIndex($props, [
+            'total' => ['value' => 1],
+            'hits' => [['_id' => 'item', '_source' => ['0' => 'zero']]],
+        ]);
+        $result = (new SigmieGetDocumentsTool($index))->handle(new Request(['ids' => ['item']]));
+
+        $this->assertSame('{"0":"zero"}', json_encode(json_decode($result)[0]->_source));
+    }
+
+    /** @test */
+    public function a_parent_facet_filter_narrows_nested_facet_counts(): void
+    {
+        $index = $this->createArticlesIndex();
+        $index->merge([new Document([
+            'author' => 'Someone else',
+            'sections' => [['type' => 'other']],
+        ])], refresh: true);
+
+        $result = (new SigmieIndexTool($index))->result(new Request([
+            'query' => '',
+            'facets' => 'sections.type',
+            'facet_filters' => "author:'Jane Doe'",
+        ]));
+
+        $this->assertSame(1, $result['total']);
+        $this->assertEquals(['analysis' => 4, 'conclusion' => 1, 'summary' => 1], $result['facets']['sections.type']);
+    }
+
+    /**
+     * @test
+     * @withoutCluster
+     */
+    public function a_field_named_sum_other_doc_count_returns_the_actual_omitted_count(): void
+    {
+        $name = 'sum_other_doc_count';
+        $props = new NewProperties;
+        $props->keyword($name);
+        $index = $this->capturingIndex($props, rawAggregations: [
+            $name => ['doc_count' => 5, $name => [
+                'sum_other_doc_count' => 2,
+                'buckets' => [['key' => 'a', 'doc_count' => 3]],
+            ]],
+        ]);
+        $result = (new SigmieFilterValuesTool($index))->result(new Request(['field' => $name, 'limit' => 1]));
+
+        $this->assertSame(['a' => 3], $result['values']);
+        $this->assertSame(2, $result['other_documents']);
+    }
+
+    /** @test */
+    public function default_output_fields_include_source_fields_outside_the_blueprint(): void
+    {
+        $index = $this->createProductIndex();
+        $index->merge([new Document(['brand' => 'One', 'label' => 'Kept'], 'product')], refresh: true);
+
+        $search = (new SigmieIndexTool($index))->result(new Request(['query' => '', 'fields' => null]));
+        $documents = (new SigmieGetDocumentsTool($index))->result(new Request(['ids' => ['product'], 'fields' => null]));
+
+        $this->assertSame('Kept', $search['hits'][0]['label'] ?? null);
+        $this->assertSame('Kept', $documents[0]->_source['label'] ?? null);
+    }
+
+    /**
+     * @test
+     * @withoutCluster
+     */
+    public function value_discovery_rejects_facet_parameters_in_the_field_name(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('brand');
+        $tool = new SigmieFilterValuesTool($this->capturingIndex($props));
+        $result = json_decode($tool->handle(new Request(['field' => 'brand:5'])), true);
+
+        $this->assertStringContainsString('Field brand:5 does not exist', $result['error'] ?? '');
+    }
+
     private function createProductIndex(): SigmieIndex
     {
         $index = new class($this->sigmie) extends SigmieIndex
@@ -60,6 +508,21 @@ class SigmieIndexToolTest extends TestCase
         $index->create();
 
         return $index;
+    }
+
+    /**
+     * @test
+     * @withoutCluster
+     */
+    public function matching_items_accept_a_hyphenated_nested_field(): void
+    {
+        $props = new NewProperties;
+        $props->nested('line-items', static function (NewProperties $props): void {
+            $props->text('title');
+        });
+        $tool = new SigmieIndexTool($this->capturingIndex($props));
+        $result = $tool->result(new Request(['query' => 'book', 'matches' => 'line-items.title:2']));
+        $this->assertSame([], $result['hits']);
     }
 
     /**
@@ -1365,14 +1828,14 @@ class SigmieIndexToolTest extends TestCase
         $getDocuments = new SigmieGetDocumentsTool($index);
         $sampleDocuments = new SigmieSampleDocumentsTool($index);
 
-        $this->assertSame('describe_index', $schema->name());
+        $this->assertSame('describe_index_'.$index->name(), $schema->name());
         $this->assertStringContainsString($index->name(), $schema->description());
         $this->assertSame([], $schema->schema(new FakeJsonSchema));
-        $this->assertSame('discover_filter_values', $filterValues->name());
+        $this->assertSame('discover_filter_values_'.$index->name(), $filterValues->name());
         $this->assertStringContainsString($index->name(), $filterValues->description());
-        $this->assertSame('get_documents', $getDocuments->name());
+        $this->assertSame('get_documents_'.$index->name(), $getDocuments->name());
         $this->assertStringContainsString($index->name(), $getDocuments->description());
-        $this->assertSame('sample_documents', $sampleDocuments->name());
+        $this->assertSame('sample_documents_'.$index->name(), $sampleDocuments->name());
         $this->assertStringContainsString($index->name(), $sampleDocuments->description());
 
         $result = $schema->result(new Request([]));
@@ -1789,5 +2252,638 @@ class SigmieIndexToolTest extends TestCase
         $this->assertTrue($subfields['email']['filter_only']);
         $this->assertArrayNotHasKey('filter_only', $subfields['name']);
         $this->assertArrayNotHasKey('filter_only', $fields['region']);
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_price_facet_keeps_the_default_histogram_interval(): void
+    {
+        $props = new NewProperties;
+        $props->price('price');
+        $props->keyword('brand');
+        $index = $this->capturingIndex($props);
+
+        (new SigmieFilterValuesTool($index))->result(new Request(['field' => 'price', 'limit' => 5]));
+        $limit5 = self::$facetRaw;
+
+        (new SigmieFilterValuesTool($index))->result(new Request(['field' => 'price']));
+        $default = self::$facetRaw;
+
+        (new SigmieFilterValuesTool($index))->result(new Request(['field' => 'brand', 'limit' => 5]));
+        $brand = json_encode(self::$facetRaw);
+
+        $this->assertSame(10, $this->histogramInterval($limit5));
+        $this->assertSame(10, $this->histogramInterval($default));
+        $this->assertSame(5, $this->termsSize($brand, 'brand'));
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_nested_object_field_stays_in_the_search_description(): void
+    {
+        $index = new class extends SigmieIndex
+        {
+            public function __construct() {}
+
+            public function name(): string
+            {
+                return 'orders';
+            }
+
+            public function properties(): NewProperties
+            {
+                $props = new NewProperties;
+                $props->nested('orders', function (NewProperties $props): void {
+                    $props->keyword('id');
+                    $props->object('customer', function (NewProperties $props): void {
+                        $props->keyword('city');
+                    });
+                });
+
+                return $props;
+            }
+        };
+
+        $description = (new SigmieIndexTool($index))->description();
+        $schema = (new SigmieIndexSchemaTool($index))->result(new Request([]));
+        $names = [];
+        foreach ($schema['fields'] as $field) {
+            foreach ($field['subfields'] ?? [] as $sub) {
+                $names[] = $sub['name'].':'.$sub['type'];
+            }
+        }
+
+        $this->assertStringContainsString('customer.city [keyword]', $description);
+        $this->assertStringContainsString('id [keyword]', $description);
+        $this->assertContains('customer.city:keyword', $names);
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_source_id_does_not_replace_the_hit_id(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('title');
+        $index = $this->capturingIndex($props, [
+            'total' => ['value' => 1],
+            'hits' => [[
+                '_id' => 'doc-1',
+                '_score' => 1.5,
+                '_source' => [
+                    '_id' => 'from-source',
+                    '_matches' => ['bogus' => true],
+                    'title' => 'Hello',
+                ],
+            ]],
+        ]);
+
+        $result = (new SigmieIndexTool($index))->result(new Request([
+            'query' => 'Hello',
+            'matches' => null,
+        ]));
+
+        $this->assertSame([
+            'total' => 1,
+            'hits' => [[
+                '_id' => 'doc-1',
+                'title' => 'Hello',
+            ]],
+        ], $result);
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_hit_field_named_one_stays_on_the_search_tool(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('1');
+        $index = $this->capturingIndex($props, [
+            'total' => ['value' => 1],
+            'hits' => [[
+                '_id' => 'doc-1',
+                '_score' => 1,
+                '_source' => [
+                    '1' => 'kept',
+                    '2' => 'also',
+                    '0' => 'zero',
+                ],
+            ]],
+        ]);
+
+        $result = (new SigmieIndexTool($index))->result(new Request([
+            'query' => 'kept',
+        ]));
+        $json = json_encode($result['hits'][0]);
+
+        $this->assertStringContainsString('"1":"kept"', $json);
+        $this->assertStringContainsString('"2":"also"', $json);
+        $this->assertStringContainsString('"0":"zero"', $json);
+        $this->assertSame('doc-1', $result['hits'][0]['_id']);
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function documents_keep_the_first_requested_id_order(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('name');
+        $index = $this->capturingIndex($props, [
+            'total' => ['value' => 2],
+            'hits' => [
+                ['_id' => 'a', '_index' => 'products', '_score' => 1, '_source' => ['name' => 'A']],
+                ['_id' => 'b', '_index' => 'products', '_score' => 1, '_source' => ['name' => 'B']],
+            ],
+        ]);
+
+        $ids = static function (array $documents): array {
+            return array_column(json_decode(json_encode($documents), true), '_id');
+        };
+        $tool = new SigmieGetDocumentsTool($index);
+
+        $this->assertSame(['b', 'a'], $ids($tool->result(new Request(['ids' => ['b', 'a']]))));
+        $this->assertSame(['b', 'a'], $ids($tool->result(new Request(['ids' => ['b', 'a', 'b']]))));
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_nested_field_line_keeps_its_description(): void
+    {
+        $index = new class extends SigmieIndex
+        {
+            public function __construct() {}
+
+            public function name(): string
+            {
+                return 'orders';
+            }
+
+            public function properties(): NewProperties
+            {
+                $props = new NewProperties;
+                $props->keyword('status')->description('Order status.');
+                $props->nested('orders', function (NewProperties $props): void {
+                    $props->keyword('id')->description('Line id.');
+                })->description('Order lines.');
+
+                return $props;
+            }
+        };
+
+        $this->assertStringContainsString(
+            "- orders [nested]: orders:{id:'value'} — Order lines.",
+            (new SigmieIndexTool($index))->description(),
+        );
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_nested_field_is_filterable(): void
+    {
+        $index = new class extends SigmieIndex
+        {
+            public function __construct() {}
+
+            public function name(): string
+            {
+                return 'orders';
+            }
+
+            public function properties(): NewProperties
+            {
+                $props = new NewProperties;
+                $props->nested('orders', function (NewProperties $props): void {
+                    $props->keyword('id');
+                    $props->object('customer', function (NewProperties $props): void {
+                        $props->keyword('city');
+                    });
+                });
+
+                return $props;
+            }
+        };
+
+        $orders = null;
+
+        foreach ((new SigmieIndexSchemaTool($index))->result(new Request([]))['fields'] as $field) {
+            if ($field['name'] === 'orders') {
+                $orders = $field;
+            }
+        }
+
+        $this->assertTrue($orders['filterable']);
+        $this->assertFalse($orders['sortable']);
+        $this->assertFalse($orders['facetable']);
+        $this->assertSame("orders:{id:'value' AND customer.city:'value'}", $orders['filter']);
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_filter_value_limit_of_zero_returns_nothing(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('brand');
+        $index = $this->capturingIndex($props);
+        self::$facetRaw = ['sentinel' => true];
+
+        $zero = (new SigmieFilterValuesTool($index))->result(new Request(['field' => 'brand', 'limit' => 0]));
+        $stringZero = (new SigmieFilterValuesTool($index))->result(new Request(['field' => 'brand', 'limit' => '0']));
+
+        $this->assertSame([], $zero['values']);
+        $this->assertSame([], $stringZero['values']);
+        $this->assertSame(['sentinel' => true], self::$facetRaw);
+
+        (new SigmieFilterValuesTool($index))->result(new Request(['field' => 'brand', 'limit' => null]));
+
+        $this->assertSame(20, $this->termsSize(json_encode(self::$facetRaw), 'brand'));
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_sort_named_zero_is_sent(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('0');
+        $index = $this->capturingIndex($props);
+        $tool = new SigmieIndexTool($index);
+
+        $tool->result(new Request(['query' => '', 'sort' => '0']));
+        $this->assertSame('0', self::$sentSort);
+
+        $tool->result(new Request(['query' => '', 'facets' => '0']));
+        $this->assertSame('0', self::$sentFacets);
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_numeric_sort_reaches_the_search(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('0');
+        $props->keyword('1');
+        $index = $this->capturingIndex($props);
+        $tool = new SigmieIndexTool($index);
+
+        $tool->result(new Request(['query' => '', 'sort' => 1]));
+        $this->assertSame('1', self::$sentSort);
+
+        $tool->result(new Request(['query' => '', 'facets' => false]));
+        $this->assertSame('', self::$sentFacets);
+
+        $handled = $tool->handle(new Request(['query' => '', 'sort' => 0]));
+        $this->assertStringNotContainsString('expressionFields()', $handled);
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_geo_sort_after_a_colon_is_refused(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('x');
+        $props->geoPoint('location');
+        $props->nested('contact', function (NewProperties $nested): void {
+            $nested->geoPoint('location');
+        });
+
+        $tool = new SigmieIndexTool($this->capturingIndex($props, except: ['location', 'contact.location']));
+
+        foreach ([
+            'location[40.71,-74.00]:km:asc' => 'location',
+            'x:location[40.71,-74.00]:km:asc' => 'location',
+            'x:contact.location[52.49,13.77]:m:asc' => 'contact.location',
+        ] as $sort => $field) {
+            try {
+                $tool->result(new Request(['query' => '', 'sort' => $sort]));
+                $this->fail($sort);
+            } catch (InvalidArgumentException $exception) {
+                $this->assertStringContainsString(
+                    'Field '.$field.' is private and cannot be listed, grouped, faceted or sorted',
+                    $exception->getMessage(),
+                );
+            }
+        }
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_filter_value_named_zero_stays_an_object(): void
+    {
+        $connection = new class extends ElasticsearchConnection
+        {
+            public function __construct() {}
+
+            public function driver(): SearchEngine
+            {
+                return new Elasticsearch;
+            }
+
+            public function isServerless(): bool
+            {
+                return false;
+            }
+
+            public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse
+            {
+                throw new RuntimeException('no cluster');
+            }
+
+            public function promise(ElasticsearchRequest $request): Promise
+            {
+                throw new RuntimeException('no cluster');
+            }
+        };
+
+        $props = new NewProperties;
+        $props->keyword('brand');
+        $index = new class($connection, $props) extends SigmieIndex
+        {
+            public function __construct(
+                private ElasticsearchConnection $connection,
+                private NewProperties $props,
+            ) {}
+
+            public function name(): string
+            {
+                return 'products';
+            }
+
+            public function properties(): NewProperties
+            {
+                return $this->props;
+            }
+
+            public function newSearch(): NewSearch
+            {
+                return (new class($this->connection) extends NewSearch
+                {
+                    public function __construct(ElasticsearchConnection $connection)
+                    {
+                        parent::__construct($connection);
+                    }
+
+                    public function get(): ResponseFormater
+                    {
+                        $formatter = new SigmieSearchResponse($this->properties);
+                        $formatter->context($this->searchContext)
+                            ->errors([])
+                            ->queryResponseRaw(['hits' => ['total' => ['value' => 0], 'hits' => []]])
+                            ->facetsResponseRaw(['aggregations' => [
+                                'brand' => [
+                                    'doc_count' => 4,
+                                    'brand' => [
+                                        'sum_other_doc_count' => 0,
+                                        'buckets' => [
+                                            ['key' => '0', 'doc_count' => 4],
+                                        ],
+                                    ],
+                                ],
+                            ]]);
+
+                        return $formatter;
+                    }
+                })->properties($this->props);
+            }
+        };
+
+        $json = (new SigmieFilterValuesTool($index))->handle(new Request([
+            'field' => 'brand',
+            'limit' => 5,
+        ]));
+
+        $this->assertStringContainsString('"values":{"0":4}', $json);
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_keyword_equality_note_names_the_lowercase_normalizer(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('brand');
+        $props->text('title')->keyword();
+        $props->caseSensitiveKeyword('code');
+
+        $analysis = new Analysis;
+        $mapped = $props->get($analysis);
+        $index = $this->schemaIndex($props);
+        $notes = (new SigmieIndexSchemaTool($index))->result(new Request([]))['notes'][0];
+        $description = (new SigmieIndexTool($index))->description();
+
+        $this->assertSame(['lowercase'], $analysis->toRaw()['normalizer']['brand_field_normalizer']['filter']);
+        $this->assertArrayNotHasKey('normalizer', $mapped->get('title')->toRaw()['title']['fields']['keyword']);
+        $this->assertArrayNotHasKey('normalizer', $mapped->get('code')->toRaw()['code']);
+
+        $filters = new FilterParser($props);
+
+        foreach (["brand:'Apple'", "title:'Apple'", "code:'Apple'"] as $expression) {
+            $term = $filters->parse($expression)->toRaw()['bool']['must'][0]['term'];
+            $clause = $term[array_key_first($term)];
+
+            $this->assertSame('Apple', $clause['value']);
+        }
+
+        $note = "Equality on keyword() is case-insensitive because its normalizer lowercases. Equality on a text field's keyword subfield and on caseSensitiveKeyword() is case-sensitive. If a filter returns 0 unexpectedly, call discover_filter_values_{$index->name()} on that field to confirm the exact stored values (including casing).";
+
+        $this->assertSame($note, $notes);
+        $matching = "Matching: equality on keyword() is case-insensitive because its normalizer lowercases. Equality on a text field's keyword subfield and on caseSensitiveKeyword() is case-sensitive. If a filter returns 0 unexpectedly, call discover_filter_values to confirm the exact stored value.";
+
+        $this->assertStringContainsString(str_replace('discover_filter_values', 'discover_filter_values_'.$index->name(), $matching), $description);
+        $this->assertStringContainsString(str_replace('discover_filter_values', 'discover_filter_values_products', $matching), (string) file_get_contents(dirname(__DIR__).'/docs/laravel-ai.md'));
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_facet_syntax_reserves_interval_for_price(): void
+    {
+        $props = new NewProperties;
+        $props->number('rating');
+        $props->price('price');
+        $props->date('created_at');
+        $props->keyword('brand');
+
+        $raw = (new FacetParser($props))->parse('rating:50 price:50 created_at:50 brand:20')->toRaw();
+
+        $this->assertSame(['stats' => ['field' => 'rating']], $raw['rating']['aggs']['rating']);
+        $this->assertSame(
+            ['stats' => ['field' => 'created_at', 'format' => 'strict_date_optional_time_nanos']],
+            $raw['created_at']['aggs']['created_at'],
+        );
+        $this->assertSame(50, $raw['price']['aggs']['price_histogram']['histogram']['interval']);
+        $this->assertSame(20, $raw['brand']['aggs']['brand']['terms']['size']);
+
+        $index = $this->schemaIndex($props);
+        $facets = 'field1 field2:20 (space-separated; :size for term fields, :interval for price; number, date, and datetime take no parameter)';
+        $syntax = (new SigmieIndexSchemaTool($index))->result(new Request([]))['filter_syntax']['facets'];
+        $description = (new SigmieIndexTool($index))->description();
+        $docs = (string) file_get_contents(dirname(__DIR__).'/docs/laravel-ai.md');
+
+        $this->assertSame($facets, $syntax);
+        $this->assertStringContainsString('Facets: '.$facets, $description);
+        $this->assertStringContainsString('Facets: '.$facets, $docs);
+    }
+
+    private function schemaIndex(NewProperties $props): SigmieIndex
+    {
+        return new class($props) extends SigmieIndex
+        {
+            public function __construct(private NewProperties $props) {}
+
+            public function name(): string
+            {
+                return 'products';
+            }
+
+            public function properties(): NewProperties
+            {
+                return $this->props;
+            }
+        };
+    }
+
+    private function histogramInterval(array $raw): ?int
+    {
+        if (preg_match('/"interval"\s*:\s*(\d+)/', (string) json_encode($raw), $match) !== 1) {
+            return null;
+        }
+
+        return (int) $match[1];
+    }
+
+    private function termsSize(string $raw, string $field): ?int
+    {
+        $decoded = json_decode($raw, true);
+        $size = $decoded[$field]['aggs'][$field]['terms']['size'] ?? null;
+
+        return is_int($size) ? $size : null;
+    }
+
+    private function capturingIndex(NewProperties $props, array $hits = ['total' => ['value' => 0], 'hits' => []], array $except = [], array $rawAggregations = []): SigmieIndex
+    {
+        $connection = new class extends ElasticsearchConnection
+        {
+            public function __construct() {}
+
+            public function driver(): SearchEngine
+            {
+                return new Elasticsearch;
+            }
+
+            public function isServerless(): bool
+            {
+                return false;
+            }
+
+            public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse
+            {
+                throw new RuntimeException('no cluster');
+            }
+
+            public function promise(ElasticsearchRequest $request): Promise
+            {
+                throw new RuntimeException('no cluster');
+            }
+        };
+
+        return new class($connection, $props, $hits, $except, $rawAggregations) extends SigmieIndex
+        {
+            public function __construct(
+                private ElasticsearchConnection $connection,
+                private NewProperties $props,
+                private array $hits,
+                private array $except,
+                private array $rawAggregations,
+            ) {}
+
+            public function name(): string
+            {
+                return 'products';
+            }
+
+            public function properties(): NewProperties
+            {
+                return $this->props;
+            }
+
+            public function exceptFromTools(): array
+            {
+                return $this->except;
+            }
+
+            public function newSearch(): NewSearch
+            {
+                $hits = $this->hits;
+
+                return (new class($this->connection, $hits, $this->rawAggregations) extends NewSearch
+                {
+                    public function __construct(
+                        ElasticsearchConnection $connection,
+                        private array $hits,
+                        private array $rawAggregations,
+                    ) {
+                        parent::__construct($connection);
+                    }
+
+                    public function get(): ResponseFormater
+                    {
+                        SigmieIndexToolTest::$sentSort = $this->searchContext->sortString;
+                        SigmieIndexToolTest::$sentFacets = $this->searchContext->facetString;
+                        SigmieIndexToolTest::$facetRaw = $this->facets->toRaw();
+
+                        $formatter = new SigmieSearchResponse($this->properties);
+                        $formatter->context($this->searchContext)
+                            ->errors([])
+                            ->queryResponseRaw(['hits' => $this->hits])
+                            ->facetsResponseRaw(['aggregations' => $this->rawAggregations]);
+
+                        return $formatter;
+                    }
+                })->properties($this->props);
+            }
+        };
     }
 }

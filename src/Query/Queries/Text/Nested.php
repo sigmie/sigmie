@@ -28,8 +28,7 @@ class Nested extends Query
             ],
         ];
 
-        // The object id keeps the inner_hits name unique when one path has several clauses.
-        if ($innerHits = $this->innerHits?->clause($this->path, spl_object_id($this))) {
+        if ($innerHits = $this->innerHits?->clause($this->path)) {
             $raw['nested']['inner_hits'] = $innerHits;
         }
 

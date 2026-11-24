@@ -4,10 +4,33 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use GuzzleHttp\Promise\Promise;
+use InvalidArgumentException;
+use LengthException;
+use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\Classification\NewClassification;
 use Sigmie\Testing\TestCase;
+use UnexpectedValueException;
 
 class ClassificationTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        if ($this->runsWithoutCluster()) {
+            return;
+        }
+
+        parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->runsWithoutCluster()) {
+            return;
+        }
+
+        parent::tearDown();
+    }
     /**
      * @test
      */
@@ -71,5 +94,196 @@ class ClassificationTest extends TestCase
 
         $this->assertEquals('sales', $result->label());
         $this->assertGreaterThan(0.7, $result->confidence());
+    }
+
+    /**
+     * @test
+     */
+    public function replaced_examples_drop_the_previous_label(): void
+    {
+        $api = $this->fixedEmbeddings([
+            'cat one' => [1.0, 0.0],
+            'dog one' => [0.0, 1.0],
+            'only dog' => [0.0, 1.0],
+            'query cat' => [1.0, 0.0],
+        ]);
+        $classification = new NewClassification($api);
+        $classification->examples([
+            ['text' => 'cat one', 'label' => 'cat'],
+            ['text' => 'dog one', 'label' => 'dog'],
+        ])->input('query cat')->classify();
+
+        $second = $classification->examples([
+            ['text' => 'only dog', 'label' => 'dog'],
+        ])->input('query cat')->classify();
+
+        $this->assertSame('dog', $second->label());
+        $this->assertArrayNotHasKey('cat', $second->allScores());
+    }
+
+    /**
+     * @test
+     */
+    public function a_numeric_label_stays_a_string(): void
+    {
+        $api = $this->fixedEmbeddings([
+            'a' => [1.0, 0.0],
+            'q' => [1.0, 0.0],
+        ]);
+
+        $result = (new NewClassification($api))
+            ->examples([
+                ['text' => 'a', 'label' => '10'],
+            ])
+            ->input('q')
+            ->classify();
+
+        $this->assertSame('10', $result->label());
+        $this->assertSame(1.0, $result->score('10'));
+    }
+
+    public function test_repeated_maximum_embeddings_have_finite_confidence(): void
+    {
+        $api = $this->fixedEmbeddings(['cat' => [PHP_FLOAT_MAX, 0.0]]);
+        $examples = array_fill(0, 3, ['text' => 'cat', 'label' => 'cat']);
+        $result = (new NewClassification($api))->examples($examples)->input('cat')->classify();
+
+        $this->assertSame(1.0, $result->confidence());
+    }
+
+    public function test_each_batch_contributes_to_the_label_centroid(): void
+    {
+        $api = $this->fixedEmbeddings(['a' => [1, 0], 'b' => [0, 16], 'query' => [1, 1]]);
+        $examples = array_fill(0, 16, ['text' => 'a', 'label' => 'cat']);
+        $examples[] = ['text' => 'b', 'label' => 'cat'];
+
+        $result = (new NewClassification($api))->examples($examples)->input('query')->classify();
+
+        $this->assertEqualsWithDelta(1.0, $result->confidence(), 1e-12);
+    }
+
+    public function test_only_allowed_labels_are_scored(): void
+    {
+        $api = $this->fixedEmbeddings(['cat' => [1, 0], 'dog' => [0, 1]]);
+        $result = (new NewClassification($api))->labels(['dog'])->examples([
+            ['text' => 'cat', 'label' => 'cat'],
+            ['text' => 'dog', 'label' => 'dog'],
+        ])->input('cat')->classify();
+
+        $this->assertSame('dog', $result->label());
+        $this->assertSame(['dog' => 0.0], $result->allScores());
+    }
+
+    public function test_missing_input_is_rejected_before_embedding_examples(): void
+    {
+        $api = $this->createMock(EmbeddingsApi::class);
+        $api->method('maxBatchSize')->willReturn(16);
+        $api->expects($this->never())->method('batchEmbed');
+        $api->expects($this->never())->method('embed');
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Classification requires input.');
+
+        (new NewClassification($api))->examples([['text' => 'cat', 'label' => 'cat']])->classify();
+    }
+
+    public function test_an_incomplete_example_batch_does_not_build_a_centroid(): void
+    {
+        $api = $this->createMock(EmbeddingsApi::class);
+        $api->method('maxBatchSize')->willReturn(16);
+        $api->method('batchEmbed')->willReturn([['vector' => [1.0, 0.0]]]);
+        $api->expects($this->never())->method('embed');
+        $this->expectException(UnexpectedValueException::class);
+
+        (new NewClassification($api))->examples([
+            ['text' => 'cat', 'label' => 'cat'],
+            ['text' => 'kitten', 'label' => 'cat'],
+        ])->input('cat')->classify();
+    }
+
+    /** @dataProvider ineligibleExamples */
+    public function test_no_eligible_examples(array $labels, array $examples): void
+    {
+        $api = $this->fixedEmbeddings(['cat' => [1, 0]]);
+        $this->expectException(InvalidArgumentException::class);
+
+        (new NewClassification($api))->labels($labels)->examples($examples)->input('cat')->classify();
+    }
+
+    public static function ineligibleExamples(): array
+    {
+        return [
+            'empty examples' => [['cat'], []],
+            'no matching label' => [['dog'], [['text' => 'cat', 'label' => 'cat']]],
+            'empty allowlist' => [[], [['text' => 'cat', 'label' => 'cat']]],
+        ];
+    }
+
+    /** @dataProvider similarityCases */
+    public function test_vector_scores(array $query, array $example, float $expected): void
+    {
+        $api = $this->fixedEmbeddings(['query' => $query, 'example' => $example]);
+        $result = (new NewClassification($api))->examples([['text' => 'example', 'label' => 'cat']])
+            ->input('query')->classify();
+
+        $this->assertEqualsWithDelta($expected, $result->confidence(), 1e-12);
+    }
+
+    public static function similarityCases(): array
+    {
+        return [
+            'large finite vectors' => [[1e200, 1e200], [1e200, 0], sqrt(0.5)],
+            'different dimensions' => [[1, 0], [1], 0.0],
+        ];
+    }
+
+    private function runsWithoutCluster(): bool
+    {
+        return $this->getName(false) !== 'centroid_based_classification';
+    }
+
+    private function fixedEmbeddings(array $vectors): EmbeddingsApi
+    {
+        return new class($vectors) implements EmbeddingsApi
+        {
+            public function __construct(private array $vectors) {}
+
+            public function embed(string $text, int $dimensions): array
+            {
+                return $this->vectors[$text] ?? array_fill(0, $dimensions, 0.0);
+            }
+
+            public function batchEmbed(array $payload): array
+            {
+                if (count($payload) > $this->maxBatchSize()) {
+                    throw new LengthException('Embedding batch exceeds provider limit.');
+                }
+
+                foreach ($payload as $key => $item) {
+                    $text = (string) ($item['text'] ?? '');
+                    $dims = (int) ($item['dims'] ?? 0);
+                    $payload[$key]['vector'] = $this->vectors[$text] ?? array_fill(0, max(1, $dims), 0.0);
+                }
+
+                return $payload;
+            }
+
+            public function promiseEmbed(string $text, int $dimensions): Promise
+            {
+                $promise = new Promise;
+                $promise->resolve($this->embed($text, $dimensions));
+
+                return $promise;
+            }
+
+            public function model(): string
+            {
+                return 'fixed';
+            }
+
+            public function maxBatchSize(): int
+            {
+                return 16;
+            }
+        };
     }
 }

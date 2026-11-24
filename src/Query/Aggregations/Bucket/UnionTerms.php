@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Aggregations\Bucket;
 
+use Sigmie\Query\Shared\OrdersBuckets;
+
 class UnionTerms extends Bucket
 {
+    use OrdersBuckets;
+
     private const SCRIPT = <<<'PAINLESS'
 def values = new HashSet();
 
@@ -15,6 +19,17 @@ for (def field : params.fields) {
     }
 
     for (def value : doc[field]) {
+        // Scripted terms stringify keys. Use the same key for 2 and 2.0 without rounding longs.
+        if (value instanceof Double || value instanceof Float) {
+            double decimal = value.doubleValue();
+            if (decimal >= -9223372036854775808.0 && decimal < 9223372036854775808.0) {
+                long integer = (long) decimal;
+                if ((double) integer == decimal) {
+                    values.add(integer);
+                    continue;
+                }
+            }
+        }
         values.add(value);
     }
 }
@@ -23,8 +38,6 @@ return values;
 PAINLESS;
 
     protected int $size;
-
-    protected array $order = [];
 
     /**
      * @param  list<string>  $fields
@@ -41,15 +54,6 @@ PAINLESS;
         return $this;
     }
 
-    public function order(string $subaggregation, string $direction): static
-    {
-        $this->order = ['order' => [
-            $subaggregation => $direction,
-        ]];
-
-        return $this;
-    }
-
     protected function value(): array
     {
         $value = [
@@ -57,13 +61,13 @@ PAINLESS;
                 'script' => [
                     'lang' => 'painless',
                     'source' => self::SCRIPT,
-                    'params' => ['fields' => $this->fields],
+                    'params' => ['fields' => array_values($this->fields)],
                 ],
                 ...$this->order,
             ],
         ];
 
-        if ($this->size ?? false) {
+        if (isset($this->size)) {
             $value['terms']['size'] = $this->size;
         }
 

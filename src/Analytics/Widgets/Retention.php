@@ -37,10 +37,10 @@ class Retention extends Widget
     public function toRaw(): array
     {
         return $this->scoped($this->name, $this->from, $this->to, function (Aggs $aggs): void {
-            $aggs->dateHistogram('cohorts', $this->cohortField, $this->interval, timeZone: $this->timeZone)
+            $aggs->dateHistogram('cohorts', $this->cohortField, $this->interval, minDocCount: 1, timeZone: $this->timeZone)
                 ->aggregate(function (Aggs $sub): void {
                     $sub->cardinality('size', $this->idField);
-                    $sub->dateHistogram('periods', $this->dateField, $this->interval, extendedBounds: $this->extendedBounds(), timeZone: $this->timeZone)
+                    $this->windowHistogram($sub, 'periods', $this->interval, $this->timeZone)
                         ->aggregate(fn (Aggs $m): Cardinality => $m->cardinality('users', $this->idField));
                 });
         })->toRaw();
@@ -57,10 +57,13 @@ class Retention extends Widget
             'cohorts' => $cohorts->map(fn (array $cohort): array => [
                 'cohort' => $cohort['key_as_string'],
                 'size' => $cohort['size']['value'] ?? 0,
-                'periods' => array_map(fn (array $bucket): array => [
-                    'label' => $bucket['key_as_string'],
-                    'value' => $bucket['users']['value'] ?? 0,
-                ], $cohort['periods']['buckets'] ?? []),
+                'periods' => (new Collection($cohort['periods']['buckets'] ?? []))
+                    ->filter(fn (array $bucket): bool => $bucket['key'] >= $cohort['key'])
+                    ->map(fn (array $bucket): array => [
+                        'label' => $bucket['key_as_string'],
+                        'value' => $bucket['users']['value'] ?? 0,
+                    ])
+                    ->values(),
             ])->toArray(),
         ];
     }

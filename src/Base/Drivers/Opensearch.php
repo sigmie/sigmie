@@ -7,6 +7,7 @@ namespace Sigmie\Base\Drivers;
 use Exception;
 use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Enums\SearchEngineType;
+use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\KnnVector;
@@ -35,10 +36,9 @@ class Opensearch implements SearchEngine
             efConstruction: $field->efConstruction(),
         );
 
-        // Preserve the path from the original field
-        $knnVector->setPath($field->fullPath());
+        $knnVector->meta($field->getMeta());
 
-        return $knnVector;
+        return $knnVector->copyPathFrom($field);
     }
 
     public function nestedVectorField(NestedVector $field): Type
@@ -47,12 +47,10 @@ class Opensearch implements SearchEngine
             name: $field->name,
             dims: $field->dims,
             similarity: $field->similarity,
+            autoNormalizeVector: $field->autoNormalizeVector && $field->boostedByField === null,
         );
 
-        // Preserve the path from the original field
-        $nestedVector->setPath($field->fullPath());
-
-        return $nestedVector;
+        return $nestedVector->copyPathFrom($field);
     }
 
     public function indexSettings(): array

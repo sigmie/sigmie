@@ -144,7 +144,7 @@ $movies->has('matrix_1');                        // true when the _id exists
 $movies->count();                                // number of documents
 $movies->take(10);                               // first 10 documents
 $movies->random(5);                              // 5 random documents
-$movies->toArray();                              // every document, keyed by _id
+$movies->toArray();                              // keyed by _id when unique, otherwise a list
 ```
 
 > **Warning:** `toArray()` loads the whole index into memory. Use it only on small indices. To go through a large index, see [Iterate over every document](#iterate-over-every-document).

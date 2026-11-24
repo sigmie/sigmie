@@ -22,6 +22,7 @@ use Sigmie\SigmieIndex;
 class SigmieGetDocumentsTool implements Tool
 {
     use HandlesToolErrors;
+    use NamesIndexTools;
     use ScopesToBaseFilters;
     use SelectsOutputFields;
 
@@ -32,13 +33,13 @@ class SigmieGetDocumentsTool implements Tool
 
     public function name(): string
     {
-        return 'get_documents';
+        return $this->toolName('get_documents');
     }
 
     public function description(): string
     {
         return sprintf(
-            "Retrieve specific documents from the '%s' index by their `_id`. Pass the ids you already learned from search_index or sample_documents. Ids that do not exist are omitted from the result.",
+            "Retrieve specific documents from the '%s' index by their `_id`. Pass the ids you already learned from {$this->toolName('search_index')} or {$this->toolName('sample_documents')}. Ids that do not exist are omitted from the result.",
             $this->index->name()
         );
     }
@@ -46,7 +47,7 @@ class SigmieGetDocumentsTool implements Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'ids' => $schema->array()->items($schema->string())
+            'ids' => $schema->array()->min(1)->max(100)->items($schema->string()->min(1))
                 ->description('Document ids to retrieve (1-100)')
                 ->required(),
             'fields' => $this->outputFieldsSchema($schema),
@@ -71,16 +72,18 @@ class SigmieGetDocumentsTool implements Tool
         $search = $this->index->newSearch()
             ->queryString('')
             ->filterQuery(new IDs($ids))
+            ->retrieve($this->outputFields($request['fields'] ?? null))
             ->except($this->index->exceptFromTools())
             ->size(count($ids));
 
         $this->applyBaseFilters($search);
 
-        if (($fields = $this->outputFields($request['fields'] ?? null)) !== []) {
-            $search->retrieve($fields);
+        $order = [];
+        foreach ($ids as $position => $id) {
+            if (! array_key_exists($id, $order)) {
+                $order[$id] = $position;
+            }
         }
-
-        $order = array_flip($ids);
         $hits = $search->get()->hits();
 
         usort($hits, fn (Hit $a, Hit $b): int => $order[$a->_id] <=> $order[$b->_id]);

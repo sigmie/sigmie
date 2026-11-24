@@ -14,11 +14,15 @@ class NewSemanticField
 {
     protected VectorSimilarity $similarity = VectorSimilarity::Cosine;
 
+    protected bool $similarityChosen = false;
+
     protected int $dims = 256;
 
-    protected ?int $efConstruction = 300;
+    protected ?int $efConstruction = null;
 
-    protected ?int $m = 64;
+    protected ?int $m = null;
+
+    protected ?int $accuracyLevel = null;
 
     protected string $indexType = 'hnsw';
 
@@ -40,35 +44,28 @@ class NewSemanticField
 
     public function cosineSimilarity(): static
     {
-        $this->similarity = VectorSimilarity::Cosine;
-
-        return $this;
+        return $this->similarity(VectorSimilarity::Cosine);
     }
 
     public function euclideanSimilarity(): static
     {
-        $this->similarity = VectorSimilarity::Euclidean;
-
-        return $this;
+        return $this->similarity(VectorSimilarity::Euclidean);
     }
 
     public function dotProductSimilarity(): static
     {
-        $this->similarity = VectorSimilarity::DotProduct;
-
-        return $this;
+        return $this->similarity(VectorSimilarity::DotProduct);
     }
 
     public function maxInnerProductSimilarity(): static
     {
-        $this->similarity = VectorSimilarity::MaxInnerProduct;
-
-        return $this;
+        return $this->similarity(VectorSimilarity::MaxInnerProduct);
     }
 
     public function similarity(VectorSimilarity $similarity): static
     {
         $this->similarity = $similarity;
+        $this->similarityChosen = true;
 
         return $this;
     }
@@ -77,17 +74,8 @@ class NewSemanticField
     {
         $dimensions ??= $this->dims;
 
-        if (! in_array($dimensions, [
-            128,
-            256,
-            384,
-            512,
-            1024,
-            1536,
-            2048,
-            3072,
-        ])) {
-            throw new Exception('Dimensions must be one of: 128, 256, 384, 512, 1024, 1536, 2048, 3072');
+        if ($dimensions < 1) {
+            throw new Exception('Dimensions must be positive');
         }
 
         if ($level < 1 || $level > 7) {
@@ -118,32 +106,10 @@ class NewSemanticField
         };
 
         $this->index = $level < 7;
-
-        // Base values for 256 dimensions
-        // These are calibrated to balance search quality vs indexing speed
-        $base = [
-            1 => [12, 60],   // Minimal quality, maximum speed
-            2 => [16, 100],  // Low quality, good for small datasets
-            3 => [24, 150],  // Balanced for most use cases
-            4 => [32, 200],  // Good quality, moderate speed
-            5 => [40, 300],  // High quality, slower indexing
-            6 => [48, 400],  // Very high quality, significant indexing cost
-        ];
-
+        $this->accuracyLevel = $level;
         $this->dims = $dimensions;
-
-        // Sublinear scaling: relationship between dimensions and optimal m is logarithmic, not linear
-        // This prevents extreme values at high dimensions (e.g., 1536, 3072)
-        if ($level < 7) {
-            [$baseM, $baseEf] = $base[$level];
-            $scale = sqrt($dimensions / 256);
-
-            $this->m = min((int) round($baseM * $scale), 64);
-            $this->efConstruction = min((int) round($baseEf * $scale), 500);
-        } else {
-            $this->m = null;
-            $this->efConstruction = null;
-        }
+        $this->m = null;
+        $this->efConstruction = null;
 
         return $this;
     }
@@ -229,25 +195,83 @@ class NewSemanticField
         return $this;
     }
 
+    public function definition(): array
+    {
+        return [
+            'accuracy' => $this->accuracyLevel,
+            'dimensions' => $this->dims,
+            'similarity' => $this->similarityChosen ? $this->similarity->value : null,
+            'index_type' => $this->indexType,
+            'm' => $this->m,
+            'ef_construction' => $this->efConstruction,
+            'api' => $this->apiName,
+            'search_api' => $this->queryApiName,
+            'boosted_by' => $this->boostedBy,
+            'normalize' => $this->autoNormalizeVector,
+            'field_type' => $this->fieldType,
+        ];
+    }
+
+    public function restoreDefinition(array $definition): void
+    {
+        $this->dimensions($definition['dimensions']);
+        if (isset($definition['accuracy'])) {
+            $this->accuracy($definition['accuracy']);
+        }
+        if (isset($definition['similarity'])) {
+            $this->similarity(VectorSimilarity::from($definition['similarity']));
+        }
+        if (isset($definition['m'])) {
+            $this->m($definition['m']);
+        }
+        if (isset($definition['ef_construction'])) {
+            $this->efConstruction($definition['ef_construction']);
+        }
+        if (isset($definition['boosted_by'])) {
+            $this->boostedBy($definition['boosted_by']);
+        }
+        $this->indexType($definition['index_type'])
+            ->api($definition['api'])
+            ->searchApi($definition['search_api'])
+            ->normalizeVector($definition['normalize'])
+            ->fieldType($definition['field_type']);
+    }
+
     public function make(): BaseVector|NestedVector
     {
-        // Auto-determine similarity if not explicitly set
-        if ($this->similarity === VectorSimilarity::Cosine) {
-            if ($this->boostedBy !== null) {
-                $this->similarity = VectorSimilarity::DotProduct;
-            } elseif ($this->fieldType === 'image') {
-                $this->similarity = VectorSimilarity::Euclidean;
-            }
+        $similarity = match (true) {
+            $this->similarityChosen => $this->similarity,
+            $this->boostedBy !== null => VectorSimilarity::DotProduct,
+            $this->fieldType === 'image' => VectorSimilarity::Euclidean,
+            default => VectorSimilarity::Cosine,
+        };
+
+        [$m, $efConstruction] = match ($this->accuracyLevel) {
+            1 => [12, 60],
+            2 => [16, 100],
+            3 => [24, 150],
+            4 => [32, 200],
+            5 => [40, 300],
+            6 => [48, 400],
+            default => [64, 300],
+        };
+
+        if ($this->index && $this->accuracyLevel !== null) {
+            $scale = sqrt($this->dims / 256);
+            $m = min((int) round($m * $scale), 64);
+            $efConstruction = min((int) round($efConstruction * $scale), 500);
         }
+        $m = $this->m ?? $m;
+        $efConstruction = $this->efConstruction ?? $efConstruction;
 
         // The name is the field path, so each index type gets its own field.
         // Plain hnsw keeps the unprefixed name of existing indices.
         $name = match (true) {
             ! $this->index => 'exact_dims'.$this->dims,
-            $this->indexType === 'hnsw' => 'm'.$this->m.'_efc'.$this->efConstruction.'_dims'.$this->dims,
+            $this->indexType === 'hnsw' => 'm'.$m.'_efc'.$efConstruction.'_dims'.$this->dims,
             str_ends_with($this->indexType, 'flat') => $this->indexType.'_dims'.$this->dims,
-            default => $this->indexType.'_m'.$this->m.'_efc'.$this->efConstruction.'_dims'.$this->dims,
-        }.'_'.$this->similarity->value.'_'.$this->strategy->suffix();
+            default => $this->indexType.'_m'.$m.'_efc'.$efConstruction.'_dims'.$this->dims,
+        }.'_'.$similarity->value.'_'.$this->strategy->suffix();
 
         if (! $this->index) {
             return new NestedVector(
@@ -255,7 +279,7 @@ class NewSemanticField
                 $this->dims,
                 $this->apiName,
                 $this->strategy,
-                $this->similarity,
+                $similarity,
                 $this->queryApiName,
                 $this->boostedBy,
                 $this->autoNormalizeVector
@@ -266,11 +290,11 @@ class NewSemanticField
             name: $name,
             dims: $this->dims,
             index: $this->index,
-            similarity: $this->similarity,
+            similarity: $similarity,
             strategy: $this->strategy,
             indexType: $this->indexType,
-            m: $this->m,
-            efConstruction: $this->efConstruction,
+            m: $m,
+            efConstruction: $efConstruction,
             apiName: $this->apiName,
             boostedByField: $this->boostedBy,
             autoNormalizeVector: $this->autoNormalizeVector,

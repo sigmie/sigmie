@@ -26,9 +26,9 @@ class Index
     public static function fromRaw(string $name, array $raw): static
     {
         $settings = Settings::fromRaw($raw);
-        $analyzers = $settings->analysis()->analyzers();
-        $mappings = Mappings::create($raw['mappings'], $analyzers);
+        $analysis = $settings->analysis();
+        $mappings = Mappings::create($raw['mappings'], $analysis->analyzers(), $analysis->normalizers());
 
-        return new static($name, $settings, $mappings);
+        return new static($name, $settings, $mappings, $raw);
     }
 }

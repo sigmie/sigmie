@@ -19,5 +19,14 @@ class SearchContext
         public ?array $searchAfter = null,
         public array $autocompletePrefixStrings = [],
         public InnerHits $innerHits = new InnerHits,
+        public ?string $collapseField = null,
+        public ?array $highlightTags = null,
     ) {}
+
+    public function __clone(): void
+    {
+        $this->innerHits = clone $this->innerHits;
+        $this->queryStrings = array_map(static fn (QueryString $query): QueryString => clone $query, $this->queryStrings);
+        $this->queryImages = array_map(static fn (QueryImage $query): QueryImage => clone $query, $this->queryImages);
+    }
 }

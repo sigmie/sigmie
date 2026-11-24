@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing\Assertions;
 
+use function Sigmie\Functions\analysis_list;
+
 trait Filter
 {
     use Contracts;
@@ -16,7 +18,7 @@ trait Filter
     {
         $this->assertEquals(
             $value,
-            $this->data['settings']['index']['analysis']['filter'][$filter],
+            $this->analysisComponent('filter', $filter),
             sprintf('Failed to assert that the filter is equal to given array in index %s.', $this->name)
         );
     }
@@ -25,7 +27,7 @@ trait Filter
     {
         $this->assertArrayHasKey(
             $filter,
-            $this->data['settings']['index']['analysis']['filter'],
+            $this->data['settings']['index']['analysis']['filter'] ?? [],
             sprintf('Failed to assert that the filter exists in index %s.', $this->name)
         );
     }
@@ -34,7 +36,7 @@ trait Filter
     {
         $this->assertArrayNotHasKey(
             $filter,
-            $this->data['settings']['index']['analysis']['filter'],
+            $this->data['settings']['index']['analysis']['filter'] ?? [],
             sprintf('Failed to assert that the filter not exists in index %s.', $this->name)
         );
     }
@@ -43,7 +45,7 @@ trait Filter
     {
         $this->assertEquals(
             $rules,
-            $this->data['settings']['index']['analysis']['filter'][$filter]['rules'],
+            $this->filterList($filter, 'rules'),
             sprintf('Failed to assert that the filter %s has the given rules in index %s.', $filter, $this->name)
         );
     }
@@ -52,7 +54,7 @@ trait Filter
     {
         $this->assertEquals(
             $stopwords,
-            $this->data['settings']['index']['analysis']['filter'][$filter]['stopwords'],
+            $this->filterList($filter, 'stopwords'),
             sprintf('Failed to assert that the filter %s has the given stopwords in index %s.', $filter, $this->name)
         );
     }
@@ -61,8 +63,15 @@ trait Filter
     {
         $this->assertEquals(
             $synonyms,
-            $this->data['settings']['index']['analysis']['filter'][$filter]['synonyms'],
+            $this->filterList($filter, 'synonyms'),
             sprintf('Failed to assert that the filter %s has the given synonyms in index %s.', $filter, $this->name)
         );
+    }
+
+    private function filterList(string $filter, string $key): ?array
+    {
+        $setting = $this->analysisComponent('filter', $filter)[$key] ?? null;
+
+        return $setting === null ? null : analysis_list($setting);
     }
 }

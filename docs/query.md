@@ -9,7 +9,7 @@ related_pages: [search, document, semantic-search, sort-parser]
 
 # Advanced Queries
 
-`newQuery()` builds an Elasticsearch query clause by clause. Use it for queries that [`newSearch()`](search.md) does not build, such as custom boolean logic and script scoring. `newSearch()` has typo tolerance, highlighting, facets, and semantic search. `newQuery()` has none of these.
+`newQuery()` builds an Elasticsearch query clause by clause. Use it for queries that [`newSearch()`](search.md) does not build, such as custom boolean logic and script scoring. `newSearch()` configures highlighting for you. With `newQuery()`, pass the Elasticsearch highlight body directly to `highlight()` on the returned search.
 
 ```php
 use Sigmie\Query\Queries\Compound\Boolean;
@@ -268,7 +268,7 @@ $response = $sigmie->newQuery('movies')
 
 ## Responses
 
-`get()` runs the request and returns the response. `promise()` returns a Guzzle promise instead.
+`get()` runs the request and returns the response. `promise()` returns an `Http\Promise\Promise` instead.
 
 ```php
 $response->json();                       // full response

@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
-use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Mappings\Contracts\FieldContainer;
 use Sigmie\Mappings\Contracts\PropertiesField;
-use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Shared\Properties as SharedProperties;
 
@@ -17,13 +15,9 @@ class Object_ extends Type implements FieldContainer, PropertiesField
 
     protected string $type = 'object';
 
-    public function __construct(
-        string $name,
-        Properties|NewProperties $properties = new NewProperties,
-    ) {
-        parent::__construct($name);
-
-        $this->properties($properties);
+    public function isEnabled(): bool
+    {
+        return $this->mappingOptions['enabled'] ?? true;
     }
 
     public function queries(array|string $queryString): array
@@ -31,35 +25,8 @@ class Object_ extends Type implements FieldContainer, PropertiesField
         return [];
     }
 
-    public function toRaw(?SearchEngine $driver = null): array
-    {
-        $raw = parent::toRaw();
-
-        $raw[$this->name]['properties'] = (object) $this->properties->toRaw($driver);
-
-        return $raw;
-    }
-
-    public function validate(string $key, mixed $value): array
-    {
-        if (! is_array($value)) {
-            return [false, sprintf('Object field %s must be an object.', $key)];
-        }
-
-        if (count($value) === count($value, COUNT_RECURSIVE)) {
-            return [false, sprintf('Onject field %s must be an array of objects.', $key)];
-        }
-
-        return [true, ''];
-    }
-
     public function getProperties(): Properties
     {
         return $this->properties;
-    }
-
-    public function hasFields(): bool
-    {
-        return isset($this->properties);
     }
 }

@@ -6,6 +6,8 @@ namespace Sigmie\Query\Queries\Term;
 
 use Sigmie\Query\Queries\Query;
 
+use function Sigmie\Functions\keyed;
+
 class Fuzzy extends Query
 {
     public function __construct(
@@ -16,16 +18,10 @@ class Fuzzy extends Query
     public function toRaw(): array
     {
         return [
-            'fuzzy' => [
-                $this->field => [
-                    'value' => $this->value,
-                    // "fuzziness" => "AUTO",
-                    // "max_expansions" => 50,
-                    // "prefix_length" => 0,
-                    // "transpositions" => true,
-                    // "rewrite" => "constant_score"
-                ],
-            ],
+            'fuzzy' => keyed($this->field, [
+                'value' => $this->value,
+                'boost' => $this->boost,
+            ]),
         ];
     }
 }

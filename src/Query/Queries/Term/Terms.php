@@ -15,11 +15,16 @@ class Terms extends Query
 
     public function toRaw(): array
     {
-        return [
-            'terms' => [
-                $this->field => $this->values,
-                'boost' => $this->boost,
-            ],
-        ];
+        // Explicit terms have numeric keys. A terms lookup has named parameters.
+        $values = is_int(array_key_first($this->values)) ? array_values($this->values) : $this->values;
+        $terms = [$this->field => $values];
+
+        if ($this->field !== 'boost') {
+            $terms['boost'] = $this->boost;
+        } elseif ($this->boost !== 1.0) {
+            return $this->wrapWithBoost(['terms' => $terms]);
+        }
+
+        return ['terms' => $terms];
     }
 }

@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Search;
 
 use Sigmie\Document\Hit;
-use Sigmie\Document\RerankedHit;
+
+use function Sigmie\Functions\select_source_fields;
 
 class NewContextComposer
 {
@@ -40,7 +41,7 @@ class NewContextComposer
     {
         $contextParts = [];
 
-        /** @var Hit|RerankedHit $hit */
+        /** @var Hit|array $hit */
         foreach ($hits as $hit) {
             $contextParts[] = $this->formatHit($hit);
         }
@@ -55,28 +56,13 @@ class NewContextComposer
             return call_user_func($this->formatter, $hit);
         }
 
-        // Extract the specified fields or all fields
-        $data = $this->extractFields($hit);
-
-        // Default formatting as JSON
-        return json_encode($data);
+        return json_encode((object) $this->extractFields($hit));
     }
 
     protected function extractFields($hit): array
     {
-        if ($this->fields === []) {
-            // Return all fields from the source
-            return $hit->_source ?? [];
-        }
+        $source = is_array($hit) ? (array) ($hit['_source'] ?? []) : $hit->_source;
 
-        // Extract only specified fields
-        $data = [];
-        foreach ($this->fields as $field) {
-            if (isset($hit->_source[$field])) {
-                $data[$field] = $hit->_source[$field];
-            }
-        }
-
-        return $data;
+        return $this->fields === [] ? $source : select_source_fields($source, $this->fields);
     }
 }

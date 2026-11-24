@@ -10,6 +10,108 @@ use Sigmie\Analytics\AnalyticsRequest;
 
 class AnalyticsRequestTest extends TestCase
 {
+    public function test_an_optional_count_field_must_still_be_a_field_name(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('metric field must be a string');
+
+        AnalyticsRequest::fromArray([
+            'widget' => 'grouped_metrics', 'date_field' => 'day', 'group_by' => 'city',
+            'metrics' => '[{"key":"total","metric":"count","field":[]}]',
+        ]);
+    }
+
+    public function test_fixed_intervals_require_a_positive_duration(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unsupported analytics interval [00ms]');
+
+        AnalyticsRequest::fromArray(['widget' => 'trend', 'date_field' => 'day', 'metric' => 'count', 'interval' => '00ms']);
+    }
+
+    public function test_funnel_steps_require_a_json_array_even_with_numeric_keys(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('funnel steps must be a JSON array');
+
+        AnalyticsRequest::fromArray([
+            'widget' => 'funnel', 'date_field' => 'day',
+            'steps' => '{"0":{"label":"visited","filter":"visits>0"}}',
+        ]);
+    }
+
+    public function test_calendar_interval_labels_can_be_reused_in_requests(): void
+    {
+        $request = AnalyticsRequest::fromArray([
+            'widget' => 'trend', 'date_field' => 'date', 'metric' => 'count', 'interval' => 'Day',
+        ]);
+
+        $this->assertSame('day', $request->toArray()['interval']);
+    }
+
+    public function test_integral_json_numbers_satisfy_integer_tool_arguments(): void
+    {
+        $request = AnalyticsRequest::fromArray([
+            'widget' => 'table', 'date_field' => 'date', 'limit' => 2.0, 'include_hits' => 1.0,
+        ]);
+
+        $this->assertSame(2, $request->toArray()['limit']);
+        $this->assertSame(1, $request->toArray()['include_hits']);
+    }
+
+    public function test_blank_optional_range_keeps_explicit_window_bounds(): void
+    {
+        $request = AnalyticsRequest::fromArray([
+            'widget' => 'kpi', 'date_field' => 'date', 'metric' => 'count',
+            'range' => " \t ", 'from' => '2024-01-01', 'to' => '2024-02-01',
+        ])->toArray();
+
+        $this->assertArrayNotHasKey('range', $request);
+        $this->assertSame('2024-01-01', $request['from']);
+        $this->assertSame('2024-02-01', $request['to']);
+    }
+
+    public function test_csv_fields_use_the_same_whitespace_as_widget_execution(): void
+    {
+        $request = AnalyticsRequest::fromArray([
+            'widget' => 'union_breakdown', 'date_field' => 'date', 'metric' => 'count',
+            'group_by_fields' => ['brand', '　', '　category'],
+        ]);
+
+        $this->assertSame('brand,category', $request->toArray()['group_by_fields']);
+    }
+
+    public function test_window_accepts_nanosecond_precision_iso_dates(): void
+    {
+        $from = '2026-01-01T00:00:00.123456789+00:00';
+        $request = AnalyticsRequest::fromArray([
+            'widget' => 'kpi', 'metric' => 'count', 'date_field' => 'created_at', 'from' => $from,
+        ]);
+
+        $this->assertSame($from, $request->toArray()['from']);
+    }
+
+    public function test_percentile_inputs_keep_their_precision(): void
+    {
+        foreach ([50.00000000000001, [50.00000000000001]] as $input) {
+            $request = AnalyticsRequest::fromArray([
+                'widget' => 'percentiles', 'date_field' => 'date', 'field' => 'value', 'percents' => $input,
+            ]);
+
+            $this->assertSame('50.00000000000001', $request->toArray()['percents']);
+        }
+    }
+
+    public function test_json_aliases_keep_unsigned_integer_terms(): void
+    {
+        $request = AnalyticsRequest::fromArray([
+            'widget' => 'breakdown', 'date_field' => 'date', 'group_by' => 'code', 'metric' => 'count',
+            'bucket_aliases' => '[{"label":"Last","values":[18446744073709551615]}]',
+        ]);
+
+        $this->assertSame('[{"label":"Last","values":["18446744073709551615"]}]', $request->toArray()['bucket_aliases']);
+    }
+
     /** @test */
     public function it_normalizes_structured_values_windows_and_fingerprints(): void
     {
@@ -98,13 +200,13 @@ class AnalyticsRequestTest extends TestCase
             'group_by' => 'category',
             'metrics' => [['key' => 'count', 'metric' => 'count']],
             'bucket_aliases' => [
-                ['values' => ['first', 2], 'label' => 'Combined'],
+                ['values' => ['first', 2, ''], 'label' => 'Combined'],
                 ['label' => 'Other', 'values' => [true]],
             ],
         ]);
 
         $this->assertSame(
-            '[{"label":"Combined","values":["first",2]},{"label":"Other","values":[true]}]',
+            '[{"label":"Combined","values":["first",2,""]},{"label":"Other","values":[true]}]',
             $request->toArray()['bucket_aliases'],
         );
     }
@@ -150,6 +252,49 @@ class AnalyticsRequestTest extends TestCase
             'metric' => 'sum',
             'widget' => 'union_breakdown',
         ], $request->toArray());
+    }
+
+    /** @test */
+    public function a_histogram_count_omits_the_metric_field(): void
+    {
+        $counted = AnalyticsRequest::fromArray([
+            'widget' => 'histogram_metric',
+            'date_field' => 'created_at',
+            'metric' => 'count',
+            'field' => 'rating',
+            'bucket_field' => 'price',
+            'bucket_size' => 50,
+        ]);
+
+        $this->assertSame('rating', $counted->toArray()['field']);
+
+        $request = AnalyticsRequest::fromArray([
+            'widget' => 'histogram_metric',
+            'date_field' => 'created_at',
+            'metric' => 'count',
+            'field' => null,
+            'bucket_field' => 'price',
+            'bucket_size' => 50,
+        ]);
+
+        $this->assertSame([
+            'bucket_field' => 'price',
+            'bucket_size' => 50,
+            'date_field' => 'created_at',
+            'metric' => 'count',
+            'widget' => 'histogram_metric',
+        ], $request->toArray());
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Analytics argument [field] is required.');
+
+        AnalyticsRequest::fromArray([
+            'widget' => 'histogram_metric',
+            'date_field' => 'created_at',
+            'metric' => 'avg',
+            'bucket_field' => 'price',
+            'bucket_size' => 50,
+        ]);
     }
 
     /**
@@ -295,8 +440,7 @@ class AnalyticsRequestTest extends TestCase
             ], 'Unknown grouped_metrics sort_metric [revenue]'],
             [[...$base, 'bucket_aliases' => [['label' => 'Combined', 'values' => 'one']]], 'values array'],
             [[...$base, 'bucket_aliases' => ['malformed']], 'bucket_aliases item must be an object'],
-            [[...$base, 'bucket_aliases' => [['label' => 'Combined', 'values' => ['']]]], 'bucket_aliases value must be a non-empty scalar'],
-            [[...$base, 'bucket_aliases' => [['label' => 'Combined', 'values' => [[]]]]], 'bucket_aliases value must be a non-empty scalar'],
+            [[...$base, 'bucket_aliases' => [['label' => 'Combined', 'values' => [[]]]]], 'bucket_aliases value must be a scalar'],
             [[...$base, 'bucket_aliases' => [
                 ['label' => 'Combined', 'values' => ['one']],
                 ['label' => 'Combined', 'values' => ['two']],
@@ -327,5 +471,17 @@ class AnalyticsRequestTest extends TestCase
             ], 'min_count cannot be negative'],
             [[...$base, 'limit' => 101], 'limit] must be between 1 and 100'],
         ];
+    }
+    public function test_windows_reject_invalid_iso_offsets(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Analytics argument [from] must be a valid ISO 8601 date.');
+
+        AnalyticsRequest::fromArray([
+            'widget' => 'kpi',
+            'date_field' => 'created_at',
+            'metric' => 'count',
+            'from' => '2024-02-29T12:00:00+01:99',
+        ]);
     }
 }

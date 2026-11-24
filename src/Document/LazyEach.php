@@ -9,6 +9,7 @@ use Iterator;
 use Sigmie\Base\APIs\Count;
 use Sigmie\Document\Actions as DocumentActions;
 use Sigmie\Enums\SearchEngineType;
+use Sigmie\Search\PitSortPlanner;
 use Sigmie\Search\PointInTimeIterator;
 
 trait LazyEach
@@ -34,14 +35,16 @@ trait LazyEach
         return $this;
     }
 
-    protected function indexGenerator(): Iterator
+    protected function indexGenerator(bool $reverse = false, ?int $pageSize = null): Iterator
     {
         $isOpenSearch = $this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch;
-
-        $sort = $isOpenSearch ? [['_id' => 'asc']] : [['_shard_doc' => 'asc']];
+        $sort = PitSortPlanner::plan([], $isOpenSearch);
+        if ($reverse) {
+            $sort = array_map(static fn (array $clause): array => [array_key_first($clause) => 'desc'], $sort);
+        }
 
         $baseBody = [
-            'size' => $this->chunk,
+            'size' => $pageSize ?? $this->chunk,
             'sort' => $sort,
             'query' => ['match_all' => (object) []],
         ];
@@ -71,13 +74,7 @@ trait LazyEach
             function (string $id): void {
                 $this->closePointInTimeAPICall($id);
             },
-            fn (array $data): Hit => new Hit(
-                $data['_source'] ?? [],
-                $data['_id'],
-                isset($data['_score']) ? (float) $data['_score'] : null,
-                $data['_index'] ?? null,
-                $data['sort'] ?? null,
-            ),
+            Hit::fromRaw(...),
         ) as $hit) {
             yield $hit->_id => $hit;
         }

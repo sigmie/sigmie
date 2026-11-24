@@ -6,6 +6,7 @@ namespace Sigmie\Testing;
 
 use Carbon\Carbon;
 use Closure;
+use Composer\InstalledVersions;
 use Exception;
 use Sigmie\AI\APIs\InfinityClipApi;
 use Sigmie\AI\APIs\InfinityEmbeddingsApi;
@@ -50,7 +51,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
         $this->loadEnv();
 
-        $this->elasticsearchPlugins = explode(',', (string) getenv('ELASTICSEARCH_PLUGINS'));
+        $this->elasticsearchPlugins = array_map('trim', explode(',', (string) getenv('ELASTICSEARCH_PLUGINS')));
 
         // Detect search engine from environment first
         $searchEngine = getenv('SEARCH_ENGINE');
@@ -107,7 +108,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
     protected function skipIfElasticsearchPluginNotInstalled(string $plugin)
     {
-        if (! in_array($plugin, $this->elasticsearchPlugins)) {
+        if (! in_array($plugin, $this->elasticsearchPlugins, true)) {
             $this->markTestSkipped(sprintf('Elasticsearch plugin %s is not installed', $plugin));
         }
     }
@@ -116,7 +117,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
     {
         $dotenv = new Dotenv;
         $dotenv->usePutenv(true);
-        $dotenv->loadEnv($GLOBALS['_composer_bin_dir'].'/../../.env', overrideExistingVars: true);
+        $dotenv->loadEnv(InstalledVersions::getRootPackage()['install_path'].'/.env', overrideExistingVars: true);
     }
 
     public function forOpensearch(Closure $callback): void
@@ -135,10 +136,11 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
     protected function tearDown(): void
     {
-        $this->embeddingApi->reset();
-        $this->rerankApi->reset();
-        $this->clipApi->reset();
+        ($this->embeddingApi ?? null)?->reset();
+        ($this->rerankApi ?? null)?->reset();
+        ($this->clipApi ?? null)?->reset();
 
+        Carbon::setTestNow();
         NewProperties::flushMacros();
         Sigmie::$plugins = [];
 

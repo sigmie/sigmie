@@ -39,10 +39,29 @@ class Percentiles extends Widget
     {
         $values = $aggregations[$this->name]['metric']['values'] ?? [];
 
-        $percentiles = [];
+        $byPercent = [];
 
         foreach ($values as $percent => $value) {
-            $percentiles[(string) (float) $percent] = $value;
+            if (! is_numeric($percent)) {
+                continue;
+            }
+
+            $byPercent[json_encode((float) $percent, JSON_THROW_ON_ERROR)] = $value;
+        }
+
+        $percentiles = [];
+        foreach ($this->percents as $percent) {
+            $key = json_encode((float) $percent, JSON_THROW_ON_ERROR);
+            if (array_key_exists($key, $byPercent)) {
+                $percentiles[$key] = $byPercent[$key];
+            }
+        }
+
+        $percentiles += $byPercent;
+
+        // Keys 0, 1, 2… are a PHP list. json_encode would drop those percentile labels.
+        if ($percentiles !== [] && array_is_list($percentiles)) {
+            $percentiles = (object) $percentiles;
         }
 
         return [

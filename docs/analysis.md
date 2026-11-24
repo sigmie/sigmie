@@ -68,7 +68,7 @@ Here is what happens to a field value:
 "some" "people" "worth" "melting"
 ```
 
-Elasticsearch stores the four tokens at the bottom. It does not store the HTML, the capital letters, or the stopwords.
+Elasticsearch indexes the four tokens at the bottom. The document’s `_source` retains the original string.
 
 ## Queries go through the same analyzer
 
@@ -115,7 +115,7 @@ newIndex('movies')
 
 The analysis methods on the index builder, such as `lowercase()` or `tokenizeOnWhitespaces()`, build the analyzer named `default`. Elasticsearch uses `default` for every text field that has no analyzer of its own. With no analysis methods, `default` uses the word boundaries tokenizer and no filters.
 
-`withNewAnalyzer()` on a text property builds an analyzer for that field only. Sigmie names it after the field path with a `_field_analyzer` suffix and uses it for both indexing and search on that field. Some property types, such as `title()`, `email()`, and `path()`, build their own field analyzer. See [Mappings](mappings.md) for per-field analyzers.
+`withNewAnalyzer()` on a text property builds an analyzer for that field only. Sigmie names it after the field path with a `_field_analyzer` suffix and uses it for both indexing and search on that field. In analyzer names, Sigmie encodes dots in field paths as `%2E` and literal percent signs as `%25`. Some property types, such as `title()`, `email()`, and `path()`, build their own field analyzer. See [Mappings](mappings.md) for per-field analyzers.
 
 `language()` swaps the index builder for one with language-specific filters. See [Languages](language.md).
 

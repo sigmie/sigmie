@@ -19,11 +19,27 @@ class Keyword extends Type
 
     protected string $type = 'keyword';
 
+    protected ?NormalizerInterface $restoredNormalizer = null;
+
+    public function restoreScalarMapping(array $mapping, array $normalizers = []): void
+    {
+        parent::restoreScalarMapping($mapping);
+
+        $name = $mapping['normalizer'] ?? null;
+        $this->restoredNormalizer = $normalizers[$name]
+            ?? ($name === 'lowercase' ? new Normalizer('lowercase', type: 'lowercase') : null);
+    }
+
     public function toRaw(): array
     {
         $normalizer = $this->normalizer();
 
         $raw = parent::toRaw();
+
+        $fields = $raw[$this->name]['fields'] ?? null;
+        if (is_array($fields) && array_is_list($fields)) {
+            $raw[$this->name]['fields'] = (object) $fields;
+        }
 
         if (! is_null($normalizer)) {
             $raw[$this->name]['normalizer'] = $normalizer->name();
@@ -34,10 +50,16 @@ class Keyword extends Type
 
     public function normalizer(): ?NormalizerInterface
     {
-        return new Normalizer(
-            $this->name.'_field_normalizer',
-            filters: [new Lowercase]
-        );
+        if ($this->restoredNormalizer !== null) {
+            return $this->restoredNormalizer;
+        }
+
+        $name = $this->analysisComponentName($this->name, '_field_normalizer');
+        if ($this->storedMapping !== null && ($this->storedMapping['normalizer'] ?? null) !== $name) {
+            return null;
+        }
+
+        return new Normalizer($name, filters: [new Lowercase]);
     }
 
     public function handleNormalizer(Analysis $analysis): void
@@ -51,22 +73,12 @@ class Keyword extends Type
 
     public function queries(array|string $queryString): array
     {
-        return [new Term($this->name(), $queryString), new Prefix($this->name(), $queryString)];
+        return $this->queryStrings($queryString, fn (string $queryString): array => [new Term($this->name(), $queryString), new Prefix($this->name(), $queryString)]);
     }
 
     public function aggregation(Aggs $aggs, string $params): void
     {
-        $params = explode(',', $params);
-        $size = $params[0];
-        $order = $params[1] ?? null;
-
-        $aggregation = $aggs->terms($this->name(), $this->name());
-
-        $aggregation->size((int) $size);
-
-        if (in_array($order, ['asc', 'desc'])) {
-            $aggregation->order('_key', $order);
-        }
+        $this->termFacetAggregation($aggs, $this->name(), $params);
     }
 
     public function facets(array $aggregation): ?array
@@ -87,6 +99,6 @@ class Keyword extends Type
             return [false, sprintf('The field %s mapped as %s must be a string', $key, $this->typeName())];
         }
 
-        return [true, ''];
+        return $this->validateKeywordTerms($key, $value);
     }
 }

@@ -11,7 +11,7 @@ related_pages: [semantic-search, mappings, document, aggregations, extending]
 
 Magic Tags adds a `keyword` field whose values an LLM writes: short labels that describe another field's content. The package prefers existing tags over new ones, so the tag list stays stable for search, filters, and agent tools.
 
-> **Note:** Magic Tags is a separate [Sigmie package](extending.md), not part of this repository. This page describes its intended behavior. The examples assume that you installed and registered the package.
+> **Note:** Magic Tags is a separate [Sigmie package](extending.md), not part of this repository. The examples use the Magic Tags extension from `sigmie/agent-tools` with a configured Laravel AI provider.
 
 ## How the package stores tags
 
@@ -30,7 +30,7 @@ Main index documents                       Sidecar index (tag registry)
    classify-first                          the source field
 ```
 
-The **main index** stores each document's tags as an array of strings. The mapping is `keyword` with `meta.type` set to `magic_tags`.
+The **main index** stores each document's tags as an array of strings. The mapping is `keyword` with `meta.type` set to `magic_tags_field_type`.
 
 The **sidecar index** holds one row for each unique `(magic_field_path, tag)` pair, with an embedding of the tag text. Its name defaults to `{logicalName}__sigmie_magic_tags`. Each row has the `_id` `md5(path::tag)`, so a repeated write updates the row and does not add a duplicate. The sidecar uses the same embeddings API and dimensions as the source field.
 
@@ -42,7 +42,7 @@ Register the package on your `Sigmie` client:
 
 ```php
 use Sigmie\Sigmie;
-use Vendor\MagicTags\MagicTagsPackage;
+use Sigmie\AgentTools\MagicTags\MagicTagsPackage;
 
 $sigmie = new Sigmie($connection);
 $sigmie->extend(new MagicTagsPackage());
@@ -63,16 +63,15 @@ $props->text('content')
     ->semantic(api: 'my-embeddings', accuracy: 1, dimensions: 1024);
 
 $props->magicTags('topic', fromField: 'content')
-    ->api('my-llm');
+    ->provider('openai');
 ```
 
-Register both API names on the collection:
+Configure the `openai` provider in Laravel AI. Register the source field’s Sigmie embeddings API on the collection:
 
 ```php
 $collection = $sigmie->collect('kb', refresh: true)
     ->properties($props)
     ->apis([
-        'my-llm' => $llmApi,
         'my-embeddings' => $embeddingsApi,
     ]);
 ```
@@ -93,7 +92,7 @@ The stored document now has a `topic` array of tags.
 
 For each document, the package selects tags in this order:
 
-1. **Classify.** This step runs only when `classifyFirst(true)` is set and the sidecar has at least `minTagsForClassification` tags. The package embeds the source text and compares it with a centroid for each tag, built from sample passages. Tags with a similarity of at least `classifyConfidence` apply without an LLM call.
+1. **Classify.** This step runs only when `classifyFirst(true)` is set and the sidecar has at least `minTagsForClassification` tags. The package searches the sidecar for tags similar to the source text. It accepts results with scores at or above `classifyConfidence` without an LLM call.
 2. **Generate.** If classification returns no tags, the LLM writes tags from the source text. The prompt lists existing tags so that the LLM can reuse them.
 3. **Deduplicate.** The package compares each new tag with existing tags by embedding similarity. A tag above `similarityThreshold` counts as a duplicate.
 
@@ -101,13 +100,12 @@ Set these values on the field:
 
 ```php
 $props->magicTags('topic', fromField: 'content')
-    ->api('my-llm')
-    ->embeddingsApi('my-embeddings')
+    ->provider('openai')
+    ->embeddingsProvider('openai')
     ->embeddingDimensions(1024)
     ->classifyFirst(true)
     ->minTagsForClassification(10)        // need 10+ tags before classifying
-    ->classifyConfidence(0.3)             // minimum centroid similarity
-    ->classifySamplesPerTag(5)            // passages per tag for centroid
+    ->classifyConfidence(0.3)             // minimum sidecar score
     ->similarityThreshold(0.85)           // dedup threshold
     ->maxTags(5);
 ```
@@ -116,7 +114,7 @@ To always call the LLM, turn classification off:
 
 ```php
 $props->magicTags('topic', fromField: 'content')
-    ->api('my-llm')
+    ->provider('openai')
     ->classifyFirst(false);
 ```
 
@@ -126,7 +124,7 @@ $props->magicTags('topic', fromField: 'content')
 
 ```php
 $props->magicTags('topic', fromField: 'content')
-    ->api('my-llm')
+    ->provider('openai')
     ->prompt(
         'You tag property-management support content. Return up to 5 lowercase '.
         'kebab-case tags. Prefer reusing tags from the existing list when applicable.'
@@ -143,17 +141,17 @@ $shared = 'property_app';
 $kb = new NewProperties;
 $kb->text('content')->semantic(api: 'my-embeddings', accuracy: 1, dimensions: 1024);
 $kb->magicTags('topic', fromField: 'content')
-    ->api('my-llm')
+    ->provider('openai')
     ->tagIndex($shared);
 
 $memory = new NewProperties;
 $memory->text('content')->semantic(api: 'my-embeddings', accuracy: 1, dimensions: 1024);
 $memory->magicTags('topic', fromField: 'content')
-    ->api('my-llm')
+    ->provider('openai')
     ->tagIndex($shared);
 ```
 
-Both collections write to `property_app__sigmie_magic_tags`. The `magic_field_path` of each row shows which source field produced the tag.
+Both collections write to `property_app__sigmie_magic_tags`. The `magic_field_path` of each row shows which magic tags field owns the tag.
 
 > **Note:** The LLM prompt lists existing tags from the **current** main index only. To show the LLM tags from all collections, merge the tag lists yourself before you call `merge()`.
 

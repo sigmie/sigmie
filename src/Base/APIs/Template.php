@@ -14,7 +14,7 @@ trait Template
 
     protected function templateAPICall(string $name, string $method, ?array $body = null): ElasticsearchResponse
     {
-        $uri = new Uri('/_template/'.$name);
+        $uri = new Uri('/_template/'.rawurlencode($name));
 
         $esRequest = new ElasticsearchRequest($method, $uri, $body);
 

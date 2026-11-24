@@ -11,6 +11,10 @@ use Sigmie\Mappings\Types\Text;
 use Sigmie\Semantic\Contracts\AIProvider;
 use Sigmie\Shared\Collection;
 
+use function Sigmie\Functions\trim_text;
+use function Sigmie\Functions\object_map;
+use function Sigmie\Functions\source_field_values;
+
 class Reranker
 {
     public function __construct(
@@ -21,28 +25,36 @@ class Reranker
 
     public function rerank(Search $res, string $queryString): Search
     {
-        if ($res->total() === 0) {
+        if (trim_text($queryString) === '') {
             return $res;
         }
 
-        if (trim($queryString) === '') {
+        $hits = $res->hits();
+        if ($hits === []) {
             return $res;
         }
 
         $semanticProps = $this->properties->nestedSemanticFields()->map(fn (Text $field): string => $field->name())->toArray();
 
-        $documents = (new Collection($res->hits()))->map(function (Hit $hit) use ($semanticProps): string {
+        $documents = (new Collection($hits))->map(function (Hit $hit) use ($semanticProps): string {
 
             $document = [];
 
             foreach ($semanticProps as $semanticProp) {
 
-                $text = dot($hit->_source)->get($semanticProp);
+                $values = source_field_values((object) $hit->_source, $semanticProp);
+                $text = count($values) === 1 ? $values[0] : $values;
 
                 if (is_array($text)) {
                     // Remove description part if it exists
                     $res = '';
-                    foreach ($text as $item) {
+                    foreach ((new Collection($text))->flatten() as $item) {
+                        if ($item === null) {
+                            continue;
+                        }
+
+                        $item = is_bool($item) ? ($item ? 'true' : 'false') : (string) $item;
+
                         // Parse the item to extract structured information
                         $title = '';
                         $company = '';
@@ -63,6 +75,8 @@ class Reranker
                             // $text = "$title at $company from $yearFrom to $yearTo$branchesString: $description";
                             $res .= sprintf('%s at %s from %s to %s: %s | ', $title, $company, $yearFrom, $yearTo, $description); // 29 / 60
                             // $res .= "$title at $company from $yearFrom to $yearTo | "; // 24 / 60
+                        } else {
+                            $res .= $item.' | ';
                         }
                     }
 
@@ -71,7 +85,7 @@ class Reranker
                     $text = $res;
                 }
 
-                $document[] = $semanticProp.': '.$text;
+                $document[] = $semanticProp.': '.(is_bool($text) ? ($text ? 'true' : 'false') : $text);
             }
 
             return implode('|', $document);
@@ -80,22 +94,21 @@ class Reranker
         $rerankedScores = $this->aiProvider->rerank($documents->toArray(), $queryString);
 
         $rerankedHits = [];
+        foreach ($res->json('hits.hits') as $index => $hit) {
+            $score = $rerankedScores[$index] ?? null;
+            if ($score === null || $score < $this->rerankThreshold) {
+                continue;
+            }
 
-        foreach ($res->hits() as $index => $hit) {
-            $rawHit = [
-                '_index' => $hit->_index,
-                '_id' => $hit->_id,
-                '_score' => $hit->_score,
-                '_source' => $hit->_source,
-                '_rerank_score' => $rerankedScores[$index] ?? 0,
-            ];
+            $hit['_rerank_score'] = $score;
+            if (isset($hit['_matches'])) {
+                $hit['_matches'] = object_map($hits[$index]->_matches);
+            }
 
-            $rerankedHits[] = $rawHit;
+            $rerankedHits[] = $hit;
         }
 
         usort($rerankedHits, fn ($a, $b): int => $b['_rerank_score'] <=> $a['_rerank_score']);
-
-        $rerankedHits = array_filter($rerankedHits, fn ($hit): bool => $hit['_rerank_score'] >= $this->rerankThreshold);
 
         $res->replaceHits($rerankedHits);
 

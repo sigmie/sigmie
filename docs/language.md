@@ -25,7 +25,7 @@ $sigmie->newIndex('articles')
     ->create();
 ```
 
-> **Warning:** Call `language()` directly after `newIndex()`. The language builder copies only the alias, the shard and replica counts, the registered APIs, and the collection hooks. It drops properties, token filters, char filters, and the tokenizer that you set before `language()`.
+> **Warning:** Call `language()` directly after `newIndex()`. The language builder copies the alias, shard and replica counts, serverless mode, registered APIs, and collection hooks. It drops properties, token filters, char filters, and the tokenizer that you set before `language()`.
 
 The language filters are token filters on the index `default` analyzer. They run in the order you add them, together with any generic [token filters](token-filters.md). Add the lowercase filter before the stopwords and the stemmer, because both compare lowercase words.
 

@@ -10,7 +10,7 @@ class Phrase extends Suggester
 {
     protected string $text;
 
-    protected int $ngramSize = 1;
+    protected ?int $ngramSize = null;
 
     protected array $highlight;
 
@@ -52,9 +52,11 @@ class Phrase extends Suggester
     {
         $res = parent::toRaw();
 
-        $res[$this->name][$this->type()->value]['gram_size'] = $this->ngramSize;
+        if ($this->ngramSize !== null) {
+            $res[$this->name][$this->type()->value]['gram_size'] = $this->ngramSize;
+        }
 
-        if ($this->text ?? false) {
+        if (isset($this->text)) {
             $res[$this->name]['text'] = $this->text;
         }
 

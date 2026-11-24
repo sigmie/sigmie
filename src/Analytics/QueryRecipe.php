@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Analytics;
 
-use DateTimeImmutable;
 use InvalidArgumentException;
 use Sigmie\Analytics\Enums\Period;
 use Sigmie\Mappings\Contracts\FieldContainer;
@@ -23,6 +22,11 @@ use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\ParseException;
 use Sigmie\Parse\SortParser;
 use Sigmie\SigmieIndex;
+
+use function Sigmie\Functions\csv_fields;
+use function Sigmie\Functions\is_iso_date_or_timestamp;
+use function Sigmie\Functions\parse_integer;
+use function Sigmie\Functions\merge_named;
 
 class QueryRecipe
 {
@@ -71,6 +75,9 @@ class QueryRecipe
 
     /** @var list<string> */
     private const LIMIT_WIDGETS = ['grouped_trend', 'breakdown', 'multi_breakdown', 'union_breakdown', 'grouped_metrics', 'table', 'heatmap'];
+
+    /** @var list<string> */
+    private const TERM_FIELD_TYPES = ['keyword', 'text', 'number', 'boolean', 'date'];
 
     /** @var list<string> */
     private const RANKING_WIDGETS = ['breakdown', 'multi_breakdown', 'union_breakdown', 'grouped_metrics'];
@@ -156,11 +163,16 @@ class QueryRecipe
 
     public function validateAgainst(SigmieIndex $index): static
     {
-        $fields = self::indexFields($index);
         $properties = $index->properties();
+        $mapping = $properties->get();
+        $fields = self::fieldTypes($mapping->toArray());
         $template = (array) $this->definition['template'];
+        $dateField = (string) ($template['date_field'] ?? '');
 
-        $this->requireFieldType($fields, (string) ($template['date_field'] ?? ''), ['date'], 'date_field');
+        $this->requireFieldType($fields, $dateField, ['date'], 'date_field');
+        if ($mapping->get($dateField)?->nestedPath() !== null) {
+            throw new InvalidArgumentException(sprintf('Query recipe date_field [%s] must be outside nested documents.', $dateField));
+        }
 
         foreach (['field', 'bucket_field'] as $key) {
             $field = trim((string) ($template[$key] ?? ''));
@@ -176,8 +188,12 @@ class QueryRecipe
 
         if ($widget === 'geo') {
             $this->requireFieldType($fields, $field, ['geo'], 'field');
-        } elseif ($field !== '' && ($metric !== '' && $metric !== 'count' || in_array($widget, ['distribution', 'histogram_metric', 'percentiles', 'stats'], true))) {
+        } elseif ($widget === 'percentiles') {
+            $this->requireFieldType($fields, $field, ['number', 'date'], 'field');
+        } elseif (in_array($widget, ['distribution', 'stats'], true)) {
             $this->requireFieldType($fields, $field, ['number'], 'field');
+        } elseif ($field !== '' && ($metric !== '' && $metric !== 'count')) {
+            $this->requireFieldType($fields, $field, self::metricFieldTypes($metric), 'field');
         }
 
         if (($template['bucket_field'] ?? '') !== '') {
@@ -188,7 +204,7 @@ class QueryRecipe
             $field = trim((string) ($template[$key] ?? ''));
 
             if ($field !== '') {
-                $this->requireFieldType($fields, $field, ['keyword', 'text', 'number', 'boolean'], $key);
+                $this->requireFieldType($fields, $field, self::TERM_FIELD_TYPES, $key);
             }
         }
 
@@ -200,10 +216,11 @@ class QueryRecipe
             }
         }
 
-        $groupByFields = $this->csvFields((string) ($template['group_by_fields'] ?? ''));
+        $groupByFields = csv_fields((string) ($template['group_by_fields'] ?? ''));
 
+        $groupTypes = $widget === 'union_breakdown' ? ['keyword', 'text', 'number', 'boolean'] : self::TERM_FIELD_TYPES;
         foreach ($groupByFields as $field) {
-            $this->requireFieldType($fields, $field, ['keyword', 'text', 'number', 'boolean'], 'group_by_fields');
+            $this->requireFieldType($fields, $field, $groupTypes, 'group_by_fields');
         }
 
         if ($widget === 'union_breakdown') {
@@ -211,7 +228,7 @@ class QueryRecipe
         }
 
         foreach (['fields', 'hit_fields'] as $key) {
-            foreach ($this->csvFields((string) ($template[$key] ?? '')) as $field) {
+            foreach (csv_fields((string) ($template[$key] ?? '')) as $field) {
                 $this->requireField($fields, $field, $key);
             }
         }
@@ -235,13 +252,19 @@ class QueryRecipe
                     throw new InvalidArgumentException('Query recipe grouped metric must be an object.');
                 }
 
-                $groupedMetricName = (string) ($groupedMetric['metric'] ?? '');
+                $groupedMetricName = trim((string) ($groupedMetric['metric'] ?? ''));
+                $field = trim((string) ($groupedMetric['field'] ?? ''));
 
                 if ($groupedMetricName === 'count') {
+                    if ($field !== '') {
+                        $this->requireField($fields, $field, 'metrics.field');
+                    }
+
                     continue;
                 }
 
-                $this->requireFieldType($fields, (string) ($groupedMetric['field'] ?? ''), ['number'], 'metrics.field');
+                $types = self::metricFieldTypes($groupedMetricName);
+                $this->requireFieldType($fields, $field, $types, 'metrics.field');
             }
         }
 
@@ -278,8 +301,8 @@ class QueryRecipe
 
     public static function contractFingerprint(SigmieIndex $index): string
     {
-        $fields = self::indexFields($index);
-        ksort($fields);
+        $fields = self::fieldTypes($index->properties()->get()->toArray());
+        ksort($fields, SORT_STRING);
 
         return hash('sha256', json_encode([
             'recipe_version' => 1,
@@ -300,25 +323,17 @@ class QueryRecipe
             fn (array $slot): array => self::normalizeSlot($slot),
             $definition['slots'] ?? [],
         ));
-        $validationTemplate = self::normalizeRankingSort($definition['template'] ?? []);
-        $limitSlotIndex = null;
-
-        foreach ($slots as $index => $slot) {
-            if (($slot['target'] ?? null) === 'limit') {
-                $limitSlotIndex = $index;
-
-                break;
-            }
+        $validationTemplate = $definition['template'] ?? [];
+        if (is_string($validationTemplate['widget'] ?? null)) {
+            $validationTemplate['widget'] = trim($validationTemplate['widget']);
         }
-
-        if ($limitSlotIndex !== null && array_key_exists('limit', $validationTemplate) && ! array_key_exists('default', $slots[$limitSlotIndex])) {
-            $slots[$limitSlotIndex]['default'] = self::slotValue($slots[$limitSlotIndex], $validationTemplate['limit']);
-        }
+        $validationTemplate = self::normalizeRankingSort($validationTemplate);
+        $originalTemplate = $validationTemplate;
 
         $supportsLimit = array_key_exists('limit', $validationTemplate)
             || in_array((string) ($validationTemplate['widget'] ?? ''), self::LIMIT_WIDGETS, true);
 
-        if ($limitSlotIndex === null && $supportsLimit) {
+        if (! in_array('limit', array_column($slots, 'target'), true) && $supportsLimit) {
             $limitSlot = [
                 'name' => self::availableLimitSlotName($slots),
                 'target' => 'limit',
@@ -328,10 +343,6 @@ class QueryRecipe
                 'maximum' => 100,
             ];
 
-            if (array_key_exists('limit', $validationTemplate)) {
-                $limitSlot['default'] = $validationTemplate['limit'];
-            }
-
             $slots[] = self::normalizeSlot($limitSlot);
         }
 
@@ -340,17 +351,29 @@ class QueryRecipe
         foreach ($slots as $slot) {
             $target = $slot['target'] ?? null;
 
-            if ($target !== null && ! array_key_exists($target, $validationTemplate)) {
+            // A range placeholder is removed after validation, but AnalyticsRequest drops
+            // from and to while it is set. Skip it so those dates stay on the template.
+            if ($target !== null && $target !== 'range' && (isset($slot['default']) || ! array_key_exists($target, $validationTemplate))) {
                 $validationTemplate[$target] = self::validationSlotValue($slot, $target);
             }
         }
 
         $template = AnalyticsRequest::fromArray($validationTemplate)->toArray();
 
-        foreach ($slots as $slot) {
-            if (($slot['target'] ?? null) !== null) {
-                unset($template[$slot['target']]);
+        foreach ($slots as $index => $slot) {
+            $target = $slot['target'];
+            if ($target === null) {
+                continue;
             }
+
+            if (array_key_exists($target, $originalTemplate) && ! isset($slot['default']) && (! $slot['required'] || $target === 'limit')) {
+                $value = $template[$target] ?? $originalTemplate[$target];
+                if ($value !== null && $value !== '') {
+                    $slots[$index]['default'] = self::slotValue($slot, $value);
+                }
+            }
+
+            unset($template[$target]);
         }
 
         $filters = array_values(array_map(
@@ -649,8 +672,8 @@ class QueryRecipe
 
         if ($type === 'number') {
             $value = self::slotNumber($value, (string) $slot['name']);
-            $minimum = (float) ($slot['minimum'] ?? -PHP_FLOAT_MAX);
-            $maximum = (float) ($slot['maximum'] ?? PHP_FLOAT_MAX);
+            $minimum = $slot['minimum'] ?? -PHP_FLOAT_MAX;
+            $maximum = $slot['maximum'] ?? PHP_FLOAT_MAX;
 
             if (! ($value >= $minimum && $value <= $maximum)) {
                 throw new InvalidArgumentException(sprintf('Query recipe binding [%s] is outside its allowed range.', $slot['name']));
@@ -663,20 +686,20 @@ class QueryRecipe
             throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be a string.', $slot['name']));
         }
 
-        $value = trim($value);
-        if ($value === '') {
+        $normalized = trim($value);
+        if ($normalized === '') {
             throw new InvalidArgumentException(sprintf('Query recipe binding [%s] cannot be empty.', $slot['name']));
         }
 
-        if ($type === 'period' && ! Period::tryFrom($value) instanceof Period) {
+        if ($type === 'period' && ! Period::tryFrom($normalized) instanceof Period) {
             throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be a supported period.', $slot['name']));
         }
 
         if ($type === 'date') {
-            self::validateSlotDate($value, (string) $slot['name']);
+            self::validateSlotDate($normalized, (string) $slot['name']);
         }
 
-        return $value;
+        return $type === 'string' ? $value : $normalized;
     }
 
     /**
@@ -695,27 +718,11 @@ class QueryRecipe
 
     private static function slotInteger(mixed $value, string $name): int
     {
-        if (is_int($value)) {
-            return $value;
-        }
-
-        if (! is_string($value)) {
-            throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be an integer.', $name));
-        }
-
-        $value = trim($value);
-        if (preg_match('/^-?(0|[1-9]\d*)$/D', $value) !== 1) {
-            throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be an integer.', $name));
-        }
-
-        $integer = filter_var($value, FILTER_VALIDATE_INT);
-
-        return $integer !== false
-            ? $integer
-            : throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be an integer.', $name));
+        return parse_integer($value)
+            ?? throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be an integer.', $name));
     }
 
-    private static function slotNumber(mixed $value, string $name): float
+    private static function slotNumber(mixed $value, string $name): int|float
     {
         if (! is_int($value) && ! is_float($value) && ! is_string($value)) {
             throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be numeric.', $name));
@@ -729,7 +736,7 @@ class QueryRecipe
             throw new InvalidArgumentException(sprintf('Query recipe binding [%s] must be numeric.', $name));
         }
 
-        $number = (float) $value;
+        $number = $value + 0;
 
         return is_finite($number)
             ? $number
@@ -738,16 +745,7 @@ class QueryRecipe
 
     private static function validateSlotDate(string $value, string $name): void
     {
-        $format = match (true) {
-            preg_match('/^\d{4}-\d{2}-\d{2}$/D', $value) === 1 => '!Y-m-d',
-            preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/D', $value) === 1 => '!Y-m-d\TH:i:sP',
-            preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,6}(?:Z|[+-]\d{2}:\d{2})$/D', $value) === 1 => '!Y-m-d\TH:i:s.uP',
-            default => null,
-        };
-
-        $date = $format !== null ? DateTimeImmutable::createFromFormat($format, $value) : false;
-
-        if ($date instanceof DateTimeImmutable && DateTimeImmutable::getLastErrors() === false) {
+        if (is_iso_date_or_timestamp($value)) {
             return;
         }
 
@@ -777,9 +775,9 @@ class QueryRecipe
 
     private function filterClause(string $field, string $operator, int|float|string $value): string
     {
-        $value = is_int($value) || is_float($value)
-            ? (string) $value
-            : "'".str_replace(['\\', "'", '*'], ['\\\\', "\\'", '\\*'], $value)."'";
+        $value = is_string($value)
+            ? "'".str_replace(['\\', "'", '*'], ['\\\\', "\\'", '\\*'], $value)."'"
+            : json_encode($value, JSON_THROW_ON_ERROR);
 
         return match ($operator) {
             'equals' => sprintf('%s:%s', $field, $value),
@@ -823,7 +821,7 @@ class QueryRecipe
 
     private function validateSort(NewProperties $properties, string $sort, string $argument, bool $multiple): void
     {
-        $tokens = preg_split('/\s+/', trim($sort)) ?: [];
+        $tokens = preg_split('/\s+/u', trim($sort), flags: PREG_SPLIT_NO_EMPTY) ?: [];
 
         if (! $multiple && count($tokens) !== 1) {
             throw new InvalidArgumentException('Query recipe sort must contain exactly one field.');
@@ -834,7 +832,7 @@ class QueryRecipe
                 continue;
             }
 
-            if ($multiple && preg_match('/^[\w.]+\[-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?\]:\w+:\w+$/D', $token) === 1) {
+            if (str_contains($token, '[')) {
                 continue;
             }
 
@@ -861,11 +859,15 @@ class QueryRecipe
     }
 
     /**
-     * @return array<string, string>
+     * @return list<string>
      */
-    private static function indexFields(SigmieIndex $index): array
+    private static function metricFieldTypes(string $metric): array
     {
-        return self::fieldTypes($index->properties()->get()->toArray());
+        return match ($metric) {
+            'unique' => self::TERM_FIELD_TYPES,
+            'min', 'max', 'median' => ['number', 'date'],
+            default => ['number'],
+        };
     }
 
     /**
@@ -881,10 +883,11 @@ class QueryRecipe
             $types[$name] = self::fieldType($field);
 
             if ($field instanceof FieldContainer) {
-                $types = [
-                    ...$types,
-                    ...self::fieldTypes($field->getProperties()->toArray(), $name),
-                ];
+                // Unpack renumbers a sibling named "1" to 0.
+                $types = merge_named(
+                    $types,
+                    self::fieldTypes($field->getProperties()->toArray(), $name),
+                );
             }
         }
 
@@ -895,7 +898,7 @@ class QueryRecipe
     {
         return match (true) {
             $field instanceof Number, $field instanceof Price => 'number',
-            $field instanceof Date, $field instanceof DateTime => 'date',
+            $field instanceof Date, $field instanceof DateTime, $field->type() === 'date_nanos' => 'date',
             $field instanceof Keyword, $field instanceof CaseSensitiveKeyword => 'keyword',
             $field instanceof Boolean => 'boolean',
             $field instanceof GeoPoint => 'geo',
@@ -942,14 +945,5 @@ class QueryRecipe
         if (count($types) > 1) {
             throw new InvalidArgumentException('Query recipe union_breakdown group_by_fields must have compatible types.');
         }
-    }
-
-    /** @return list<string> */
-    private function csvFields(string $fields): array
-    {
-        return array_values(array_filter(array_map(
-            fn (string $field): string => trim($field),
-            explode(',', $fields),
-        )));
     }
 }

@@ -6,12 +6,14 @@ namespace Sigmie\Index\Shared;
 
 use Composer\InstalledVersions;
 use Sigmie\Index\Analysis\Analysis as AnalysisAnalysis;
-use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Contracts\Analysis;
+use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Index\Contracts\Mappings as MappingsInterface;
 use Sigmie\Index\Mappings as IndexMappings;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
+
+use function Sigmie\Functions\merge_named;
 
 trait Mappings
 {
@@ -46,12 +48,12 @@ trait Mappings
 
     public function meta(array $meta): static
     {
-        $this->customMeta = [...$this->customMeta, ...$meta];
+        $this->customMeta = merge_named($this->customMeta, $meta);
 
         return $this;
     }
 
-    protected function createMappings(DefaultAnalyzer $defaultAnalyzer): MappingsInterface
+    protected function createMappings(Analyzer $defaultAnalyzer): MappingsInterface
     {
         $defaultMeta = [
             'created_by' => 'sigmie',
@@ -61,8 +63,8 @@ trait Mappings
 
         return new IndexMappings(
             defaultAnalyzer: $defaultAnalyzer,
-            properties: $this->properties,
-            meta: [...$defaultMeta, ...$this->customMeta],
+            properties: $this->properties->copy(),
+            meta: merge_named($defaultMeta, $this->customMeta),
         );
     }
 }

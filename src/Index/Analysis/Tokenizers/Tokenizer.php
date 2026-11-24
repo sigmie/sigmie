@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Analysis\Tokenizers;
 
-use Exception;
 use Sigmie\Index\Contracts\Tokenizer as TokenizerInterface;
 
+use function Sigmie\Functions\merge_named;
 use function Sigmie\Functions\name_configs;
 
 abstract class Tokenizer implements TokenizerInterface
@@ -25,7 +25,7 @@ abstract class Tokenizer implements TokenizerInterface
 
     public static function filterMap(array $map)
     {
-        static::$map = array_merge(static::$map, $map);
+        static::$map = merge_named(static::$map, $map);
 
         return static::$map;
     }
@@ -40,8 +40,6 @@ abstract class Tokenizer implements TokenizerInterface
             return $class::fromRaw($raw);
         }
 
-        // @codeCoverageIgnoreStart
-        throw new Exception(sprintf("Tokenizer of type '%s' doesn't exists.", $config['type']));
-        // @codeCoverageIgnoreEnd
+        return Generic::fromRaw($raw);
     }
 }

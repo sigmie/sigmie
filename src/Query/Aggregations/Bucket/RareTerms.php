@@ -10,16 +10,18 @@ class RareTerms extends Bucket
 {
     use Missing;
 
-    protected int $size;
+    protected int $maxDocCount;
 
     public function __construct(
         protected string $name,
         protected string $field,
     ) {}
 
-    public function size(int $size): void
+    public function maxDocCount(int $count): static
     {
-        $this->size = $size;
+        $this->maxDocCount = $count;
+
+        return $this;
     }
 
     protected function value(): array
@@ -29,6 +31,10 @@ class RareTerms extends Bucket
                 'field' => $this->field,
             ],
         ];
+
+        if (isset($this->maxDocCount)) {
+            $value['rare_terms']['max_doc_count'] = $this->maxDocCount;
+        }
 
         if (isset($this->missing)) {
             $value['rare_terms']['missing'] = $this->missing;

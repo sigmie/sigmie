@@ -7,6 +7,8 @@ namespace Sigmie\Query\Aggregations\Metrics;
 use Sigmie\Query\Aggregations\Bucket\Bucket;
 use Sigmie\Query\Shared\Missing;
 
+use function Sigmie\Functions\sort_clauses;
+
 class TopHits extends Bucket
 {
     use Missing;
@@ -29,16 +31,16 @@ class TopHits extends Bucket
 
         if ($this->_sources !== null) {
             $topHits['_source'] = [
-                'includes' => $this->_sources,
+                'includes' => array_values($this->_sources),
             ];
         }
 
         if ($this->sourceExcludes !== []) {
-            $topHits['_source']['excludes'] = $this->sourceExcludes;
+            $topHits['_source']['excludes'] = array_values($this->sourceExcludes);
         }
 
         if ($this->sort !== null) {
-            $topHits['sort'] = $this->sort;
+            $topHits['sort'] = sort_clauses($this->sort);
         }
 
         return [

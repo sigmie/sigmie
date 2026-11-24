@@ -17,6 +17,17 @@ use Sigmie\Testing\TestCase;
 
 class MultiSearchTest extends TestCase
 {
+    public function test_empty_raw_query_matches_all_documents(): void
+    {
+        $index = uniqid('audit_');
+        $this->sigmie->newIndex($index)->create();
+        $this->sigmie->collect($index, refresh: true)->merge([new Document(['title' => 'Star'], _id: 'star')]);
+        $multi = $this->sigmie->newMultiSearch();
+        $multi->raw($index, []);
+
+        $this->assertSame('star', $multi->hits()[0]['_id']);
+    }
+
     /**
      * @test
      */
@@ -180,7 +191,7 @@ class MultiSearchTest extends TestCase
 
         $this->assertSame(1, $response->total());
         $this->assertSame('Beta Guide', $response->hits()[0]->_source['name']);
-        $this->assertSame(1, $response->format()['facets']->type->docs);
+        $this->assertSame(1, $response->facet('type')['docs']);
         $this->assertSame('formatter-parameters', $params->getMeta()['scenario']);
         $this->assertSame($params->getMeta(), $params->toArray()['meta']);
     }

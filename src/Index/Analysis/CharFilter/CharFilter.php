@@ -7,6 +7,7 @@ namespace Sigmie\Index\Analysis\CharFilter;
 use Exception;
 use Sigmie\Index\Contracts\CharFilter as CharFilterInterface;
 
+use function Sigmie\Functions\merge_named;
 use function Sigmie\Functions\name_configs;
 
 abstract class CharFilter implements CharFilterInterface
@@ -19,7 +20,7 @@ abstract class CharFilter implements CharFilterInterface
 
     public static function filterMap(array $map)
     {
-        static::$map = array_merge(static::$map, $map);
+        static::$map = merge_named(static::$map, $map);
 
         return static::$map;
     }

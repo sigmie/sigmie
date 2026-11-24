@@ -48,7 +48,7 @@ An index holds related documents, like a table in a database. When you call `$si
 movies (alias) ──► movies_20260101120000000000 (physical index)
 ```
 
-Your code only uses `movies`. The alias exists because Elasticsearch cannot change the analysis or the field types of an index that already holds documents. To change them, Sigmie builds a new physical index, fills it, and then moves the alias to it. Searches keep using the old index until the move. [Update an index](index.md#update-an-index) and [Rebuild an index](index.md#rebuild-an-index) use this.
+Your code only uses `movies`. The alias exists because Elasticsearch cannot change the analysis or the field types of an index that already holds documents. To change them, Sigmie builds a new physical index, fills it, and then moves the alias to it. Searches keep using the old index until the move. An [update](index.md#update-an-index) copies stored documents into the new mapping. A [rebuild](index.md#rebuild-an-index) fills the index from the documents your application supplies.
 
 ### Shards split an index, replicas copy it
 
@@ -105,6 +105,8 @@ use Sigmie\Mappings\NewProperties;
 $props = new NewProperties;
 $props->title('title');
 $props->name('director');
+$props->category('genre');
+$props->number('year');
 
 $sigmie->newIndex('movies')->properties($props)->create();
 

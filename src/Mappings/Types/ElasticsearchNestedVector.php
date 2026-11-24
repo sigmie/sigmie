@@ -10,7 +10,7 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\Compound\Boolean;
-use Sigmie\Query\Queries\MatchAll;
+use Sigmie\Query\Queries\Term\Exists;
 use Sigmie\Query\Queries\Text\Nested;
 
 class ElasticsearchNestedVector extends TypesNested implements Type
@@ -23,12 +23,14 @@ class ElasticsearchNestedVector extends TypesNested implements Type
         string $name,
         int $dims = 384,
         VectorSimilarity $similarity = VectorSimilarity::Cosine,
+        protected bool $autoNormalizeVector = true,
     ) {
         $props = new NewProperties;
         $props->type(
             new DenseVector(
                 name: 'vector',
                 dims: $dims,
+                index: false,
                 similarity: $similarity,
             )
         );
@@ -46,34 +48,33 @@ class ElasticsearchNestedVector extends TypesNested implements Type
 
     protected function mapSimilarityToScript(VectorSimilarity $similarity): string
     {
-        $fullPath = $this->fullPath();
+        $fullPath = addcslashes($this->fullPath(), "'\\");
+        $dotProduct = "dotProduct(params.query_vector, '_embeddings.{$fullPath}.vector')";
+        $innerProductScore = "double value = {$dotProduct}; return value < 0 ? 1 / (1 + -value) : value + 1;";
 
         return match ($similarity) {
-            VectorSimilarity::Cosine => sprintf("cosineSimilarity(params.query_vector, '_embeddings.%s.vector') + 1.0", $fullPath),
-            VectorSimilarity::DotProduct => sprintf("dotProduct(params.query_vector, '_embeddings.%s.vector')", $fullPath),
+            VectorSimilarity::Cosine => sprintf("Math.max(0.0, cosineSimilarity(params.query_vector, '_embeddings.%s.vector') + 1.0)", $fullPath),
             VectorSimilarity::Euclidean => sprintf("1 / (1 + l2norm(params.query_vector, '_embeddings.%s.vector'))", $fullPath),
-            VectorSimilarity::MaxInnerProduct => sprintf("dotProduct(params.query_vector, '_embeddings.%s.vector')", $fullPath),
+            VectorSimilarity::DotProduct => $this->autoNormalizeVector
+                ? "Math.max(0.0, {$dotProduct} + 1.0)"
+                : $innerProductScore,
+            VectorSimilarity::MaxInnerProduct => $innerProductScore,
         };
     }
 
     public function vectorQueries(array $vector, int $k, Boolean $filter): array
     {
+        $path = '_embeddings.'.$this->fullPath();
         $source = $this->mapSimilarityToScript($this->similarity);
 
-        // Note: We use MatchAll() here instead of $filter because nested queries operate
-        // in a different scope. The $filter parameter contains parent-level filters
-        // (e.g., "active:true") which cannot be applied inside a nested query context.
-        // Parent-level filters are applied by the outer query structure in NewSearch
-        // that wraps these nested vector queries.
         return [
             new Nested(
-                '_embeddings.'.$this->fullPath(),
+                $path,
                 new FunctionScore(
-                    query: new MatchAll,
+                    query: new Exists($path.'.vector'),
                     source: $source,
-                    boostMode: 'replace',
                     params: [
-                        'query_vector' => $vector,
+                        'query_vector' => array_values($vector),
                     ]
                 )
             ),

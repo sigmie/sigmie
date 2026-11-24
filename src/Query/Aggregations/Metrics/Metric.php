@@ -7,6 +7,8 @@ namespace Sigmie\Query\Aggregations\Metrics;
 use Sigmie\Query\Contracts\Aggregation;
 use Sigmie\Query\Shared\Meta;
 
+use function Sigmie\Functions\object_map;
+
 abstract class Metric implements Aggregation
 {
     use Meta;
@@ -23,9 +25,7 @@ abstract class Metric implements Aggregation
         ]];
 
         if ($this->meta !== []) {
-            $raw[$this->name]['meta'] = [
-                ...$this->meta,
-            ];
+            $raw[$this->name]['meta'] = object_map($this->meta);
         }
 
         return $raw;

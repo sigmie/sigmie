@@ -6,6 +6,8 @@ namespace Sigmie\Query\Queries\Term;
 
 use Sigmie\Query\Queries\Query;
 
+use function Sigmie\Functions\keyed;
+
 class Term extends Query
 {
     public function __construct(
@@ -16,12 +18,10 @@ class Term extends Query
     public function toRaw(): array
     {
         return [
-            'term' => [
-                $this->field => [
-                    'value' => $this->value,
-                    'boost' => $this->boost,
-                ],
-            ],
+            'term' => keyed($this->field, [
+                'value' => $this->value,
+                'boost' => $this->boost,
+            ]),
         ];
     }
 }

@@ -11,6 +11,8 @@ related_pages: [installation, search, document]
 
 `sigmie/elasticsearch-scout` is a [Laravel Scout](https://laravel.com/docs/scout) driver. Scout sends model writes and deletes to Elasticsearch, and `Model::search()` runs through Sigmie's [search builder](search.md).
 
+> **Warning:** With this version of Sigmie, `sigmie/elasticsearch-scout` 1.0.13 returns search hits under `hits`, while its model mapper reads `hits.hits`. Use `Movie::search('Star Wars')->raw()->getData(true)['hits']` to read hits directly. Model hydration and pagination totals require a driver compatible with this response shape.
+
 The driver connects with the Elasticsearch driver only. It has no OpenSearch option.
 
 ## Install the driver
@@ -196,7 +198,7 @@ $movie->scoutMetadata()['_id'];       // "1"
 $movie->scoutMetadata()['_source'];   // the indexed document
 ```
 
-The models do not carry highlights. `Movie::search('Star Wars')->raw()` returns the search response as a `JsonResponse`, and each hit in it has a `highlight` key.
+The models do not carry highlights. `Movie::search('Star Wars')->raw()` returns the search response as a `JsonResponse`, and matching hits contain `highlight` when highlighting is enabled.
 
 ## Index dates
 

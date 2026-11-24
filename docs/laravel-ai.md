@@ -76,18 +76,18 @@ new SigmieIndexTool(app(ProductIndex::class));
 
 ## The tool suite
 
-`tools(string $baseFilter = '')` returns six tools, in this order:
+`tools(string $baseFilter = '')` returns six tools. Each name includes the index so one agent can use several suites. For the `products` index:
 
 | # | Class | `name()` | Purpose |
 |---|-------|----------|---------|
-| 0 | `SigmieIndexTool` | not defined | Query, filter, sort, facet, and paginate. |
-| 1 | `SigmieFilterValuesTool` | `discover_filter_values` | List the values of one facetable field. |
-| 2 | `SigmieSampleDocumentsTool` | `sample_documents` | Return random documents, so the agent sees the data shape. |
-| 3 | `SigmieGetDocumentsTool` | `get_documents` | Return documents by `_id`. |
-| 4 | `SigmieIndexSchemaTool` | `describe_index` | Return the field list, types, and filter syntax as structured data. |
-| 5 | `SigmieAnalyticsTool` | `analytics` | Compute one dashboard widget per call. See [Analytics](analytics.md). |
+| 0 | `SigmieIndexTool` | `search_index_products` | Query, filter, sort, facet, and paginate. |
+| 1 | `SigmieFilterValuesTool` | `discover_filter_values_products` | List the values of one facetable field. |
+| 2 | `SigmieSampleDocumentsTool` | `sample_documents_products` | Return random documents, so the agent sees the data shape. |
+| 3 | `SigmieGetDocumentsTool` | `get_documents_products` | Return documents by `_id`. |
+| 4 | `SigmieIndexSchemaTool` | `describe_index_products` | Return the field list, types, and filter syntax as structured data. |
+| 5 | `SigmieAnalyticsTool` | `analytics_products` | Compute one dashboard widget per call. See [Analytics](analytics.md). |
 
-The tool descriptions refer to the search tool as `search_index`.
+For long index names or names containing characters outside letters, digits, underscores, and hyphens, Sigmie uses a hash suffix. Read `name()` for the registered name.
 
 ## Base filters
 
@@ -138,6 +138,11 @@ Override `toolFields()` to set the fields the tools return when the agent passes
 class ArticleIndex extends SigmieIndex
 {
     use AsTool;
+
+    public function name(): string
+    {
+        return 'articles';
+    }
 
     public function properties(): NewProperties
     {
@@ -234,6 +239,11 @@ class CustomerIndex extends SigmieIndex
 {
     use AsTool;
 
+    public function name(): string
+    {
+        return 'customers';
+    }
+
     public function properties(): NewProperties
     {
         $props = new NewProperties;
@@ -297,12 +307,12 @@ Grouping: (field:'a' OR field:'b') AND other>10
 Exists check: field:*
 Sort: space-separated list of 'field:asc' or 'field:desc' ...
 Geo sort: field[lat,lon]:km:asc
-Facets: field1 field2:20 (space-separated, optional :size for keywords or :interval for numbers)
-Matching: equality filters on text/keyword fields are exact and CASE-SENSITIVE ...
+Facets: field1 field2:20 (space-separated; :size for term fields, :interval for price; number, date, and datetime take no parameter)
+Matching: equality on keyword() is case-insensitive because its normalizer lowercases. Equality on a text field's keyword subfield and on caseSensitiveKeyword() is case-sensitive. If a filter returns 0 unexpectedly, call discover_filter_values_products to confirm the exact stored value.
 Output: each hit holds `_id` plus the source fields in `fields` (null uses the index default).
 Matches: to see WHICH items of a nested field matched the query or a nested filter, ...
-Discovering valid values: if you do not know a field's valid values, call discover_filter_values ...
-Schema: call describe_index for the full structured field list, types and filter syntax.
+Discovering valid values: if you do not know a field's valid values, call discover_filter_values_products ...
+Schema: call describe_index_products for the full structured field list, types and filter syntax.
 ```
 
 A field's `description` from the mapping follows its line. A private field shows `(filter only)` instead of its capabilities. The full syntax lives in [Filter parser](filter-parser.md), [Sort parser](sort-parser.md), and [Facets](facets.md).
