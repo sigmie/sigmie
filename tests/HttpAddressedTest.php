@@ -1365,13 +1365,8 @@ class HttpAddressedTest extends TestCase
             use MgetApi;
             use Script;
             use SearchApi;
-            use SearchTemplate {
-                SearchTemplate::templateAPICall as searchTemplateCall;
-            }
+            use SearchTemplate;
             use Stats;
-            use Template {
-                Template::templateAPICall as storedTemplateCall;
-            }
             use Update;
 
             public function send(string $id): void
@@ -1386,18 +1381,30 @@ class HttpAddressedTest extends TestCase
                 $this->analyzeAPICall($id, 'text', 'default');
                 $this->statsAPICall($id);
                 $this->searchAPICall($id, []);
-                $this->searchTemplateCall($id, 'saved', []);
+                $this->templateAPICall($id, 'saved', []);
                 $this->openPointInTimeAPICall($id);
                 $this->indexAPICall($id.'/_refresh', 'POST');
                 $this->indexAPICall($id.'/_delete_by_query?refresh=true', 'POST');
                 $this->indexAPICall($id.'_*', 'GET');
                 $this->ingestAPICall($id, 'GET');
                 $this->scriptAPICall('GET', $id);
-                $this->storedTemplateCall($id, 'GET');
             }
         };
         $client->setElasticsearchConnection($connection);
         $client->send('foo#bar');
+
+        // Template and SearchTemplate both define templateAPICall, so each needs its own client.
+        $templates = new class
+        {
+            use Template;
+
+            public function send(string $id): void
+            {
+                $this->templateAPICall($id, 'GET');
+            }
+        };
+        $templates->setElasticsearchConnection($connection);
+        $templates->send('foo#bar');
 
         $this->assertSame([
             '/movies/_doc/foo%23bar',
