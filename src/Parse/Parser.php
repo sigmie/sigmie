@@ -7,6 +7,7 @@ namespace Sigmie\Parse;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\Mappings\Types\Type;
 use Sigmie\Parse\Contracts\Parser as ParserInterface;
 
 abstract class Parser implements ParserInterface
@@ -118,6 +119,6 @@ abstract class Parser implements ParserInterface
 
     protected function fieldExists(string $field): bool
     {
-        return $this->properties->get($field) !== null;
+        return $this->properties->get($field) instanceof Type;
     }
 }
