@@ -19,16 +19,20 @@ use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
+use Sigmie\Index\Analysis\TokenFilter\Synonyms;
 use Sigmie\Index\Analysis\TokenFilter\Trim;
 use Sigmie\Index\Index as RawIndex;
 use Sigmie\Index\Mappings;
 use Sigmie\Index\NewAnalyzer;
+use Sigmie\Mappings\DateBound;
 use Sigmie\Mappings\Field;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\NewSemanticField;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Traits\HasQueries;
 use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Boolean as BooleanField;
+use Sigmie\Mappings\Types\Boost;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Combo;
@@ -2897,5 +2901,177 @@ class MappingsAddressedTest extends TestCase
         $restored = Properties::create($mapping, new DefaultAnalyzer, [], Properties::ROOT_NAME);
 
         $this->assertSame($mapping['availability']['format'], $restored['availability']->toRaw()['availability']['format'] ?? null);
+    }
+
+    public function test_null_bounds_leave_date_and_ip_intervals_open(): void
+    {
+        $this->assertTrue((new Range('period'))->date()->validate('period', ['gte' => null, 'lte' => '2026-01-01'])[0]);
+        $this->assertTrue((new Range('network'))->ip()->validate('network', ['gte' => null, 'lte' => '192.0.2.1'])[0]);
+    }
+
+    public function test_name_excludes_synonyms_from_allowed_text_filters(): void
+    {
+        $this->assertSame([], (new Text('body'))->notAllowedFilters());
+        $this->assertSame([Synonyms::class], (new Name('author'))->notAllowedFilters());
+    }
+
+    public function test_long_keyword_terms_respect_indexing_and_normalization(): void
+    {
+        $value = str_repeat('a', 32767);
+        $tag = new Keyword('tag');
+        foreach ([['index' => false, 'doc_values' => false], ['normalizer' => 'custom']] as $options) {
+            $tag->restoreScalarMapping(['type' => 'keyword', ...$options]);
+            $this->assertTrue($tag->validate('tag', $value)[0]);
+        }
+
+        $tag->restoreScalarMapping(['type' => 'keyword']);
+        $this->assertFalse($tag->validate('tag', $value)[0]);
+    }
+
+    public function test_completion_objects_accept_optional_input_and_reject_unknown_keys(): void
+    {
+        $field = (new NewProperties)->completion('suggest');
+        $this->assertFalse($field->validate('suggest', 2)[0]);
+        $this->assertFalse($field->validate('suggest', ['extra' => 'text'])[0]);
+        $this->assertTrue($field->validate('suggest', ['weight' => 2])[0]);
+    }
+
+    public function test_facet_mode_and_boost_eligibility(): void
+    {
+        $field = new Keyword('genre');
+        $this->assertTrue($field->isFacetConjunctive());
+        $this->assertFalse($field->facetDisjunctive()->isFacetConjunctive());
+        $this->assertFalse((new Boost('rank'))->isFacetable());
+    }
+
+    public function test_image_fields_exclude_other_text_fields(): void
+    {
+        $fields = new NewProperties;
+        $fields->image('photo');
+        $fields->text('caption');
+        $this->assertSame(['photo'], $fields->get()->imageFields()->keys());
+    }
+
+    public function test_object_source_shapes(): void
+    {
+        $object = new Object_('details', mappingOptions: ['dynamic' => 'strict']);
+        $fields = new Properties(fields: ['details' => $object]);
+        $this->assertFalse($fields->isSourceObjectList(['name' => 'Ada']));
+        $this->assertSame(['details' => null], $fields->sourceObject(['details' => null]));
+        $this->assertSame([false, 'Strict field details has no mapped property name.'], $object->validate('details', (object) ['name' => 'Ada']));
+    }
+
+    public function test_query_callback_flattens_results_in_input_order(): void
+    {
+        $field = new class
+        {
+            use HasQueries;
+        };
+        $field->withQueries(fn (string $word): array => [new Term('title', $word), new Term('alias', $word)]);
+
+        $queries = $field->queryStringQueries(['one', 'two']);
+        $this->assertEquals([new Term('title', 'one'), new Term('alias', 'one'), new Term('title', 'two'), new Term('alias', 'two')], $queries);
+    }
+
+    public function test_flattened_term_limits_skip_unindexed_and_null_leaves(): void
+    {
+        $source = ['tag' => str_repeat('a', 32767)];
+        $this->assertFalse(FlatObject::acceptsFlattenedValue($source));
+        $this->assertTrue(FlatObject::acceptsFlattenedValue($source, ['index' => false, 'doc_values' => false]));
+        $this->assertTrue(FlatObject::acceptsFlattenedValue(['tag' => null]));
+    }
+
+    public function test_knn_encoder_keeps_empty_parameter_object(): void
+    {
+        $field = KnnVector::fromMapping('v', ['type' => 'knn_vector', 'dimension' => 2, 'method' => ['parameters' => ['encoder' => ['name' => 'flat', 'parameters' => []]]]]);
+        $this->assertSame('{"name":"flat","parameters":{}}', json_encode($field->toRaw()['v']['method']['parameters']['encoder']));
+        $this->assertSame([true, ''], $field->validate('v', [1, 0]));
+    }
+
+    public function test_geo_point_coordinate_validation_respects_mapping_options(): void
+    {
+        $field = new GeoPoint('location');
+        $field->restoreScalarMapping(['type' => 'geo_point', 'ignore_z_value' => false]);
+        $this->assertFalse($field->validate('location', [10, 20, 30])[0]);
+        $field->restoreScalarMapping(['type' => 'geo_point', 'ignore_malformed' => true]);
+        $this->assertTrue($field->validate('location', [200, 100])[0]);
+        $this->assertFalse($field->validate('location', [10, 'north'])[0]);
+    }
+
+    public function test_epoch_terms_and_ignored_malformed_dates(): void
+    {
+        $field = new DateField('date', ['epoch_millis']);
+        $this->assertTrue($field->acceptsImplicitDateTerm('1700000000000'));
+        $field->restoreScalarMapping(['type' => 'date', 'ignore_malformed' => true]);
+        $this->assertTrue($field->validate('date', 'unknown')[0]);
+    }
+
+    public function test_semantic_definition_restores_graph_options(): void
+    {
+        $field = new NewSemanticField('title');
+        $field->restoreDefinition([...$field->definition(), 'm' => 24, 'ef_construction' => 125]);
+
+        $vector = $field->make();
+        $this->assertSame(24, $vector->m());
+        $this->assertSame(125, $vector->efConstruction());
+    }
+
+    public function test_dense_vector_input_and_magnitude_constraints(): void
+    {
+        $bytes = DenseVector::fromMapping('v', ['type' => 'dense_vector', 'element_type' => 'byte', 'dims' => 1]);
+        $this->assertFalse($bytes->validate('v', 'F')[0]);
+        $vector = new DenseVector('v', dims: 1, similarity: VectorSimilarity::DotProduct);
+        $this->assertFalse($vector->validate('v', [])[0]);
+        $this->assertFalse($vector->validate('v', [1e20])[0]);
+        $this->assertFalse($vector->validate('v', [2])[0]);
+        $this->assertTrue($vector->validate('v', [1])[0]);
+    }
+
+    public function test_date_bounds_reject_objects_and_empty_strings(): void
+    {
+        $this->assertFalse(DateBound::accepts((object) [], 'epoch_millis'));
+        $this->assertFalse(DateBound::accepts('', 'epoch_millis'));
+    }
+
+    public function test_geo_shape_point_encodings(): void
+    {
+        $field = new Field('shape', 'geo_shape');
+        $this->assertTrue($field->validate('shape', 'POINT EMPTY')[0]);
+        $this->assertFalse($field->validate('shape', 'POINT broken')[0]);
+        $this->assertFalse($field->validate('shape', ['type' => 'Point', 'coordinates' => []])[0]);
+        $this->assertFalse($field->validate('shape', ['type' => 'Point', 'coordinates' => [1]])[0]);
+    }
+
+    public function test_generic_field_serializes_copy_target(): void
+    {
+        $field = (new Field('address', 'ip'))->copyTo('search');
+        $this->assertSame('search', $field->toRaw()['address']['copy_to']);
+    }
+
+    public function test_long_coercion_rejects_surrounding_whitespace(): void
+    {
+        $this->assertTrue(Number::fitsMapping('long', '42'));
+        $this->assertFalse(Number::fitsMapping('long', ' 42'));
+    }
+
+    public function test_html_keeps_highlight_around_plain_text(): void
+    {
+        $this->assertSame('a [word]', (new HTML('body'))->formatHighlight('a [word]', '[', ']'));
+    }
+
+    /** @runInSeparateProcess */
+    public function test_html_preserves_highlight_when_tag_split_exceeds_regex_limit(): void
+    {
+        $this->iniSet('pcre.jit', '0');
+        $this->iniSet('pcre.recursion_limit', '10');
+        $fragment = '[hi<a href="x">there</a>]';
+        $this->assertSame($fragment, (new HTML('body'))->formatHighlight($fragment, '[', ']'));
+    }
+
+    public function test_empty_keyword_subfields_serialize_as_an_object(): void
+    {
+        $field = new Keyword('tag');
+        $field->restoreScalarMapping(['type' => 'keyword', 'fields' => []]);
+        $this->assertSame('{}', json_encode($field->toRaw()['tag']['fields']));
     }
 }
