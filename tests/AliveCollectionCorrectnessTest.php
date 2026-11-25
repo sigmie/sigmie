@@ -1446,4 +1446,84 @@ class AliveCollectionCorrectnessTest extends TestCase
             $this->assertSame($document->_source, $document::fromRaw($raw)->_source);
         }
     }
+
+    public function test_single_document_rethrows_a_payload_too_large_error(): void
+    {
+        $error = new ElasticsearchException(['type' => 'content_too_long_exception'], 413);
+        $connection = $this->createMock(ElasticsearchConnection::class);
+        $connection->method('driver')->willReturn(new Elasticsearch);
+        $connection->expects($this->once())->method('__invoke')->willThrowException($error);
+
+        $this->expectExceptionObject($error);
+        (new AliveCollection('movies', $connection))->add(new Document(['title' => 'Matrix']));
+    }
+
+    public function test_bulk_item_error_never_assigns_document_identity(): void
+    {
+        [$collection] = $this->movies('{"items":[{"create":{"status":201,"_id":"1","_index":"movies","error":{"type":"write_failed","reason":"Write failed"}}}]}');
+        $document = new Document(['title' => 'Matrix']);
+
+        try {
+            $collection->add($document);
+            $this->fail('Expected a bulk item exception.');
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame('write_failed', $elasticsearchException->json('type'));
+            $this->assertFalse(isset($document->_id));
+            $this->assertFalse(isset($document->_index));
+        }
+    }
+
+    public function test_merge_without_an_alias_uses_upsert_when_patch_index_is_missing(): void
+    {
+        [$collection, $captured] = $this->movies(
+            '{"items":[{"update":{"status":201,"_id":"1","_index":"movies"}}]}',
+            '{"docs":[{"_id":"1","error":{"type":"index_not_found_exception"}}]}',
+        );
+        $properties = new NewProperties;
+        $properties->keyword('title');
+        $properties->combo('label', ['title']);
+
+        $collection->properties($properties)->merge([new Document(['title' => 'Matrix'], '1')]);
+
+        $this->assertSame(['/movies/_mget', '/movies/_bulk'], $captured->paths);
+        $this->assertSame([
+            ['update' => ['_id' => '1']],
+            ['doc' => ['title' => 'Matrix', 'label' => 'Matrix'], 'doc_as_upsert' => true],
+        ], $this->ndjson($captured->bodies[1]));
+    }
+
+    public function test_merge_reports_patch_item_errors_before_writing(): void
+    {
+        [$collection, $captured] = $this->movies('{}', '{"docs":[{"_id":"1","status":403,"error":{"type":"security_exception"}}]}');
+        $properties = new NewProperties;
+        $properties->keyword('title');
+        $properties->combo('label', ['title']);
+
+        try {
+            $collection->properties($properties)->merge([new Document(['title' => 'Matrix'], '1')]);
+            $this->fail('Expected a patch read exception.');
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame(403, $elasticsearchException->getCode());
+            $this->assertSame('security_exception', $elasticsearchException->json('type'));
+            $this->assertSame(['/movies/_mget'], $captured->paths);
+        }
+    }
+
+    public function test_merge_rejects_a_patch_for_a_document_without_source(): void
+    {
+        [$collection, $captured] = $this->movies('{}', '{"docs":[{"_id":"1","found":true}]}');
+        $properties = new NewProperties;
+        $properties->keyword('title');
+        $properties->combo('label', ['title']);
+
+        try {
+            $collection->properties($properties)->merge([new Document(['title' => 'Matrix'], '1')]);
+            $this->fail('Expected a missing source exception.');
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame(400, $elasticsearchException->getCode());
+            $this->assertSame('illegal_argument_exception', $elasticsearchException->json('type'));
+            $this->assertSame("Cannot patch document '1' without _source.", $elasticsearchException->json('reason'));
+            $this->assertSame(['/movies/_mget'], $captured->paths);
+        }
+    }
 }

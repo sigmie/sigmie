@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Carbon\Carbon;
+use Elastic\Transport\Exception\CloudIdParseException;
 use Elastic\Transport\Exception\NoNodeAvailableException;
 use Elastic\Transport\NodePool\NodePoolInterface;
 use Elastic\Transport\TransportBuilder;
@@ -2135,5 +2136,26 @@ PHP_WRAP
         $this->expectExceptionCode(404);
         $this->expectExceptionMessage('No index named missing');
         $sigmie->newQuery('missing')->matchAll()->promise()->wait();
+    }
+
+    public function test_response_reports_invalid_gzip(): void
+    {
+        $response = Response::fromPsrResponse(new PsrResponse(200, ['Content-Encoding' => 'gzip'], 'invalid gzip'));
+
+        try {
+            $response->json();
+            $this->fail('Expected a gzip decoding exception.');
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame(200, $elasticsearchException->getCode());
+            $this->assertSame('invalid_gzip_response', $elasticsearchException->json('type'));
+        }
+    }
+
+    public function test_create_for_cloud_rejects_a_missing_elasticsearch_id(): void
+    {
+        $this->expectException(CloudIdParseException::class);
+        $this->expectExceptionMessage('Cloud ID not valid');
+
+        Sigmie::createForCloud('deploy:'.base64_encode('example.com$'), 'test-key');
     }
 }

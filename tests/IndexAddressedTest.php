@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Carbon\Carbon;
+use Exception;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Http\Promise\FulfilledPromise;
 use Http\Promise\Promise;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionProperty;
@@ -21,11 +23,13 @@ use Sigmie\Base\ElasticsearchException;
 use Sigmie\Document\Document;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Index\Alias\Actions as AliasActions;
+use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\BuiltInAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\Noop;
+use Sigmie\Index\Contracts\Language;
 use Sigmie\Index\Index;
 use Sigmie\Index\IndexRebuild;
 use Sigmie\Index\IndexTemplate;
@@ -1824,5 +1828,395 @@ class IndexAddressedTest extends TestCase
         ));
 
         $this->assertSame($later, (new Sigmie($connection))->rebuilding('movies')?->name);
+    }
+
+    public function test_starting_an_update_requires_a_reindex_task_id(): void
+    {
+        $connection = $this->indexResponses(['POST /_reindex' => new PsrResponse(200, [], '{}')]);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Reindex did not return a task ID.');
+
+        new IndexUpdateTask($connection, 'source', 'dest', 'movies', 'movies', 0);
+    }
+
+    public function test_unpacking_an_update_requires_its_task_id(): void
+    {
+        $connection = $this->createMock(ElasticsearchConnection::class);
+        $connection->expects($this->never())->method('__invoke');
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Packed index update is missing its task ID.');
+
+        IndexUpdateTask::unpack($connection, [
+            'source' => 'source',
+            'dest' => 'dest',
+            'old_alias' => 'movies',
+            'new_alias' => 'movies',
+            'requested_replicas' => 0,
+        ]);
+    }
+
+    public function test_task_status_requires_a_boolean_completion_flag(): void
+    {
+        $connection = $this->indexResponses(['GET /_tasks/node%3A1' => new PsrResponse(200, [], '{"completed":"true"}')]);
+        $task = new IndexUpdateTask($connection, 'source', 'dest', 'movies', 'movies', 0, task: 'node:1');
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Reindex task status did not report whether it completed.');
+
+        $task->isCompleted();
+    }
+
+    public function test_unsuccessful_completed_task_restores_source_writes(): void
+    {
+        $connection = $this->indexResponses([
+            'GET /_tasks/node%3A1' => new PsrResponse(200, [], '{"completed":true,"response":{"failures":[],"timed_out":false,"updated":1}}'),
+            'HEAD /source' => new PsrResponse(200),
+            'PUT /source/_settings' => new PsrResponse(200, [], '{"acknowledged":true}'),
+        ], ['PUT /source/_settings' => ['index' => ['blocks.write' => false]]], requestCount: 3);
+        $task = new IndexUpdateTask($connection, 'source', 'dest', 'movies', 'movies', 0, task: 'node:1');
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Reindex did not complete successfully.');
+
+        $task->isCompleted();
+    }
+
+    public function test_finish_rejects_an_update_that_is_still_running(): void
+    {
+        $connection = $this->indexResponses([
+            'HEAD /_alias/movies' => new PsrResponse(404),
+            'GET /_tasks/node%3A1' => new PsrResponse(200, [], '{"completed":false}'),
+        ]);
+        $task = new IndexUpdateTask($connection, 'source', 'dest', 'movies', 'movies', 0, task: 'node:1');
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Index update is not completed.');
+
+        $task->finish();
+    }
+
+    public function test_wait_and_finish_propagates_a_task_permission_error(): void
+    {
+        $error = new ElasticsearchException(['type' => 'security_exception'], 403);
+        $connection = $this->indexResponses(['GET /_tasks/node%3A1' => $error]);
+        $task = new IndexUpdateTask($connection, 'source', 'dest', 'movies', 'movies', 0, task: 'node:1');
+        $this->expectExceptionObject($error);
+
+        $task->waitAndFinish();
+    }
+
+    public function test_null_shard_settings_keep_the_configured_counts(): void
+    {
+        $settings = (new NewIndex($this->connection()))
+            ->alias('movies')
+            ->shards(2)
+            ->replicas(1)
+            ->config('index.number_of_shards', null)
+            ->config('index.number_of_replicas', null)
+            ->make()
+            ->settings;
+
+        $this->assertSame(2, $settings->primaryShards());
+        $this->assertSame(1, $settings->replicaShards());
+    }
+
+    public function test_shard_count_rejects_fractional_values(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("The index setting 'index.number_of_shards' requires an integer.");
+
+        (new NewIndex($this->connection()))->config('index.number_of_shards', '2.5');
+    }
+
+    public function test_language_selection_uses_its_configured_tokenizer(): void
+    {
+        $connection = $this->connection();
+        $english = (new English)->builder($connection)->dontTokenize('whole_title');
+        $language = $this->createStub(Language::class);
+        $language->method('builder')->willReturn($english);
+
+        $analysis = (new NewIndex($connection))
+            ->alias('movies')
+            ->language($language)
+            ->make()
+            ->settings
+            ->analysis()
+            ->toRaw();
+
+        $this->assertSame('whole_title', $analysis['analyzer']['default']['tokenizer']);
+        $this->assertSame(['type' => 'keyword'], $analysis['tokenizer']['whole_title']);
+    }
+
+    public function test_configuring_a_builtin_default_analyzer_pipeline_fails(): void
+    {
+        $builder = new NewIndex($this->connection());
+        $builder->analysis()->addAnalyzer(new BuiltInAnalyzer('default', ['type' => 'standard']));
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The default analyzer must be custom to configure its pipeline.');
+
+        $builder->dontTokenize();
+    }
+
+    public function test_create_if_not_exists_propagates_permission_errors(): void
+    {
+        $error = new ElasticsearchException(['type' => 'security_exception'], 403);
+        $connection = $this->indexResponses([
+            'HEAD /_alias/movies' => new PsrResponse(404),
+            'HEAD /movies' => $error,
+        ]);
+        $this->expectExceptionObject($error);
+
+        (new NewIndex($connection))->alias('movies')->createIfNotExists();
+    }
+
+    public function test_create_if_not_exists_reports_a_conflicting_physical_index(): void
+    {
+        $connection = $this->indexResponses([
+            'HEAD /_alias/movies' => new PsrResponse(404),
+            'HEAD /movies' => new PsrResponse(200),
+            'GET /movies' => new PsrResponse(200, [], '{"movies":{"aliases":{},"settings":{},"mappings":{}}}'),
+        ]);
+        $this->expectException(AliasAlreadyExists::class);
+        $this->expectExceptionMessage("An index with alias 'movies' already exists.");
+
+        (new NewIndex($connection))->alias('movies')->createIfNotExists();
+    }
+
+    public function test_search_synonyms_reject_a_builtin_default_analyzer(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Search synonyms require a custom default analyzer.');
+
+        (new NewIndex($this->connection()))
+            ->alias('movies')
+            ->config('analysis.analyzer.default', ['type' => 'keyword'])
+            ->searchSynonyms(['film, movie'])
+            ->make();
+    }
+
+    public function test_rebuild_finish_never_deletes_the_destination_from_a_retirement_list(): void
+    {
+        $connection = $this->indexResponses([
+            'HEAD /_alias/movies' => new PsrResponse(200),
+            'GET /_alias/movies' => new PsrResponse(200, [], '{"dest":{"aliases":{"movies":{}}}}'),
+            'GET /movies' => new PsrResponse(200, [], '{"dest":{"aliases":{"movies":{}},"settings":{},"mappings":{}}}'),
+        ]);
+        $rebuild = new IndexRebuild($connection, 'movies', 'dest', 0, startedOn: ['dest']);
+
+        $this->assertSame('dest', $rebuild->finish()->name);
+    }
+
+    public function test_rebuild_does_not_delete_a_source_if_retirement_cannot_be_confirmed(): void
+    {
+        $retired = '.sigmie-retired-'.hash('sha256', 'dest');
+        $connection = $this->indexResponses([
+            'HEAD /_alias/movies' => new PsrResponse(200),
+            'GET /_alias/movies' => new PsrResponse(200, [], '{"dest":{"aliases":{"movies":{}}}}'),
+            'HEAD /source/_alias/'.$retired => new PsrResponse(204),
+        ]);
+        $rebuild = new IndexRebuild($connection, 'movies', 'dest', 0, startedOn: ['source']);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("Could not confirm retirement of 'source'.");
+
+        $rebuild->finish();
+    }
+
+    public function test_failed_update_propagates_an_error_releasing_its_destination_lock(): void
+    {
+        $owner = '.sigmie-update-source-'.hash('sha256', 'dest');
+        $lock = '.sigmie-update-lock-'.hash('sha256', 'source');
+        $error = new ElasticsearchException(['type' => 'security_exception'], 403);
+        $connection = $this->indexResponses([
+            'GET /_tasks/node%3A1' => new PsrResponse(200, [], '{"completed":true,"response":{"failures":[],"timed_out":false,"updated":1}}'),
+            'PUT /'.$owner.'/_settings' => new ElasticsearchException(['type' => 'index_not_found_exception'], 404),
+            'DELETE /dest/_alias/'.$lock => $error,
+        ]);
+        $task = new IndexUpdateTask($connection, 'source', 'dest', 'movies', 'movies', 0, task: 'node:1', ownsUpdateLock: true);
+        $this->expectExceptionObject($error);
+
+        $task->isCompleted();
+    }
+
+    public function test_update_does_not_promote_an_index_when_settings_are_unacknowledged(): void
+    {
+        $connection = $this->indexResponses([
+            'HEAD /_alias/movies' => new PsrResponse(404),
+            'GET /_tasks/node%3A1' => new PsrResponse(200, [], '{"completed":true,"response":{"failures":[],"timed_out":false}}'),
+            'PUT /dest/_settings' => new PsrResponse(200, [], '{}'),
+        ]);
+        $task = new IndexUpdateTask($connection, 'source', 'dest', 'movies', 'movies', 0, task: 'node:1');
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("Destination settings for 'dest' were not acknowledged.");
+
+        $task->finish();
+    }
+
+    public function test_rebuild_rejects_an_unexpected_alias_lookup_status(): void
+    {
+        $connection = $this->indexResponses(['HEAD /_alias/movies' => new PsrResponse(204)]);
+        $rebuild = new IndexRebuild($connection, 'movies', 'dest', 0);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("Could not resolve alias 'movies'.");
+
+        $rebuild->finish();
+    }
+
+    public function test_finishing_an_update_refuses_to_replace_an_occupied_new_alias(): void
+    {
+        $connection = $this->indexResponses([
+            'HEAD /_alias/new-movies' => new PsrResponse(200),
+            'GET /_alias/new-movies' => new PsrResponse(200, [], '{"occupied":{"aliases":{"new-movies":{}}}}'),
+            'GET /_tasks/node%3A1' => new PsrResponse(200, [], '{"completed":true,"response":{"failures":[],"timed_out":false}}'),
+            'PUT /dest/_settings' => new PsrResponse(200, [], '{"acknowledged":true}'),
+        ]);
+        $task = new IndexUpdateTask($connection, 'source', 'dest', 'movies', 'new-movies', 0, task: 'node:1');
+        $this->expectException(AliasAlreadyExists::class);
+        $this->expectExceptionMessage("An index with alias 'new-movies' already exists.");
+
+        $task->finish();
+    }
+
+    public function test_rebuild_rejects_source_indices_with_different_alias_filters(): void
+    {
+        $connection = $this->indexResponses([
+            'HEAD /_alias/movies' => new PsrResponse(200),
+            'GET /_alias/movies' => new PsrResponse(200, [], '{"one":{"aliases":{"movies":{"filter":{"term":{"year":1999}}}}},"two":{"aliases":{"movies":{"filter":{"term":{"year":2003}}}}}}'),
+            'GET /one,two' => new PsrResponse(200, [], '{"one":{"aliases":{"movies":{}}},"two":{"aliases":{"movies":{}}}}'),
+            'POST /dest/_refresh' => new PsrResponse(200, [], '{}'),
+            'GET /dest/_count' => new PsrResponse(200, [], '{"count":2}'),
+            'PUT /dest/_settings' => new PsrResponse(200, [], '{"acknowledged":true}'),
+        ]);
+        $rebuild = new IndexRebuild($connection, 'movies', 'dest', 0, startedOn: ['one', 'two'], refresh: '1s');
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("Alias 'movies' has different settings on its source indices.");
+
+        $rebuild->finish();
+    }
+
+    public function test_abort_keeps_the_index_if_its_alias_update_is_unacknowledged(): void
+    {
+        $connection = $this->indexResponses(['POST /_aliases' => new PsrResponse(200, [], '{"acknowledged":false}')]);
+        $rebuild = new IndexRebuild($connection, 'movies', 'dest', 0);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("Alias update for 'movies' was not acknowledged.");
+
+        $rebuild->abort();
+    }
+
+    public function test_aliased_index_requires_an_alias_in_the_payload(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('An aliased index payload needs an alias name.');
+
+        AliasedIndex::fromRaw('movies', ['aliases' => [], 'settings' => [], 'mappings' => []]);
+    }
+
+    public function test_disabling_writes_requires_acknowledgement_by_all_shards(): void
+    {
+        $connection = $this->indexResponses([
+            'PUT /source/_block/write' => new PsrResponse(200, [], '{"acknowledged":true,"shards_acknowledged":false,"indices":[{"name":"source","blocked":true}]}'),
+        ]);
+        $index = new AliasedIndex('source', 'movies');
+        $index->setElasticsearchConnection($connection);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("Write block for 'source' was not acknowledged by all shards.");
+
+        $index->disableWrite();
+    }
+
+    public function test_abort_succeeds_when_the_rebuild_index_is_already_missing(): void
+    {
+        $marker = '.sigmie-rebuild-aborted-'.hash('sha256', 'dest');
+        $connection = $this->indexResponses([
+            'POST /_aliases' => new ElasticsearchException(['type' => 'index_not_found_exception'], 404),
+        ], ['POST /_aliases' => ['actions' => [
+            ['remove' => ['index' => 'dest', 'alias' => IndexRebuild::pendingAlias('dest'), 'must_exist' => true]],
+            ['add' => ['index' => 'dest', 'alias' => $marker, 'is_hidden' => true]],
+        ]]], requestCount: 1);
+        $rebuild = new IndexRebuild($connection, 'movies', 'dest', 0);
+
+        $rebuild->abort();
+    }
+
+    public function test_abort_reports_an_unexpected_marker_lookup_status(): void
+    {
+        $marker = '.sigmie-rebuild-aborted-'.hash('sha256', 'dest');
+        $connection = $this->indexResponses([
+            'POST /_aliases' => new ElasticsearchException(['type' => 'aliases_not_found_exception'], 404),
+            'HEAD /dest/_alias/'.$marker => new PsrResponse(204),
+        ]);
+        $rebuild = new IndexRebuild($connection, 'movies', 'dest', 0);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("Could not resolve abort status for 'dest'.");
+        $this->expectExceptionCode(404);
+
+        $rebuild->abort();
+    }
+
+    public function test_index_settings_reject_scalar_analysis(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The analysis setting requires an array of named components.');
+
+        (new Settings)->config('index.analysis', 'standard')->toRaw();
+    }
+
+    public function test_analysis_rejects_a_conflicting_token_filter_definition(): void
+    {
+        $stored = Analysis::fromRaw(['filter' => ['common_words' => ['type' => 'stop', 'stopwords' => ['the']]]]);
+        $incoming = Analysis::fromRaw(['filter' => ['common_words' => ['type' => 'stop', 'stopwords' => ['a']]]]);
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Token filter `common_words` already exists.');
+
+        $incoming->registerFieldComponents($stored);
+    }
+
+    public function test_analysis_rejects_a_conflicting_char_filter_definition(): void
+    {
+        $stored = Analysis::fromRaw(['char_filter' => ['symbols' => ['type' => 'mapping', 'mappings' => ['& => and']]]]);
+        $incoming = Analysis::fromRaw(['char_filter' => ['symbols' => ['type' => 'mapping', 'mappings' => ['& => plus']]]]);
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Char filter name `symbols` already exists.');
+
+        $incoming->registerFieldComponents($stored);
+    }
+
+    public function test_mapping_ignores_combo_metadata_for_a_missing_parent(): void
+    {
+        $mapping = Mappings::create([
+            'properties' => ['title' => ['type' => 'keyword']],
+            '_meta' => [
+                '_sigmie_fields' => [
+                    'version' => 1,
+                    'fields' => [['path' => 'removed.label', 'combo' => ['name' => 'label', 'sources' => ['title']], 'vectors' => []]],
+                ],
+            ],
+        ], []);
+
+        $this->assertSame(['title'], $mapping->fieldNames());
+        $this->assertArrayNotHasKey('_sigmie_fields', (array) $mapping->toRaw(new Elasticsearch)['_meta']);
+    }
+
+    private function indexResponses(array $responses, array $expectedBodies = [], ?int $requestCount = null): ElasticsearchConnection
+    {
+        $connection = $this->createMock(ElasticsearchConnection::class);
+        $connection->method('driver')->willReturn(new Elasticsearch);
+        $connection->method('isServerless')->willReturn(false);
+        $calls = $requestCount === null ? $this->atLeastOnce() : $this->exactly($requestCount);
+        $connection->expects($calls)->method('__invoke')->willReturnCallback(
+            function (ElasticsearchRequest $request) use ($responses, $expectedBodies): ElasticsearchResponse {
+                $key = $request->getMethod().' '.$request->getUri()->getPath();
+                $this->assertArrayHasKey($key, $responses);
+                if (isset($expectedBodies[$key])) {
+                    $this->assertSame($expectedBodies[$key], json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR));
+                }
+
+                $response = $responses[$key];
+                if ($response instanceof ElasticsearchException) {
+                    throw $response;
+                }
+
+                return $request->response($response);
+            },
+        );
+
+        return $connection;
     }
 }
