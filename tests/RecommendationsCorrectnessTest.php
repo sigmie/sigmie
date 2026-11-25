@@ -558,4 +558,12 @@ class RecommendationsCorrectnessTest extends TestCase
         );
         $this->assertSame('similar', $ranked[0]['_id']);
     }
+
+    public function test_stale_seed_vectors_for_an_unmapped_field_match_nothing(): void
+    {
+        $connection = $this->respondingConnection([[0.5, 0.5]]);
+        $raw = (new NewRecommendations('products', $connection))->properties(new NewProperties)
+            ->field('title')->seedIds(['seed'])->make()->toRaw();
+        $this->assertArrayHasKey('match_none', $raw['query']);
+    }
 }

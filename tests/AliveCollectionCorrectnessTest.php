@@ -1526,4 +1526,52 @@ class AliveCollectionCorrectnessTest extends TestCase
             $this->assertSame(['/movies/_mget'], $captured->paths);
         }
     }
+
+    public function test_patch_merges_sources_when_embedding_generation_is_disabled(): void
+    {
+        $props = new NewProperties;
+        $props->text('title')->semantic('model');
+        $patch = new Document(['title' => 'updated']);
+        $processor = new DocumentProcessor($props->get());
+        $this->assertSame([], $processor->applyPatch($patch, ['status' => 'open'], false));
+        $this->assertSame(['status' => 'open', 'title' => 'updated'], $patch->_source);
+    }
+
+    public function test_partial_embedding_batch_embeds_plain_completion_inputs_only_for_selected_fields(): void
+    {
+        $props = new NewProperties;
+        $props->text('title')->semantic('model', dimensions: 8);
+        $props->text('suggest')->completion()->semantic('model', dimensions: 8, accuracy: 1);
+        $api = new FakeEmbeddingsApi($this->createStub(EmbeddingsApi::class), 10);
+        $processor = (new DocumentProcessor($props->get()))->apis(['model' => $api]);
+        $doc = new Document(['title' => 'untouched', 'suggest' => ['Star Trek', 'Stargate'], '_embeddings' => ['title' => ['v' => [1]]]]);
+        $processor->populateEmbeddingsBatch([$doc], [['fields' => ['suggest'], 'embeddings' => new Document([])]]);
+        $this->assertSame(['Star Trek Stargate'], array_column($api->getBatchEmbedCalls()[0], 'text'));
+        $this->assertSame(['v' => [1]], $doc['_embeddings']['title']);
+    }
+
+    public function test_literal_dotted_date_leaves_an_unmapped_prefix_untouched(): void
+    {
+        $props = new NewProperties;
+        $props->date('event.date');
+
+        $date = Carbon::parse('2026-01-02');
+        $doc = new Document(['event.date' => $date, 'event' => ['date' => $date]]);
+        (new DocumentProcessor($props->get()))->formatDateTimeFields($doc);
+        $this->assertSame('2026-01-02', $doc->_source['event.date']);
+        $this->assertSame($date, $doc->_source['event']['date']);
+    }
+
+    public function test_combo_under_a_dotted_container_skips_unmapped_prefixes(): void
+    {
+        $props = new NewProperties;
+        $props->object('order.item', function (NewProperties $item): void {
+            $item->keyword('name');
+            $item->combo('label', ['name']);
+        });
+        $doc = new Document(['order.item' => ['name' => 'book'], 'order' => ['item' => ['name' => 'other']]]);
+        (new DocumentProcessor($props->get()))->populateComboFields($doc);
+        $this->assertSame('book', $doc->_source['order.item']['label']);
+        $this->assertSame(['item' => ['name' => 'other']], $doc->_source['order']);
+    }
 }

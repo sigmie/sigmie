@@ -53,6 +53,8 @@ use Sigmie\Query\Aggs;
 use Sigmie\Query\NewQuery;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\MatchAll;
+use Sigmie\Query\Queries\MatchNone;
+use Sigmie\Query\Queries\Raw;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
@@ -75,6 +77,7 @@ use Sigmie\Search\NewMultiSearch;
 use Sigmie\Search\NewRerank;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewTemplate;
+use Sigmie\Search\PointInTimeIterator;
 use Sigmie\Search\RawQuery;
 use Sigmie\Search\RRF;
 use Sigmie\Search\SearchContext;
@@ -86,6 +89,7 @@ use Sigmie\Testing\FakeEmbeddingsApi;
 use Sigmie\Testing\FakeRerankApi;
 use stdClass;
 use Symfony\Component\Yaml\Yaml;
+use UnexpectedValueException;
 
 use function Sigmie\Functions\object_map;
 
@@ -4983,5 +4987,215 @@ class SearchCorrectnessTest extends TestCase
         ]]]], ['items.part.author.name']);
 
         $this->assertSame(['items.part.author.name' => ['Ada', 'Grace']], Yaml::parse($payload[0]));
+    }
+
+    public function test_scalar_raw_query_preserves_original_text(): void
+    {
+        $this->assertSame(['false'], (new Raw('false'))->toRaw());
+    }
+
+    public function test_raw_query_keeps_lists_of_term_objects(): void
+    {
+        $json = '{"bool":{"filter":[{"term":{"status":"open"}}]}}';
+        $this->assertSame([['term' => ['status' => 'open']]], (new Raw($json))->toRaw()['bool']['filter']);
+    }
+
+    public function test_highlight_field_zero_accepts_multiple_or_reserved_options(): void
+    {
+        foreach ([['type' => 'plain', 'fragment_size' => 30], ['highlight_query' => ['match_all' => (object) []]]] as $options) {
+            $raw = (new Search($this->connection()))->highlight(['fields' => [$options]])->toRaw();
+            $this->assertSame(json_encode((object) [0 => $options]), json_encode($raw['highlight']['fields']));
+        }
+    }
+
+    public function test_repeated_filter_directive_stays_in_the_filter_text(): void
+    {
+        $this->assertSame(['query_string' => 'books ', 'filter_string' => 'a FILTER b', 'sort_string' => 'date'],
+            (new InputParser(new Properties))->parse('books FILTER a FILTER b SORT date'));
+    }
+
+    public function test_sort_rejects_invalid_utf8(): void
+    {
+        $parser = new SortParser(new Properties, false);
+        $this->assertSame([], $parser->parse("\xff"));
+        $this->assertSame([['message' => 'Sort expression contains invalid UTF-8.']], $parser->errors());
+    }
+
+    public function test_facet_reports_the_unparseable_selection(): void
+    {
+        $parser = new FacetParser(new Properties, false);
+        $this->assertSame('', $parser->parseFilterString('broken'));
+        $this->assertSame('broken', $parser->errors()[0]['field']);
+    }
+
+    public function test_relative_filter_fields_use_the_parent_path(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('status');
+
+        $query = (new FilterParser($props))->parentPath('orders')->handleIs('status:true');
+        $this->assertTrue($query->toRaw()['term']['orders.status']['value']);
+    }
+
+    public function test_invalid_list_item_matches_nothing(): void
+    {
+        $parser = new FilterParser(new Properties, false);
+        $this->assertInstanceOf(MatchNone::class, $parser->handleIn('brand:[two words]'));
+        $this->assertSame("Invalid list item 'two words'.", $parser->errors()[0]['message']);
+    }
+
+    public function test_numeric_ranges_reject_date_math(): void
+    {
+        $props = new NewProperties;
+        $props->number('price');
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage("Invalid inclusive range 'price:1..now'.");
+        (new FilterParser($props))->handleBetween('price:1..now');
+    }
+
+    public function test_unknown_boolean_filter_has_no_query(): void
+    {
+        $parser = new FilterParser(new Properties, false);
+        $this->assertNull($parser->handleIs('missing:true'));
+        $this->assertSame('missing', $parser->errors()[0]['field']);
+    }
+
+    public function test_nested_alternatives_share_the_parent_facet_scope(): void
+    {
+        $props = new NewProperties;
+        $props->nested('orders', function (NewProperties $order): void {
+            $order->keyword('state');
+            $order->nested('items', fn (NewProperties $items): Keyword => $items->keyword('sku'));
+        });
+        $field = $props->get()->get('orders.items.sku');
+        $filters = (new FilterParser($props))->nestedFacetFilters($field, 'orders:{state:open OR state:closed}', 'orders.items');
+        $this->assertSame(['orders', 'orders.items'], array_keys($filters));
+        $this->assertStringContainsString('"should"', json_encode($filters['orders']->toRaw()));
+    }
+
+    public function test_invalid_alternative_uses_root_scope(): void
+    {
+        $props = new NewProperties;
+        $props->nested('items', fn (NewProperties $items): Keyword => $items->keyword('sku'));
+
+        $parser = new FilterParser($props, false);
+        $filters = $parser->nestedFacetFilters($props->get()->get('items.sku'), 'items.sku:book OR broken', 'items');
+        $this->assertSame(['', 'items'], array_keys($filters));
+    }
+
+    public function test_facet_alias_skips_an_existing_custom_name(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('brand');
+
+        $raw = $this->search($props)->facets('brand')->aggregate(function (Aggs $aggs): void {
+            $aggs->max('brand', 'rating');
+            $aggs->max('_facet_brand', 'price');
+        })->makeSearch()->toRaw()['aggs'];
+        $this->assertArrayHasKey('filter', $raw['__facet_brand']);
+        $this->assertSame('price', $raw['_facet_brand']['max']['field']);
+    }
+
+    public function test_collapsed_hits_respect_disabled_source(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('brand');
+
+        $raw = $this->search($props)->retrieve([])->uniqueBy('brand', top: 2)->makeSearch()->toRaw();
+        $this->assertFalse($raw['collapse']['inner_hits']['_source']);
+    }
+
+    public function test_semantic_field_without_an_api_omits_knn(): void
+    {
+        $props = new NewProperties;
+        $props->text('title')->semantic('absent', dimensions: 128);
+        $raw = $this->search($props)->semantic()->queryString('book')->makeSearch()->toRaw();
+        $this->assertArrayNotHasKey('knn', $raw);
+        $this->assertStringContainsString('book', json_encode($raw['query']));
+    }
+
+    public function test_seeding_a_registered_api_preserves_vector_magnitude(): void
+    {
+        $search = $this->search(new NewProperties)->apis(['book' => $this->createStub(EmbeddingsApi::class)]);
+        $search->setVectorPool(['guide' => [2 => [3, 4]]], 'book');
+        $this->assertSame([3, 4], $search->getVectorPool('book')->get('guide', 2));
+    }
+
+    public function test_analytics_queries_are_skipped_by_lazy_iteration(): void
+    {
+        $connection = $this->connection();
+        $index = $this->createStub(SigmieIndex::class);
+        $index->method('analytics')->willReturn(new Analytics(new NewQuery($connection), new NewProperties, 'created_at'));
+        $multi = new NewMultiSearch($connection);
+        $multi->newAnalytics($index, 'created_at');
+        $this->assertSame([], iterator_to_array($multi->lazy()));
+        $multi->each(fn () => $this->fail('Analytics yielded a hit'));
+    }
+
+    public function test_unterminated_template_marker_remains_literal(): void
+    {
+        $source = (new SearchTemplate($this->connection(), ['size' => '@size(10)'], 'books'))->source();
+        $this->assertSame('{"size":"@size(10)"}', $source);
+    }
+
+    public function test_unknown_response_facet_is_null(): void
+    {
+        $this->assertNull((new SigmieSearchResponse(new Properties))->facet('missing'));
+    }
+
+    public function test_unknown_inner_hits_are_ignored(): void
+    {
+        $props = new NewProperties;
+        $props->nested('reviews', fn (NewProperties $review): Text => $review->text('body'));
+
+        $inner = new InnerHits;
+        $inner->request(['reviews'], 1);
+        $inner->resolve($props->get());
+
+        $name = $inner->clause('reviews')['name'];
+        $matches = $inner->matches([
+            'external' => ['hits' => ['hits' => [['_nested' => ['field' => 'other', 'offset' => 0]]]]],
+            $name => ['hits' => ['total' => 3]],
+        ]);
+        $this->assertSame(['reviews' => ['total' => 3, 'items' => []]], $matches);
+    }
+
+    public function test_empty_stored_vectors_yield_no_candidates(): void
+    {
+        $this->assertSame([], MMR::storedVectors([]));
+    }
+
+    public function test_embedding_batch_must_return_the_requested_text(): void
+    {
+        $api = $this->createStub(EmbeddingsApi::class);
+        $api->method('maxBatchSize')->willReturn(5);
+        $api->method('batchEmbed')->willReturn([['text' => 'other', 'dims' => 1, 'vector' => [1]]]);
+        $this->expectException(UnexpectedValueException::class);
+        $this->expectExceptionMessage('The query embedding batch omitted a requested vector.');
+        (new VectorPool($api))->getMany([['text' => 'book', 'dims' => 1]]);
+    }
+
+    public function test_nested_vector_template_scores_each_matching_vector(): void
+    {
+        $props = new NewProperties;
+        $props->text('title')->semantic('book', dimensions: 128, accuracy: 7);
+        $source = (new NewTemplate($this->connection()))->id('books')->properties($props)->semantic()->get()->source();
+        $this->assertStringContainsString('"nested"', $source);
+        $this->assertStringContainsString('"script_score"', $source);
+    }
+
+    public function test_collapsed_scan_after_a_missing_first_group_requires_a_present_field(): void
+    {
+        $requests = [];
+        $hits = PointInTimeIterator::iterate('snapshot', '1m', [
+            'size' => 1, 'collapse' => ['field' => 'brand'], 'sort' => [['brand' => ['missing' => '_first']]],
+        ], function (array $body) use (&$requests): HttpElasticsearchResponse {
+            $requests[] = $body;
+            $hits = count($requests) === 1 ? [['_id' => 'missing', 'sort' => ['']]] : [];
+
+            return new HttpElasticsearchResponse(200, [], json_encode(['hits' => ['hits' => $hits]]));
+        }, fn (string $pit) => $this->assertSame('snapshot', $pit), fn (array $hit): string => $hit['_id']);
+        $this->assertSame(['missing'], iterator_to_array($hits));
+        $this->assertSame([['exists' => ['field' => 'brand']]], $requests[1]['post_filter']['bool']['filter']);
     }
 }

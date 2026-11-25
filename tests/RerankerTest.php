@@ -843,4 +843,18 @@ class RerankerTest extends TestCase
             }
         };
     }
+
+    public function test_rerank_omits_null_inputs_and_keeps_hits_at_the_threshold(): void
+    {
+        $props = new NewProperties;
+        $props->text('title')->semantic('model');
+        $provider = $this->semanticProvider([0.49, 0.5]);
+        $search = new Search(200, [], json_encode(['hits' => ['hits' => [
+            ['_id' => 'low', '_source' => ['title' => [null, 'book']]],
+            ['_id' => 'boundary', '_source' => ['title' => 'guide']],
+        ]]]));
+        $hits = (new Reranker($provider, $props->get(), 0.5))->rerank($search, 'book')->hits();
+        $this->assertSame(['title: book | ', 'title: guide'], $provider->documents);
+        $this->assertSame(['boundary'], array_map(fn ($hit): string => $hit->_id, $hits));
+    }
 }
