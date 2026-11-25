@@ -485,4 +485,26 @@ class AnalyticsRequestTest extends TestCase
             'from' => '2024-02-29T12:00:00+01:99',
         ]);
     }
+
+    public function test_metrics_reject_an_associative_php_array(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('metrics must be a JSON array');
+
+        AnalyticsRequest::fromArray([
+            'widget' => 'grouped_metrics', 'date_field' => 'date', 'group_by' => 'city',
+            'metrics' => ['total' => ['key' => 'total', 'metric' => 'count']],
+        ]);
+    }
+
+    public function test_histograms_reject_a_negative_minimum_document_count(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Analytics min_doc_count cannot be negative.');
+
+        AnalyticsRequest::fromArray([
+            'widget' => 'histogram_metric', 'date_field' => 'date', 'bucket_field' => 'price',
+            'metric' => 'count', 'bucket_size' => 10, 'min_doc_count' => -1,
+        ]);
+    }
 }

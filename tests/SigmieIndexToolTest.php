@@ -44,6 +44,7 @@ use Sigmie\Search\NewSearch;
 use Sigmie\Sigmie;
 use Sigmie\SigmieIndex;
 use Sigmie\Testing\TestCase;
+use stdClass;
 
 class SigmieIndexToolTest extends TestCase
 {
@@ -2829,7 +2830,7 @@ class SigmieIndexToolTest extends TestCase
         return is_int($size) ? $size : null;
     }
 
-    private function capturingIndex(NewProperties $props, array $hits = ['total' => ['value' => 0], 'hits' => []], array $except = [], array $rawAggregations = []): SigmieIndex
+    private function capturingIndex(NewProperties $props, array $hits = ['total' => ['value' => 0], 'hits' => []], array $except = [], array $rawAggregations = [], ?ResponseFormater $formatter = null): SigmieIndex
     {
         $connection = new class extends ElasticsearchConnection
         {
@@ -2856,7 +2857,7 @@ class SigmieIndexToolTest extends TestCase
             }
         };
 
-        return new class($connection, $props, $hits, $except, $rawAggregations) extends SigmieIndex
+        return new class($connection, $props, $hits, $except, $rawAggregations, $formatter) extends SigmieIndex
         {
             public function __construct(
                 private ElasticsearchConnection $connection,
@@ -2864,6 +2865,7 @@ class SigmieIndexToolTest extends TestCase
                 private array $hits,
                 private array $except,
                 private array $rawAggregations,
+                private ?ResponseFormater $responseFormatter,
             ) {}
 
             public function name(): string
@@ -2885,7 +2887,7 @@ class SigmieIndexToolTest extends TestCase
             {
                 $hits = $this->hits;
 
-                return (new class($this->connection, $hits, $this->rawAggregations) extends NewSearch
+                $search = new class($this->connection, $hits, $this->rawAggregations) extends NewSearch
                 {
                     public function __construct(
                         ElasticsearchConnection $connection,
@@ -2901,7 +2903,7 @@ class SigmieIndexToolTest extends TestCase
                         SigmieIndexToolTest::$sentFacets = $this->searchContext->facetString;
                         SigmieIndexToolTest::$facetRaw = $this->facets->toRaw();
 
-                        $formatter = new SigmieSearchResponse($this->properties);
+                        $formatter = $this->formatter ?? new SigmieSearchResponse($this->properties);
                         $formatter->context($this->searchContext)
                             ->errors([])
                             ->queryResponseRaw(['hits' => $this->hits])
@@ -2909,8 +2911,125 @@ class SigmieIndexToolTest extends TestCase
 
                         return $formatter;
                     }
-                })->properties($this->props);
+                };
+
+                if ($this->responseFormatter instanceof ResponseFormater) {
+                    $search->formatter($this->responseFormatter);
+                }
+
+                return $search->properties($this->props);
             }
         };
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_cluster_error_without_a_reason_returns_search_guidance(): void
+    {
+        $index = $this->createMock(SigmieIndex::class);
+        $index->method('newSearch')->willThrowException(new ElasticsearchException(['error' => ['type' => 'search_phase_execution_exception']], 500));
+
+        $json = (new SigmieIndexTool($index))->handle(new Request(['query' => 'books']));
+
+        $this->assertSame([
+            'error' => "Elasticsearch could not complete the search. Check the field names and the filter/sort syntax in this tool's description, then try again.",
+        ], json_decode($json, true, flags: JSON_THROW_ON_ERROR));
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function schema_omits_vectors_and_excludes_them_from_nested_filters(): void
+    {
+        $props = new NewProperties;
+        $props->vector('embedding');
+        $props->keyword('title');
+        $props->nested('variants', function (NewProperties $children): void {
+            $children->vector('embedding');
+            $children->keyword('sku');
+        });
+        $tool = new SigmieIndexSchemaTool($this->schemaIndex($props));
+
+        $fields = array_column($tool->result(new Request([]))['fields'], null, 'name');
+
+        $this->assertSame(['title', 'variants'], array_keys($fields));
+        $this->assertSame("variants:{sku:'value'}", $fields['variants']['filter']);
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function names_for_long_indices_stay_distinct_and_fit_the_tool_limit(): void
+    {
+        $first = $this->createMock(SigmieIndex::class);
+        $second = $this->createMock(SigmieIndex::class);
+        $first->method('name')->willReturn(str_repeat('a', 64).'one');
+        $second->method('name')->willReturn(str_repeat('a', 64).'two');
+
+        $tool = new SigmieIndexTool($first);
+        $name = $tool->name();
+
+        $this->assertMatchesRegularExpression('/^search_index_[a-zA-Z0-9_-]+$/D', $name);
+        $this->assertLessThanOrEqual(64, strlen($name));
+        $this->assertSame($name, $tool->name());
+        $this->assertNotSame($name, (new SigmieIndexTool($second))->name());
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_structured_sort_argument_is_treated_as_absent(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('brand');
+
+        $tool = new SigmieIndexTool($this->capturingIndex($props));
+
+        $tool->result(new Request(['sort' => 'brand:desc']));
+        $this->assertSame('brand:desc', self::$sentSort);
+
+        $result = $tool->result(new Request(['sort' => ['brand' => 'asc']]));
+
+        $this->assertSame(['total' => 0, 'hits' => []], $result);
+        $this->assertSame('', self::$sentSort);
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function sequential_filter_value_keys_remain_json_object_members_with_a_custom_formatter(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('code');
+
+        $formatter = new class($props->get()) extends SigmieSearchResponse
+        {
+            public function facet(string $field): array
+            {
+                return $field === 'code' ? [4, 3] : [];
+            }
+        };
+
+        $tool = new SigmieFilterValuesTool($this->capturingIndex($props, formatter: $formatter));
+        $request = new Request(['field' => 'code']);
+        $this->assertSame([4, 3], $tool->result($request)['values']);
+
+        $json = $tool->handle($request);
+        $values = json_decode($json, flags: JSON_THROW_ON_ERROR)->values ?? null;
+
+        $this->assertInstanceOf(stdClass::class, $values, $json);
+        $this->assertSame(4, $values->{'0'});
+        $this->assertSame(3, $values->{'1'});
     }
 }

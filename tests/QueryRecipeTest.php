@@ -1305,6 +1305,8 @@ class QueryRecipeTest extends TestCase
     private function runsWithoutCluster(): bool
     {
         return in_array($this->getName(false), [
+            'test_grouped_count_checks_its_optional_field_against_the_mapping',
+            'test_ranking_sort_rejects_an_unsupported_direction',
             'test_integral_json_numbers_bind_to_integer_slots',
             'test_explicit_slot_defaults_are_validated_as_request_arguments',
             'test_recipe_rejects_a_nested_timeline_that_the_tool_cannot_query',
@@ -1471,5 +1473,34 @@ class QueryRecipeTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Query recipe binding [cutoff] must be a valid ISO 8601 date.');
         $recipe->bind(['cutoff' => '2024-02-29T12:00:00+25:00']);
+    }
+
+    public function test_grouped_count_checks_its_optional_field_against_the_mapping(): void
+    {
+        $properties = new NewProperties;
+        $properties->date('date');
+        $properties->keyword('city');
+
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'grouped_metrics',
+            'date_field' => 'date',
+            'group_by' => 'city',
+            'metrics' => [['key' => 'total', 'metric' => 'count', 'field' => 'missing']],
+        ]));
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('missing');
+        $recipe->validateAgainst($this->eventsIndex($properties));
+    }
+
+    public function test_ranking_sort_rejects_an_unsupported_direction(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unsupported query recipe ranking direction [sideways].');
+
+        QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'breakdown', 'date_field' => 'date', 'group_by' => 'city',
+            'metric' => 'count', 'sort' => 'metric:sideways',
+        ]));
     }
 }

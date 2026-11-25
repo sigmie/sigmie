@@ -254,6 +254,10 @@ class AiApisTest extends TestCase
     private function runsWithoutCluster(): bool
     {
         return in_array($this->getName(false), [
+            'test_scalar_embedding_batch_items_use_the_default_dimensions',
+            'test_api_response_rejects_a_non_numeric_rerank_score',
+            'test_api_response_requires_a_json_object',
+            'test_api_response_rejects_invalid_embedding_vectors',
             'test_classification_accepts_fixed_width_embeddings',
             'test_cohere_search_pool_requests_query_embeddings',
             'test_batch_dimensions_match_the_fake_request',
@@ -1927,6 +1931,49 @@ class AiApisTest extends TestCase
         return [
             ['accounting', 'ledger', 'reconciliation', 'audit'],
             ['basketball', 'training', 'schedule'],
+        ];
+    }
+
+    public function test_scalar_embedding_batch_items_use_the_default_dimensions(): void
+    {
+        $this->assertSame(
+            [['dims' => 256, 'keys' => ['first'], 'texts' => ['']]],
+            batch_slots(['first' => null], 256),
+        );
+    }
+
+    public function test_api_response_rejects_a_non_numeric_rerank_score(): void
+    {
+        $response = new Response(200, [], '{"results":[{"index":0,"relevance_score":"0.9"}]}');
+
+        $this->expectException(UnexpectedValueException::class);
+        $this->expectExceptionMessage('invalid relevance score');
+        ApiResponse::rerank($response, 'results', 1);
+    }
+
+    public function test_api_response_requires_a_json_object(): void
+    {
+        $this->expectException(UnexpectedValueException::class);
+        $this->expectExceptionMessage('AI API response must contain a JSON object.');
+        ApiResponse::embeddings(new Response(200, [], '[]'), 1);
+    }
+
+    /** @dataProvider invalidEmbeddingVectors */
+    public function test_api_response_rejects_invalid_embedding_vectors(string $vector, string $reason): void
+    {
+        $response = new Response(200, [], '{"data":[{"index":0,"embedding":'.$vector.'}]}');
+
+        $this->expectException(UnexpectedValueException::class);
+        $this->expectExceptionMessage('Embedding response contains '.$reason.'.');
+        ApiResponse::embeddings($response, 1);
+    }
+
+    public static function invalidEmbeddingVectors(): array
+    {
+        return [
+            'invalid base64' => ['"!"', 'an invalid base64 vector'],
+            'empty vector' => ['[]', 'an invalid vector'],
+            'string component' => ['["1"]', 'an invalid vector component'],
         ];
     }
 }

@@ -153,4 +153,26 @@ class CollectionCorrectnessTest extends TestCase
         $this->assertTrue(isset($collection[true]));
         $this->assertFalse(isset($collection[1.0 + 1]));
     }
+
+    public function test_non_key_offsets_are_absent(): void
+    {
+        $rows = new Collection(['present']);
+
+        $this->assertFalse(isset($rows[[]]));
+    }
+
+    public function test_grouping_and_uniqueness_skip_scalar_rows(): void
+    {
+        $rows = new Collection(['skip', ['code' => 'A'], ['code' => 'A']]);
+
+        $this->assertSame([['code' => 'A']], $rows->uniqueBy('code')->toArray());
+        $this->assertSame(['A' => [['code' => 'A'], ['code' => 'A']]], $rows->groupBy('code')->toArray());
+    }
+
+    public function test_signed_float_zeros_share_one_group(): void
+    {
+        $rows = new Collection([['amount' => -0.0], ['amount' => 0.0], ['amount' => 0]]);
+
+        $this->assertSame([0 => $rows->toArray()], $rows->groupBy('amount')->toArray());
+    }
 }

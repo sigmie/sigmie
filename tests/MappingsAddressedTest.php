@@ -3074,4 +3074,25 @@ class MappingsAddressedTest extends TestCase
         $field->restoreScalarMapping(['type' => 'keyword', 'fields' => []]);
         $this->assertSame('{}', json_encode($field->toRaw()['tag']['fields']));
     }
+
+    public function test_epoch_seconds_reject_values_that_overflow_the_millisecond_width(): void
+    {
+        $field = new DateField('d', ['epoch_second']);
+
+        $this->assertFalse($field->validate('d', '10000000000000000')[0]);
+    }
+
+    public function test_calendar_formats_keep_the_sign_on_expanded_years(): void
+    {
+        $field = new DateField('d', ['MM/dd/yyyy']);
+
+        $this->assertSame('02/29/+10000', $field->formatForWrite(new DateTime('+10000-02-29'), 'Y-m-d'));
+    }
+
+    public function test_epoch_seconds_store_whole_seconds_as_an_integer(): void
+    {
+        $field = new DateTimeField('d', ['epoch_second']);
+
+        $this->assertSame(42, $field->formatForWrite(new DateTime('1970-01-01T00:00:42Z'), 'Y-m-d'));
+    }
 }

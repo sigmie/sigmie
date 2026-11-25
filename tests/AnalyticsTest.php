@@ -9,6 +9,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use Http\Promise\Promise;
+use InvalidArgumentException;
 use RuntimeException;
 use Sigmie\Analytics\Analytics;
 use Sigmie\Analytics\Enums\Metric;
@@ -3512,6 +3513,10 @@ class AnalyticsTest extends TestCase
     private function runsWithoutCluster(): bool
     {
         return in_array($this->getName(false), [
+            'test_invalid_numeric_bucket_aliases_are_ignored',
+            'test_table_rejects_multiple_sort_fields',
+            'test_table_preserves_sort_for_fields_outside_its_local_mapping',
+            'test_grouped_metric_escapes_a_reserved_key_with_a_colliding_alias',
             'test_tied_rankings_preserve_the_elasticsearch_key_order',
             'test_table_serializes_an_empty_source_as_an_object',
             'test_stats_preserves_finite_values_when_the_sum_overflows',
@@ -3695,5 +3700,53 @@ class AnalyticsTest extends TestCase
         $analytics->format('U')->kpi('seconds', Metric::Count);
         $formatted = $analytics->toMultiSearch()[1]['aggs']['seconds']['filter']['range']['created_at'];
         $this->assertArrayNotHasKey('format', $formatted);
+    }
+
+    public function test_invalid_numeric_bucket_aliases_are_ignored(): void
+    {
+        $properties = new NewProperties;
+        $properties->number('code');
+
+        $analytics = (new Analytics(new NewQuery($this->disconnectedConnection(), 'sales'), $properties, 'date'))
+            ->breakdown('rank', 'code', Metric::Count, bucketAliases: [' ' => [8], 'Valid' => [7, [9], ' ']]);
+
+        $aggs = $analytics->toMultiSearch()[1]['aggs']['rank']['aggs'];
+
+        $this->assertCount(2, $aggs);
+        $this->assertSame(['7'], $aggs['groups']['terms']['exclude']);
+        $this->assertSame(['7'], $aggs['alias_'.substr(md5('Valid'), 0, 12)]['filter']['terms']['code']);
+    }
+
+    public function test_table_rejects_multiple_sort_fields(): void
+    {
+        $analytics = new Analytics(new NewQuery($this->disconnectedConnection(), 'sales'), new NewProperties, 'date');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Table sort must contain exactly one field.');
+        $analytics->table('rows', sort: 'date:asc title:desc');
+    }
+
+    public function test_table_preserves_sort_for_fields_outside_its_local_mapping(): void
+    {
+        $analytics = new Analytics(new NewQuery($this->disconnectedConnection(), 'sales'), new NewProperties, 'date');
+        $analytics->table('rows', sort: 'amount:asc');
+
+        $sort = $analytics->toMultiSearch()[1]['aggs']['rows']['aggs']['hits']['top_hits']['sort'];
+
+        $this->assertSame([['amount' => ['order' => 'asc']]], $sort);
+    }
+
+    public function test_grouped_metric_escapes_a_reserved_key_with_a_colliding_alias(): void
+    {
+        $widget = $this->groupedMetricsWidget([
+            ['key' => 'key', 'label' => 'Average', 'metric' => Metric::Avg, 'field' => 'amount'],
+            ['key' => 'metric_6b6579', 'label' => 'Total', 'metric' => Metric::Sum, 'field' => 'amount'],
+        ], 'key', 10);
+
+        $terms = $widget->toRaw()['groups']['aggs']['groups'];
+
+        $this->assertSame(['avg' => ['field' => 'amount']], $terms['aggs']['metric_6b6579_metric']);
+        $this->assertSame(['sum' => ['field' => 'amount']], $terms['aggs']['metric_6b6579']);
+        $this->assertSame([['metric_present' => 'desc'], ['metric_6b6579_metric' => 'desc']], $terms['terms']['order']);
     }
 }

@@ -158,6 +158,7 @@ use Sigmie\Support\VectorMath;
 use Sigmie\Testing\TestCase;
 
 use function Sigmie\Functions\name_configs;
+use function Sigmie\Functions\values_at;
 
 class UtilityCoverageTest extends TestCase
 {
@@ -1636,5 +1637,21 @@ class UtilityCoverageTest extends TestCase
             ->hits();
 
         $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $hits));
+    }
+
+    /** @test */
+    public function dotted_paths_collect_values_across_lists_and_objects(): void
+    {
+        $source = [
+            'orders' => [
+                ['product.code' => 'A'],
+                (object) ['product' => (object) ['code' => ['first' => 'B', 'second' => 'C']]],
+                ['product' => ['code' => null]],
+                ['product' => false],
+                ['other' => 'unrelated'],
+            ],
+        ];
+
+        $this->assertSame(['A', 'B', 'C'], values_at($source, 'orders.product.code'));
     }
 }
