@@ -1237,7 +1237,8 @@ class HttpAddressedTest extends TestCase
         $request = new HttpRequest('POST', new Uri('/movies/_search'), [
             'query' => ['match_all' => (object) []],
         ]);
-        $request->getBody();
+        // Sending reads the body stream to its end.
+        $request->getBody()->getContents();
 
         $response = Response::fromPsrResponse(new PsrResponse(400, ['Content-Type' => 'application/json'], json_encode([
             'error' => ['type' => 'search_phase_execution_exception'],

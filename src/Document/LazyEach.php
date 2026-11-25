@@ -38,7 +38,10 @@ trait LazyEach
     protected function indexGenerator(bool $reverse = false, ?int $pageSize = null): Iterator
     {
         $isOpenSearch = $this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch;
-        $sort = PitSortPlanner::plan([], $isOpenSearch);
+        // OpenSearch has no _shard_doc. _doc keeps index order, and the planner adds _id and _index as tiebreakers.
+        $sort = $isOpenSearch
+            ? PitSortPlanner::plan([['_doc' => 'asc']], true, preserveSingleSort: true)
+            : PitSortPlanner::plan([], false);
         if ($reverse) {
             $sort = array_map(static fn (array $clause): array => [array_key_first($clause) => 'desc'], $sort);
         }

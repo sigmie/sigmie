@@ -1266,7 +1266,7 @@ class AliveCollectionCorrectnessTest extends TestCase
     {
         $doc = new Document(['price' => 0, 'note' => null]);
 
-        $this->assertTrue(property_exists($doc, 'price') && $doc->price !== null);
+        $this->assertTrue(isset($doc->price));
         $this->assertFalse(isset($doc->note));
         $this->assertSame(0, $doc->price ?? -1);
 

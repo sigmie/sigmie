@@ -33,7 +33,15 @@ class CollectionCorrectnessTest extends TestCase
 
     public function test_grouping_and_uniqueness_skip_inaccessible_object_fields(): void
     {
-        $private = new class {};
+        $private = new class
+        {
+            private string $category = 'private';
+
+            public function category(): string
+            {
+                return $this->category;
+            }
+        };
         $uninitialized = new class
         {
             public string $category;

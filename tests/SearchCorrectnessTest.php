@@ -3726,11 +3726,14 @@ class SearchCorrectnessTest extends TestCase
                 return false;
             }
         };
-        new RawQuery($connection, 'orders', [
+
+        $raw = new RawQuery($connection, 'orders', [
             'query' => ['match_all' => (object) []],
             'post_filter' => ['term' => ['status' => 'paid']],
             'sort' => [['processed_at' => 'asc']],
         ]);
+
+        iterator_to_array($raw->lazy());
 
         $search = json_decode($connection->bodies[1], true);
 

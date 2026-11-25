@@ -56,6 +56,8 @@ class FacetParser extends Parser
         $res = [];
         $parser = new FilterParser($this->properties, throwOnError: false);
         foreach ($fields as $field => $values) {
+            $field = (string) $field;
+
             $type = $this->properties->get($field);
 
             if (! $type instanceof Type && $field !== '_id') {

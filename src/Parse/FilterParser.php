@@ -598,7 +598,7 @@ class FilterParser extends Parser
         $queries = [];
         try {
             foreach ($groups as $scope => $expressions) {
-                $this->nestedFacetPath = $scope;
+                $this->nestedFacetPath = (string) $scope;
                 $queries[$scope] = $this->facetFilterMasked($field, implode(' AND ', $expressions));
             }
         } finally {

@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Exception;
-use PHPUnit\Framework\TestCase;
 use Sigmie\Base\Drivers\Elasticsearch;
-use Sigmie\Base\Http\ElasticsearchConnection;
-use Sigmie\Http\JSONClient;
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\CharFilter\CharFilter;
@@ -55,6 +52,7 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Testing\Assert;
+use Sigmie\Testing\TestCase;
 
 class AnalysisAddressedTest extends TestCase
 {
@@ -233,6 +231,8 @@ class AnalysisAddressedTest extends TestCase
 
     public function test_stored_native_character_filter_survives_index_lookup(): void
     {
+        $this->forOpensearch(fn () => $this->markTestSkipped('Elasticsearch first_line_with_letters character filter'));
+
         $builder = $this->indexBuilder()->config('analysis', [
             'char_filter' => ['header' => ['type' => 'first_line_with_letters']],
             'analyzer' => ['header_text' => ['tokenizer' => 'keyword', 'char_filter' => ['header']]],
@@ -1461,8 +1461,7 @@ class AnalysisAddressedTest extends TestCase
     /** @test */
     public function the_search_synonym_analyzer_keeps_normalization_and_leaves_shingles_on_the_default(): void
     {
-        $connection = new ElasticsearchConnection(JSONClient::create(['http://localhost:9200']), new Elasticsearch);
-        $raw = (new NewIndex($connection))
+        $raw = (new NewIndex($this->elasticsearchConnection))
             ->alias('analysis')
             ->lowercase('lower')
             ->shingle(name: 'pairs')
@@ -1566,9 +1565,7 @@ class AnalysisAddressedTest extends TestCase
 
     private function indexBuilder(): NewIndex
     {
-        $connection = new ElasticsearchConnection(JSONClient::create(['http://localhost:9200']), new Elasticsearch);
-
-        return (new NewIndex($connection))->alias(uniqid('.analysis-dsl-'));
+        return (new NewIndex($this->elasticsearchConnection))->alias(uniqid('.analysis-dsl-'));
     }
 
     public function test_replacing_properties_discards_previous_field_components(): void

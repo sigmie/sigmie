@@ -119,7 +119,7 @@ class VectorMath
         }
 
         // Identical finite vectors are 1. Scaling still leaves a double rounding short of 1.
-        if ($vectorA === $vectorB && is_finite($peakA) && is_finite($peakB)) {
+        if ($vectorA == $vectorB && is_finite($peakA) && is_finite($peakB)) {
             return 1.0;
         }
 

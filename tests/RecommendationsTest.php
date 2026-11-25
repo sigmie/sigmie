@@ -204,7 +204,8 @@ class RecommendationsTest extends TestCase
             $this->assertStringStartsWith('wireless-earbuds', $id);
         }
 
-        $this->assertSame(['wireless-earbuds-2', 'wireless-earbuds-3'], $ids);
+        // Earbuds 2 to 6 score the same, so the engine decides which two come first.
+        $this->assertSame([], array_diff($ids, ['wireless-earbuds-2', 'wireless-earbuds-3', 'wireless-earbuds-4', 'wireless-earbuds-5', 'wireless-earbuds-6']));
     }
 
     /**

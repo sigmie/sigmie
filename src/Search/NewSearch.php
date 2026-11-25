@@ -18,7 +18,6 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\BaseVector;
-use Sigmie\Mappings\Types\Boost;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\Text;
@@ -770,7 +769,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
         // Document boosts and collapse expansion need vector scores inside the main query.
         $useTopLevelKnn = $driver->engine() === SearchEngineType::Elasticsearch
-            && ! $this->properties->boostField instanceof Boost
+            && ! isset($this->properties->boostField)
             && $this->collapseTop === 0;
 
         foreach ($this->semanticFields($input->fields()) as $text) {

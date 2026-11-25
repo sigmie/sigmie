@@ -25,6 +25,8 @@ class AggregationTest extends TestCase
 
     public function test_rate_without_a_unit_uses_the_date_histogram_interval(): void
     {
+        $this->forOpensearch(fn () => $this->markTestSkipped('Elasticsearch rate aggregation'));
+
         $index = uniqid('.rate-interval-');
         $properties = new NewProperties;
         $properties->date('date');

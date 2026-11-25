@@ -101,7 +101,7 @@ class Analyzer implements CustomAnalyzerInterface
 
         foreach (analysis_list($config['char_filter'] ?? []) as $filterName) {
             $analyzerCharFilters[] = match ($filterName) {
-                'html_strip' => $charFilters[$filterName] ?? new HTMLStrip($filterName),
+                'html_strip' => $charFilters[$filterName] ?? new HTMLStrip((string) $filterName),
                 default => $charFilters[$filterName] ?? new FilterReference($filterName),
             };
         }
