@@ -10,9 +10,9 @@ class TokenLimit extends TokenFilter
 {
     public function __construct(
         string $name,
-        protected int $count
+        int $count
     ) {
-        parent::__construct($name, []);
+        parent::__construct($name, ['max_token_count' => $count]);
     }
 
     public function type(): string
@@ -24,13 +24,14 @@ class TokenLimit extends TokenFilter
     {
         [$name, $configs] = name_configs($raw);
 
-        return new static($name,(int) $configs['max_token_count']);
+        $filter = new static($name, (int) ($configs['max_token_count'] ?? 1));
+        $filter->settings($filter->settings + $configs);
+
+        return $filter;
     }
 
     protected function getValues(): array
     {
-        return [
-            'max_token_count' => $this->count,
-        ];
+        return $this->settings;
     }
 }

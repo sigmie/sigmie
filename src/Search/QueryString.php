@@ -8,7 +8,14 @@ use Stringable;
 
 class QueryString implements Stringable
 {
-    public function __construct(private string $text, private float $weight = 1.0, private ?int $dimension = null, private ?array $vector = null, private ?array $fields = null) {}
+    public function __construct(
+        private string $text,
+        private float $weight = 1.0,
+        private ?int $dimension = null,
+        private ?array $vector = null,
+        private ?array $fields = null,
+        public readonly ?string $vectorField = null,
+    ) {}
 
     public function text(): string
     {
@@ -72,6 +79,7 @@ class QueryString implements Stringable
             'dimension' => $this->dimension,
             'vector' => $this->vector,
             'fields' => $this->fields,
+            ...($this->vectorField === null ? [] : ['vector_field' => $this->vectorField]),
         ];
     }
 

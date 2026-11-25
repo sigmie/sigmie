@@ -28,11 +28,10 @@ class Shingle extends TokenFilter
     {
         [$name, $configs] = name_configs($raw);
 
-        return new static(
-            $name,
-            $configs['min_shingle_size'],
-            $configs['max_shingle_size']
-        );
+        $filter = new static($name);
+        $filter->settings($configs + $filter->settings);
+
+        return $filter;
     }
 
     protected function getValues(): array

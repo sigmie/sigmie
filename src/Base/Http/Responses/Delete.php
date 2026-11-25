@@ -10,6 +10,10 @@ class Delete extends ElasticsearchResponse
 {
     public function failed(): bool
     {
-        return $this->serverError();
+        if ($this->code() === 404 && $this->json('result') === 'not_found') {
+            return false;
+        }
+
+        return parent::failed();
     }
 }

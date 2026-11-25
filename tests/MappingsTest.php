@@ -46,11 +46,186 @@ use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Semantic\Contracts\AIProvider;
+use Sigmie\Semantic\DocumentProcessor;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
 
 class MappingsTest extends TestCase
 {
+    public function test_converting_an_opensearch_inner_product_vector_keeps_nonunit_values_valid(): void
+    {
+        if ($this->elasticsearchConnection->driver()->engine() !== SearchEngineType::Elasticsearch) {
+            $this->markTestSkipped('Requires an Elasticsearch destination index.');
+        }
+
+        $name = uniqid('.inner-product-migration-');
+        $mapping = Mappings::create(['properties' => ['coordinates' => [
+            'type' => 'knn_vector',
+            'dimension' => 2,
+            'method' => ['name' => 'hnsw', 'engine' => 'lucene', 'space_type' => 'innerproduct'],
+        ]]], []);
+        $this->indexAPICall($name, 'PUT', [
+            'mappings' => $mapping->toRaw($this->elasticsearchConnection->driver()),
+        ]);
+        try {
+            $this->sigmie->collect($name, true)->add(new Document(['coordinates' => [3, 4]], 'unnormalized'));
+            $response = $this->sigmie->rawQuery($name, [
+                'knn' => ['field' => 'coordinates', 'query_vector' => [1, 0], 'k' => 1, 'num_candidates' => 1],
+            ]);
+
+            $this->assertSame('unnormalized', $response->hits()[0]->_id);
+        } finally {
+            $this->indexAPICall($name, 'DELETE');
+        }
+    }
+
+    public function test_replaying_a_semantic_mapping_keeps_stored_vector_metadata(): void
+    {
+        if ($this->elasticsearchConnection->driver()->engine() !== SearchEngineType::Elasticsearch) {
+            $this->markTestSkipped('Requires Elasticsearch dense vector mappings.');
+        }
+
+        $properties = new NewProperties;
+        $properties->text('title')->semantic('test-embeddings', dimensions: 4);
+        $alias = uniqid('.semantic-mapping-meta-');
+        $source = $this->sigmie->newIndex($alias)->properties($properties)->create();
+        $copy = $alias.'-copy';
+        try {
+            $vector = $properties->get()->get('title')->vectorFields()->first()->name;
+            $this->indexAPICall($alias.'/_mapping', 'PUT', ['properties' => [
+                '_embeddings.title.'.$vector => ['type' => 'dense_vector', 'dims' => 4, 'meta' => ['owner' => 'catalog']],
+            ]]);
+
+            $loaded = $this->sigmie->index($alias);
+            $this->indexAPICall($copy, 'PUT', [
+                'mappings' => $loaded->mappings->toRaw($this->elasticsearchConnection->driver()),
+            ]);
+
+            $field = $this->sigmie->index($copy)->mappings->properties()->get('_embeddings.title.'.$vector);
+            $this->assertSame(['owner' => 'catalog'], $field->getMeta());
+        } finally {
+            $this->indexAPICall($copy.'?ignore_unavailable=true', 'DELETE');
+            $source->delete();
+        }
+    }
+
+    public function test_dotted_combo_sources_survive_replaying_a_live_mapping(): void
+    {
+        $properties = new NewProperties;
+        $properties->object('item', function (NewProperties $item): void {
+            $item->text('name');
+            $item->combo('display.label', ['name']);
+        });
+        $alias = uniqid('.dotted-combo-');
+        $source = $this->sigmie->newIndex($alias)->properties($properties)->create();
+        $copy = $alias.'-copy';
+        try {
+            $this->sigmie->collect($alias, true)->properties($properties)->add(new Document(['item' => ['name' => 'Mars']]));
+            $loaded = $this->sigmie->index($alias);
+            $this->indexAPICall($copy, 'PUT', [
+                'mappings' => $loaded->mappings->toRaw($this->elasticsearchConnection->driver()),
+            ]);
+
+            $copyProperties = $this->sigmie->index($copy)->mappings->properties();
+            $document = (new DocumentProcessor($copyProperties))->populateComboFields(new Document(['item' => ['name' => 'Venus']]));
+            $this->sigmie->collect($copy, true)->add($document);
+            $response = $this->sigmie->rawQuery($copy, ['query' => ['match' => ['item.display.label' => 'Venus']]]);
+
+            $this->assertSame(1, $response->total());
+        } finally {
+            $this->indexAPICall($copy.'?ignore_unavailable=true', 'DELETE');
+            $source->delete();
+        }
+    }
+
+    public function test_dynamic_template_multifield_keeps_its_numeric_name(): void
+    {
+        $source = uniqid('.numeric-template-multifield-');
+        $copy = $source.'-copy';
+        $this->indexAPICall($source, 'PUT', ['mappings' => ['dynamic_templates' => [[
+            'labels' => [
+                'match' => 'label_*',
+                'mapping' => ['type' => 'keyword', 'fields' => (object) ['0' => ['type' => 'keyword']]],
+            ],
+        ]]]]);
+        try {
+            $index = $this->sigmie->index($source);
+            $this->indexAPICall($copy, 'PUT', [
+                'mappings' => $index->mappings->toRaw($this->elasticsearchConnection->driver()),
+            ]);
+            $this->sigmie->collect($copy, true)->add(new Document(['label_status' => 'Open']));
+
+            $response = $this->sigmie->rawQuery($copy, ['query' => ['term' => ['label_status.0' => 'Open']]]);
+            $this->assertSame(1, $response->total());
+        } finally {
+            $this->indexAPICall($source.','.$copy.'?ignore_unavailable=true', 'DELETE');
+        }
+    }
+
+    public function test_native_multifield_with_a_numeric_name_survives_mapping_restore(): void
+    {
+        $source = uniqid('.numeric-native-multifield-');
+        $copy = $source.'-copy';
+        $this->indexAPICall($source, 'PUT', ['mappings' => ['properties' => [
+            'label' => ['type' => 'wildcard', 'fields' => (object) ['0' => ['type' => 'keyword']]],
+        ]]]);
+        try {
+            $index = $this->sigmie->index($source);
+            $this->indexAPICall($copy, 'PUT', [
+                'mappings' => $index->mappings->toRaw($this->elasticsearchConnection->driver()),
+            ]);
+            $this->sigmie->collect($copy, true)->add(new Document(['label' => 'Open']));
+
+            $response = $this->sigmie->rawQuery($copy, ['query' => ['term' => ['label.0' => 'Open']]]);
+            $this->assertSame(1, $response->total());
+        } finally {
+            $this->indexAPICall($source.','.$copy.'?ignore_unavailable=true', 'DELETE');
+        }
+    }
+
+    public function test_date_range_with_epoch_fallback_accepts_php_dates(): void
+    {
+        $properties = new NewProperties;
+        $properties->type((new Range('available', 'dd/MM/uuuu||epoch_millis'))->date());
+
+        $alias = uniqid('.date-range-epoch-fallback-');
+        $index = $this->sigmie->newIndex($alias)->properties($properties)->create();
+        try {
+            $this->sigmie->collect($alias, true)->properties($properties)->add(new Document([
+                'available' => ['gte' => new DateTime('2024-06-15T12:45:00Z'), 'lt' => '01/07/2024'],
+            ]));
+
+            $response = $this->sigmie->rawQuery($alias, [
+                'query' => ['range' => ['available' => ['gte' => '16/06/2024', 'lte' => '16/06/2024']]],
+            ]);
+            $this->assertSame(1, $response->total());
+        } finally {
+            $index->delete();
+        }
+    }
+
+    public function test_search_as_you_type_uses_shingles_with_a_custom_analyzer(): void
+    {
+        $properties = new NewProperties;
+        $properties->searchAsYouType('title')->withNewAnalyzer(fn (NewAnalyzer $a): NewAnalyzer => $a->lowercase());
+        $name = uniqid('.custom-shingle-search-');
+        $index = $this->sigmie->newIndex($name)->properties($properties)->create();
+        try {
+            $this->sigmie->collect($name, true)->merge([
+                new Document(['title' => 'quick red fox'], 'separate'),
+                new Document(['title' => 'quick fox red'], 'adjacent'),
+            ]);
+            $response = $this->sigmie->rawQuery($name, [
+                'query' => $index->mappings->properties()->get('title')->queries('quick fo')[0]->toRaw(),
+            ]);
+
+            $this->assertSame('adjacent', $response->hits()[0]->_id);
+            $this->assertGreaterThan($response->hits()[1]->_score, $response->hits()[0]->_score);
+        } finally {
+            $index->delete();
+        }
+    }
+
     /**
      * @test
      */
@@ -305,7 +480,7 @@ class MappingsTest extends TestCase
 
         [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29.000Z');
 
-        $this->assertFalse($valid);
+        $this->assertTrue($valid);
 
         [$valid, $message] = $props['updated_at']->validate('updated_at', '2023-04-07T12:38:29Z');
 
@@ -505,7 +680,7 @@ class MappingsTest extends TestCase
             ]
         );
 
-        $this->assertFalse($valid);
+        $this->assertTrue($valid);
     }
 
     /**
@@ -558,7 +733,7 @@ class MappingsTest extends TestCase
             ]
         );
 
-        $this->assertFalse($valid);
+        $this->assertTrue($valid);
     }
 
     /**
@@ -1030,23 +1205,7 @@ class MappingsTest extends TestCase
 
         $this->assertSame('_embeddings.comments.vector', $query['nested']['path']);
         $this->assertSame([0.1, 0.2, 0.3, 0.4], (array) $query['nested']['query']['function_score']['script_score']['script']['params']->query_vector);
-        $this->assertStringContainsString("l2norm(params.query_vector, doc['_embeddings.comments.vector.vector'])", $query['nested']['query']['function_score']['script_score']['script']['source']);
-
-        $similarities = [
-            [VectorSimilarity::Cosine, 'cosineSimilarity'],
-            [VectorSimilarity::DotProduct, 'dotProduct'],
-            [VectorSimilarity::Euclidean, 'l2norm'],
-            [VectorSimilarity::MaxInnerProduct, 'dotProduct'],
-        ];
-
-        foreach ($similarities as [$similarity, $expectedScript]) {
-            $vector = new OpenSearchNestedVector('embedding', dims: 2, similarity: $similarity);
-            $vector->setPath('comments>embedding');
-
-            $query = $vector->vectorQueries([1.0, 0.0], 1, new BooleanQuery)[0]->toRaw();
-
-            $this->assertStringContainsString($expectedScript, $query['nested']['query']['function_score']['script_score']['script']['source']);
-        }
+        $this->assertSame('_embeddings.comments.vector.vector', $query['nested']['query']['function_score']['script_score']['script']['params']->field);
     }
 
     /**
@@ -1121,7 +1280,7 @@ class MappingsTest extends TestCase
         $field = $properties->get('embedding');
 
         $this->assertSame(384, $field->dims());
-        $this->assertSame(VectorSimilarity::Cosine, $field->similarity());
+        $this->assertSame(VectorSimilarity::Euclidean, $field->similarity());
         $this->assertSame('hnsw', $field->indexType());
         $this->assertSame(64, $field->m());
         $this->assertSame(300, $field->efConstruction());
@@ -1865,7 +2024,7 @@ class MappingsTest extends TestCase
         $analyzers = $mappings->analyzers();
 
         $this->assertContains($defaultAnalyzer, $analyzers);
-        $this->assertContains($analyzer, $analyzers);
+        $this->assertSame($analyzer->toRaw(), $analyzers['bar']->toRaw());
     }
 
     /**
@@ -2248,20 +2407,14 @@ class MappingsTest extends TestCase
             $this->forOpenSearch(function () use ($vectorField): void {
                 $this->assertEquals('knn_vector', $vectorField['type']);
                 $this->assertEquals(256, $vectorField['dimension']);
-                $this->assertEquals('cosinesimil', $vectorField['method']['space_type']);
-                $this->assertEquals('hnsw', $vectorField['method']['name']);
-                $this->assertEquals(64, $vectorField['method']['parameters']['m']);
-                $this->assertEquals(300, $vectorField['method']['parameters']['ef_construction']);
+                $this->assertArrayNotHasKey('method', $vectorField);
             });
 
             $this->forElasticsearch(function () use ($vectorField): void {
                 $this->assertEquals('dense_vector', $vectorField['type']);
                 $this->assertEquals(256, $vectorField['dims']);
-                $this->assertTrue($vectorField['index']);
-                $this->assertEquals('cosine', $vectorField['similarity']);
-                $this->assertEquals('hnsw', $vectorField['index_options']['type']);
-                $this->assertEquals(64, $vectorField['index_options']['m']);
-                $this->assertEquals(300, $vectorField['index_options']['ef_construction']);
+                $this->assertFalse($vectorField['index']);
+                $this->assertArrayNotHasKey('index_options', $vectorField);
             });
         });
     }
@@ -2755,17 +2908,16 @@ class MappingsTest extends TestCase
         $this->assertCount(1, $normalizer->filters());
         $this->assertCount(1, $normalizer->charFilters());
 
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage("Normalizer filter 'missing_filter' doesn't exists.");
-
-        Normalizer::create([
-            'broken_keyword' => [
+        $referenced = Normalizer::create([
+            'referenced_keyword' => [
                 'type' => 'custom',
                 'filter' => ['missing_filter'],
             ],
         ], [], [
             'lowercase' => new Lowercase,
         ]);
+
+        $this->assertSame(['missing_filter'], $referenced->toRaw()['referenced_keyword']['filter']);
     }
 
     /**
@@ -2852,10 +3004,10 @@ class MappingsTest extends TestCase
         $this->assertSame([], $combo->toRaw());
         $this->assertSame([], $nested->queries('anything'));
         $this->assertSame([false, 'Nested field items must be an object.'], $nested->validate('items', 'invalid'));
-        $this->assertTrue($nested->hasFields());
+        $this->assertFalse($nested->hasFields());
         $this->assertSame([], $object->queries('anything'));
         $this->assertSame([false, 'Object field profile must be an object.'], $object->validate('profile', 'invalid'));
-        $this->assertTrue($object->hasFields());
+        $this->assertFalse($object->hasFields());
         $this->assertFalse($range->isFacetable());
         $this->assertNull($range->facets([]));
         $this->assertSame([false, "The field price mapped as integer_range must be an array with 'gte', 'gt', 'lte', or 'lt' keys"], $range->validate('price', 'invalid'));

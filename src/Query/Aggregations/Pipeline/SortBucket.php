@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Aggregations\Pipeline;
 
+use function Sigmie\Functions\object_map;
+
 class SortBucket extends Pipeline
 {
     public function __construct(
@@ -16,12 +18,20 @@ class SortBucket extends Pipeline
 
     public function toRaw(): array
     {
-        return [$this->name => [
+        $sort = [
+            $this->path => ['order' => $this->order],
+        ];
+
+        $raw = [$this->name => [
             $this->type => [
-                'sort' => [
-                    $this->path => ['order' => $this->order],
-                ],
+                'sort' => object_map($sort),
             ],
         ]];
+
+        if ($this->meta !== []) {
+            $raw[$this->name]['meta'] = object_map($this->meta);
+        }
+
+        return $raw;
     }
 }

@@ -6,6 +6,8 @@ namespace Sigmie\AI;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 
+use function Sigmie\Functions\csv_fields;
+
 /**
  * The `fields` argument of the document tools: which source fields each returned document keeps.
  *
@@ -31,11 +33,12 @@ trait SelectsOutputFields
      */
     protected function outputFields(mixed $fields): array
     {
-        $requested = array_values(array_filter(
-            array_map(trim(...), explode(',', (string) $fields)),
-            fn (string $field): bool => $field !== '',
-        ));
+        $requested = csv_fields((string) $fields);
 
-        return $requested === [] ? $this->index->toolFields() : $requested;
+        if ($requested !== []) {
+            return $requested;
+        }
+
+        return $this->index->toolFields() ?: ['*'];
     }
 }

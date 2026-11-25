@@ -11,7 +11,7 @@ class Synonyms extends TokenFilter
     public function __construct(
         string $name,
         protected array $synonyms = [],
-        protected bool $expand = false
+        protected bool $expand = true
     ) {
         parent::__construct(
             $name,
@@ -27,41 +27,37 @@ class Synonyms extends TokenFilter
     public static function fromRaw(array $raw): static
     {
         [$name, $configs] = name_configs($raw);
-        $settings = [];
+        $configs['expand'] = filter_var($configs['expand'] ?? true, FILTER_VALIDATE_BOOLEAN);
 
-        foreach ($configs['synonyms'] as $value) {
-            if (str_contains($value, '=>')) {
-                [$to, $from] = explode('=>', $value);
+        $filter = new static($name);
+        $filter->settings($configs + ['type' => $filter->type()]);
 
-                $to = explode(', ', $to);
-                $from = trim($from);
-                $to = array_map(fn ($value): string => trim($value), $to);
-
-                $settings[] = [$from => $to];
-
-                continue;
-            }
-
-            $value = explode(',', $value);
-            $value = array_map(fn ($value): string => trim($value), $value);
-
-            $settings[] = $value;
-        }
-
-        return new static($name, $settings);
+        return $filter;
     }
 
     protected function getValues(): array
     {
+        if (($this->settings['type'] ?? null) === $this->type()) {
+            return $this->settings;
+        }
+
         $res = [];
+        $escape = fn (string $term): string => strtr($term, ['\\' => '\\\\', ',' => '\\,', '=' => '\\=', '#' => '\\#']);
 
         foreach ($this->settings as $values) {
-            [$first, $value] = $values;
-            if (is_array($value)) {
-                $from = implode(', ', $value);
-                $res[] = sprintf('%s => %s', $from, $first);
+            if (is_string($values)) {
+                $res[] = $values;
+
+                continue;
+            }
+
+            $values = array_values($values);
+            if (is_array($values[1] ?? null)) {
+                [$first, $value] = $values;
+                $from = implode(', ', array_map($escape, $value));
+                $res[] = sprintf('%s => %s', $from, $escape($first));
             } else {
-                $res[] = implode(', ', $values);
+                $res[] = implode(', ', array_map($escape, $values));
             }
         }
 

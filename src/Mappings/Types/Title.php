@@ -16,17 +16,17 @@ class Title extends Text implements Analyze
         $newAnalyzer
             ->tokenizeOnWordBoundaries()
             ->lowercase();
-
-        $this->makeSortable();
     }
 
     public function configure(): void
     {
         $this->unstructuredText()->keyword();
+
+        $this->makeSortable();
     }
 
     public function queries(array|string $queryString): array
     {
-        return [new MatchPhrasePrefix($this->name(), $queryString, analyzer: $this->searchAnalyzer()), new Match_($this->name(), $queryString, analyzer: $this->searchAnalyzer())];
+        return $this->queryStrings($queryString, fn (string $queryString): array => [new MatchPhrasePrefix($this->name(), $queryString, analyzer: $this->searchAnalyzer()), new Match_($this->name(), $queryString, analyzer: $this->searchAnalyzer())]);
     }
 }

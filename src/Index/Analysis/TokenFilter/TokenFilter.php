@@ -6,6 +6,7 @@ namespace Sigmie\Index\Analysis\TokenFilter;
 
 use Sigmie\Index\Contracts\TokenFilter as TokenFilterInterface;
 
+use function Sigmie\Functions\merge_named;
 use function Sigmie\Functions\name_configs;
 
 abstract class TokenFilter implements TokenFilterInterface
@@ -16,7 +17,13 @@ abstract class TokenFilter implements TokenFilterInterface
         'synonym_graph' => SynonymGraph::class,
         'stemmer_override' => Stemmer::class,
         'decimal_digit' => DecimalDigit::class,
-        'ascii_folding' => AsciiFolding::class,
+        'asciifolding' => AsciiFolding::class,
+        'lowercase' => Lowercase::class,
+        'uppercase' => Uppercase::class,
+        'keyword_marker' => Keywords::class,
+        'trim' => Trim::class,
+        'truncate' => Truncate::class,
+        'unique' => Unique::class,
         'limit' => TokenLimit::class,
         'ngram' => Ngram::class,
         'shingle' => Shingle::class,
@@ -29,7 +36,7 @@ abstract class TokenFilter implements TokenFilterInterface
 
     public static function filterMap(array $map)
     {
-        static::$map = array_merge(static::$map, $map);
+        static::$map = merge_named(static::$map, $map);
 
         return static::$map;
     }
@@ -64,7 +71,7 @@ abstract class TokenFilter implements TokenFilterInterface
 
     public function value(): array
     {
-        return array_merge(
+        return merge_named(
             $this->getValues(),
             [
                 'type' => $this->type(),

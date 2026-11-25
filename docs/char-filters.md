@@ -22,7 +22,7 @@ The index builder and `NewAnalyzer` have the same char filter methods. The examp
 
 ## Char filter names
 
-Each builder method takes an optional `$name`. Without one, Sigmie generates a name from a prefix and a random suffix, such as `html_strip` followed by five random characters. A name must be unique in the index. Adding a char filter with a name that the index already has throws an `Exception` with the message ``Char filter name `<name>` already exists.``
+Each builder method takes an optional `$name`. Without one, Sigmie generates a name from a prefix and a random suffix, such as `html_strip` followed by five random characters. A name identifies one filter definition in the index. Reusing the name with different settings throws an `Exception` with the message ``Char filter name `<name>` already exists.``
 
 ## HTML strip
 

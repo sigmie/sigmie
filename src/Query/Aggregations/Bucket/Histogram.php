@@ -9,7 +9,7 @@ class Histogram extends Bucket
     public function __construct(
         protected string $name,
         protected string $field,
-        protected int $interval,
+        protected int|float $interval,
         protected int $minDocCount = 0,
         protected ?array $extendedBounds = null
     ) {}
@@ -24,7 +24,7 @@ class Histogram extends Bucket
             ],
         ];
 
-        if (! is_null($this->extendedBounds)) {
+        if ($this->extendedBounds) {
             $value['histogram']['extended_bounds'] = $this->extendedBounds;
         }
 

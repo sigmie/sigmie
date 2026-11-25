@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Index;
 
 use Sigmie\Index\Analysis\Analyzer;
-use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\CustomAnalyzer;
 use Sigmie\Index\Shared\CharFilters;
@@ -18,9 +17,11 @@ class NewAnalyzer
     use Filters;
     use Tokenizer;
 
+    protected Analyzer $pipeline;
+
     public function __construct(protected AnalysisInterface $analysis, public string $name)
     {
-        $this->tokenizer = new WordBoundaries;
+        $this->pipeline = new Analyzer($name);
     }
 
     public function name(string $name): static
@@ -35,14 +36,20 @@ class NewAnalyzer
         return $this->analysis;
     }
 
+    protected function pipeline(): CustomAnalyzer
+    {
+        return $this->pipeline;
+    }
+
     public function create(): CustomAnalyzer
     {
-        $analyzer = new Analyzer($this->name);
-        $analyzer->addCharFilters($this->charFilters());
-        $analyzer->addFilters($this->filters());
-        $analyzer->setTokenizer($this->tokenizer);
-
-        $this->analysis()->addAnalyzers([$analyzer]);
+        $analyzer = clone new Analyzer(
+            $this->name,
+            $this->pipeline->tokenizer(),
+            $this->filters(),
+            $this->charFilters(),
+        );
+        $this->analysis()->addAnalyzer($analyzer);
 
         return $analyzer;
     }

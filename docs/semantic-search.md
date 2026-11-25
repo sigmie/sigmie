@@ -127,7 +127,7 @@ $response = $sigmie->newSearch('articles')
     ->get();
 ```
 
-The search runs the keyword query and the vector query together. A document that matches both ranks above a document that matches only one.
+The search runs the keyword query and the vector query together. A document that matches both receives a score contribution from each query.
 
 To rank by vectors only, turn off the keyword query:
 

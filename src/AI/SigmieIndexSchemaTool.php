@@ -21,6 +21,7 @@ class SigmieIndexSchemaTool implements Tool
 {
     use DescribesIndexFields;
     use HandlesToolErrors;
+    use NamesIndexTools;
 
     public function __construct(
         protected SigmieIndex $index,
@@ -28,7 +29,7 @@ class SigmieIndexSchemaTool implements Tool
 
     public function name(): string
     {
-        return 'describe_index';
+        return $this->toolName('describe_index');
     }
 
     public function description(): string
@@ -64,11 +65,11 @@ class SigmieIndexSchemaTool implements Tool
                 'exists' => 'field:*',
                 'sort' => "space-separated 'field:asc' or 'field:desc' — direction after a COLON (e.g. 'price:asc name:desc'), plus '_score'. 'price asc' (a space) is INVALID.",
                 'geo_sort' => 'field[lat,lon]:km:asc',
-                'facets' => 'field1 field2:20 (space-separated; optional :size for keywords or :interval for numbers)',
+                'facets' => 'field1 field2:20 (space-separated; :size for term fields, :interval for price; number, date, and datetime take no parameter)',
             ],
             'notes' => [
-                'Equality filters on text/keyword fields are exact and case-sensitive. If a filter returns 0 unexpectedly, call discover_filter_values on that field to confirm the exact stored values (including casing).',
-                "Use discover_filter_values to list a field's valid values; use sample_documents to see example records.",
+                sprintf("Equality on keyword() is case-insensitive because its normalizer lowercases. Equality on a text field's keyword subfield and on caseSensitiveKeyword() is case-sensitive. If a filter returns 0 unexpectedly, call %s on that field to confirm the exact stored values (including casing).", $this->toolName('discover_filter_values')),
+                sprintf("Use %s to list a field's valid values; use %s to see example records.", $this->toolName('discover_filter_values'), $this->toolName('sample_documents')),
             ],
         ];
     }

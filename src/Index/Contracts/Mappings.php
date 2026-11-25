@@ -9,7 +9,7 @@ use Sigmie\Mappings\Properties;
 
 interface Mappings
 {
-    public static function create(array $raw, array $analyzers): static;
+    public static function create(array $raw, array $analyzers, array $normalizers = []): static;
 
     public function analyzers(): array;
 

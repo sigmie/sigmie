@@ -14,15 +14,17 @@ class RangeOperatorParser implements Parser
 
     protected array $errors = [];
 
-    public function parse(string $operator)
+    public function parse(string $string): ?string
     {
-        return match ($operator) {
+        $this->errors = [];
+
+        return match ($string) {
             '>' => 'gt',
             '>=' => 'gte',
             '<' => 'lt',
             '<=' => 'lte',
-            default => (function () use ($operator): void {
-                $message = 'Range operator `'.$operator.'` could not be parsed.';
+            default => (function () use ($string): void {
+                $message = 'Range operator `'.$string.'` could not be parsed.';
 
                 if ($this->throwOnError) {
                     throw new ParseException($message);

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\APIs;
 
-use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\ElasticsearchRequest;
 
@@ -14,10 +13,13 @@ trait Stats
 
     protected function statsAPICall(string $index): ElasticsearchResponse
     {
-        $uri = new Uri(sprintf('/%s/_stats', $index));
+        $uri = $this->indexUri($index, '_stats');
 
         $esRequest = new ElasticsearchRequest('GET', $uri);
 
-        return $this->elasticsearchCall($esRequest);
+        $response = $this->elasticsearchCall($esRequest);
+        $this->assertNoFailedShards($response);
+
+        return $response;
     }
 }

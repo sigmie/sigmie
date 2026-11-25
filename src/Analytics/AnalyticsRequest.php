@@ -4,13 +4,20 @@ declare(strict_types=1);
 
 namespace Sigmie\Analytics;
 
-use DateTimeImmutable;
 use InvalidArgumentException;
 use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Analytics\Enums\Period;
+use stdClass;
+
+use function Sigmie\Functions\csv_fields;
+use function Sigmie\Functions\is_iso_date_or_timestamp;
+use function Sigmie\Functions\parse_integer;
+use function Sigmie\Functions\trim_text;
 
 class AnalyticsRequest
 {
+    public const INTERVAL_PATTERN = '^(minute|hour|day|week|month|quarter|year|0*[1-9][0-9]*(ms|s|m|h|d))$';
+
     /** @var list<string> */
     public const WIDGETS = [
         'kpi',
@@ -176,10 +183,16 @@ class AnalyticsRequest
                 throw new InvalidArgumentException(sprintf('Analytics argument [%s] must be scalar.', $key));
             }
 
-            $normalized[$key] = trim((string) $value);
+            $value = trim((string) $value);
+
+            if ($value === '') {
+                continue;
+            }
+
+            $normalized[$key] = $key === 'interval' && ctype_alpha($value) ? strtolower($value) : $value;
 
             if (in_array($key, ['from', 'to'], true)) {
-                self::validateIsoDate($normalized[$key], $key);
+                self::validateIsoDate($value, $key);
             }
         }
 
@@ -212,36 +225,19 @@ class AnalyticsRequest
                 : throw new InvalidArgumentException(sprintf('Analytics argument [%s] must be an integer.', $key));
         }
 
-        if (is_int($value)) {
-            return $value;
-        }
-
-        if (! is_string($value)) {
-            throw new InvalidArgumentException(sprintf('Analytics argument [%s] must be an integer.', $key));
-        }
-
-        $value = trim($value);
-        if (preg_match('/^-?(0|[1-9]\d*)$/D', $value) !== 1) {
-            throw new InvalidArgumentException(sprintf('Analytics argument [%s] must be an integer.', $key));
-        }
-
-        $integer = filter_var($value, FILTER_VALIDATE_INT);
-
-        return $integer !== false
-            ? $integer
-            : throw new InvalidArgumentException(sprintf('Analytics argument [%s] must be an integer.', $key));
+        return parse_integer($value)
+            ?? throw new InvalidArgumentException(sprintf('Analytics argument [%s] must be an integer.', $key));
     }
 
     private static function jsonList(mixed $value, string $key): string
     {
         if (is_string($value)) {
-            $decoded = json_decode(trim($value), true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            $decoded = json_decode(trim($value), flags: JSON_BIGINT_AS_STRING);
+            if (! is_array($decoded)) {
                 throw new InvalidArgumentException(self::jsonListError($key));
             }
 
-            $value = $decoded;
+            $value = array_map(static fn (mixed $item): mixed => $item instanceof stdClass ? (array) $item : $item, $decoded);
         }
 
         if (! is_array($value) || ! array_is_list($value)) {
@@ -291,7 +287,7 @@ class AnalyticsRequest
 
             $values = $value;
         } elseif (is_scalar($value)) {
-            $values = explode(',', (string) $value);
+            $values = is_string($value) ? explode(',', $value) : [$value];
         } else {
             throw new InvalidArgumentException(sprintf('Analytics argument [%s] must be a comma-separated list.', $key));
         }
@@ -301,7 +297,7 @@ class AnalyticsRequest
                 throw new InvalidArgumentException(sprintf('Analytics argument [%s] must contain only scalar values.', $key));
             }
 
-            return trim((string) $item);
+            return is_float($item) && is_finite($item) ? json_encode($item, JSON_THROW_ON_ERROR) : trim_text((string) $item);
         }, $values);
 
         return implode(',', array_values(array_filter($values, fn (string $item): bool => $item !== '')));
@@ -375,11 +371,11 @@ class AnalyticsRequest
             'union_breakdown' => self::required($request, 'group_by_fields'),
             'distribution' => self::requireMany($request, ['field', 'bucket_size']),
             'percentiles', 'stats', 'geo' => self::required($request, 'field'),
-            'histogram_metric' => self::requireMany($request, ['bucket_field', 'bucket_size', 'field']),
+            'histogram_metric' => self::requireMany($request, ['bucket_field', 'bucket_size']),
             'grouped_metrics' => self::requireMany($request, ['group_by', 'metrics']),
             'funnel' => self::required($request, 'steps'),
             'heatmap' => self::requireMany($request, ['row_field', 'col_field']),
-            'retention' => self::requireMany($request, ['cohort_field', 'id_field', 'interval']),
+            'retention' => self::requireMany($request, ['cohort_field', 'id_field']),
             default => null,
         };
 
@@ -397,9 +393,7 @@ class AnalyticsRequest
         }
 
         $interval = (string) $request['interval'];
-        $calendar = ['minute', 'hour', 'day', 'week', 'month', 'quarter', 'year'];
-
-        if (! in_array($interval, $calendar, true) && preg_match('/^\d+(ms|s|m|h|d)$/', $interval) !== 1) {
+        if (preg_match('/'.self::INTERVAL_PATTERN.'/D', $interval) !== 1) {
             throw new InvalidArgumentException(sprintf('Unsupported analytics interval [%s].', $interval));
         }
     }
@@ -452,10 +446,7 @@ class AnalyticsRequest
      */
     private static function csvValues(array $request, string $key): array
     {
-        return array_values(array_filter(
-            array_map(fn (string $value): string => trim($value), explode(',', (string) ($request[$key] ?? ''))),
-            fn (string $value): bool => $value !== '',
-        ));
+        return csv_fields((string) ($request[$key] ?? ''));
     }
 
     /**
@@ -522,7 +513,11 @@ class AnalyticsRequest
             $key = is_string($metric['key'] ?? null) ? trim($metric['key']) : '';
             $label = $metric['label'] ?? null;
             $resolved = is_string($metric['metric'] ?? null) ? Metric::tryFrom(trim($metric['metric'])) : null;
-            $field = is_string($metric['field'] ?? null) ? trim($metric['field']) : '';
+            if (isset($metric['field']) && ! is_string($metric['field'])) {
+                throw new InvalidArgumentException('Each grouped_metrics metric field must be a string.');
+            }
+
+            $field = trim($metric['field'] ?? '');
 
             if ($label !== null && ! is_string($label)) {
                 throw new InvalidArgumentException('Each grouped_metrics metric label must be a string.');
@@ -569,8 +564,8 @@ class AnalyticsRequest
             }
 
             foreach ($values as $value) {
-                if (! is_scalar($value) || trim((string) $value) === '') {
-                    throw new InvalidArgumentException('Each bucket_aliases value must be a non-empty scalar.');
+                if (! is_scalar($value)) {
+                    throw new InvalidArgumentException('Each bucket_aliases value must be a scalar.');
                 }
             }
 
@@ -615,16 +610,7 @@ class AnalyticsRequest
 
     private static function validateIsoDate(string $value, string $key): void
     {
-        $format = match (true) {
-            preg_match('/^\d{4}-\d{2}-\d{2}$/D', $value) === 1 => '!Y-m-d',
-            preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/D', $value) === 1 => '!Y-m-d\TH:i:sP',
-            preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,6}(?:Z|[+-]\d{2}:\d{2})$/D', $value) === 1 => '!Y-m-d\TH:i:s.uP',
-            default => null,
-        };
-
-        $date = $format !== null ? DateTimeImmutable::createFromFormat($format, $value) : false;
-
-        if ($date instanceof DateTimeImmutable && DateTimeImmutable::getLastErrors() === false) {
+        if (is_iso_date_or_timestamp($value)) {
             return;
         }
 
@@ -651,7 +637,9 @@ class AnalyticsRequest
             throw new InvalidArgumentException('Analytics min_count cannot be negative.');
         }
 
-        self::between($request, 'min_doc_count', 0, 1);
+        if (isset($request['min_doc_count']) && $request['min_doc_count'] < 0) {
+            throw new InvalidArgumentException('Analytics min_doc_count cannot be negative.');
+        }
     }
 
     /**

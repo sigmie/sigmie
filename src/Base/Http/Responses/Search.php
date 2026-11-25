@@ -7,16 +7,40 @@ namespace Sigmie\Base\Http\Responses;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Document\Hit;
 
+use function Sigmie\Functions\response_value;
+use function Sigmie\Functions\search_total;
+
 class Search extends ElasticsearchResponse
 {
-    public function total(): int
+    public function failed(): bool
     {
-        return $this->json('hits.total.value');
+        $payload = $this->json();
+        if (parent::failed()) {
+            return true;
+        }
+
+        return is_array($payload) && self::isPartial($payload);
+    }
+
+    public static function isPartial(array $payload): bool
+    {
+        $shards = $payload['_shards'] ?? [];
+
+        return ($payload['timed_out'] ?? false) === true
+            || ($payload['_clusters']['partial'] ?? 0) > 0
+            || ($payload['_clusters']['failed'] ?? 0) > 0
+            || ($shards['failed'] ?? 0) > 0
+            || (isset($shards['successful'], $shards['total']) && $shards['successful'] < $shards['total']);
+    }
+
+    public function total(): ?int
+    {
+        return search_total($this->json('hits.total'));
     }
 
     public function aggregation(string $dot): mixed
     {
-        return $this->json('aggregations.'.$dot);
+        return response_value($this->json('aggregations') ?? [], $dot);
     }
 
     public function get(): array
@@ -26,22 +50,27 @@ class Search extends ElasticsearchResponse
 
     public function autocompletion(): array
     {
-        return array_map(fn ($value) => $value['text'], $this->json('suggest.autocompletion.0.options') ?? []);
+        $texts = [];
+        foreach ($this->json('suggest.autocompletion') ?? [] as $entry) {
+            array_push($texts, ...array_column($entry['options'] ?? [], 'text'));
+        }
+
+        return $texts;
     }
 
     public function hits(): array
     {
-        return array_map(fn ($value): Hit => new Hit(
-            _source: $value['_source'],
-            _id: $value['_id'],
-            _score: $value['_score'],
-            _index: $value['_index'],
-        ), $this->json('hits.hits') ?? []);
+        return array_map(
+            Hit::fromRaw(...),
+            $this->json('hits.hits') ?? [],
+        );
     }
 
     public function replaceHits(array $hits): array
     {
-        $this->decoded->set('hits.hits', $hits);
+        $this->json();
+
+        $this->decoded->set('hits.hits', array_values($hits));
 
         return $this->hits();
     }

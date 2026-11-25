@@ -19,13 +19,11 @@ use function Sigmie\Functions\random_name;
 
 trait Tokenizer
 {
-    protected TokenizerInterface $tokenizer;
-
     abstract public function analysis(): Analysis;
 
     public function tokenizer(TokenizerInterface $tokenizer): static
     {
-        $this->tokenizer = $tokenizer;
+        $this->pipeline()->setTokenizer($tokenizer);
 
         return $this;
     }
@@ -34,36 +32,28 @@ trait Tokenizer
     {
         $name ??= $this->createTokenizerName('whitespace');
 
-        $this->tokenizer = new Noop($name);
-
-        return $this;
+        return $this->tokenizer(new Noop($name));
     }
 
     public function tokenizeOnNonLetter(?string $name = null): static
     {
         $name ??= $this->createTokenizerName('non_letter');
 
-        $this->tokenizer = new NonLetter($name);
-
-        return $this;
+        return $this->tokenizer(new NonLetter($name));
     }
 
     public function tokenizePathHierarchy(string $delimiter = '/', ?string $name = null): static
     {
         $name ??= $this->createTokenizerName('path_hierarchy');
 
-        $this->tokenizer = new PathHierarchy($name, $delimiter);
-
-        return $this;
+        return $this->tokenizer(new PathHierarchy($name, $delimiter));
     }
 
     public function tokenizeOnWhitespaces(?string $name = null): static
     {
         $name ??= $this->createTokenizerName('whitespace');
 
-        $this->tokenizer = new Whitespace($name);
-
-        return $this;
+        return $this->tokenizer(new Whitespace($name));
     }
 
     private function createTokenizerName(string $name): string

@@ -84,9 +84,9 @@ $sigmie->newRecommend('products')
     ->hits();
 ```
 
-Sigmie runs one vector search for each seed and fetches `topK × 10` candidates from each. It merges the lists with Reciprocal Rank Fusion (RRF). Each list adds `1 / (k + rank)` to the score of every document in it, so a document that ranks well for several seeds rises to the top. A document at rank 1 for one seed and rank 3 for another scores `1/61 + 1/63` with the default `k` of 60.
+Sigmie runs one vector search for each seed and merges the lists with Reciprocal Rank Fusion (RRF). Each list adds `1 / (k + rank)` to the score of every document in it, so a document that ranks well for several seeds rises to the top. A document at rank 1 for one seed and rank 3 for another scores `1/61 + 1/63` with the default `k` of 60.
 
-To change `k`, call `rrf()`. A higher `k` gives lower-ranked candidates more influence:
+To change `k`, call `rrf()`. Pass `rankWindowSize` to set the per-seed candidate count. If omitted, Sigmie requests ten times `topK` per seed, capped at the default result window of 10,000. A higher `k` gives lower-ranked candidates more influence:
 
 ```php
 ->rrf(rrfRankConstant: 80)

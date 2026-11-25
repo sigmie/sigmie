@@ -16,7 +16,7 @@ class IDs extends Query
     {
         return [
             'ids' => [
-                'values' => $this->ids,
+                'values' => array_values(array_filter($this->ids, static fn (mixed $id): bool => $id !== '')),
                 'boost' => $this->boost,
             ],
         ];

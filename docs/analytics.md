@@ -39,17 +39,17 @@ Widgets that measure something take a `Metric`:
 | `Metric::Avg`    | Average of a numeric field                               |
 | `Metric::Min`    | Minimum value                                            |
 | `Metric::Max`    | Maximum value                                            |
-| `Metric::Count`  | Number of documents with a value in the field            |
-| `Metric::Unique` | Distinct values. Approximate above 40,000 distinct values |
+| `Metric::Count`  | Number of field values, including multiple values per document |
+| `Metric::Unique` | Estimated distinct values, with a precision threshold of 40,000 |
 | `Metric::Median` | 50th percentile                                          |
 
-When you give `Metric::Count` no field, it counts the timeline field, so it counts every document in the window.
+Omit the field to count matching documents. For example, a document with two timestamps in the same trend bucket counts once in that bucket. A text field has no stored values to count, so `Metric::Count` on it counts the documents that contain it.
 
 ## Widgets
 
 `get()` returns an array keyed by widget name. Each value has a `type` key and the chart data. The outputs below are shortened.
 
-Every widget method also takes [`filter:`](#per-widget-filter) and [`window:`](#per-widget-window) as its last arguments.
+Every widget method accepts [`filter:`](#per-widget-filter) and [`window:`](#per-widget-window).
 
 ### KPI
 
@@ -188,7 +188,7 @@ The fields need compatible, aggregatable mapping types. A document with the same
 
 ### Grouped metrics
 
-`groupedMetrics()` returns several metrics per group and ranks groups by the metric whose `key` is `sortMetric`. Metrics other than count need a numeric `field`. `minCount` drops smaller groups.
+`groupedMetrics()` returns several metrics per group and ranks groups by the metric whose `key` is `sortMetric`. For example, use `Metric::Unique` on a customer ID or `Metric::Avg` on a numeric amount. `minCount` drops smaller groups.
 
 ```php
 $orders->analytics('created_at')
@@ -514,7 +514,7 @@ $multi->newAnalytics($orders, 'created_at', 'metrics')
     ->trend('revenue_over_time', Metric::Sum, 'amount', CalendarInterval::Day);
 
 $multi->newSearch($orders->name(), 'rows')
-    ->queryString('')->filters("status:'paid'")->page(3, 20);
+    ->properties($orders->properties())->queryString('')->filters("status:'paid'")->page(3, 20);
 
 [$metrics, $rows] = $multi->get();
 ```
@@ -522,8 +522,9 @@ $multi->newSearch($orders->name(), 'rows')
 For an existing `Analytics` instance, pass `toSearch()` to `addQuery()` and convert its response with `formatResponse()`:
 
 ```php
+$multi = $sigmie->newMultiSearch();
 $multi->addQuery($analytics->toSearch(), 'metrics');
-[$metrics, $rows] = $multi->get();
+[$metrics] = $multi->get();
 $dashboard = $analytics->formatResponse($metrics);
 ```
 

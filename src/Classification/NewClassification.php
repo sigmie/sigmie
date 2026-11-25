@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Classification;
 
+use InvalidArgumentException;
 use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\Support\VectorMath;
+use UnexpectedValueException;
 
 class NewClassification
 {
-    protected array $labels = [];
+    protected ?array $labels = null;
 
     protected array $examples = [];
 
@@ -43,9 +46,17 @@ class NewClassification
 
     public function classify(): ClassificationResult
     {
+        if ($this->input === null) {
+            throw new InvalidArgumentException('Classification requires input.');
+        }
+
         $this->buildCentroids();
 
-        $inputEmbedding = $this->embeddingsApi->embed($this->input, 1024);
+        if ($this->centroids === []) {
+            throw new InvalidArgumentException('Classification requires at least one example with an eligible label.');
+        }
+
+        $inputEmbedding = $this->embeddingsApi->embed($this->input, count(reset($this->centroids)));
 
         $similarities = [];
         foreach ($this->centroids as $label => $centroid) {
@@ -55,6 +66,11 @@ class NewClassification
         arsort($similarities);
 
         $topLabel = array_key_first($similarities);
+        // A label "10" is stored as int 10. The result types the label as string.
+        if (is_int($topLabel)) {
+            $topLabel = (string) $topLabel;
+        }
+
         $confidence = $similarities[$topLabel];
 
         return new ClassificationResult(
@@ -66,22 +82,33 @@ class NewClassification
 
     protected function buildCentroids(): void
     {
+        // examples() replaces the set. A label that was removed must not stay.
+        $this->centroids = [];
+
         $groupedExamples = [];
 
         foreach ($this->examples as $example) {
             $label = $example['label'];
+            if ($this->labels !== null && ! in_array($label, $this->labels, true)) {
+                continue;
+            }
+
             $groupedExamples[$label][] = $example['text'];
         }
 
         foreach ($groupedExamples as $label => $texts) {
-            $payload = array_map(fn ($text, $index): array => [
-                'text' => $text,
-                'dims' => 1024,
-            ], $texts, array_keys($texts));
+            $vectors = [];
+            foreach (array_chunk($texts, $this->embeddingsApi->maxBatchSize()) as $batch) {
+                $payload = array_map(fn ($text): array => ['text' => $text], $batch);
+                $embeddings = $this->embeddingsApi->batchEmbed($payload);
+                if (count($embeddings) !== count($payload)) {
+                    throw new UnexpectedValueException('The embedding provider returned the wrong number of classification vectors.');
+                }
 
-            $embeddings = $this->embeddingsApi->batchEmbed($payload);
-
-            $vectors = array_map(fn ($item) => $item['vector'], $embeddings);
+                foreach ($embeddings as $embedding) {
+                    $vectors[] = $embedding['vector'];
+                }
+            }
 
             $this->centroids[$label] = $this->calculateCentroid($vectors);
         }
@@ -89,47 +116,11 @@ class NewClassification
 
     protected function calculateCentroid(array $vectors): array
     {
-        if ($vectors === []) {
-            return [];
-        }
-
-        $dimensions = count($vectors[0]);
-        $centroid = array_fill(0, $dimensions, 0.0);
-
-        foreach ($vectors as $vector) {
-            for ($i = 0; $i < $dimensions; $i++) {
-                $centroid[$i] += $vector[$i];
-            }
-        }
-
-        $count = count($vectors);
-        for ($i = 0; $i < $dimensions; $i++) {
-            $centroid[$i] /= $count;
-        }
-
-        return $centroid;
+        return VectorMath::average($vectors);
     }
 
     protected function cosineSimilarity(array $vectorA, array $vectorB): float
     {
-        $dotProduct = 0.0;
-        $magnitudeA = 0.0;
-        $magnitudeB = 0.0;
-        $counter = count($vectorA);
-
-        for ($i = 0; $i < $counter; $i++) {
-            $dotProduct += $vectorA[$i] * $vectorB[$i];
-            $magnitudeA += $vectorA[$i] * $vectorA[$i];
-            $magnitudeB += $vectorB[$i] * $vectorB[$i];
-        }
-
-        $magnitudeA = sqrt($magnitudeA);
-        $magnitudeB = sqrt($magnitudeB);
-
-        if ($magnitudeA == 0 || $magnitudeB == 0) {
-            return 0.0;
-        }
-
-        return $dotProduct / ($magnitudeA * $magnitudeB);
+        return VectorMath::cosineSimilarity($vectorA, $vectorB);
     }
 }

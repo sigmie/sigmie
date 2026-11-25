@@ -198,7 +198,7 @@ $sigmie->newSearch('fairy-tales')
     ->get();
 ```
 
-A match in `name` now scores 4 times higher than the same match in `description`.
+The search multiplies the `name` clause’s score by 4. Each field’s underlying relevance score can differ.
 
 ## Drop low-scoring hits
 
@@ -251,6 +251,8 @@ To also return the next best hits of each group as inner hits, pass `top`:
 ```
 
 The field must hold one value per document, such as a `keyword`.
+
+`total` counts matching documents before grouping. `total_pages` is `null` because the search response does not include the number of groups.
 
 ## Add facets
 
@@ -592,7 +594,7 @@ To give several fields or paths one size, pass an array:
 }
 ```
 
-When `total` is greater than the number of items, the list is capped. With more than 100 matches, `items` holds 100 and `total` holds the real count. To return more than 100, raise `index.max_inner_result_window` on the index and pass a larger `size`.
+When `total` is greater than the number of items, the list is capped. For a single clause, Elasticsearch reports the total even when it returns fewer items. If capped clauses overlap, Sigmie reports a lower bound on their combined total. To return more than 100, raise `index.max_inner_result_window` on the index and pass a larger `size`.
 
 When you call `innerHits()` again for the same path, the later `size` wins and the fields merge. A whole-path request covers every field under it, so `->innerHits('reviews.comment', size: 8)->innerHits('reviews', size: 1)` returns one whole review.
 
@@ -607,6 +609,8 @@ A [nested filter](filter-parser.md#nested-field-filtering) also produces matches
 ```
 
 Deeper nested paths use dots too. For orders with nested items, `innerHits('orders.items.sku')` with the filter `orders:{items:{sku:'y'}}` returns the matching items under `_matches['orders.items']`. Each item also holds `_parents`, the offsets of its parent items, such as `{"orders": 1}`.
+
+When a child clause runs inside a parent clause, Sigmie fetches up to 100 matching parents (or the requested parent size if larger). Asking for one displayed order still lets its child clause search the other returned orders. Children of omitted parents do not contribute to that clause’s items or total. The index must allow the parent fetch size in `index.max_inner_result_window`.
 
 `except()` applies to the items too. With `->except(['reviews.author'])`, no item holds `author`, even with `innerHits('reviews')`.
 
@@ -630,7 +634,7 @@ $response->json('hits.0._source');   // one value, by dot notation
 
 ## Return nothing for an empty query
 
-An empty query string returns every document. To return no documents, call `noResultsOnEmptySearch()`:
+An empty or whitespace-only query string returns every document. To return no documents, call `noResultsOnEmptySearch()`:
 
 ```php
 ->noResultsOnEmptySearch()
@@ -638,7 +642,7 @@ An empty query string returns every document. To return no documents, call `noRe
 
 ## Run the search asynchronously
 
-`promise()` returns a Guzzle promise and does not wait for the response:
+`promise()` returns an `Http\Promise\Promise` and does not wait for the response:
 
 ```php
 $promise = $sigmie->newSearch('fairy-tales')
@@ -694,9 +698,11 @@ $sigmie->newSearch('products')
     });
 ```
 
+For semantic scans, `chunk()` also sets the nearest-neighbor window for each vector query.
+
 ### Sort the iteration
 
-A point in time needs a sort with a unique last key. Sigmie adds one, `_shard_doc` on Elasticsearch and `_id` on OpenSearch, unless your sort already ends with it.
+A point in time needs a sort that uniquely orders the documents. Elasticsearch uses `_shard_doc`. OpenSearch uses `_id` and `_index` together to distinguish documents with the same ID in different indices.
 
 | Builder | Where the sort comes from |
 |---------|---------------------------|
@@ -704,7 +710,7 @@ A point in time needs a sort with a unique last key. Sigmie adds one, `_shard_do
 | `newQuery()` | `sortString()` or `sort()`. Without a sort, hits arrive in a stable but unranked order. |
 | `raw()` | The top-level `sort` key of the body. |
 
-For `newQuery()`, sort on fields that exist in the mapping:
+For `raw()`, set the sort in the request body:
 
 ```php
 $multi->raw('orders', [

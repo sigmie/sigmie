@@ -64,7 +64,8 @@ class ComboFieldTest extends TestCase
 
         $response = $search->get();
 
-        $this->assertGreaterThan(0, $response->json('hits.total.value'));
+        $this->assertSame(2, $response->json('total'));
+        $this->assertCount(2, $response->hits());
     }
 
     /**
@@ -118,6 +119,7 @@ class ComboFieldTest extends TestCase
 
         $response = $search->get();
 
-        $this->assertGreaterThan(0, $response->json('hits.total.value'));
+        $this->assertSame(1, $response->json('total'));
+        $this->assertCount(1, $response->hits());
     }
 }

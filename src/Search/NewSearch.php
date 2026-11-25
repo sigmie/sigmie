@@ -8,17 +8,17 @@ use Closure;
 use Generator;
 use Http\Promise\Promise;
 use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
-use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Base\Http\PointInTimeRequests;
 use Sigmie\Document\Hit;
 use Sigmie\Enums\SearchEngineType;
+use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\DenseVector;
-use Sigmie\Mappings\Types\Nested as TypesNested;
 use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
@@ -27,13 +27,14 @@ use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\BooleanQueryBuilder;
-use Sigmie\Query\Contracts\FuzzyQuery;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\FunctionScore;
 use Sigmie\Query\Queries\Compound\Boolean;
-// use Sigmie\Query\Queries\Query;
+use Sigmie\Query\Queries\ElasticsearchKnn;
 use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\MatchNone;
+use Sigmie\Query\Queries\OpenSearchKnn;
+use Sigmie\Query\Queries\Raw;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
@@ -44,10 +45,16 @@ use Sigmie\Search\Contracts\SearchQueryBuilder as SearchQueryBuilderInterface;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\UsesApis;
+use Sigmie\Support\VectorMath;
+
+use function Sigmie\Functions\search_hits;
+use function Sigmie\Functions\trim_text;
 
 class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, MultiSearchable, SearchQueryBuilderInterface
 {
-    use UsesApis;
+    use UsesApis {
+        apis as private registerApis;
+    }
 
     protected array $sort = ['_score'];
 
@@ -62,6 +69,14 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     protected float $textScoreMultiplier = 1.0;
 
     protected float $semanticScoreMultiplier = 1.0;
+
+    protected array $facetFilterErrors = [];
+
+    private array $facetAggregationAliases = [];
+
+    protected string $facetFilterInput = '';
+
+    protected bool $throwOnFacetError = false;
 
     protected bool $retrieveEmbeddingsField = false;
 
@@ -80,8 +95,6 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     protected array $vectorPools = [];
 
     protected int $pitIterationChunkSize = 500;
-
-    protected ?string $collapseField = null;
 
     protected int $collapseTop = 0;
 
@@ -102,10 +115,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     public function page(int $page, int $perPage = 20): static
     {
-        $this->searchContext->from = ($page - 1) * $perPage;
-        $this->searchContext->size = $perPage;
-
-        return $this;
+        return $this->from(($page - 1) * $perPage)->size($perPage);
     }
 
     public function retrieveEmbeddingsField(bool $retrieve = true): static
@@ -151,6 +161,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         ?array $fields = null,
         ?int $dimension = null,
         ?array $vector = null,
+        ?string $vectorField = null,
     ): static {
         $this->searchContext->queryStrings[] = new QueryString(
             text: $query,
@@ -158,6 +169,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
             dimension: $dimension,
             vector: $vector,
             fields: $fields,
+            vectorField: $vectorField,
         );
 
         return $this;
@@ -183,7 +195,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     public function autocompletePrefix(string $prefix): static
     {
-        $this->searchContext->autocompletePrefixStrings[] = $prefix;
+        $this->searchContext->autocompletePrefixStrings = [$prefix];
 
         return $this;
     }
@@ -195,13 +207,25 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         return $this;
     }
 
-    public function properties(Properties|NewProperties $props): static
+    public function properties(Properties|NewProperties $properties): static
     {
-        parent::properties($props);
+        parent::properties($properties);
 
-        $this->filterParser->properties($props);
-        $this->facetParser->properties($props);
-        $this->sortParser->properties($props);
+        $this->filterParser->properties($properties);
+        $this->facetParser->properties($properties);
+        $this->sortParser->properties($properties);
+
+        if ($this->searchContext->filterString !== '') {
+            $this->globalFilters = $this->filterParser->parse($this->searchContext->filterString);
+        }
+
+        if ($this->searchContext->sortString !== '') {
+            $this->sort = $this->sortParser->parse($this->searchContext->sortString);
+        }
+
+        if ($this->searchContext->facetString !== '' || $this->facetFilterInput !== '') {
+            $this->facets($this->searchContext->facetString, $this->facetFilterInput, $this->throwOnFacetError);
+        }
 
         return $this;
     }
@@ -257,68 +281,52 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         bool $throwOnError = false,
     ): static {
 
+        $this->facetFilterInput = $filters;
+        $this->throwOnFacetError = $throwOnError;
         $this->facetParser->throwOnError($throwOnError);
 
         $facetFilterString = $this->facetParser->parseFilterString($filters);
+        $this->facetFilterErrors = $this->facetParser->errors();
 
-        $this->searchContext->facetFields = $this->facetParser->fields($facets);
         $this->searchContext->facetString = $facets;
         $this->searchContext->facetFilterString = $facetFilterString;
 
         if ($facetFilterString !== '') {
-            $this->facetFilters = $this->filterParser->throwOnError($throwOnError)->parse($facetFilterString);
+            $facetFilters = (new FilterParser($this->properties, $throwOnError))
+                ->innerHits($this->searchContext->innerHits);
+            $this->facetFilters = $facetFilters->parse($facetFilterString);
+            $this->facetFilterErrors = [...$this->facetFilterErrors, ...$facetFilters->errors()];
         }
 
         $this->facets = $this->facetParser->parse($facets, $facetFilterString);
+        $this->searchContext->facetFields = $this->facetParser->parsedFields();
 
         return $this;
     }
 
     public function sort(string $sort = '_score', bool $throwOnError = true): static
     {
-        $parser = new SortParser($this->properties, $throwOnError);
-
         $this->searchContext->sortString = $sort;
-        $this->sort = $parser->parse($sort);
+        $this->sort = $this->sortParser
+            ->throwOnError($throwOnError)
+            ->parse($sort);
 
         return $this;
     }
 
     public function uniqueBy(string $field, int $top = 0): static
     {
-        $this->collapseField = $field;
+        $this->searchContext->collapseField = $field;
         $this->collapseTop = $top;
 
         return $this;
     }
 
-    protected function handleHighlight(Search $search)
+    public function highlighting(array $attributes, string $prefix, string $suffix): static
     {
-        $highlight = new Collection($this->highlight);
+        $this->searchContext->highlightTags = [$prefix, $suffix];
 
-        $fields = [];
-        $highlight->each(function (string $field) use (&$fields): void {
-            $properties = $this->properties;
-
-            $field = $properties->get($field);
-
-            foreach ($field->names() as $name) {
-                $fields[$name] = [
-                    'type' => 'plain',
-                    'pre_tags' => [$this->highlightPrefix],
-                    'post_tags' => [$this->highlightSuffix],
-                    'fragment_size' => 150,
-                    'number_of_fragments' => 3,
-                    'no_match_size' => 150,
-                ];
-            }
-        });
-
-        $search->highlight([
-            'require_field_match' => false,
-            'no_match_size' => 100,
-            'fields' => $fields,
-        ]);
+        return parent::highlighting($attributes, $prefix, $suffix);
     }
 
     public function size(int $size = 20): static
@@ -331,24 +339,36 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     public function from(int $from = 0): static
     {
         $this->searchContext->from = $from;
+        $this->searchContext->searchAfter = null;
 
         return $this;
     }
 
     public function searchAfter(array $sort): static
     {
-        $this->searchContext->searchAfter = $sort;
-        $this->searchContext->from = 0;
+        $this->from();
+        $this->searchContext->searchAfter = $sort === [] ? null : array_values($sort);
 
         return $this;
     }
 
     protected function handleRetrievableFields(Search $search)
     {
-        $search->fields($this->retrieve ?? [
-            ...$this->properties->fieldNames(),
-            ...($this->retrieveEmbeddingsField ? ['_embeddings'] : []),
-        ])->except($this->except);
+        $search->fields($this->retrievableFields())->except($this->except);
+    }
+
+    private function retrievableFields(): array|false
+    {
+        if ($this->retrieve === []) {
+            return false;
+        }
+
+        $fields = $this->retrieve ?? $this->properties->fieldNames();
+        if ($fields !== [] && $this->retrieveEmbeddingsField && ! in_array('_embeddings', $fields, true)) {
+            $fields[] = '_embeddings';
+        }
+
+        return array_values($fields);
     }
 
     protected function handleSize(Search $search)
@@ -367,7 +387,25 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
             return;
         }
 
+        $collapsedSort = $this->openSearchCollapsedSort();
+        if ($collapsedSort instanceof CollapsedSort && count($this->searchContext->searchAfter) === 1) {
+            // OpenSearch 3.2 rejects native search_after with collapse.
+            $postFilter = $this->searchContext->facetFilterString !== '' ? $this->facetFilters->toRaw() : null;
+            $search->postFilter(new Raw($collapsedSort->postFilter($this->searchContext->searchAfter[0], $postFilter)));
+
+            return;
+        }
+
         $search->addRaw('search_after', $this->searchContext->searchAfter);
+    }
+
+    private function openSearchCollapsedSort(): ?CollapsedSort
+    {
+        if ($this->elasticsearchConnection->driver()->engine() !== SearchEngineType::OpenSearch) {
+            return null;
+        }
+
+        return CollapsedSort::fromSort($this->searchContext->collapseField, $this->sort);
     }
 
     protected function handleKnn(Search $search)
@@ -379,10 +417,32 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected function handleAggs(Search $search)
     {
-        $search->addRaw('aggs', [
-            ...$this->facets->toRaw(),
-            ...$this->aggregations->toRaw(),
-        ]);
+        $facets = $this->facets->toRaw();
+        $custom = $this->aggregations->toRaw();
+        $aggs = $facets;
+        $this->facetAggregationAliases = [];
+
+        foreach ($custom as $name => $aggregation) {
+            if (isset($facets[$name])) {
+                $alias = '_facet_'.$name;
+                while (isset($aggs[$alias]) || isset($custom[$alias])) {
+                    $alias = '_'.$alias;
+                }
+
+                $aggs[$alias] = $facets[$name];
+                $this->facetAggregationAliases[$name] = $alias;
+            }
+
+            $aggs[$name] = $aggregation;
+        }
+
+        // Array spread renumbers a name "1" to 0. Names "0" and "1" are then
+        // a PHP list, and json_encode drops them.
+        if ($aggs !== [] && array_is_list($aggs)) {
+            $aggs = (object) $aggs;
+        }
+
+        $search->addRaw('aggs', $aggs);
     }
 
     public function aggregate(callable $callable): static
@@ -394,22 +454,44 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected function handleSort(Search $search)
     {
-        $search->addRaw('sort', $this->sort);
+        $search->sort($this->sort);
     }
 
     protected function handleCollapse(Search $search): void
     {
-        if ($this->collapseField === null) {
+        if ($this->searchContext->collapseField === null) {
             return;
         }
 
-        $collapse = ['field' => $this->collapseField];
+        $collapse = ['field' => $this->searchContext->collapseField];
 
         if ($this->collapseTop > 0) {
             $collapse['inner_hits'] = [
                 'name' => 'top',
+                'from' => 1,
                 'size' => $this->collapseTop,
+                'sort' => array_map(
+                    fn (mixed $clause): mixed => is_array($clause) && array_is_list($clause) ? (object) $clause : $clause,
+                    $this->sort,
+                ),
             ];
+
+            if ($this->highlight !== []) {
+                $collapse['inner_hits']['highlight'] = $this->highlightOptions();
+            }
+
+            $fields = $this->retrievableFields();
+            if ($fields === false) {
+                $collapse['inner_hits']['_source'] = false;
+            }
+
+            if ($fields) {
+                $collapse['inner_hits']['_source']['includes'] = $fields;
+            }
+
+            if ($fields !== false && $this->except !== []) {
+                $collapse['inner_hits']['_source']['excludes'] = array_values($this->except);
+            }
         }
 
         $search->addRaw('collapse', $collapse);
@@ -417,9 +499,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected function handleMinScore(Search $search)
     {
-        $minScore = $this->semanticSearch && $this->minScore == 0 ? 0 : $this->minScore;
-
-        $search->minScore($minScore);
+        $search->minScore($this->minScore ?? 0.0);
     }
 
     protected function handleFiltersQuery(Boolean $boolean)
@@ -434,7 +514,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     protected function handlePostFilter(Search $search): void
     {
         if ($this->searchContext->facetFilterString !== '') {
-            $search->postFilter($this->facetFilters);
+            $search->postFilter(new Raw($this->facetFilters->toRaw()));
         }
     }
 
@@ -442,7 +522,8 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     {
         $boolean->must()->bool(function (Boolean $boolean): void {
 
-            $queryStrings = new Collection($this->searchContext->queryStrings);
+            $queryStrings = (new Collection($this->searchContext->queryStrings))
+                ->filter(fn (QueryString $query): bool => trim_text($query->text()) !== '');
 
             $queryStrings->each(function (QueryString $queryString) use ($boolean): void {
 
@@ -451,7 +532,15 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
                 $boolean->should()->query($query);
             });
 
-            // Add semantic queries (function_score queries for accuracy 7)
+            if ($queryStrings->isEmpty()) {
+                if ($this->knn !== [] || $this->semanticQueries !== [] || $this->searchContext->queryImages !== []
+                    || array_filter($this->searchContext->queryStrings, fn (QueryString $query): bool => $query->hasVector())) {
+                    $boolean->should()->query(new MatchNone);
+                } elseif ($this->searchContext->queryStrings !== [] || $this->noKeywordSearch || $this->noResultsOnEmptySearch) {
+                    $boolean->should()->query($this->onEmptyQueryString());
+                }
+            }
+
             foreach ($this->semanticQueries as $semanticQuery) {
                 $boolean->should()->query($semanticQuery);
             }
@@ -460,7 +549,9 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected function handleSuggest(Search $search): void
     {
-        if (! ($this->searchContext->autocompletePrefixStrings[0] ?? false)) {
+        $prefix = $this->searchContext->autocompletePrefixStrings[0] ?? null;
+
+        if (! $this->autocompletion || $prefix === null || $prefix === '') {
             return;
         }
 
@@ -474,8 +565,8 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
                 ->size($this->autocompleteSize)
                 ->fuzzyMinLegth($this->autocompleteFuzzyMinLength)
                 ->fuzzyPrefixLenght($this->autocompleteFuzzyPrefixLength)
-                ->fuzzy($this->autocompletion)
-                ->prefix($this->searchContext->autocompletePrefixStrings[0]);
+                ->fuzzy()
+                ->prefix($prefix);
 
             $search->suggest($suggest);
         }
@@ -486,35 +577,27 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         $search->trackTotalHits();
     }
 
-    protected function handleBoostField(Query $query): FunctionScore|Query
-    {
-        if ($this->properties->boostField ?? false) {
-            return new FunctionScore(
-                $query,
-                source: $this->properties->boostField->scriptScoreSource(),
-                boostMode: $this->properties->boostField->scriptScoreBoostMode()
-            );
-        }
-
-        return $query;
-    }
-
     public function makeFacetSearch(): Search
     {
-        $facets = new Search($this->elasticsearchConnection);
+        $facets = clone $this;
+        $facets->facetFilters = new Boolean;
 
-        $facets->index($this->index)
-            ->query($this->appliedFilters())
-            ->aggs($this->facets);
-
-        return $facets;
+        return $facets->makeSearch()->from(0)->size(0);
     }
 
     public function makeSearch(): Search
     {
+        $search = $this->buildSearch(self::VECTOR_PAGE_WINDOW);
+        $this->handleSearchAfter($search);
+
+        return $search;
+    }
+
+    private function buildSearch(int $knnWindow): Search
+    {
         $search = new Search($this->elasticsearchConnection);
 
-        $search->index($this->index);
+        $search->index($this->index)->filterParserProperties($this->properties);
 
         $this->searchContext->innerHits->resolve($this->properties);
 
@@ -524,17 +607,18 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         $this->handleAggs($search);
         $this->handleSize($search);
         $this->handleFrom($search);
-        $this->handleSearchAfter($search);
         $this->handleMinScore($search);
         $this->handleSuggest($search);
         $this->handleTrackTotalHits($search);
 
         $boolean = new Boolean;
 
+        $this->knn = [];
+        $this->semanticQueries = [];
+
         if ($this->semanticSearch && $this->hasSemanticFields()) {
             $this->populateVectorPool();
-            // Build KNN queries independently before main query
-            $this->buildKnnQueries();
+            $this->buildKnnQueries(max(1, $knnWindow, $this->collapseTop + 1));
             $this->handleKnn($search);
         }
 
@@ -542,7 +626,12 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
         $query = $this->handleBoostField($boolean);
 
-        $search->query($query);
+        if ($this->collapseTop > 0 && $this->minScore > 0 && $this->knn === []) {
+            // Collapse expansion copies the query, but drops the request-level minimum score.
+            $query = new FunctionScore($query, minScore: $this->minScore);
+        }
+
+        $search->query(new Raw($query->toRaw()));
 
         $this->handlePostFilter($search);
 
@@ -559,115 +648,62 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected function hasSemanticFields(): bool
     {
-        $semanticFields = $this->properties->nestedSemanticFields()
-            ->filter(fn (Text $field): bool => $field->isSemantic());
-
-        // If specific fields are requested, filter to only those fields
-        // Otherwise, use all semantic fields
-        if ($this->fields !== []) {
-            $semanticFields = $semanticFields->filter(fn (Text $field): bool => in_array($field->fullPath(), $this->fields));
+        foreach ([...$this->searchContext->queryStrings, ...$this->searchContext->queryImages] as $query) {
+            if ($this->getVectorFields($query)->isNotEmpty()) {
+                return true;
+            }
         }
 
-        return $semanticFields->isNotEmpty();
+        return false;
     }
 
     protected function populateVectorPool(): void
     {
-        // Get all unique APIs needed for semantic fields
-        $requiredApis = $this->getRequiredEmbeddingApis();
+        $textItems = [];
 
-        if ($requiredApis === []) {
-            return;
-        }
-
-        // Create VectorPools for each required API
-        foreach ($requiredApis as $apiName) {
-            if (! isset($this->vectorPools[$apiName])) {
-                $embeddingsApi = $this->getApi($apiName);
-                if (! $embeddingsApi instanceof EmbeddingsApi) {
-                    continue;
-                }
-
-                $this->vectorPools[$apiName] = new VectorPool($embeddingsApi);
-            }
-        }
-
-        // Group fields by their API
-        $fieldsByApi = [];
-
-        $semanticFields = $this->properties->nestedSemanticFields()
-            ->filter(fn (Text $field): bool => $field->isSemantic());
-
-        // If specific fields are requested, filter to only those fields
-        if ($this->fields !== []) {
-            $semanticFields = $semanticFields->filter(fn (Text $field): bool => in_array($field->fullPath(), $this->fields));
-        }
-
-        foreach ($semanticFields as $field) {
-            foreach ($field->vectorFields()->getIterator() as $vectorField) {
-                // Use queryApiName if set, otherwise fall back to apiName
-                $apiName = $vectorField->queryApiName ?? $vectorField->apiName ?? null;
-
-                if (! isset($fieldsByApi[$apiName])) {
-                    $fieldsByApi[$apiName] = [];
-                }
-
-                $fieldsByApi[$apiName][] = $vectorField;
-            }
-        }
-
-        // Populate each VectorPool with its required embeddings
-        foreach ($fieldsByApi as $apiName => $vectorFields) {
-            if (! isset($this->vectorPools[$apiName])) {
+        foreach ([...$this->searchContext->queryStrings, ...$this->searchContext->queryImages] as $query) {
+            if ($query->hasVector()) {
                 continue;
             }
 
-            $dims = array_unique(array_map(fn ($field) => $field->dims, $vectorFields));
+            if (trim_text((string) $query) === '') {
+                continue;
+            }
 
-            // Build array of all text/dimension combinations for this API
-            $items = [];
-            foreach ($this->searchContext->queryStrings as $queryString) {
-                // Skip if already has a vector (passed directly via queryString())
-                if ($queryString->hasVector()) {
+            foreach ($this->getVectorFields($query) as $field) {
+                $apiName = $field->queryApiName ?? $field->apiName ?? null;
+
+                if ($apiName === null) {
                     continue;
                 }
 
-                // Skip empty text
-                if (trim($queryString->text()) === '') {
+                if (! isset($this->vectorPools[$apiName])) {
+                    $api = $this->getApi($apiName);
+                    if (! $api instanceof EmbeddingsApi) {
+                        continue;
+                    }
+
+                    $this->vectorPools[$apiName] = new VectorPool($api, ensureNormalized: false);
+                }
+
+                if ($query instanceof QueryImage) {
+                    $this->vectorPools[$apiName]->get($query->imageSource(), $field->dims());
+
                     continue;
                 }
 
-                foreach ($dims as $dim) {
-                    $items[] = [
-                        'text' => $queryString->text(),
-                        'dims' => $dim,
-                    ];
-                }
+                $textItems[$apiName][] = ['text' => $query->text(), 'dims' => $field->dims()];
             }
+        }
 
-            // Handle image queries - these use embed() instead of batchEmbed()
-            foreach ($this->searchContext->queryImages as $queryImage) {
-                // Skip if already has a vector
-                if ($queryImage->hasVector()) {
-                    continue;
-                }
-
-                // Pre-populate image embeddings using embed()
-                foreach ($dims as $dim) {
-                    $this->vectorPools[$apiName]->get($queryImage->imageSource(), $dim);
-                }
-            }
-
-            // Batch fetch all text embeddings for this API
-            if ($items !== []) {
-                $this->vectorPools[$apiName]->getMany($items);
-            }
+        foreach ($textItems as $apiName => $items) {
+            $this->vectorPools[$apiName]->getMany($items);
         }
     }
 
     protected function onEmptyQueryString(): Query
     {
-        if ($this->noResultsOnEmptySearch) {
+        if ($this->noKeywordSearch || $this->noResultsOnEmptySearch) {
             return new MatchNone;
         }
 
@@ -681,17 +717,8 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         return array_key_exists($field->fullPath(), $this->weight) ? $fieldWeight * $queryWeight : $queryWeight;
     }
 
-    protected function queryFuzziness(Text $field): ?string
-    {
-        return in_array($field->fullPath(), $this->typoTolerantAttributes) ? sprintf('AUTO:%d,%d', $this->minCharsForOneTypo, $this->minCharsForTwoTypo) : null;
-    }
-
     protected function createStringQueries(string $queryString, float $queryBoost = 1.0, ?array $scopedFields = null): Query
     {
-        if ($queryString === '' && ! $this->noResultsOnEmptySearch) {
-            return $this->onEmptyQueryString();
-        }
-
         $keywordQuery = $this->buildKeywordQuery($queryString, $queryBoost, $scopedFields);
 
         $boolean = new Boolean;
@@ -700,119 +727,23 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         return $boolean;
     }
 
-    protected function buildKnnQueries(): void
+    protected function buildKnnQueries(int $k): void
     {
         $allKnnQueries = [];
         $allSemanticQueries = [];
 
-        foreach ($this->searchContext->queryStrings as $queryString) {
-            // Skip if no text and no vector
-            if (trim($queryString->text()) === '' && ! $queryString->hasVector()) {
+        foreach ([...$this->searchContext->queryStrings, ...$this->searchContext->queryImages] as $query) {
+            if (trim_text((string) $query) === '' && ! $query->hasVector()) {
                 continue;
             }
 
-            $result = $this->createVectorQuery($queryString);
-            $allKnnQueries = array_merge($allKnnQueries, $result['knn']);
-            $allSemanticQueries = array_merge($allSemanticQueries, $result['semantic']);
-        }
-
-        foreach ($this->searchContext->queryImages as $queryImage) {
-            // Skip if no image source and no vector
-            if (! $queryImage->hasVector() && trim($queryImage->imageSource()) === '') {
-                continue;
-            }
-
-            $result = $this->createVectorQueryFromImage($queryImage);
+            $result = $this->createVectorQuery($query, $k);
             $allKnnQueries = array_merge($allKnnQueries, $result['knn']);
             $allSemanticQueries = array_merge($allSemanticQueries, $result['semantic']);
         }
 
         $this->knn = $allKnnQueries;
         $this->semanticQueries = $allSemanticQueries;
-    }
-
-    protected function createVectorQueryFromImage(QueryImage $queryImage): array
-    {
-        $vectorFields = $this->getVectorFields($queryImage->fields());
-
-        if ($vectorFields->isEmpty()) {
-            return ['knn' => [], 'semantic' => []];
-        }
-
-        // Group fields by API and dimensions
-        $fieldsByApiAndDims = [];
-        foreach ($vectorFields as $field) {
-            // Use queryApiName if set, otherwise fall back to apiName
-            $apiName = $field->queryApiName ?? $field->apiName ?? null;
-            if (! $apiName) {
-                continue; // Skip fields without API configuration
-            }
-
-            $dims = $field->dims();
-            $key = $apiName.'_'.$dims;
-
-            if (! isset($fieldsByApiAndDims[$key])) {
-                $fieldsByApiAndDims[$key] = [
-                    'apiName' => $apiName,
-                    'dims' => $dims,
-                    'fields' => [],
-                ];
-            }
-
-            $fieldsByApiAndDims[$key]['fields'][] = $field;
-        }
-
-        $knnQueries = [];
-        $semanticQueries = [];
-
-        // Process each API/dimension combination
-        foreach ($fieldsByApiAndDims as $group) {
-            $apiName = $group['apiName'];
-            $dims = $group['dims'];
-            $fields = new Collection($group['fields']);
-
-            // Check if vector was passed directly
-            if ($queryImage->hasVector() && $queryImage->hasDimension() && $queryImage->dimension() === $dims) {
-                // Use the provided vector
-                $vector = $queryImage->vector();
-            } else {
-                // Get embeddings from the appropriate VectorPool
-                if (! isset($this->vectorPools[$apiName])) {
-                    continue; // Skip if VectorPool for this API doesn't exist
-                }
-
-                $vector = $this->vectorPools[$apiName]->get($queryImage->imageSource(), $dims);
-            }
-
-            $vectorByDims = new Collection([$dims => $vector]);
-
-            // Build queries for these fields
-            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryImage->weight(), $this->appliedFilters());
-
-            $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries): void {
-
-                $raw = $query->toRaw();
-
-                if (isset($raw['knn'])) {
-                    // For OpenSearch, keep knn queries as Query objects to add to boolean query
-                    // For Elasticsearch, extract the knn part for top-level knn parameter
-                    // @codeCoverageIgnoreStart
-                    if ($this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch) {
-                        $semanticQueries[] = $query;
-                        // @codeCoverageIgnoreEnd
-                    } else {
-                        $knnQueries[] = $raw['knn'];
-                    }
-                } else {
-                    // @codeCoverageIgnoreStart
-                    // This is a function_score or other non-KNN query
-                    $semanticQueries[] = $query;
-                    // @codeCoverageIgnoreEnd
-                }
-            });
-        }
-
-        return ['knn' => $knnQueries, 'semantic' => $semanticQueries];
     }
 
     protected function buildKeywordQuery(string $queryString, float $queryBoost, ?array $scopedFields = null): Query
@@ -824,101 +755,88 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         return $this->createTextQuery($queryString, $queryBoost, $scopedFields);
     }
 
-    protected function createVectorQuery(QueryString $queryString): array
+    protected function createVectorQuery(QueryString|QueryImage $input, int $k): array
     {
-        $vectorFields = $this->getVectorFields($queryString->fields());
-
-        if ($vectorFields->isEmpty()) {
-            return ['knn' => [], 'semantic' => []];
+        $knn = [];
+        $semantic = [];
+        $driver = $this->elasticsearchConnection->driver();
+        $filter = $this->appliedFilters();
+        if ($this->searchContext->facetFilterString !== '') {
+            $combined = new Boolean;
+            $combined->filter()->query($filter)->query($this->facetFilters);
+            $filter = $combined;
         }
 
-        // Group fields by API and dimensions
-        $fieldsByApiAndDims = [];
-        foreach ($vectorFields as $field) {
-            // Use queryApiName if set, otherwise fall back to apiName
-            $apiName = $field->queryApiName ?? $field->apiName ?? null;
-            if (! $apiName) {
-                continue; // Skip fields without API configuration
-            }
+        // Document boosts and collapse expansion need vector scores inside the main query.
+        $useTopLevelKnn = $driver->engine() === SearchEngineType::Elasticsearch
+            && ! isset($this->properties->boostField)
+            && $this->collapseTop === 0;
 
-            $dims = $field->dims;
-            $key = $apiName.'_'.$dims;
-
-            if (! isset($fieldsByApiAndDims[$key])) {
-                $fieldsByApiAndDims[$key] = [
-                    'apiName' => $apiName,
-                    'dims' => $dims,
-                    'fields' => [],
-                ];
-            }
-
-            $fieldsByApiAndDims[$key]['fields'][] = $field;
-        }
-
-        $knnQueries = [];
-        $semanticQueries = [];
-
-        // Process each API/dimension combination
-        foreach ($fieldsByApiAndDims as $group) {
-            $apiName = $group['apiName'];
-            $dims = $group['dims'];
-            $fields = new Collection($group['fields']);
-
-            // Check if vector was passed directly
-            if ($queryString->hasVector() && $queryString->hasDimension() && $queryString->dimension() === $dims) {
-                // Use the provided vector
-                $vector = $queryString->vector();
-            } else {
-                // Get embeddings from the appropriate VectorPool
-                if (! isset($this->vectorPools[$apiName])) {
-                    continue; // Skip if VectorPool for this API doesn't exist
+        foreach ($this->semanticFields($input->fields()) as $text) {
+            $boost = $this->queryBoost($text, $input->weight()) * $this->semanticScoreMultiplier;
+            foreach ($text->vectorFields() as $field) {
+                if (! $this->matchesVectorField($input, $field)) {
+                    continue;
                 }
 
-                $vector = $this->vectorPools[$apiName]->get($queryString->text(), $dims);
-            }
-
-            $vectorByDims = new Collection([$dims => $vector]);
-
-            // Build queries for these fields
-            $vectorQueries = $this->buildVectorQueries($fields, $vectorByDims, $queryString->weight(), $this->appliedFilters());
-
-            $vectorQueries->each(function (Query $query) use (&$knnQueries, &$semanticQueries): void {
-                $raw = $query->toRaw();
-                if (isset($raw['knn'])) {
-                    // For OpenSearch, keep knn queries as Query objects to add to boolean query
-                    // For Elasticsearch, extract the knn part for top-level knn parameter
-                    // @codeCoverageIgnoreStart
-                    if ($this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch) {
-                        $semanticQueries[] = $query;
-                        // @codeCoverageIgnoreEnd
-                    } else {
-                        $knnQueries[] = $raw['knn'];
-                    }
+                $dims = $field->dims();
+                if ($input->hasVector()) {
+                    $vector = $this->callerVector($input, $dims);
                 } else {
-                    // This is a function_score or other non-KNN query
-                    $semanticQueries[] = $query;
+                    $apiName = $field->queryApiName ?? $field->apiName;
+                    $pool = $this->vectorPools[$apiName ?? 'default'] ?? null;
+                    $vector = $pool?->get((string) $input, $dims);
                 }
-            });
+
+                if ($vector === null) {
+                    continue;
+                }
+
+                $normalize = ! $input->hasVector() || $field->similarity === VectorSimilarity::DotProduct;
+                if ($field->autoNormalizeVector && $normalize && ! VectorMath::isNormalized($vector)) {
+                    $vector = VectorMath::normalize($vector);
+                }
+
+                $mapped = $field instanceof NestedVector ? $driver->nestedVectorField($field) : $driver->vectorField($field);
+                foreach ($mapped->vectorQueries($vector, $k, $filter) as $query) {
+                    $query->boost($boost);
+                    $raw = $useTopLevelKnn ? $query->toRaw() : [];
+                    if (isset($raw['knn'])) {
+                        $knn[] = $raw['knn'];
+                    } else {
+                        $semantic[] = $query;
+                    }
+                }
+            }
         }
 
-        return ['knn' => $knnQueries, 'semantic' => $semanticQueries];
+        return ['knn' => $knn, 'semantic' => $semantic];
     }
 
-    protected function getVectorFields(?array $scopedFields = null): Collection
+    private function matchesVectorField(QueryString|QueryImage $query, BaseVector|NestedVector $field): bool
     {
-        $fieldsToFilter = $scopedFields ?? $this->fields;
+        return (! $query->hasDimension() || $query->dimension() === $field->dims())
+            && (! $query instanceof QueryString || $query->vectorField === null || $query->vectorField === $field->name);
+    }
 
-        $semanticFields = $this->properties->nestedSemanticFields()
-            ->filter(fn (Text $field): bool => $field->isSemantic());
-
-        // If specific fields are requested, filter to only those fields
-        if ($fieldsToFilter !== []) {
-            $semanticFields = $semanticFields->filter(fn (Text $field): bool => in_array($field->fullPath(), $fieldsToFilter));
-        }
-
-        return $semanticFields
+    protected function getVectorFields(QueryString|QueryImage|null $query = null): Collection
+    {
+        $fields = $this->semanticFields($query?->fields())
             ->map(fn (Text $field): Collection => $field->vectorFields())
             ->flatten(1);
+
+        return $query === null ? $fields : $fields->filter(fn ($field): bool => $this->matchesVectorField($query, $field));
+    }
+
+    private function callerVector(QueryString|QueryImage $query, int $dims): ?array
+    {
+        $vector = $query->vector();
+
+        if (count($vector) !== $dims) {
+            return null;
+        }
+
+        return $vector;
     }
 
     protected function getVectorDimensions(Collection $vectorFields): array
@@ -929,51 +847,12 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
             ->toArray();
     }
 
-    protected function buildVectorQueries(Collection $vectorFields, Collection $vectorByDims, float $queryBoost, Boolean $filter): Collection
-    {
-        return $vectorFields
-            ->map(function (TypesNested|BaseVector $field) use ($vectorByDims, $filter) {
-
-                $vector = $vectorByDims->get($field->dims);
-
-                $driver = $this->elasticsearchConnection->driver();
-
-                if ($field instanceof NestedVector) {
-                    $queries = $driver->nestedVectorField($field)->vectorQueries(
-                        vector: $vector,
-                        k: $this->searchContext->size,
-                        filter: $filter
-                    );
-                }
-
-                if ($field instanceof BaseVector) {
-                    return $driver->vectorField($field)->vectorQueries(
-                        vector: $vector,
-                        k: $this->searchContext->size,
-                        filter: $filter
-                    );
-                }
-
-                return $queries;
-            })
-            ->flatten(1)
-            ->map(fn (Query $query): Query => $this->configureVectorQuery($query, $queryBoost));
-    }
-
-    protected function configureVectorQuery(Query $query, float $queryBoost): Query
-    {
-        // Apply the query boost/weight
-        $query->boost($queryBoost);
-
-        return $query;
-    }
-
     protected function createTextQuery(string $queryString, float $queryBoost = 1.0, ?array $scopedFields = null): Query
     {
         $keywordBoolean = new Boolean;
         $keywordBoolean->should()->query(new MatchNone);
 
-        $fieldsToQuery = $scopedFields ?? $this->fields;
+        $fieldsToQuery = $scopedFields ?? $this->searchFields();
         $fields = new Collection($fieldsToQuery);
 
         $fields->each(function ($field) use ($keywordBoolean, $queryString, $queryBoost): void {
@@ -1001,19 +880,12 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected function configureQueryClause(Query $queryClause, Text|Type $field, float $queryBoost): Query
     {
-        if ($queryClause instanceof FuzzyQuery) {
-            $fuzziness = $this->queryFuzziness($field);
-            $queryClause->fuzziness($fuzziness);
-        }
-
-        $boost = $this->queryBoost($field, $queryBoost);
-
-        return $queryClause->boost($boost);
+        return $this->weightedFieldQuery($queryClause, $field->fullPath(), $this->queryBoost($field, $queryBoost));
     }
 
     protected function wrapNestedQuery(Query $queryClause, $field): Query
     {
-        if ($nestedPath = $field->nestedPath()) {
+        if (($nestedPath = $field->nestedPath()) !== null) {
             return new Nested($nestedPath, $queryClause, innerHits: $this->searchContext->innerHits);
         }
 
@@ -1029,18 +901,37 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     public function formatRespones(array $searchResponse, array $facetsResponse, ?int $httpCode = null)
     {
-        $formatter = $this->formatter ?? new SigmieSearchResponse($this->properties, $this->semanticSearch);
+        search_hits($searchResponse);
+        search_hits($facetsResponse);
 
-        $formatter->context($this->searchContext)
+        if (($collapsedSort = $this->openSearchCollapsedSort()) instanceof CollapsedSort && isset($searchResponse['hits']['hits'])) {
+            foreach ($searchResponse['hits']['hits'] as &$hit) {
+                // Numeric missing values use a sort sentinel that can also be a real value.
+                if (isset($hit['sort']) && ! isset($hit['fields'][$collapsedSort->field])) {
+                    $hit['sort'][0] = null;
+                }
+            }
+
+            unset($hit);
+        }
+
+        $formatter = isset($this->formatter)
+            ? clone $this->formatter
+            : new SigmieSearchResponse($this->properties, $this->semanticSearch);
+        $formatter = $formatter->context(clone $this->searchContext)
             ->apis($this->apis)
             ->errors([
                 ...$this->filterParser->errors(),
+                ...$this->facetFilterErrors,
                 ...$this->facetParser->errors(),
                 ...$this->sortParser->errors(),
             ])
             ->facetsResponseRaw($facetsResponse)
-            ->queryResponseRaw($searchResponse)
-            ->responseCode($httpCode ?? 200);
+            ->queryResponseRaw($searchResponse);
+
+        if (is_callable([$formatter, 'responseCode'])) {
+            $formatter->responseCode($httpCode ?? 200);
+        }
 
         return $formatter;
     }
@@ -1048,14 +939,9 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     public function get(): ResponseFormater
     {
         $multi = new NewMultiSearch($this->elasticsearchConnection);
+        $multi->add($this);
 
-        $multi->raw($this->index, $this->makeSearch()->toRaw());
-
-        [$response] = $multi->get();
-
-        $httpCode = $multi->responseCode();
-
-        return $this->formatRespones($response, $response, $httpCode);
+        return $multi->get()[0];
     }
 
     public function promise(): Promise
@@ -1067,19 +953,23 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     {
         return new FunctionScore(
             $query,
-            source: sprintf('return _score * %s;', $this->textScoreMultiplier),
+            source: 'return _score * params.multiplier;',
+            params: ['multiplier' => $this->textScoreMultiplier],
             boostMode: 'replace'
         );
     }
 
     public function toMultiSearch(): array
     {
-        return [
-            [
-                'index' => $this->index,
-            ],
-            $this->makeSearch()->toRaw(),
-        ];
+        $header = ['index' => $this->index];
+        $body = [$header, $this->makeSearch()->toRaw()];
+
+        if ($this->multisearchResCount() === 2) {
+            $body[] = $header;
+            $body[] = $this->makeFacetSearch()->toRaw();
+        }
+
+        return $body;
     }
 
     public function formatResponses(...$responses): mixed
@@ -1087,17 +977,54 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         $response = $responses[0] ?? [];
         $httpCode = $responses['httpCode'] ?? null;
 
-        return $this->formatRespones($response, $response, $httpCode);
+        $facetsResponse = $responses[1] ?? $response;
+        foreach ($this->facetAggregationAliases as $name => $alias) {
+            if (isset($facetsResponse['aggregations'][$alias])) {
+                $facetsResponse['aggregations'][$name] = $facetsResponse['aggregations'][$alias];
+                unset($facetsResponse['aggregations'][$alias]);
+            }
+
+            unset($response['aggregations'][$alias]);
+        }
+
+        return $this->formatRespones($response, $facetsResponse, $httpCode);
     }
 
     public function multisearchResCount(): int
     {
+        if ($this->searchContext->facetFields === [] || $this->searchContext->facetFilterString === '') {
+            return 1;
+        }
+
+        // kNN pre-filters hide candidates that the selected facet still needs to count.
+        if ($this->knn !== []) {
+            return 2;
+        }
+
+        foreach ($this->semanticQueries as $query) {
+            if ($query instanceof ElasticsearchKnn || $query instanceof OpenSearchKnn) {
+                return 2;
+            }
+        }
+
         return 1;
+    }
+
+    public function forHits(): static
+    {
+        if (isset($this->formatter) && ! is_callable([$this->formatter, 'hits'])) {
+            $search = clone $this;
+            unset($search->formatter);
+
+            return $search;
+        }
+
+        return $this;
     }
 
     public function hits()
     {
-        return $this->get()->hits();
+        return $this->forHits()->get()->hits();
     }
 
     public function chunk(int $size = 500): static
@@ -1130,22 +1057,23 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         $pit = new PointInTimeRequests($this->elasticsearchConnection);
         $isOpenSearch = $this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch;
 
-        $body = $this->makeSearch()->toRaw();
+        $body = $this->buildSearch($this->pitIterationChunkSize)->toRaw();
+        $innerHits = clone $this->searchContext->innerHits;
 
         $hasCollapse = array_key_exists('collapse', $body);
+        $sort = $body['sort'] ?? [];
 
         unset(
             $body['from'],
             $body['size'],
             $body['aggs'],
-            $body['highlight'],
             $body['suggest'],
             $body['track_total_hits'],
             $body['sort'],
         );
 
         $body['size'] = $this->pitIterationChunkSize;
-        $body['sort'] = PitSortPlanner::plan($this->sort, $isOpenSearch, $hasCollapse);
+        $body['sort'] = PitSortPlanner::plan($sort, $isOpenSearch, $hasCollapse, preserveSingleSort: $this->searchContext->sortString !== '');
 
         $keepAlive = '1m';
         $open = $pit->open($this->index, $keepAlive);
@@ -1159,14 +1087,19 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
             function (string $id) use ($pit): void {
                 $pit->close($id);
             },
-            fn (array $data): Hit => new Hit(
-                $data['_source'] ?? [],
-                $data['_id'],
-                isset($data['_score']) ? (float) $data['_score'] : null,
-                $data['_index'] ?? null,
-                $data['sort'] ?? null,
-            ),
+            fn (array $data): Hit => Hit::fromRaw($innerHits->formatRawHit($data)),
         );
+    }
+
+    public function apis(array $apis): static
+    {
+        foreach ($this->apis as $name => $previous) {
+            if (($apis[$name] ?? null) !== $previous) {
+                unset($this->vectorPools[$name]);
+            }
+        }
+
+        return $this->registerApis($apis);
     }
 
     public function setVectorPool(VectorPool|array $pool, ?string $apiName = null): static
@@ -1179,8 +1112,14 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
             }
 
             $this->vectorPools[$apiName] = $pool;
+        } elseif ($apiName !== null) {
+            if (! isset($this->vectorPools[$apiName]) && ($api = $this->getApi($apiName)) instanceof EmbeddingsApi) {
+                $this->vectorPools[$apiName] = new VectorPool($api, ensureNormalized: false);
+            }
+
+            ($this->vectorPools[$apiName] ?? null)?->setPool($pool);
         } else {
-            // Legacy array format support - set pool data for all existing VectorPools
+            // An unnamed seed applies to each existing pool.
             foreach ($this->vectorPools as $vectorPool) {
                 $vectorPool->setPool($pool);
             }
@@ -1218,19 +1157,11 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
     {
         $apis = [];
 
-        $semanticFields = $this->properties->nestedSemanticFields()
-            ->filter(fn (Text $field): bool => $field->isSemantic());
-
-        // If specific fields are requested, filter to only those fields
-        if ($this->fields !== []) {
-            $semanticFields = $semanticFields->filter(fn (Text $field): bool => in_array($field->fullPath(), $this->fields));
-        }
-
-        foreach ($semanticFields as $field) {
-            foreach ($field->vectorFields()->getIterator() as $vectorField) {
-                // Use queryApiName if set, otherwise fall back to apiName
-                $apiName = $vectorField->queryApiName ?? $vectorField->apiName ?? null;
-                if ($apiName) {
+        $queries = [...$this->searchContext->queryStrings, ...$this->searchContext->queryImages];
+        foreach ($queries === [] ? [null] : $queries as $query) {
+            foreach ($this->getVectorFields($query) as $field) {
+                $apiName = $field->queryApiName ?? $field->apiName;
+                if ($apiName !== null) {
                     $apis[$apiName] = true;
                 }
             }

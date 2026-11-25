@@ -9,13 +9,15 @@ class Rate extends Metric
     public function __construct(
         protected string $name,
         protected string $field,
+        protected ?string $unit = 'year',
     ) {}
 
     protected function value(): array
     {
         return [
             'rate' => [
-                'unit' => 'year',
+                'field' => $this->field,
+                ...($this->unit === null ? [] : ['unit' => $this->unit]),
             ],
         ];
     }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Support;
 
+use UnexpectedValueException;
+
 class VectorMath
 {
     /**
@@ -11,14 +13,15 @@ class VectorMath
      */
     public static function normalize(array $vector): array
     {
-        $magnitude = sqrt(array_sum(array_map(fn ($v): int|float => $v * $v, $vector)));
-
-        // Avoid division by zero
-        if ($magnitude == 0) {
+        $peak = self::peak($vector);
+        if ($peak == 0.0) {
             return $vector;
         }
 
-        return array_map(fn ($v): float => $v / $magnitude, $vector);
+        $scaled = array_map(fn ($value): float => $value / $peak, $vector);
+        $length = sqrt(array_sum(array_map(fn ($value): float => $value * $value, $scaled)));
+
+        return array_map(fn ($value): float => $value / $length, $scaled);
     }
 
     /**
@@ -28,7 +31,7 @@ class VectorMath
     {
         $magnitude = sqrt(array_sum(array_map(fn ($v): int|float => $v * $v, $vector)));
 
-        return abs($magnitude - 1.0) < $tolerance;
+        return abs($magnitude - 1.0) <= $tolerance;
     }
 
     /**
@@ -37,26 +40,53 @@ class VectorMath
      */
     public static function centroid(array $vectors): array
     {
+        return self::normalize(self::average($vectors));
+    }
+
+    public static function average(array $vectors): array
+    {
         if ($vectors === []) {
             return [];
         }
 
-        $numVectors = count($vectors);
-        $dimensions = count($vectors[0]);
-
-        $centroid = array_fill(0, $dimensions, 0.0);
-
+        $count = count($vectors);
+        $mean = array_fill(0, count(reset($vectors)), 0.0);
+        $corrections = $mean;
         foreach ($vectors as $vector) {
-            foreach ($vector as $i => $value) {
-                $centroid[$i] += $value;
+            if (count($vector) !== count($mean)) {
+                throw new UnexpectedValueException('Cannot average vectors of different dimensions.');
+            }
+
+            foreach (array_values($vector) as $i => $value) {
+                $sum = $mean[$i];
+                $next = $sum + $value;
+                $mean[$i] = $next;
+
+                if (is_finite($next)) {
+                    // Keep the part lost to rounding when adding different magnitudes.
+                    $corrections[$i] += abs($sum) >= abs($value)
+                        ? ($sum - $next) + $value
+                        : ($value - $next) + $sum;
+                }
             }
         }
 
-        // Average each dimension
-        $centroid = array_map(fn ($sum): float => $sum / $numVectors, $centroid);
+        foreach ($mean as $i => $sum) {
+            $sum += $corrections[$i];
+            if (is_finite($sum)) {
+                $mean[$i] = $sum / $count;
 
-        // Normalize the centroid
-        return self::normalize($centroid);
+                continue;
+            }
+
+            // The mean fits even when its intermediate sum overflows.
+            $components = array_map(fn ($vector): mixed => array_values($vector)[$i], $vectors);
+            $peak = self::peak($components);
+            $scaled = array_map(fn ($value): float => $value / $peak, $components);
+            $mean[$i] = (array_sum($scaled) / $count) * $peak;
+        }
+
+        return $mean;
     }
 
     /**
@@ -73,29 +103,54 @@ class VectorMath
      */
     public static function cosineSimilarity(array $vectorA, array $vectorB): float
     {
+        $vectorA = array_values($vectorA);
+        $vectorB = array_values($vectorB);
+
         if ($vectorA === [] || $vectorB === [] || count($vectorA) !== count($vectorB)) {
             return 0.0;
         }
 
-        $dotProduct = 0.0;
-        $magnitudeA = 0.0;
-        $magnitudeB = 0.0;
-
-        foreach ($vectorA as $i => $valueA) {
-            $valueB = $vectorB[$i];
-            $dotProduct += $valueA * $valueB;
-            $magnitudeA += $valueA * $valueA;
-            $magnitudeB += $valueB * $valueB;
-        }
-
-        $magnitudeA = sqrt($magnitudeA);
-        $magnitudeB = sqrt($magnitudeB);
+        $peakA = self::peak($vectorA);
+        $peakB = self::peak($vectorB);
 
         // Avoid division by zero
-        if ($magnitudeA == 0 || $magnitudeB == 0) {
+        if ($peakA == 0.0 || $peakB == 0.0) {
             return 0.0;
         }
 
-        return $dotProduct / ($magnitudeA * $magnitudeB);
+        // Identical finite vectors are 1. Scaling still leaves a double rounding short of 1.
+        if ($vectorA == $vectorB && is_finite($peakA) && is_finite($peakB)) {
+            return 1.0;
+        }
+
+        $dotProduct = 0.0;
+        $sumA = 0.0;
+        $sumB = 0.0;
+
+        foreach ($vectorA as $i => $valueA) {
+            $scaledA = $valueA / $peakA;
+            $scaledB = $vectorB[$i] / $peakB;
+            $dotProduct += $scaledA * $scaledB;
+            $sumA += $scaledA * $scaledA;
+            $sumB += $scaledB * $scaledB;
+        }
+
+        $similarity = $dotProduct / (sqrt($sumA) * sqrt($sumB));
+
+        return max(-1.0, min(1.0, $similarity));
+    }
+
+    /**
+     * @param  array<int|string, int|float>  $vector
+     */
+    private static function peak(array $vector): float
+    {
+        $peak = 0.0;
+
+        foreach ($vector as $value) {
+            $peak = max($peak, abs((float) $value));
+        }
+
+        return $peak;
     }
 }

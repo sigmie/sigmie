@@ -8,6 +8,8 @@ use GuzzleHttp\Client;
 use GuzzleHttp\RequestOptions;
 use Sigmie\AI\Contracts\RerankApi;
 
+use function Sigmie\Functions\rerank_batches;
+
 class VoyageRerankApi implements RerankApi
 {
     protected Client $client;
@@ -28,36 +30,27 @@ class VoyageRerankApi implements RerankApi
 
     public function rerank(array $newIndexes, string $query, ?int $topK = null): array
     {
-        $payload = [
-            'model' => $this->model,
-            'query' => $query,
-            'documents' => $newIndexes,
-        ];
+        // Allow up to three bytes per original byte after normalization.
+        $queryCost = 3 * strlen($query);
 
-        // Merge additional options
-        if ($topK !== null) {
-            $payload['top_k'] = $topK;
-        }
+        return rerank_batches(
+            $newIndexes,
+            $topK,
+            1000,
+            function (array $documents, ?int $limit) use ($query): array {
+                $response = $this->client->post('/v1/rerank', [
+                    RequestOptions::JSON => [
+                        'model' => $this->model,
+                        'query' => $query,
+                        'documents' => $documents,
+                        ...($limit === null ? [] : ['top_k' => $limit]),
+                    ],
+                ]);
 
-        // Common options that can be passed:
-        // - top_k: number of documents to return
-        // - return_documents: whether to return the full documents
-        // - truncation: whether to truncate long documents
-
-        $response = $this->client->post('/v1/rerank', [
-            RequestOptions::JSON => $payload,
-        ]);
-
-        $json = json_decode($response->getBody()->getContents(), true);
-
-        $data = $json['data'];
-
-        // Reorder documents based on reranking results using array_map
-        $newIndexes = array_map(fn ($result): array => [
-            'index' => $result['index'],
-            'score' => $result['relevance_score'],
-        ], $data);
-
-        return $newIndexes;
+                return ApiResponse::rerank($response, 'data', count($documents));
+            },
+            static fn (string $document): int => $queryCost + 3 * strlen($document) + 10,
+            in_array($this->model, ['rerank-1', 'rerank-lite-1'], true) ? 300_000 : 600_000,
+        );
     }
 }

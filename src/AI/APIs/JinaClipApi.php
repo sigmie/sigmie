@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Sigmie\AI\APIs;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Promise\Promise;
+use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\RequestOptions;
+use Psr\Http\Message\ResponseInterface;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Helpers\ImageHelper;
+
+use function Sigmie\Functions\batch_slots;
 
 class JinaClipApi implements EmbeddingsApi
 {
@@ -19,7 +22,7 @@ class JinaClipApi implements EmbeddingsApi
         protected string $model = 'ViT-B/32'
     ) {
         $this->client = new Client([
-            'base_uri' => $baseUrl,
+            'base_uri' => rtrim($baseUrl, '/').'/',
             'headers' => [
                 'Content-Type' => 'application/json',
             ],
@@ -32,24 +35,13 @@ class JinaClipApi implements EmbeddingsApi
      */
     public function embed(string $text, int $dimensions): array
     {
-        $isImage = $this->isImageSource($text);
+        $payload = $this->requestBody([$text]);
 
-        $payload = [
-            'data' => [
-                [
-                    'text' => $isImage ? null : $text,
-                    'uri' => $isImage ? $text : null,
-                ],
-            ],
-        ];
-
-        $response = $this->client->post('/encode', [
+        $response = $this->client->post('post', [
             RequestOptions::JSON => $payload,
         ]);
 
-        $data = json_decode($response->getBody()->getContents(), true);
-
-        return $data['data'][0]['embedding'] ?? [];
+        return ApiResponse::resizeEmbedding(ApiResponse::jinaEmbeddings($response, 1)[0], $dimensions);
     }
 
     /**
@@ -61,30 +53,13 @@ class JinaClipApi implements EmbeddingsApi
             return [];
         }
 
-        $jinaData = [];
+        foreach (batch_slots($payload, null, $this->maxBatchSize()) as $group) {
+            $response = $this->client->post('post', [
+                RequestOptions::JSON => $this->requestBody($group['texts']),
+            ]);
 
-        foreach ($payload as $item) {
-            $text = $item['text'] ?? '';
-            $isImage = $this->isImageSource($text);
-
-            $jinaData[] = [
-                'text' => $isImage ? null : $text,
-                'uri' => $isImage ? $text : null,
-            ];
-        }
-
-        $response = $this->client->post('/encode', [
-            RequestOptions::JSON => [
-                'data' => $jinaData,
-            ],
-        ]);
-
-        $data = json_decode($response->getBody()->getContents(), true);
-
-        // Map embeddings back to payload
-        foreach ($data['data'] as $index => $result) {
-            if (isset($result['embedding'])) {
-                $payload[$index]['vector'] = $result['embedding'];
+            foreach (ApiResponse::jinaEmbeddings($response, count($group['keys'])) as $index => $vector) {
+                $payload[$group['keys'][$index]]['vector'] = ApiResponse::resizeEmbedding($vector, $group['dims']);
             }
         }
 
@@ -94,20 +69,15 @@ class JinaClipApi implements EmbeddingsApi
     /**
      * Generate embeddings asynchronously
      */
-    public function promiseEmbed(string $text, int $dimensions): Promise
+    public function promiseEmbed(string $text, int $dimensions): PromiseInterface
     {
-        $isImage = $this->isImageSource($text);
+        return $this->client->postAsync('post', [
+            RequestOptions::JSON => $this->requestBody([$text]),
+        ])->then(static function (ResponseInterface $response): ResponseInterface {
+            ApiResponse::jinaEmbeddings($response, 1);
 
-        return $this->client->postAsync('/encode', [
-            RequestOptions::JSON => [
-                'data' => [
-                    [
-                        'text' => $isImage ? null : $text,
-                        'uri' => $isImage ? $text : null,
-                    ],
-                ],
-            ],
-        ]);
+            return $response;
+        });
     }
 
     public function model(): string
@@ -120,19 +90,19 @@ class JinaClipApi implements EmbeddingsApi
         return 2048;
     }
 
-    /**
-     * Check if a string is likely an image source (URL, base64, or file path)
-     */
-    protected function isImageSource(string $text): bool
+    private function requestBody(array $texts): array
     {
-        if (ImageHelper::isUrl($text)) {
-            return true;
+        return ['data' => array_map($this->input(...), $texts), 'execEndpoint' => '/'];
+    }
+
+    private function input(string $text): array
+    {
+        if (ImageHelper::isFilePath($text)) {
+            return ['blob' => ImageHelper::toBase64(ImageHelper::fetchImageContent($text))];
         }
 
-        if (ImageHelper::isBase64($text)) {
-            return true;
-        }
+        $uri = ImageHelper::base64ImageUri($text) ?? (ImageHelper::isUrl($text) ? $text : null);
 
-        return ImageHelper::isFilePath($text);
+        return $uri === null ? ['text' => $text] : ['uri' => $uri];
     }
 }

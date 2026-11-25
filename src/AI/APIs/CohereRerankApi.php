@@ -8,6 +8,8 @@ use GuzzleHttp\Client;
 use GuzzleHttp\RequestOptions;
 use Sigmie\AI\Contracts\RerankApi;
 
+use function Sigmie\Functions\rerank_texts;
+
 class CohereRerankApi implements RerankApi
 {
     protected Client $client;
@@ -28,10 +30,14 @@ class CohereRerankApi implements RerankApi
 
     public function rerank(array $newIndexes, string $query, ?int $topK = null): array
     {
+        if ($newIndexes === [] || $topK === 0) {
+            return [];
+        }
+
         $payload = [
             'model' => $this->model,
             'query' => $query,
-            'documents' => $newIndexes,
+            'documents' => rerank_texts($newIndexes),
         ];
 
         if ($topK !== null) {
@@ -42,13 +48,6 @@ class CohereRerankApi implements RerankApi
             RequestOptions::JSON => $payload,
         ]);
 
-        $json = json_decode($response->getBody()->getContents(), true);
-
-        $data = $json['results'];
-
-        return array_map(fn ($result): array => [
-            'index' => $result['index'],
-            'score' => $result['relevance_score'],
-        ], $data);
+        return ApiResponse::rerank($response, 'results', count($newIndexes));
     }
 }

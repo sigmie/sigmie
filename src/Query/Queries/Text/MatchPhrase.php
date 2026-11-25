@@ -4,26 +4,22 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Queries\Text;
 
-use Sigmie\Query\Queries\Query;
+use function Sigmie\Functions\keyed;
 
-class MatchPhrase extends Query
+class MatchPhrase extends MatchQuery
 {
     public function __construct(
         protected string $field,
-        protected string $query,
-        protected string $analyzer = 'default',
-    ) {}
+        string $query,
+        ?string $analyzer = null,
+    ) {
+        parent::__construct($query, $analyzer);
+    }
 
     public function toRaw(): array
     {
         return [
-            'match_phrase' => [
-                $this->field => [
-                    'query' => $this->query,
-                    'boost' => $this->boost,
-                    'analyzer' => $this->analyzer,
-                ],
-            ],
+            'match_phrase' => keyed($this->field, $this->matchOptions()),
         ];
     }
 }

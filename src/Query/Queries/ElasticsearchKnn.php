@@ -20,9 +20,9 @@ class ElasticsearchKnn extends Query
         return [
             'knn' => [
                 'field' => $this->field,
-                'query_vector' => $this->queryVector,
+                'query_vector' => is_array($this->queryVector) ? array_values($this->queryVector) : $this->queryVector,
                 'k' => $this->k,
-                'filter' => $this->filter,
+                'filter' => is_int(array_key_first($this->filter)) ? array_values($this->filter) : $this->filter,
                 'num_candidates' => $this->numCandidates,
                 'boost' => $this->boost,
             ],

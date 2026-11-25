@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Analytics\Widgets;
 
 use DateTimeInterface;
+use Sigmie\Mappings\Properties;
 use Sigmie\Query\Aggs;
 use Sigmie\Shared\Collection;
 
@@ -29,6 +30,7 @@ class Table extends Widget
         protected array $fields,
         protected int $limit,
         protected ?array $sort,
+        protected Properties $properties,
         protected array $except = [],
     ) {
         parent::__construct($name, $dateField, $from, $to, $dateFormat);
@@ -49,7 +51,7 @@ class Table extends Widget
             'type' => 'table',
             'rows' => $hits->map(fn (array $hit): array => [
                 'id' => $hit['_id'] ?? null,
-                'document' => $hit['_source'] ?? [],
+                'document' => $this->properties->sourceObject($hit['_source'] ?? []),
             ])->toArray(),
         ];
     }

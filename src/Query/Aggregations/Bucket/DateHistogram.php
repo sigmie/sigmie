@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Aggregations\Bucket;
 
+use DateTimeInterface;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Shared\Missing;
+
+use function Sigmie\Functions\epoch_milliseconds;
 
 class DateHistogram extends Bucket
 {
     use Missing;
+
+    protected ?array $script = null;
 
     public function __construct(
         protected string $name,
@@ -21,6 +26,19 @@ class DateHistogram extends Bucket
         protected ?string $timeZone = null,
     ) {}
 
+    public function script(array $script): static
+    {
+        foreach (['params', 'options'] as $key) {
+            if (is_array($script[$key] ?? null) && array_is_list($script[$key])) {
+                $script[$key] = (object) $script[$key];
+            }
+        }
+
+        $this->script = $script;
+
+        return $this;
+    }
+
     protected function value(): array
     {
         // A CalendarInterval (1d, 1w, 1M…) is calendar-aware; a raw string (15d, 90m, 12h) is a
@@ -31,7 +49,7 @@ class DateHistogram extends Bucket
 
         $value = [
             'date_histogram' => [
-                'field' => $this->field,
+                ...($this->script === null ? ['field' => $this->field] : ['script' => $this->script]),
                 $key => $interval,
                 'min_doc_count' => $this->minDocCount,
             ],
@@ -45,8 +63,11 @@ class DateHistogram extends Bucket
             $value['date_histogram']['missing'] = $this->missing;
         }
 
-        if (! is_null($this->extendedBounds)) {
-            $value['date_histogram']['extended_bounds'] = $this->extendedBounds;
+        if ($this->extendedBounds) {
+            $value['date_histogram']['extended_bounds'] = array_map(
+                fn (mixed $bound): mixed => $bound instanceof DateTimeInterface ? epoch_milliseconds($bound) : $bound,
+                $this->extendedBounds,
+            );
         }
 
         if (! is_null($this->format)) {

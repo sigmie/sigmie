@@ -6,6 +6,8 @@ namespace Sigmie\Search;
 
 use Sigmie\Support\VectorMath;
 
+use function Sigmie\Functions\response_value;
+
 class MMR
 {
     public function __construct(
@@ -23,27 +25,25 @@ class MMR
      */
     public function diversify(array $hits, array $seedDocs, string $fieldName, int $topK): array
     {
-        if ($hits === [] || $seedDocs === [] || ($fieldName === '' || $fieldName === '0')) {
+        if ($hits === [] || $seedDocs === [] || $fieldName === '') {
             return array_slice($hits, 0, $topK);
         }
 
-        // Extract query vectors from seed documents
-        $queryVectors = $this->extractQueryVectors($seedDocs, $fieldName);
+        $seeds = [];
+        foreach ($seedDocs as $doc) {
+            foreach (self::documentVectors($doc, $fieldName) as $space => $vectors) {
+                foreach ($vectors as $vector) {
+                    $seeds[$space][count($vector)][] = $vector;
+                }
+            }
+        }
 
-        if ($queryVectors === []) {
+        if ($seeds === []) {
             return array_slice($hits, 0, $topK);
         }
 
-        // Calculate centroid of query vectors for relevance comparison
-        $queryVector = VectorMath::centroid($queryVectors);
-
-        // @codeCoverageIgnoreStart
-        if ($queryVector === []) {
-            return array_slice($hits, 0, $topK);
-        }
-
-        // @codeCoverageIgnoreEnd
-
+        $centroids = array_map(fn (array $byDimension): array => array_map(fn (array $vectors): array => [VectorMath::centroid($vectors)], $byDimension), $seeds);
+        $selectedVectors = [];
         $selected = [];
         $remaining = $hits;
 
@@ -52,28 +52,14 @@ class MMR
             $maxIndex = null;
 
             foreach ($remaining as $index => $hit) {
-                $docVector = $this->extractVector($hit, $fieldName);
+                $docVectors = self::documentVectors($hit, $fieldName);
 
-                if ($docVector === null) {
+                $relevance = $this->maxSimilarity($docVectors, $centroids);
+                if ($relevance === null) {
                     continue;
                 }
 
-                // Calculate relevance (similarity to query)
-                $relevance = VectorMath::cosineSimilarity($queryVector, $docVector);
-
-                // Calculate diversity (max similarity to already selected docs)
-                $maxSimilarity = 0.0;
-
-                foreach ($selected as $selectedHit) {
-                    $selectedVector = $this->extractVector($selectedHit, $fieldName);
-
-                    if ($selectedVector === null) {
-                        continue;
-                    }
-
-                    $similarity = VectorMath::cosineSimilarity($docVector, $selectedVector);
-                    $maxSimilarity = max($maxSimilarity, $similarity);
-                }
+                $maxSimilarity = $this->maxSimilarity($docVectors, $selectedVectors) ?? 0.0;
 
                 // MMR score: λ * relevance - (1-λ) * max_similarity
                 $mmrScore = ($this->lambda * $relevance) - ((1 - $this->lambda) * $maxSimilarity);
@@ -86,6 +72,12 @@ class MMR
 
             if ($maxIndex !== null) {
                 $selected[] = $remaining[$maxIndex];
+                foreach (self::documentVectors($remaining[$maxIndex], $fieldName) as $space => $vectors) {
+                    foreach ($vectors as $vector) {
+                        $selectedVectors[$space][count($vector)][] = $vector;
+                    }
+                }
+
                 unset($remaining[$maxIndex]);
                 $remaining = array_values($remaining);
             } else {
@@ -104,81 +96,68 @@ class MMR
     }
 
     /**
-     * Extract query vectors from seed documents
+     * Accuracy 1-6 stores a float list. Accuracy 7 stores {"vector": <embedding>}.
+     *
+     * @return list<list<int|float>>
      */
-    protected function extractQueryVectors(array $seedDocs, string $fieldName): array
+    public static function storedVectors(mixed $stored): array
     {
-        $queryVectors = [];
+        if (! is_array($stored) || $stored === []) {
+            return [];
+        }
 
-        foreach ($seedDocs as $doc) {
-            $source = is_array($doc) ? ($doc['_source'] ?? null) : ($doc->_source ?? null);
-            if (! $source) {
-                continue;
+        if (array_is_list($stored) && is_numeric(reset($stored))) {
+            return [$stored];
+        }
+
+        if (isset($stored['vector']) && is_array($stored['vector'])) {
+            return self::storedVectors($stored['vector']);
+        }
+
+        $vectors = [];
+
+        foreach ($stored as $value) {
+            if (is_array($value)) {
+                $vectors = [...$vectors, ...self::storedVectors($value)];
             }
+        }
 
-            if (! isset($source['_embeddings'])) {
-                continue;
-            }
+        return $vectors;
+    }
 
-            // Get all vectors for the field using dot notation
-            $vectors = dot($source['_embeddings'])->get($fieldName);
-            if (! $vectors) {
-                continue;
-            }
-
-            if (! is_array($vectors)) {
-                continue;
-            }
-
-            // Add all vectors from this document
+    private function maxSimilarity(array $left, array $right): ?float
+    {
+        $best = null;
+        foreach ($left as $space => $vectors) {
             foreach ($vectors as $vector) {
-                if (is_array($vector) && $vector !== []) {
-                    $firstElement = reset($vector);
-                    if (is_numeric($firstElement)) {
-                        $queryVectors[] = $vector;
-                    }
+                foreach ($right[$space][count($vector)] ?? [] as $other) {
+                    $cosine = VectorMath::cosineSimilarity($vector, $other);
+                    $best = $best === null ? $cosine : max($best, $cosine);
                 }
             }
         }
 
-        return $queryVectors;
+        return $best;
     }
 
-    /**
-     * Extract vector from hit's embeddings field
-     */
-    protected function extractVector($hit, string $fieldName): ?array
+    /** @return array<string, list<list<int|float>>> Vectors grouped by mapped vector field. */
+    public static function documentVectors(mixed $hit, string $fieldName): array
     {
-        $source = is_array($hit) ? ($hit['_source'] ?? null) : ($hit->_source ?? null);
-
-        if (! $source || ! isset($source['_embeddings'])) {
-            return null;
+        $source = is_array($hit) ? ($hit['_source'] ?? []) : ($hit->_source ?? []);
+        if (! is_array($source) || ! is_array($source['_embeddings'] ?? null)) {
+            return [];
         }
 
-        // Get all vectors for the field using dot notation (same as NewRecommendations)
-        $vectors = dot($source['_embeddings'])->get($fieldName);
+        $stored = response_value($source['_embeddings'], $fieldName);
 
-        if (! $vectors || ! is_array($vectors)) {
-            return null;
+        if (! is_array($stored)) {
+            return [];
         }
 
-        // Get the first valid vector (should be consistent across all documents)
-        foreach ($vectors as $vectorData) {
-            if (! is_array($vectorData)) {
-                continue;
-            }
-
-            if ($vectorData === []) {
-                continue;
-            }
-
-            // Check if it's a numeric vector array
-            $firstElement = reset($vectorData);
-            if (is_numeric($firstElement)) {
-                return $vectorData;
-            }
+        if (array_is_list($stored) || isset($stored['vector'])) {
+            $stored = ['' => $stored];
         }
 
-        return null;
+        return array_filter(array_map(self::storedVectors(...), $stored));
     }
 }

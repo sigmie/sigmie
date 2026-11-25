@@ -8,12 +8,114 @@ use RuntimeException;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
+use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\ParseException;
 use Sigmie\Parse\SortParser;
 use Sigmie\Testing\TestCase;
 
 class SortParserTest extends TestCase
 {
+    public function test_geo_sort_accepts_a_decimal_point_without_fractional_digits(): void
+    {
+        $properties = new NewProperties;
+        $properties->geoPoint('location');
+
+        $this->assertSame(
+            [['_geo_distance' => ['location' => ['lat' => 0.0, 'lon' => -0.0], 'order' => 'asc', 'unit' => 'km']]],
+            (new SortParser($properties))->parse('location[0.,-0.E0]:km:asc')
+        );
+    }
+
+    /** @test */
+    public function whitespace_runs_separate_sort_fields(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('name');
+        $properties->number('price');
+
+        $this->assertSame(
+            [['name' => 'asc'], ['price' => 'desc']],
+            (new SortParser($properties))->parse(" name:asc  \tprice:desc ")
+        );
+    }
+
+    /** @test */
+    public function a_mapped_field_named_asc_sorts_in_ascending_order(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('asc');
+
+        $this->assertSame([['asc' => 'asc']], (new SortParser($properties))->parse('asc'));
+    }
+
+    /** @test */
+    public function a_mapped_geo_sort_field_can_contain_a_hyphen(): void
+    {
+        $properties = new NewProperties;
+        $properties->geoPoint('store-location');
+
+        $this->assertSame(
+            [['_geo_distance' => ['store-location' => ['lat' => 1.0, 'lon' => -2.0], 'order' => 'asc', 'unit' => 'km']]],
+            (new SortParser($properties))->parse('store-location[1,-2]:km:asc')
+        );
+    }
+
+    /** @test */
+    public function geo_filters_and_sorts_accept_signed_decimals_without_a_leading_zero(): void
+    {
+        $indexName = uniqid('geo-decimals-');
+        $properties = new NewProperties;
+        $properties->geoPoint('pin');
+        $this->sigmie->newIndex($indexName)->properties($properties)->create();
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['pin' => ['lat' => 0.5, 'lon' => -0.25]], _id: 'near'),
+            new Document(['pin' => ['lat' => 0.5, 'lon' => -0.5]], _id: 'far'),
+        ]);
+
+        $filter = (new FilterParser($properties))->parse('pin:.5km[+.5,-.25]');
+        $sort = (new SortParser($properties))->parse('pin[+.5,-.25]:km:asc');
+        $hits = $this->sigmie->query($indexName, $filter)->sort($sort)->get()->json('hits.hits');
+
+        $this->assertSame(['near'], array_column($hits, '_id'));
+        $this->assertLessThan(0.001, $hits[0]['sort'][0]);
+    }
+
+    public function test_field_type_audit_sorts_large_integer_ids(): void
+    {
+        $props = new NewProperties;
+        $props->id('user_id');
+
+        $index = uniqid('.type-sort-');
+        $this->sigmie->newIndex($index)->properties($props)->create();
+
+        try {
+            $this->sigmie->collect($index, refresh: true)->properties($props)->merge([
+                new Document(['user_id' => 3000000000], _id: 'large'),
+                new Document(['user_id' => 7], _id: 'small'),
+            ]);
+
+            $hits = $this->sigmie->newSearch($index)->properties($props)->queryString('')
+                ->sort('user_id:asc')->get()->hits();
+
+            $this->assertSame(['small', 'large'], array_column($hits, '_id'));
+        } finally {
+            $this->sigmie->deleteIfExists($index);
+        }
+    }
+
+    public function test_field_type_audit_rejects_direct_sort_on_geo_and_range(): void
+    {
+        $props = new NewProperties;
+        $props->geoPoint('location');
+        $props->range('availability');
+        $props->date('created_at');
+
+        $parser = new SortParser($props, throwOnError: false);
+
+        $this->assertSame([['created_at' => 'asc']], $parser->parse('location:asc availability:asc created_at:asc'));
+        $this->assertSame(['location', 'availability'], array_column($parser->errors(), 'field'));
+    }
+
     /**
      * @test
      */

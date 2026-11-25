@@ -20,7 +20,6 @@ class Nested extends Bucket
             'nested' => [
                 'path' => $this->path,
             ],
-            'aggs' => $this->aggs->toRaw(),
         ];
     }
 }

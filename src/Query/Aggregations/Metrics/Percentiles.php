@@ -21,7 +21,7 @@ class Percentiles extends Metric
         $value = [
             'percentiles' => [
                 'field' => $this->field,
-                'percents' => $this->percents,
+                'percents' => array_values($this->percents),
             ],
         ];
 

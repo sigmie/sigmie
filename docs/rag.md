@@ -48,7 +48,7 @@ $response = $sigmie->newSearch('docs')
 $top5 = $response->rerank('reranker', ['content'], topK: 5); // [tl! highlight]
 
 // 3. Generate with your own client. $yourOpenAiClient is a placeholder.
-$context = collect($top5)->pluck('_source.content')->implode("\n\n");
+$context = implode("\n\n", array_map(fn ($hit) => $hit['content'], $top5));
 
 $answer = $yourOpenAiClient->chat([
     ['role' => 'system', 'content' => 'Answer using only the provided context.'],

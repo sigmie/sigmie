@@ -32,10 +32,10 @@ class UnionBreakdown extends Widget
     public function toRaw(): array
     {
         return $this->scoped($this->name, $this->from, $this->to, function (Aggs $aggs): void {
-            $aggs->unionTerms('groups', $this->groupBy)
+            $terms = $aggs->unionTerms('groups', $this->groupBy)
                 ->size($this->limit)
-                ->order($this->metric->orderKey('metric'), $this->direction)
                 ->aggregate(fn (Aggs $sub) => $this->addMetric($sub));
+            $this->metric->rank($terms, 'metric', $this->field, $this->direction);
         })->toRaw();
     }
 
@@ -46,37 +46,23 @@ class UnionBreakdown extends Widget
         return [
             'type' => 'union_breakdown',
             'metric' => $this->metric->value,
-            'field' => $this->field,
+            'field' => $this->metric->resultField($this->field, $this->countedField()),
             'group_by_fields' => $this->groupBy,
             'rows' => $groups->map(fn (array $bucket): array => [
                 'key' => $bucket['key'],
                 'value' => $this->metric->extract($bucket['metric'] ?? []),
                 'count' => $bucket['doc_count'] ?? 0,
-                'population' => $this->metricPopulation($bucket),
+                'population' => $this->metric->population($bucket, $this->metric->resultField($this->field, $this->countedField())),
             ])->toArray(),
         ];
     }
 
     protected function addMetric(Aggs $aggs): void
     {
-        $this->metric->apply($aggs, 'metric', $this->field);
+        $this->metric->apply($aggs, 'metric', $this->field, $this->countedField());
 
         if ($this->metric !== Metric::Count) {
             $aggs->valueCount('metric_population', $this->field);
         }
-    }
-
-    /** @return array{document_count: int, value_count: int, field: string} */
-    protected function metricPopulation(array $bucket): array
-    {
-        $documentCount = (int) ($bucket['doc_count'] ?? 0);
-
-        return [
-            'document_count' => $documentCount,
-            'value_count' => $this->metric === Metric::Count
-                ? $documentCount
-                : (int) ($bucket['metric_population']['value'] ?? 0),
-            'field' => $this->field,
-        ];
     }
 }

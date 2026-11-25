@@ -34,7 +34,7 @@ The index builder and `NewAnalyzer` have the same token filter methods. The exam
 
 ## Token filter names
 
-Each builder method takes an optional `$name` as its last argument. Without one, Sigmie generates a name from the method's prefix and a random suffix, such as `stopwords` followed by five random characters. A name must be unique in the index. Adding a token filter with a name that the index already has throws an `Exception` with the message ``Token filter `<name>` already exists.``
+Each builder method takes an optional `$name` as its last argument. Without one, Sigmie generates a name from the method's prefix and a random suffix, such as `stopwords` followed by five random characters. A name identifies one filter definition in the index. Reusing the name with different settings throws an `Exception` with the message ``Token filter `<name>` already exists.``
 
 ## Lowercase and uppercase
 
@@ -299,7 +299,7 @@ TokenFilter::filterMap([
 ]);
 ```
 
-The keys are Elasticsearch filter types, not filter names. `CharFilter::filterMap()` and `Tokenizer::filterMap()` do the same for char filters and tokenizers. Those two have no generic fallback and throw an `Exception` for an unknown type.
+The keys are Elasticsearch filter types, not filter names. `CharFilter::filterMap()` and `Tokenizer::filterMap()` do the same for char filters and tokenizers. An unregistered tokenizer type keeps its settings in a generic tokenizer. An unregistered character filter type throws an `Exception`.
 
 ## See also
 

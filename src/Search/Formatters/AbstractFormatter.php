@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Sigmie\Search\Formatters;
 
 use LogicException;
@@ -7,6 +9,8 @@ use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Document\RerankedHit;
 use Sigmie\Search\Contracts\ResponseFormater;
 use Sigmie\Search\SearchContext;
+
+use function Sigmie\Functions\response_value;
 
 abstract class AbstractFormatter implements ResponseFormater
 {
@@ -23,7 +27,7 @@ abstract class AbstractFormatter implements ResponseFormater
 
     protected array $facets = [];
 
-    protected array $errors;
+    protected array $errors = [];
 
     protected SearchContext $search;
 
@@ -106,6 +110,6 @@ abstract class AbstractFormatter implements ResponseFormater
 
     public function aggregation(string $dot): mixed
     {
-        return dot($this->aggregations())->get($dot);
+        return response_value($this->aggregations(), $dot);
     }
 }

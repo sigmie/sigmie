@@ -11,6 +11,25 @@ use Sigmie\Testing\TestCase;
 
 class AutocompletePipelineTest extends TestCase
 {
+    public function test_simulating_filtered_documents_preserves_their_order(): void
+    {
+        $pipeline = (new NewPipeline($this->elasticsearchConnection, uniqid('audit_')))->create();
+        $docs = [1 => ['_source' => ['title' => 'First']], 3 => ['_source' => ['title' => 'Next']]];
+
+        $response = $pipeline->simulate($docs);
+        $this->assertSame('First', $response->json('docs.0.doc._source.title'));
+        $this->assertSame('Next', $response->json('docs.1.doc._source.title'));
+    }
+
+    public function test_pipeline_id_containing_a_slash(): void
+    {
+        $pipeline = (new NewPipeline($this->elasticsearchConnection, uniqid('audit_').'/titles'))
+            ->create();
+
+        $response = $pipeline->simulate([['_source' => ['title' => 'Star']]]);
+        $this->assertSame('Star', $response->json('docs.0.doc._source.title'));
+    }
+
     /**
      * @test
      */

@@ -12,6 +12,7 @@ use Sigmie\Base\APIs\Ingest;
 use Sigmie\Base\APIs\Script;
 use Sigmie\Base\APIs\Template;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Base\ElasticsearchException;
 
 trait ClearElasticsearch
 {
@@ -27,15 +28,28 @@ trait ClearElasticsearch
     {
         $this->setElasticsearchConnection($connection);
 
-        $response = $this->catAPICall('indices', 'GET');
+        $response = $this->catAPICall('indices?expand_wildcards=all', 'GET');
 
         $names = array_map(fn ($data) => $data['index'], $response->json());
 
-        $nameChunks = array_chunk(array_filter($names, fn ($name): bool => ! str_starts_with($name, '.')), 50);
+        // Five percent-encoded 255-byte names fit Elasticsearch's 4 KiB request-line limit.
+        $nameChunks = array_chunk(array_filter($names, fn ($name): bool => ! str_starts_with($name, '.')), 5);
 
         // Delete indices
         foreach ($nameChunks as $chunk) {
-            $this->indexAPICall(implode(',', $chunk), 'DELETE');
+            while ($chunk !== []) {
+                try {
+                    $this->indexAPICall(implode(',', $chunk).'?ignore_unavailable=true', 'DELETE');
+                    break;
+                } catch (ElasticsearchException $exception) {
+                    $missing = array_search($exception->json('json.error.index'), $chunk, true);
+                    if ($exception->getCode() !== 404 || $exception->json('type') !== 'index_not_found_exception' || $missing === false) {
+                        throw $exception;
+                    }
+
+                    unset($chunk[$missing]);
+                }
+            }
         }
 
         // Delete searches
@@ -46,7 +60,13 @@ trait ClearElasticsearch
         $names = (is_null($scripts)) ? [] : array_keys($scripts);
 
         foreach ($names as $name) {
-            $this->scriptAPICall('DELETE', (string) $name);
+            try {
+                $this->scriptAPICall('DELETE', (string) $name);
+            } catch (ElasticsearchException $exception) {
+                if ($exception->getCode() !== 404 || $exception->json('type') !== 'resource_not_found_exception') {
+                    throw $exception;
+                }
+            }
         }
 
         // Delete index templates

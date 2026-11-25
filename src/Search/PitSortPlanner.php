@@ -4,75 +4,63 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use stdClass;
+
 class PitSortPlanner
 {
     /**
      * When `$hasCollapse` is true, returns `$userSort` unchanged. Elasticsearch allows only one
      * sort field with `collapse` + `search_after`; the tiebreaker would violate that rule.
      *
-     * @param  list<string|array<string, mixed>>  $userSort
-     * @return list<string|array<string, mixed>>
+     * @param  list<string|array<string, mixed>|stdClass>  $userSort
+     * @return list<string|array<string, mixed>|stdClass>
      */
-    public static function plan(array $userSort, bool $isOpenSearch, bool $hasCollapse = false): array
-    {
+    public static function plan(
+        array $userSort,
+        bool $isOpenSearch,
+        bool $hasCollapse = false,
+        bool $preserveSingleSort = false,
+    ): array {
         if ($hasCollapse) {
             return $userSort;
         }
 
-        $tiebreaker = $isOpenSearch ? [['_id' => 'asc']] : [['_shard_doc' => 'asc']];
+        $sort = ! $preserveSingleSort && self::onlyScoreOrDoc($userSort) ? [] : $userSort;
 
-        if ($userSort === [] || self::onlyScoreOrDoc($userSort)) {
-            return $tiebreaker;
+        if ($isOpenSearch) {
+            $fields = array_merge(...array_map(
+                static fn ($clause): array => is_string($clause) ? [$clause] : array_keys((array) $clause),
+                $sort,
+            ));
+
+            // OpenSearch can return the same _id from multiple indices in a PIT.
+            foreach (array_diff(['_id', '_index'], $fields) as $field) {
+                $sort[] = [$field => 'asc'];
+            }
+
+            return $sort;
         }
 
-        return self::appendTiebreakerUnlessPresent($userSort, $tiebreaker);
+        $last = $sort[array_key_last($sort)] ?? null;
+        if ($last === '_shard_doc' || array_key_last((array) $last) === '_shard_doc') {
+            return $sort;
+        }
+
+        return [...$sort, ['_shard_doc' => 'asc']];
     }
 
     /**
-     * @param  list<string|array<string, mixed>>  $sort
+     * @param  list<string|array<string, mixed>|stdClass>  $sort
      */
     private static function onlyScoreOrDoc(array $sort): bool
     {
-        // @codeCoverageIgnoreStart
-        if ($sort === []) {
-            return true;
-        }
-
-        // @codeCoverageIgnoreEnd
-
-        if ($sort === ['_score'] || $sort === ['_doc']) {
-            return true;
-        }
-
         if (count($sort) !== 1) {
             return false;
         }
 
-        $only = $sort[0];
+        $only = reset($sort);
+        $keys = is_string($only) ? [$only] : array_keys((array) $only);
 
-        // @codeCoverageIgnoreStart
-        if ($only === '_score' || $only === '_doc') {
-            return true;
-        }
-
-        // @codeCoverageIgnoreEnd
-
-        return is_array($only) && (isset($only['_score']) || isset($only['_doc']));
-    }
-
-    /**
-     * @param  list<string|array<string, mixed>>  $sort
-     * @param  list<array<string, string>>  $tiebreaker
-     * @return list<string|array<string, mixed>>
-     */
-    private static function appendTiebreakerUnlessPresent(array $sort, array $tiebreaker): array
-    {
-        $last = $sort[array_key_last($sort)];
-
-        if (is_array($last) && (isset($last['_shard_doc']) || isset($last['_id']))) {
-            return $sort;
-        }
-
-        return array_merge($sort, $tiebreaker);
+        return $keys === ['_score'] || $keys === ['_doc'];
     }
 }

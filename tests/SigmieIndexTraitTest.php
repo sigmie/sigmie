@@ -12,6 +12,50 @@ use Sigmie\Traits\SigmieIndexTrait;
 
 class SigmieIndexTraitTest extends TestCase
 {
+    public function test_multi_search_retrieves_fields_from_the_selected_index(): void
+    {
+        $index = $this->traitIndex();
+        $other = uniqid('authors-');
+        $this->sigmie->newIndex($other)->create();
+        $this->sigmie->collect($other, true)->add(new Document(['author' => 'Ada']));
+
+        $multi = $index->newMultiSearch();
+        $multi->newSearch($other);
+        [$result] = $multi->get();
+        $this->assertSame(['author' => 'Ada'], $result->hits()[0]->_source);
+    }
+
+    public function test_updating_an_existing_index_retains_its_blueprint(): void
+    {
+        $index = $this->traitIndex();
+        $index->create();
+        $index->update(fn ($builder) => $builder->replicas(0));
+        $this->assertIndex($index->name(), fn ($mapping) => $mapping->assertPropertyExists('type'));
+    }
+
+    public function test_index_queries_parse_filters_with_the_blueprint(): void
+    {
+        $index = $this->traitIndex();
+        $index->create();
+        $index->collect(true)->add(new Document(['type' => 'Fresh Fruit']));
+        $multi = $index->newMultiSearch();
+        foreach ([$index->newQuery(), $multi->newQuery()] as $query) {
+            $this->assertSame(1, $query->parse('type:"Fresh Fruit"')->get()->total());
+        }
+    }
+
+    public function test_index_existence_accepts_an_alias_with_two_targets(): void
+    {
+        $index = $this->traitIndex();
+        foreach (['-a', '-b'] as $suffix) {
+            $this->indexAPICall($index->name().$suffix, 'PUT', ['aliases' => [$index->name() => (object) []]]);
+        }
+
+        $this->assertTrue($index->exists());
+        $index->delete();
+        $this->assertIndexNotExists($index->name());
+    }
+
     /**
      * @test
      */

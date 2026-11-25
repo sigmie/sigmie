@@ -4,10 +4,18 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\Mappings\Types\DateTime;
+use Sigmie\Mappings\Types\Keyword;
+
+require_once __DIR__.'/Stubs/LaravelAiStubs.php';
+
 use InvalidArgumentException;
+use Laravel\Ai\Tools\Request;
 use ReflectionClass;
+use Sigmie\AI\SigmieAnalyticsTool;
 use Sigmie\Analytics\AnalyticsRequest;
 use Sigmie\Analytics\QueryRecipe;
+use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Sigmie;
@@ -16,6 +24,123 @@ use Sigmie\Testing\TestCase;
 
 class QueryRecipeTest extends TestCase
 {
+    public function test_integral_json_numbers_bind_to_integer_slots(): void
+    {
+        $definition = $this->definition('events', [
+            'widget' => 'table', 'date_field' => 'date',
+        ], [[
+            'name' => 'rows', 'target' => 'limit', 'type' => 'integer',
+            'minimum' => 1.0, 'maximum' => 3.0, 'default' => 2.0,
+        ]]);
+
+        $recipe = QueryRecipe::fromArray($definition);
+
+        $this->assertSame(2, $recipe->bind([])->toArray()['limit']);
+        $this->assertSame(3, $recipe->bind(['rows' => 3.0])->toArray()['limit']);
+        $this->assertInvalid(fn (): AnalyticsRequest => $recipe->bind(['rows' => 2.5]), 'Query recipe binding [rows] must be an integer.');
+    }
+
+    public function test_explicit_slot_defaults_are_validated_as_request_arguments(): void
+    {
+        $this->assertInvalid(fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'table', 'date_field' => 'date', 'limit' => 5,
+        ], [[
+            'name' => 'rows', 'target' => 'limit', 'type' => 'integer', 'default' => 0,
+        ]])), 'Analytics argument [limit] must be between 1 and 100.');
+    }
+
+    public function test_recipe_rejects_a_nested_timeline_that_the_tool_cannot_query(): void
+    {
+        $properties = new NewProperties;
+        $properties->nested('events', fn (NewProperties $events): DateTime => $events->datetime('occurred_at'));
+
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'trend', 'date_field' => 'events.occurred_at', 'metric' => 'count',
+        ]));
+
+        $this->assertInvalid(
+            fn (): QueryRecipe => $recipe->validateAgainst($this->eventsIndex($properties)),
+            'Query recipe date_field [events.occurred_at] must be outside nested documents.',
+        );
+    }
+
+    public function test_widget_names_are_normalized_before_recipe_defaults(): void
+    {
+        $template = [
+            'widget' => 'breakdown', 'date_field' => 'date', 'metric' => 'count', 'group_by' => 'category',
+        ];
+        $plain = QueryRecipe::fromArray($this->definition('events', $template));
+        $padded = QueryRecipe::fromArray($this->definition('events', [...$template, 'widget' => ' breakdown ']));
+
+        $this->assertSame($plain->toArray(), $padded->toArray());
+        $this->assertSame(20, $padded->bind(['limit' => 20])->toArray()['limit']);
+    }
+
+    public function test_histogram_count_recipes_accept_non_numeric_metric_fields(): void
+    {
+        $props = new NewProperties;
+        $props->date('date');
+        $props->number('amount');
+        $props->keyword('status');
+
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'histogram_metric', 'date_field' => 'date', 'metric' => 'count',
+            'field' => 'status', 'bucket_field' => 'amount', 'bucket_size' => 50,
+        ]));
+
+        $this->assertSame($recipe, $recipe->validateAgainst($this->eventsIndex($props)));
+    }
+
+    public function test_percentile_recipes_accept_date_fields(): void
+    {
+        $props = new NewProperties;
+        $props->date('date');
+
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'percentiles', 'date_field' => 'date', 'field' => 'date',
+        ]));
+
+        $this->assertSame($recipe, $recipe->validateAgainst($this->eventsIndex($props)));
+    }
+
+    public function test_bound_keyword_filters_preserve_literal_padding(): void
+    {
+        $props = new NewProperties;
+        $props->date('date');
+        $props->caseSensitiveKeyword('code');
+
+        $definition = $this->definition('events', [
+            'widget' => 'kpi', 'date_field' => 'date', 'metric' => 'count',
+        ], [['name' => 'code', 'type' => 'string', 'default' => ' A ']]);
+        $definition['filter_templates'] = [['field' => 'code', 'operator' => 'equals', 'slot' => 'code']];
+        $recipe = QueryRecipe::fromArray($definition)->validateAgainst($this->eventsIndex($props));
+
+        foreach ([[[], ' A '], [['code' => ' B '], ' B ']] as [$bindings, $expected]) {
+            $filter = $recipe->bind($bindings)->toArray()['filters'];
+            $raw = (new FilterParser($props))->parse($filter)->toRaw();
+
+            $this->assertSame($expected, $raw['bool']['must'][0]['term']['code']['value']);
+        }
+    }
+
+    protected function setUp(): void
+    {
+        if ($this->runsWithoutCluster()) {
+            return;
+        }
+
+        parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->runsWithoutCluster()) {
+            return;
+        }
+
+        parent::tearDown();
+    }
+
     /** @test */
     public function it_binds_slots_and_keeps_the_dataset_in_canonical_identity(): void
     {
@@ -156,6 +281,82 @@ class QueryRecipeTest extends TestCase
 
         $this->assertSame(25, $recipe->toArray()['slots'][0]['default']);
         $this->assertSame(25, $recipe->bind([])->toArray()['limit']);
+    }
+
+    /** @test */
+    public function numeric_recipe_filters_keep_the_supplied_precision(): void
+    {
+        $definition = $this->definition('events', [
+            'widget' => 'kpi',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+        ], [['name' => 'threshold', 'type' => 'number']]);
+        $definition['filter_templates'][] = ['field' => 'amount', 'operator' => 'gte', 'slot' => 'threshold'];
+        $recipe = QueryRecipe::fromArray($definition);
+
+        $this->assertSame('amount>=9007199254740993', $recipe->bind(['threshold' => 9007199254740993])->toArray()['filters']);
+        $this->assertSame('amount>=9007199254740993', $recipe->bind(['threshold' => '9007199254740993'])->toArray()['filters']);
+        $this->assertSame('amount>=1.2345678901234567', $recipe->bind(['threshold' => 1.2345678901234567])->toArray()['filters']);
+    }
+
+    /** @test */
+    public function a_recipe_accepts_the_sort_parsers_geo_coordinates(): void
+    {
+        $props = new NewProperties;
+        $props->date('occurred_at');
+        $props->geoPoint('location');
+
+        $index = $this->eventsIndex($props);
+        $sort = 'location[+.5,-.75]:m:asc';
+
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'table',
+            'date_field' => 'occurred_at',
+            'sort' => $sort,
+            'hit_sort' => '_score '.$sort,
+            'include_hits' => 1,
+        ]));
+
+        $bound = $recipe->validateAgainst($index)->bind([])->toArray();
+
+        $this->assertSame($sort, $bound['sort']);
+        $this->assertSame('_score '.$sort, $bound['hit_sort']);
+    }
+
+    /** @test */
+    public function a_grouped_metric_recipe_accepts_trimmed_specs(): void
+    {
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'grouped_metrics',
+            'date_field' => 'occurred_at',
+            'group_by' => 'category',
+            'metrics' => [['key' => 'total', 'metric' => ' sum ', 'field' => ' amount ']],
+        ]));
+
+        $this->assertSame($recipe, $recipe->validateAgainst($this->recipeIndex()));
+    }
+
+    /** @test */
+    public function a_recipe_accepts_distinct_date_values(): void
+    {
+        $index = $this->recipeIndex();
+        $tool = new SigmieAnalyticsTool($index);
+        $base = ['date_field' => 'occurred_at', 'from' => '2024-01-01', 'to' => '2024-01-02'];
+        $index->merge([
+            new Document(['occurred_at' => '2024-01-01T00:00:00Z', 'category' => 'a']),
+            new Document(['occurred_at' => '2024-01-01T01:00:00Z', 'category' => 'a']),
+        ], refresh: true);
+
+        $kpi = QueryRecipe::fromArray($this->definition('events', [
+            ...$base, 'widget' => 'kpi', 'metric' => 'unique', 'field' => 'occurred_at',
+        ]));
+        $grouped = QueryRecipe::fromArray($this->definition('events', [
+            ...$base, 'widget' => 'grouped_metrics', 'group_by' => 'category',
+            'metrics' => [['key' => 'dates', 'metric' => 'unique', 'field' => 'occurred_at']],
+        ]));
+
+        $this->assertEquals(2, $tool->result(new Request($kpi->validateAgainst($index)->bind([])->toArray()))['value']);
+        $this->assertEquals(2, $tool->result(new Request($grouped->validateAgainst($index)->bind([])->toArray()))['rows'][0]['value']);
     }
 
     /** @test */
@@ -839,6 +1040,296 @@ class QueryRecipeTest extends TestCase
         );
     }
 
+    /** @test */
+    public function unbound_optional_range_keeps_template_dates(): void
+    {
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'kpi',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+            'from' => '2024-01-01',
+            'to' => '2024-02-01',
+        ], [[
+            'name' => 'window',
+            'target' => 'range',
+            'type' => 'period',
+            'required' => false,
+        ]]));
+
+        $template = $recipe->toArray()['template'];
+        $bound = $recipe->bind([])->toArray();
+
+        $this->assertSame('2024-01-01', $template['from']);
+        $this->assertSame('2024-02-01', $template['to']);
+        $this->assertArrayNotHasKey('range', $template);
+        $this->assertSame('2024-01-01', $bound['from']);
+        $this->assertSame('2024-02-01', $bound['to']);
+        $this->assertArrayNotHasKey('range', $bound);
+
+        $ranged = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'kpi',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+            'range' => 'this_month',
+        ], [[
+            'name' => 'window_start',
+            'target' => 'from',
+            'type' => 'date',
+            'required' => true,
+        ]]));
+        $boundFrom = $ranged->bind(['window_start' => '2024-06-01'])->toArray();
+
+        $this->assertSame('this_month', $boundFrom['range']);
+        $this->assertArrayNotHasKey('from', $boundFrom);
+        $this->assertArrayNotHasKey('to', $boundFrom);
+    }
+
+    /** @test */
+    public function unique_metric_accepts_keyword_category_and_boolean(): void
+    {
+        $props = new NewProperties;
+        $props->datetime('occurred_at');
+        $props->double('amount');
+        $props->keyword('customer_id');
+        $props->category('product');
+        $props->bool('active');
+
+        $index = $this->eventsIndex($props);
+
+        foreach (['customer_id', 'product', 'active', 'amount'] as $field) {
+            $recipe = QueryRecipe::fromArray($this->definition('events', [
+                'widget' => 'kpi',
+                'date_field' => 'occurred_at',
+                'metric' => 'unique',
+                'field' => $field,
+            ]));
+
+            $this->assertSame($recipe, $recipe->validateAgainst($index));
+        }
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Query recipe field field [customer_id] has incompatible type [keyword].');
+
+        QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'kpi',
+            'date_field' => 'occurred_at',
+            'metric' => 'sum',
+            'field' => 'customer_id',
+        ]))->validateAgainst($index);
+    }
+
+    /** @test */
+    public function a_csv_field_named_zero_is_checked(): void
+    {
+        $dated = new NewProperties;
+        $dated->datetime('occurred_at');
+        $dated->keyword('category');
+        $dated->date('0');
+
+        $plain = new NewProperties;
+        $plain->datetime('occurred_at');
+        $plain->keyword('category');
+
+        $release = new NewProperties;
+        $release->datetime('occurred_at');
+        $release->keyword('category');
+        $release->date('release_date');
+
+        $cases = [
+            [$this->eventsIndex($dated), ['widget' => 'union_breakdown', 'date_field' => 'occurred_at', 'metric' => 'count', 'group_by_fields' => '0,category']],
+            [$this->eventsIndex($release), ['widget' => 'union_breakdown', 'date_field' => 'occurred_at', 'metric' => 'count', 'group_by_fields' => 'release_date,category']],
+            [$this->eventsIndex($plain), ['widget' => 'table', 'date_field' => 'occurred_at', 'fields' => '0']],
+            [$this->eventsIndex($plain), ['widget' => 'table', 'date_field' => 'occurred_at', 'fields' => 'nope']],
+        ];
+        $messages = [];
+
+        foreach ($cases as [$index, $template]) {
+            try {
+                QueryRecipe::fromArray($this->definition('events', $template))->validateAgainst($index);
+                $messages[] = 'returned';
+            } catch (InvalidArgumentException $exception) {
+                $messages[] = $exception->getMessage();
+            }
+        }
+
+        $this->assertSame([
+            'Query recipe group_by_fields field [0] has incompatible type [date].',
+            'Query recipe group_by_fields field [release_date] has incompatible type [date].',
+            'Query recipe fields field [0] does not exist in the index.',
+            'Query recipe fields field [nope] does not exist in the index.',
+        ], $messages);
+    }
+
+    /** @test */
+    public function a_field_named_one_stays_beside_a_nested_field(): void
+    {
+        $props = new NewProperties;
+        $props->datetime('occurred_at');
+        $props->number('1');
+        $props->nested('items', function (NewProperties $props): void {
+            $props->keyword('sku');
+        });
+        $index = $this->eventsIndex($props);
+
+        $sum = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'kpi',
+            'date_field' => 'occurred_at',
+            'metric' => 'sum',
+            'field' => '1',
+        ]));
+        $nested = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'table',
+            'date_field' => 'occurred_at',
+            'fields' => 'items.sku',
+        ]));
+
+        $this->assertSame($sum, $sum->validateAgainst($index));
+        $this->assertSame($nested, $nested->validateAgainst($index));
+    }
+
+    /** @test */
+    public function an_optional_slot_inherits_its_template_value(): void
+    {
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'trend',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+            'interval' => 'week',
+        ], [['name' => 'period', 'target' => 'interval', 'type' => 'string']]));
+        $recipe = QueryRecipe::fromArray($recipe->toArray());
+
+        $this->assertSame('week', $recipe->bind([])->toArray()['interval'] ?? null);
+        $this->assertSame('day', $recipe->bind(['period' => 'day'])->toArray()['interval']);
+    }
+
+    /** @test */
+    public function grouped_unique_recipes_accept_keyword_fields(): void
+    {
+        $props = new NewProperties;
+        $props->date('occurred_at');
+        $props->keyword('category');
+        $props->keyword('user');
+
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'grouped_metrics',
+            'date_field' => 'occurred_at',
+            'group_by' => 'category',
+            'metrics' => [['key' => 'users', 'metric' => 'unique', 'field' => 'user']],
+        ]));
+
+        $this->assertSame($recipe, $recipe->validateAgainst($this->eventsIndex($props)));
+    }
+
+    /** @test */
+    public function a_bound_nested_filter_targets_nested_documents(): void
+    {
+        $props = new NewProperties;
+        $props->date('occurred_at');
+        $props->nested('items', fn (NewProperties $items): Keyword => $items->keyword('sku'));
+
+        $definition = $this->definition('events', [
+            'widget' => 'kpi',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+        ], [['name' => 'sku', 'type' => 'string']]);
+        $definition['filter_templates'][] = ['field' => 'items.sku', 'operator' => 'equals', 'slot' => 'sku'];
+        $recipe = QueryRecipe::fromArray($definition)->validateAgainst($this->eventsIndex($props));
+        $filters = $recipe->bind(['sku' => 'A'])->toArray()['filters'];
+        $query = (new FilterParser($props))->parse($filters)->toRaw();
+
+        $nested = $query['bool']['must'][0]['nested'] ?? [];
+        $this->assertSame('items', $nested['path'] ?? null);
+        $this->assertStringContainsString('"items.sku"', json_encode($nested['query']));
+    }
+
+    public function test_contract_identity_ignores_field_declaration_order(): void
+    {
+        $first = new NewProperties;
+        $first->date('01');
+        $first->keyword('1');
+
+        $second = new NewProperties;
+        $second->keyword('1');
+        $second->date('01');
+
+        $this->assertSame(QueryRecipe::contractFingerprint($this->eventsIndex($first)),
+            QueryRecipe::contractFingerprint($this->eventsIndex($second)));
+    }
+
+    public function test_percentile_slot_inherits_a_list_from_the_template(): void
+    {
+        $recipe = QueryRecipe::fromArray($this->definition('sales', [
+            'widget' => 'percentiles', 'date_field' => 'date', 'field' => 'amount', 'percents' => [50, 97.5],
+        ], [['name' => 'points', 'type' => 'string', 'target' => 'percents']]));
+
+        $this->assertSame('50,97.5', $recipe->bind([])->toArray()['percents']);
+        $this->assertSame('25,75', $recipe->bind(['points' => '25,75'])->toArray()['percents']);
+    }
+
+    public function test_recipes_can_group_by_date_terms(): void
+    {
+        $properties = new NewProperties;
+        $properties->date('day');
+        $properties->keyword('region');
+
+        $index = $this->eventsIndex($properties);
+        foreach ([
+            ['widget' => 'breakdown', 'group_by' => 'day'],
+            ['widget' => 'multi_breakdown', 'group_by_fields' => ['day', 'region']],
+        ] as $widget) {
+            $recipe = QueryRecipe::fromArray($this->definition('sales', ['date_field' => 'day', 'metric' => 'count', ...$widget]));
+            $this->assertSame($recipe, $recipe->validateAgainst($index));
+        }
+    }
+
+    public function test_recipes_accept_date_extrema_and_medians(): void
+    {
+        $properties = new NewProperties;
+        $properties->date('date');
+        $properties->keyword('group');
+
+        $index = $this->eventsIndex($properties);
+
+        foreach (['min', 'max', 'median'] as $metric) {
+            $spec = ['field' => 'date', 'metric' => $metric];
+            foreach ([
+                ['widget' => 'kpi', ...$spec],
+                ['widget' => 'grouped_metrics', 'group_by' => 'group', 'metrics' => [['key' => 'when', ...$spec]]],
+            ] as $template) {
+                $recipe = QueryRecipe::fromArray($this->definition('sales', ['date_field' => 'date', ...$template]));
+                $this->assertSame($recipe, $recipe->validateAgainst($index));
+            }
+        }
+    }
+
+    private function runsWithoutCluster(): bool
+    {
+        return in_array($this->getName(false), [
+            'test_grouped_count_checks_its_optional_field_against_the_mapping',
+            'test_ranking_sort_rejects_an_unsupported_direction',
+            'test_integral_json_numbers_bind_to_integer_slots',
+            'test_explicit_slot_defaults_are_validated_as_request_arguments',
+            'test_recipe_rejects_a_nested_timeline_that_the_tool_cannot_query',
+            'test_contract_identity_ignores_field_declaration_order',
+            'test_percentile_slot_inherits_a_list_from_the_template',
+            'test_recipes_can_group_by_date_terms',
+            'test_recipes_accept_date_extrema_and_medians',
+            'numeric_recipe_filters_keep_the_supplied_precision',
+            'a_recipe_accepts_the_sort_parsers_geo_coordinates',
+            'an_optional_slot_inherits_its_template_value',
+            'grouped_unique_recipes_accept_keyword_fields',
+            'a_bound_nested_filter_targets_nested_documents',
+            'unbound_optional_range_keeps_template_dates',
+            'unique_metric_accepts_keyword_category_and_boolean',
+            'a_csv_field_named_zero_is_checked',
+            'a_field_named_one_stays_beside_a_nested_field',
+            'test_widget_names_are_normalized_before_recipe_defaults',
+            'test_histogram_count_recipes_accept_non_numeric_metric_fields',
+            'test_percentile_recipes_accept_date_fields',
+            'test_bound_keyword_filters_preserve_literal_padding',
+        ], true);
+    }
+
     /**
      * @param  array<string, mixed>  $template
      * @param  list<array<string, mixed>>  $slots
@@ -852,6 +1343,24 @@ class QueryRecipeTest extends TestCase
             'slots' => $slots,
             'filter_templates' => [],
         ];
+    }
+
+    private function eventsIndex(NewProperties $props): SigmieIndex
+    {
+        return new class($props) extends SigmieIndex
+        {
+            public function __construct(private NewProperties $props) {}
+
+            public function name(): string
+            {
+                return 'events';
+            }
+
+            public function properties(): NewProperties
+            {
+                return $this->props;
+            }
+        };
     }
 
     private function recipeIndex(): SigmieIndex
@@ -945,5 +1454,53 @@ class QueryRecipeTest extends TestCase
             'retention' => [...$base, 'widget' => 'retention', 'cohort_field' => 'occurred_at', 'id_field' => 'user_id', 'interval' => 'week'],
             'geo' => [...$base, 'widget' => 'geo', 'field' => 'location', 'precision' => 5],
         ];
+    }
+
+    public function test_date_filter_slots_reject_invalid_iso_offsets(): void
+    {
+        $definition = $this->definition('events', [
+            'widget' => 'kpi',
+            'date_field' => 'occurred_at',
+            'metric' => 'count',
+        ], [[
+            'name' => 'cutoff',
+            'type' => 'date',
+            'required' => true,
+        ]]);
+        $definition['filter_templates'] = [['field' => 'occurred_at', 'operator' => 'gte', 'slot' => 'cutoff']];
+        $recipe = QueryRecipe::fromArray($definition);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Query recipe binding [cutoff] must be a valid ISO 8601 date.');
+        $recipe->bind(['cutoff' => '2024-02-29T12:00:00+25:00']);
+    }
+
+    public function test_grouped_count_checks_its_optional_field_against_the_mapping(): void
+    {
+        $properties = new NewProperties;
+        $properties->date('date');
+        $properties->keyword('city');
+
+        $recipe = QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'grouped_metrics',
+            'date_field' => 'date',
+            'group_by' => 'city',
+            'metrics' => [['key' => 'total', 'metric' => 'count', 'field' => 'missing']],
+        ]));
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('missing');
+        $recipe->validateAgainst($this->eventsIndex($properties));
+    }
+
+    public function test_ranking_sort_rejects_an_unsupported_direction(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unsupported query recipe ranking direction [sideways].');
+
+        QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'breakdown', 'date_field' => 'date', 'group_by' => 'city',
+            'metric' => 'count', 'sort' => 'metric:sideways',
+        ]));
     }
 }

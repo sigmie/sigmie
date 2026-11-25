@@ -61,9 +61,9 @@ use Sigmie\Languages\English\English;
 $sigmie->newIndex('articles')
     ->language(new English) // [tl! highlight]
     ->properties($props)
-    ->englishStemmer()
-    ->englishStopwords()
     ->englishLowercase()
+    ->englishStopwords()
+    ->englishStemmer()
     ->create();
 ```
 
@@ -99,7 +99,7 @@ To change the properties or the analysis of an index that holds documents, call 
 ```php
 use Sigmie\Index\UpdateIndex;
 
-$sigmie->index('movies')->update(function (UpdateIndex $update) {
+$sigmie->index('movies')->update(function (UpdateIndex $update) use ($newProperties) {
     $update->properties($newProperties);
     $update->lowercase();
 
@@ -114,9 +114,13 @@ $sigmie->index('movies')->update(function (UpdateIndex $update) {
 3. Points the `movies` alias at the new index.
 4. Deletes the old index.
 
-Searches keep working through every step. Writes to `movies` fail from step 2 until step 4 ends.
+Searches keep working through every step. Writes to `movies` fail from the write block in step 2 until the alias moves in step 3.
 
 > **Warning:** `update()` does not merge settings. It builds the new index only from what the callback declares. Declare again every property, filter, shard count, and replica count that you want to keep.
+
+Elasticsearch copies each stored document and applies the new mapping. If a document still contains an omitted field such as `genre`, dynamic mapping can add it back. If a value such as `"unknown"` cannot fit a new integer field, the update fails and the original alias stays live.
+
+Use a rebuild to remove fields from documents, regenerate embeddings, or replace an index whose stored `_source` excludes fields. The Elasticsearch copy skips the destination's default ingest pipeline. Elasticsearch still runs any final ingest pipeline.
 
 ## Rebuild an index
 
@@ -147,7 +151,7 @@ movies (alias) ──► movies_20260201   (one _aliases request)
                    movies_20260101   deleted
 ```
 
-If no alias exists yet, `rebuild()` creates it. The same call works for the first build and for every refresh after it.
+Both update and rebuild refuse to retire an index that also serves another alias. If no alias exists yet, `rebuild()` creates it. The same call works for the first build and for every refresh after it.
 
 If the callback throws, Sigmie deletes the new index, leaves the alias where it was, and throws the exception again.
 
@@ -182,7 +186,7 @@ $sigmie->rebuilding('movies')->abort();
 
 `startRebuild()` turns refresh off and sets replicas to zero for fast bulk writes. `finish()` restores both before the swap. `count()` returns the number of documents written so far.
 
-`rebuilding()` returns the newest index that `startRebuild()` created for the alias and that no alias points to yet. It returns `null` when no rebuild is pending. Sigmie stores the rebuild state in the index's `_meta`, so it survives restarts and queue retries. `rebuild()` is `startRebuild()`, your callback, then `finish()`.
+`rebuilding()` returns the newest index that `startRebuild()` created for the alias and that still has its pending rebuild marker. It returns `null` when no rebuild is pending. Sigmie stores the rebuild state in the index's `_meta`, so it survives restarts and queue retries. `rebuild()` is `startRebuild()`, your callback, then `finish()`.
 
 ## Inspect an index
 

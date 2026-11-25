@@ -154,10 +154,10 @@ Turns each match of a Lucene regular expression into a token and drops the rest 
 ```php
 use Sigmie\Index\Analysis\Tokenizers\SimplePattern;
 
-$analyzer->tokenizeOnPatternMatch("'.*'");
+$analyzer->tokenizeOnPatternMatch("'[^']*'");
 
 // Or, with the class:
-$analyzer->tokenizer(new SimplePattern(name: 'quoted_tokenizer', pattern: "'.*'"));
+$analyzer->tokenizer(new SimplePattern(name: 'quoted_tokenizer', pattern: "'[^']*'"));
 ```
 
 ```
@@ -239,6 +239,8 @@ $analyzer->tokenizer(new Ngram(name: 'two_gram_tokenizer', minGram: 2, maxGram: 
 | `minGram` | `3` | `min_gram` |
 | `maxGram` | `3` | `max_gram` |
 | `tokenChars` | `['letter']` | `token_chars` |
+
+These defaults apply when constructing `Ngram`. When reading an existing Elasticsearch tokenizer with omitted settings, Sigmie uses gram lengths of 1 and 2 and includes every character.
 
 ## See also
 

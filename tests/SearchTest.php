@@ -21,6 +21,7 @@ use Sigmie\Query\Aggregations\Metrics\Composite;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
+use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Search\Formatters\RawElasticsearchFormat;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\VectorPool;
@@ -30,6 +31,333 @@ use Sigmie\Testing\TestCase;
 
 class SearchTest extends TestCase
 {
+    public function test_paginated_vector_search_keeps_scores_from_every_query_vector(): void
+    {
+        $name = uniqid('.multi_vector_cursor_');
+        $props = new NewProperties;
+        $props->text('title')->semantic(api: 'test-embeddings', dimensions: 128);
+        $field = $props->get()->get('title')->vectorFields()->first()->name;
+        $vector = fn (float $x, float $y): array => [$x, $y, ...array_fill(0, 126, 0.0)];
+        $index = $this->sigmie->newIndex($name)->properties($props)->create();
+        try {
+            $this->sigmie->collect($name, refresh: true)->populateEmbeddings(false)->merge([
+                new Document(['title' => 'North', '_embeddings' => ['title' => [$field => $vector(1, 0)]]], _id: 'north'),
+                new Document(['title' => 'East', '_embeddings' => ['title' => [$field => $vector(-0.1, 1)]]], _id: 'east'),
+                new Document(['title' => 'Central', '_embeddings' => ['title' => [$field => $vector(0.8, 0.6)]]], _id: 'central'),
+            ]);
+            $search = $this->sigmie->newSearch($name)->properties($props)->semantic()->disableKeywordSearch()
+                ->queryString('', vector: $vector(1, 0))
+                ->queryString('', vector: $vector(0, 1));
+
+            $expected = $search->size(3)->hits();
+            $this->assertSame(['central', 'north', 'east'], array_column($expected, '_id'));
+            foreach ($expected as $offset => $hit) {
+                $page = $search->from($offset)->size(1)->hits();
+                $this->assertSame([$hit->_id], array_column($page, '_id'));
+                $this->assertSame($hit->_score, $page[0]->_score);
+            }
+
+            $this->assertSame([], $search->from(3)->hits());
+        } finally {
+            $index->delete();
+        }
+    }
+
+    public function test_lazy_search_omits_highlights_inside_collapsed_groups(): void
+    {
+        $name = uniqid('.lazy_collapsed_highlight_');
+        $props = new NewProperties;
+        $props->text('title');
+        $props->keyword('edition');
+        $props->integer('year');
+
+        $index = $this->sigmie->newIndex($name)->properties($props)->create();
+        try {
+            $this->sigmie->collect($name, refresh: true)->merge([
+                new Document(['title' => 'Search guide', 'edition' => 'guide', 'year' => 2026], _id: 'latest'),
+                new Document(['title' => 'Search guide', 'edition' => 'guide', 'year' => 2025], _id: 'older'),
+            ]);
+            $search = $this->sigmie->newSearch($name)->properties($props)->queryString('Search')
+                ->uniqueBy('edition', top: 1)->sort('year:desc')->highlighting(['title'], '<mark>', '</mark>');
+
+            $groupHits = fn (Hit $hit): array => $hit->toArray()['inner_hits']['top']['hits']['hits'];
+            $this->assertStringContainsString('<mark>Search</mark>', $groupHits($search->hits()[0])[0]['highlight']['title'][0]);
+            $inner = $groupHits($search->lazy()->current());
+            $this->assertSame(['older'], array_column($inner, '_id'));
+            $this->assertArrayNotHasKey('highlight', $inner[0]);
+
+            $raw = $search->makeSearch()->toRaw();
+            $raw['collapse']['inner_hits'] = [$raw['collapse']['inner_hits']];
+            $multi = $this->sigmie->newMultiSearch();
+            $multi->raw($name, $raw);
+            $this->assertSame($inner, $groupHits($multi->lazy()->current()));
+        } finally {
+            $index->delete();
+        }
+    }
+
+    public function test_blank_text_inputs_do_not_add_unmatched_hybrid_hits(): void
+    {
+        $index = uniqid('hybrid_blank_');
+        $props = new NewProperties;
+        $props->text('title')->semantic(api: 'test-embeddings', dimensions: 128);
+
+        $this->sigmie->newIndex($index)->properties($props)->create();
+        $this->sigmie->collect($index, refresh: true)->properties($props)->merge([
+            new Document(['title' => 'guide'], _id: 'guide'),
+            // Without a title the document has no embedding, so only a match-all fallback can return it.
+            new Document([], _id: 'other'),
+        ]);
+
+        $vector = $this->embeddingApi->embed('guide', 128);
+        $result = $this->sigmie->newSearch($index)->properties($props)->semantic()
+            ->queryString('guide', vector: $vector)->queryString(' ')->size(1)->get();
+
+        $this->assertSame(1, $result->total());
+        $this->assertSame(['guide'], array_column($result->hits(), '_id'));
+    }
+
+    public function test_image_only_search_returns_only_vector_matches(): void
+    {
+        $index = uniqid('hybrid_image_');
+        $props = new NewProperties;
+        $props->text('title');
+        $props->image('photo')->semantic(api: 'test-clip', dimensions: 128);
+        $vector = [1.0, ...array_fill(0, 127, 0.0)];
+        $field = $props->get()->get('photo')->vectorFields()->first()->name;
+
+        $this->sigmie->newIndex($index)->properties($props)->create();
+        $this->sigmie->collect($index, refresh: true)->properties($props)->merge([
+            new Document(['title' => 'with photo', '_embeddings' => ['photo' => [$field => $vector]]], _id: 'photo'),
+            new Document(['title' => 'without photo'], _id: 'other'),
+        ]);
+
+        $result = $this->sigmie->newSearch($index)->properties($props)->semantic()
+            ->queryImage('stored image', vector: $vector, fields: ['photo'])->get();
+
+        $this->assertSame(['photo'], array_column($result->hits(), '_id'));
+    }
+
+    public function test_document_boost_scales_the_combined_hybrid_score(): void
+    {
+        $index = uniqid('hybrid_boost_');
+        $props = new NewProperties;
+        $props->text('title')->semantic(api: 'test-embeddings', dimensions: 128);
+        $props->boost('priority');
+
+        $this->sigmie->newIndex($index)->properties($props)->create();
+        $this->sigmie->collect($index, refresh: true)->properties($props)->merge([
+            new Document(['title' => 'guide', 'priority' => 1], _id: 'low'),
+            new Document(['title' => 'guide', 'priority' => 5], _id: 'high'),
+        ]);
+
+        $result = $this->sigmie->newSearch($index)->properties($props)->semantic()
+            ->queryString('guide')->get();
+        [$high, $low] = $result->hits();
+
+        $this->assertSame(['high', 'low'], [$high->_id, $low->_id]);
+        $this->assertEqualsWithDelta(5 * $low->_score, $high->_score, 0.00001);
+    }
+
+    public function test_collapsed_hybrid_inner_hits_keep_the_minimum_score(): void
+    {
+        $index = uniqid('hybrid_collapse_');
+        $props = new NewProperties;
+        $props->text('title')->semantic(api: 'test-embeddings', dimensions: 128);
+        $props->keyword('group');
+        $props->integer('order');
+
+        $vector = [1.0, ...array_fill(0, 127, 0.0)];
+        $opposite = [-1.0, ...array_fill(0, 127, 0.0)];
+        $field = $props->get()->get('title')->vectorFields()->first()->name;
+
+        $this->sigmie->newIndex($index)->properties($props)->create();
+        $this->sigmie->collect($index, refresh: true)->properties($props)->merge([
+            new Document([
+                'title' => 'guide', 'group' => 'a', 'order' => 1, '_embeddings' => ['title' => [$field => $vector]],
+            ], _id: 'first'),
+            new Document([
+                'title' => 'guide', 'group' => 'a', 'order' => 2, '_embeddings' => ['title' => [$field => $opposite]],
+            ], _id: 'below'),
+            new Document([
+                'title' => 'guide', 'group' => 'a', 'order' => 3, '_embeddings' => ['title' => [$field => $vector]],
+            ], _id: 'last'),
+        ]);
+
+        $result = $this->sigmie->newSearch($index)->properties($props)->semantic()
+            ->queryString('guide', vector: $vector)->minScore(0.8)
+            ->sort('order:asc')->uniqueBy('group', top: 2)->get();
+
+        $this->assertSame('first', $result->json('hits.0._id'));
+        $this->assertSame(['last'], array_column($result->json('hits.0.inner_hits.top.hits.hits'), '_id'));
+    }
+
+    public function test_facet_selection_filters_live_hits_and_preserves_its_own_counts(): void
+    {
+        $index = uniqid('facet_selection_');
+        $props = new NewProperties;
+        $props->keyword('brand');
+        $props->keyword('color');
+
+        $this->sigmie->newIndex($index)->properties($props)->create();
+        $this->sigmie->collect($index, refresh: true)->merge([
+            new Document(['brand' => 'dell', 'color' => 'red'], _id: 'dell'),
+            new Document(['brand' => 'hp', 'color' => 'blue'], _id: 'hp'),
+        ]);
+
+        $result = $this->sigmie->newSearch($index)->facets('brand color', "brand:'dell'")
+            ->properties($props)->get();
+
+        $this->assertSame(['dell'], array_column($result->hits(), '_id'));
+        $this->assertSame(['dell' => 1, 'hp' => 1], $result->facet('brand'));
+        $this->assertSame(['red' => 1], $result->facet('color'));
+    }
+
+    public function test_collapsed_inner_hits_omit_excluded_source_fields(): void
+    {
+        $index = uniqid('collapse_excludes_');
+        $props = new NewProperties;
+        $props->keyword('group');
+        $props->keyword('internal_note');
+        $props->number('rank');
+
+        $this->sigmie->newIndex($index)->properties($props)->create();
+        $this->sigmie->collect($index, refresh: true)->merge([
+            new Document(['group' => 'one', 'internal_note' => 'keep private', 'rank' => 1], _id: 'one'),
+            new Document(['group' => 'one', 'internal_note' => 'keep private', 'rank' => 2], _id: 'two'),
+        ]);
+
+        $result = $this->sigmie->newSearch($index)->properties($props)
+            ->sort('rank:asc')->uniqueBy('group', top: 1)->except(['internal_note'])->get();
+
+        $top = $result->json('hits.0.inner_hits.top.hits.hits');
+        $this->assertSame('two', $top[0]['_id']);
+        $this->assertArrayNotHasKey('internal_note', $top[0]['_source']);
+    }
+
+    public function test_vector_only_search_can_request_no_hits(): void
+    {
+        $this->forOpensearch(fn () => $this->markTestSkipped('Elasticsearch top-level kNN request'));
+
+        $index = uniqid('no_vector_hits_');
+        $props = new NewProperties;
+        $props->text('title')->semantic(api: 'test-embeddings', dimensions: 128);
+
+        $this->sigmie->newIndex($index)->properties($props)->create();
+        $this->sigmie->collect($index, refresh: true)->properties($props)->merge([
+            new Document(['title' => 'first'], _id: 'first'),
+            new Document(['title' => 'second'], _id: 'second'),
+        ]);
+
+        $vector = $this->embeddingApi->embed('first', 128);
+        $result = $this->sigmie->newSearch($index)->properties($props)
+            ->semantic()->disableKeywordSearch()
+            ->queryString('first', vector: $vector)->size(0)->get();
+
+        $this->assertSame([], $result->hits());
+        // Both documents are vector neighbours; the total does not depend on the page size.
+        $this->assertSame(2, $result->total());
+    }
+
+    public function test_field_type_audit_matches_search_as_you_type_prefixes(): void
+    {
+        $props = new NewProperties;
+        $props->searchAsYouType('headline');
+
+        $this->withFieldTypeDocuments($props, ['fox' => ['headline' => 'Quick brown fox']], function (NewSearch $search): void {
+            $this->assertSame(['fox'], array_column($search->queryString('fo')->get()->hits(), '_id'));
+        });
+    }
+
+    public function test_field_type_audit_matches_uppercase_email_prefixes(): void
+    {
+        $props = new NewProperties;
+        $props->email('email');
+
+        $this->withFieldTypeDocuments($props, ['jane' => ['email' => 'Jane.Doe@Example.com']], function (NewSearch $search): void {
+            $this->assertSame(['jane'], array_column($search->queryString('JAN')->get()->hits(), '_id'));
+        });
+    }
+
+    public function test_field_type_audit_searches_the_whole_path_prefix(): void
+    {
+        $props = new NewProperties;
+        $props->path('location');
+
+        $this->withFieldTypeDocuments($props, [
+            'tax' => ['location' => '/Assets/Reports/ΟΣΧ'],
+            'readme' => ['location' => '/Assets/Readme'],
+        ], function (NewSearch $search): void {
+            $this->assertSame(['tax'], array_column($search->queryString('/ASSETS/REPORTS/ΟΣ')->get()->hits(), '_id'));
+        });
+    }
+
+    public function test_field_type_audit_keeps_all_letters_in_name_prefixes(): void
+    {
+        $props = new NewProperties;
+        $props->name('name');
+
+        $this->withFieldTypeDocuments($props, [
+            'mina' => ['name' => 'Mina'],
+            'minerva' => ['name' => 'Minerva'],
+        ], function (NewSearch $search): void {
+            $this->assertSame(['mina'], array_column($search->queryString('Mina')->get()->hits(), '_id'));
+        });
+    }
+
+    public function test_field_type_audit_highlights_indexed_address_prefixes(): void
+    {
+        $props = new NewProperties;
+        $props->address('address');
+
+        $this->withFieldTypeDocuments($props, ['lyon' => ['address' => '42 Rue de Lyon']], function (NewSearch $search): void {
+            $hits = $search->queryString('LY')->highlighting(['address'], '<mark>', '</mark>')->get()->json('hits');
+            $this->assertSame(['42 Rue de <mark>Lyon</mark>'], $hits[0]['highlight']['address']);
+        });
+    }
+
+    public function test_field_type_audit_handles_whitespace_like_an_empty_search(): void
+    {
+        $props = new NewProperties;
+        $props->text('title');
+
+        $this->withFieldTypeDocuments($props, ['fox' => ['title' => 'Quick brown fox']], function (NewSearch $search): void {
+            $this->assertSame(['fox'], array_column($search->queryString(" \t ")->get()->hits(), '_id'));
+            $this->assertSame([], $search->noResultsOnEmptySearch()->get()->hits());
+        });
+    }
+
+    public function test_field_type_audit_runs_custom_match_queries_on_keywords(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('code')->withQueries(fn (string $query): array => [
+            new Match_('code', $query),
+        ]);
+
+        $this->withFieldTypeDocuments($props, ['sku' => ['code' => 'FR42']], function (NewSearch $search): void {
+            $this->assertSame(['sku'], array_column($search->queryString('fr42')->get()->hits(), '_id'));
+        });
+    }
+
+    private function withFieldTypeDocuments(NewProperties $props, array $documents, callable $assert): void
+    {
+        $index = uniqid('.type-search-');
+        $this->sigmie->newIndex($index)->properties($props)->create();
+
+        try {
+            $collection = $this->sigmie->collect($index, refresh: true)->properties($props);
+            $collection->merge(array_map(
+                fn (array $source, string $id): Document => new Document($source, _id: $id),
+                array_values($documents),
+                array_keys($documents),
+            ));
+
+            $assert($this->sigmie->newSearch($index)->properties($props));
+        } finally {
+            $this->sigmie->deleteIfExists($index);
+        }
+    }
+
     /**
      * @test
      */
@@ -307,6 +635,29 @@ class SearchTest extends TestCase
             ->rerank('invalid-rerank', ['title']);
     }
 
+    /** @test */
+    public function standalone_facet_search_uses_the_configured_query(): void
+    {
+        $name = uniqid('facet_search_');
+        $blueprint = new NewProperties;
+        $blueprint->text('title');
+        $blueprint->keyword('category');
+
+        $this->sigmie->newIndex($name)->properties($blueprint)->create();
+        $this->sigmie->collect($name, refresh: true)->merge([
+            new Document(['title' => 'Orchid', 'category' => 'flower']),
+            new Document(['title' => 'Cedar', 'category' => 'tree']),
+        ]);
+
+        $search = $this->sigmie->newSearch($name)
+            ->properties($blueprint)
+            ->queryString('Orchid')
+            ->facets('category');
+
+        $aggregations = $search->makeFacetSearch()->get()->get()['aggregations'];
+        $this->assertSame(['flower' => 1], $blueprint->get()->get('category')->facets($aggregations['category']));
+    }
+
     /**
      * @test
      */
@@ -387,9 +738,9 @@ class SearchTest extends TestCase
         $this->embeddingApi->assertEmbedWasCalled(1);
         $this->embeddingApi->assertEmbedWasCalledWith('Gamma cache seed');
         $this->embeddingApi->assertEmbedWasCalledWith('Gamma cache seed', 128);
-        $this->embeddingApi->assertBatchEmbedWasCalledWith('Gamma cache seed');
 
-        $this->assertCount(128, $this->embeddingApi->promiseEmbed('Alpha search manual', 128)->wait());
+        $response = $this->embeddingApi->promiseEmbed('Alpha search manual', 128)->wait();
+        $this->assertCount(128, json_decode((string) $response->getBody(), true)['data'][0]['embedding']);
         $this->embeddingApi->assertEmbedWasCalled(2);
         $this->embeddingApi->assertEmbedWasCalled();
         $this->assertNotSame('', $this->embeddingApi->model());
@@ -2180,12 +2531,14 @@ class SearchTest extends TestCase
 
         $blueprint = new NewProperties;
         $blueprint->range('numbers')->integer()
-            ->withQueries(fn (string $queryString): array => [
-                new Range('numbers', [
-                    '>=' => $queryString,
-                    '<=' => $queryString,
-                ]),
-            ]);
+            ->withQueries(function (string $queryString): array {
+                $bound = filter_var($queryString, FILTER_VALIDATE_INT);
+                if ($bound === false) {
+                    return [];
+                }
+
+                return [new Range('numbers', ['>=' => $bound, '<=' => $bound])];
+            });
 
         $this->sigmie->newIndex($indexName)
             ->properties($blueprint)
@@ -2309,6 +2662,29 @@ class SearchTest extends TestCase
         }
     }
 
+    /** @test */
+    public function lazy_scans_include_the_same_document_id_from_each_index(): void
+    {
+        $indices = [uniqid('scan-a-'), uniqid('scan-b-')];
+        $properties = new NewProperties;
+        $properties->text('name');
+
+        foreach ($indices as $name) {
+            $this->sigmie->newIndex($name)->properties($properties)->create();
+            $this->sigmie->collect($name, refresh: true)->merge([
+                new Document(['name' => $name], _id: 'shared-id'),
+            ]);
+        }
+
+        $hits = iterator_to_array($this->sigmie->newSearch(implode(',', $indices))
+            ->properties($properties)
+            ->chunk(1)
+            ->lazy());
+
+        $this->assertEqualsCanonicalizing($indices, array_map(fn (Hit $hit): string => $hit->_source['name'], $hits));
+        $this->assertSame(['shared-id', 'shared-id'], array_column($hits, '_id'));
+    }
+
     /**
      * @test
      */
@@ -2407,6 +2783,126 @@ class SearchTest extends TestCase
         $this->assertCount(2, $hits);
     }
 
+    public function test_collapsed_scan_sorted_by_another_field_keeps_rank_and_facet_filter(): void
+    {
+        $name = uniqid('collapsed_rank_');
+        $properties = new NewProperties;
+        $properties->keyword('group');
+        $properties->keyword('status');
+        $properties->integer('rank');
+
+        $index = $this->sigmie->newIndex($name)->properties($properties)->create();
+        try {
+            $this->sigmie->collect($name, refresh: true)->merge([
+                new Document(['group' => 'B', 'rank' => 1, 'status' => 'excluded'], _id: 'excluded'),
+                new Document(['group' => 'A', 'rank' => 2, 'status' => 'active'], _id: 'best-a'),
+                new Document(['rank' => 3, 'status' => 'active'], _id: 'best-missing'),
+                new Document(['group' => 'A', 'rank' => 4, 'status' => 'active'], _id: 'other-a'),
+                new Document(['rank' => 5, 'status' => 'active'], _id: 'other-missing'),
+                new Document(['group' => 'C', 'rank' => 6, 'status' => 'active'], _id: 'best-c'),
+                new Document(['group' => 'B', 'rank' => 7, 'status' => 'active'], _id: 'best-b'),
+            ]);
+
+            $search = $this->sigmie->newSearch($name)->properties($properties)
+                ->uniqueBy('group', top: 1)->sort('rank:asc')->facets('status', 'status:active')
+                ->retrieve(['rank'])->chunk(2);
+
+            $hits = iterator_to_array($search->lazy());
+
+            $this->assertSame(['best-a', 'best-missing', 'best-c', 'best-b'], array_column($hits, '_id'));
+            $this->assertSame('other-a', $hits[0]->toArray()['inner_hits']['top']['hits']['hits'][0]['_id']);
+        } finally {
+            $index->delete();
+        }
+    }
+
+    /** @dataProvider collapsedScanGroups */
+    public function test_collapsed_scan_reads_multiple_pages_in_collapse_order(string $type, array $values, array $expected, string $order = 'desc'): void
+    {
+        $name = uniqid('collapsed_scan_');
+        $blueprint = new NewProperties;
+        $blueprint->{$type}('group');
+
+        $index = $this->sigmie->newIndex($name)->properties($blueprint)->create();
+        try {
+            $this->sigmie->collect($name, refresh: true)->merge([
+                ...array_map(fn (int|string $group): Document => new Document(['group' => $group]), $values),
+                new Document(['name' => 'ungrouped']),
+            ]);
+
+            $search = $this->sigmie->newSearch($name)->properties($blueprint)
+                ->queryString('')->uniqueBy('group')->sort('group:'.$order)->chunk(1);
+
+            $groups = [];
+            foreach ($search->lazy() as $hit) {
+                $groups[] = $hit->_source['group'] ?? null;
+            }
+
+            $this->assertSame($expected, $groups);
+        } finally {
+            $index->delete();
+        }
+    }
+
+    public static function collapsedScanGroups(): array
+    {
+        return [
+            ['integer', [1, 2, 2, 3], [3, 2, 1, null]],
+            ['keyword', ['A', 'B', 'B', 'C'], ['C', 'B', 'A', null]],
+            ['keyword', ['A', 'B', 'B', 'C'], ['A', 'B', 'C', null], 'asc'],
+        ];
+    }
+
+    public function test_html_highlight_closes_before_the_containing_tag(): void
+    {
+        $name = uniqid('html_highlight_');
+        $blueprint = new NewProperties;
+        $blueprint->html('body');
+
+        $index = $this->sigmie->newIndex($name)->properties($blueprint)->create();
+        try {
+            $this->sigmie->collect($name, refresh: true)->merge([new Document(['body' => '<b>Bonjour</b>'])]);
+
+            $hits = $this->sigmie->newSearch($name)->properties($blueprint)
+                ->fields(['body'])->queryString('Bonjour')->highlighting(['body'], '<em>', '</em>')->get()->json('hits');
+
+            $this->assertSame(['<b><em>Bonjour</em></b>'], $hits[0]['highlight']['body']);
+        } finally {
+            $index->delete();
+        }
+    }
+
+    /** @test */
+    public function collapsed_inner_hits_respect_the_search_minimum_score(): void
+    {
+        $name = uniqid('collapsed_score_');
+        $blueprint = new NewProperties;
+        $blueprint->keyword('group');
+        $blueprint->boost('priority');
+        $blueprint->integer('ord');
+
+        $this->sigmie->newIndex($name)->properties($blueprint)->create();
+        $this->sigmie->collect($name, refresh: true)->merge([
+            new Document(['group' => 'A', 'priority' => 10, 'ord' => 1], _id: 'representative'),
+            new Document(['group' => 'A', 'priority' => 1, 'ord' => 2], _id: 'below-threshold'),
+            new Document(['group' => 'A', 'priority' => 8, 'ord' => 3], _id: 'eligible'),
+        ]);
+
+        $hits = $this->sigmie->newSearch($name)
+            ->properties($blueprint)
+            ->queryString('')
+            ->minScore(5)
+            ->sort('ord:asc')
+            ->uniqueBy('group', top: 3)
+            ->get()
+            ->json('hits');
+
+        $this->assertSame('representative', $hits[0]['_id']);
+        $innerIds = array_column($hits[0]['inner_hits']['top']['hits']['hits'], '_id');
+        $this->assertNotContains('below-threshold', $innerIds);
+        $this->assertSame(['eligible'], $innerIds);
+    }
+
     /**
      * @test
      */
@@ -2450,10 +2946,11 @@ class SearchTest extends TestCase
         $this->assertNotNull($groupA);
         $this->assertArrayHasKey('inner_hits', $groupA);
         $this->assertArrayHasKey('top', $groupA['inner_hits']);
-        $this->assertCount(
-            2,
-            $groupA['inner_hits']['top']['hits']['hits']
+        $this->assertSame(
+            [2, 3],
+            array_column(array_column($groupA['inner_hits']['top']['hits']['hits'], '_source'), 'ord'),
         );
+        $this->assertSame([], $hits[0]['inner_hits']['top']['hits']['hits']);
     }
 
     /**
@@ -2630,6 +3127,26 @@ class SearchTest extends TestCase
         $this->assertEquals(2, $response->total());
     }
 
+    /** @test */
+    public function input_parser_preserves_keywords_inside_text_and_quoted_values(): void
+    {
+        $parsed = (new InputParser)->parse(<<<'INPUT'
+            RESORT GUIDE FILTER title:"Keep the FILTER and the SORT order \"as is\"" SORT rank:desc
+            INPUT);
+
+        $this->assertSame('RESORT GUIDE', trim($parsed['query_string']));
+        $this->assertSame(<<<'FILTER_WRAP'
+title:"Keep the FILTER and the SORT order \"as is\""
+FILTER_WRAP
+            , $parsed['filter_string']);
+        $this->assertSame('rank:desc', $parsed['sort_string']);
+
+        $parsed = (new InputParser)->parse("O'Reilly FILTER title:'Guide'");
+
+        $this->assertSame("O'Reilly", trim($parsed['query_string']));
+        $this->assertSame("title:'Guide'", $parsed['filter_string']);
+    }
+
     /**
      * @test
      */
@@ -2782,14 +3299,16 @@ class SearchTest extends TestCase
         $reranked = new RerankedHit($hit, 0.9);
 
         $this->assertSame([
+            '_index' => $indexName,
             '_id' => 'matching',
-            '_score' => 1.5,
             '_source' => ['title' => 'Hit serialization'],
+            '_score' => 1.5,
         ], $hit->toArray());
         $this->assertSame([
+            '_index' => $indexName,
             '_id' => 'matching',
-            '_score' => 1.5,
             '_source' => ['title' => 'Hit serialization'],
+            '_score' => 1.5,
             '_rerank_score' => 0.9,
         ], $reranked->toArray());
     }

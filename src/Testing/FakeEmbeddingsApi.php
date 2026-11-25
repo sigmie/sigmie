@@ -5,11 +5,21 @@ declare(strict_types=1);
 namespace Sigmie\Testing;
 
 use GuzzleHttp\Promise\Promise;
+use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\Assert;
+use Sigmie\AI\APIs\ApiResponse;
+use Sigmie\AI\APIs\CohereEmbeddingsApi;
+use Sigmie\AI\APIs\JinaClipApi;
+use Sigmie\AI\APIs\OpenAIEmbeddingsApi;
+use Sigmie\AI\APIs\VoyageEmbeddingsApi;
 use Sigmie\AI\Contracts\EmbeddingsApi;
+
+use function Sigmie\Functions\batch_dimensions;
 
 class FakeEmbeddingsApi implements EmbeddingsApi
 {
+    use TokenizesText;
+
     protected array $embedCalls = [];
 
     protected array $batchEmbedCalls = [];
@@ -27,6 +37,11 @@ class FakeEmbeddingsApi implements EmbeddingsApi
     }
 
     public function embed(string $text, int $dimensions): array
+    {
+        return ApiResponse::resizeEmbedding($this->rawEmbed($text, $dimensions), $dimensions);
+    }
+
+    protected function rawEmbed(string $text, int $dimensions): array
     {
         $this->embedCalls[] = [
             'text' => $text,
@@ -46,7 +61,11 @@ class FakeEmbeddingsApi implements EmbeddingsApi
     public function promiseEmbed(string $text, int $dimensions): Promise
     {
         $promise = new Promise;
-        $promise->resolve($this->embed($text, $dimensions));
+        $vector = $this->rawEmbed($text, $dimensions);
+        $body = $this->realApi instanceof CohereEmbeddingsApi
+            ? ['embeddings' => ['float' => [$vector]]]
+            : ['data' => [['index' => 0, 'embedding' => $vector]]];
+        $promise->resolve(new Response(200, ['Content-Type' => 'application/json'], json_encode($body, JSON_THROW_ON_ERROR)));
 
         return $promise;
     }
@@ -119,29 +138,17 @@ class FakeEmbeddingsApi implements EmbeddingsApi
 
     public function assertBatchEmbedWasCalledWith(string $expectedText): void
     {
-        $found = false;
-
-        // Check in batch embed calls
         foreach ($this->batchEmbedCalls as $batch) {
             foreach ($batch as $item) {
                 if (($item['text'] ?? '') === $expectedText) {
-                    $found = true;
-                    break 2;
+                    Assert::assertTrue(true);
+
+                    return;
                 }
             }
         }
 
-        // Also check in single embed calls
-        if (! $found) {
-            foreach ($this->embedCalls as $call) {
-                if (($call['text'] ?? '') === $expectedText) {
-                    $found = true;
-                    break;
-                }
-            }
-        }
-
-        Assert::assertTrue($found, sprintf("Text '%s' was never embedded", $expectedText));
+        Assert::fail(sprintf("batchEmbed() was never called with text '%s'", $expectedText));
     }
 
     public function getEmbedCalls(): array
@@ -162,21 +169,60 @@ class FakeEmbeddingsApi implements EmbeddingsApi
 
     protected function embedPayload(array $payload): array
     {
-        return array_map(fn (array $item): array => [
-            ...$item,
-            'vector' => $this->vector(
-                (string) ($item['text'] ?? ''),
-                (int) ($item['dims'] ?? $item['dimensions'] ?? 384),
-            ),
-        ], $payload);
+        $defaultDimensions = $this->defaultDimensions();
+
+        foreach ($payload as $key => $item) {
+            $dims = batch_dimensions($item, $defaultDimensions) ?? $defaultDimensions;
+            $vector = $this->vector((string) ($item['text'] ?? ''), $dims);
+            $payload[$key]['vector'] = ApiResponse::resizeEmbedding($vector, $dims);
+        }
+
+        return $payload;
+    }
+
+    protected function defaultDimensions(): int
+    {
+        if ($this->realApi instanceof OpenAIEmbeddingsApi) {
+            return $this->realApi->defaultDimensions();
+        }
+
+        if ($this->realApi instanceof VoyageEmbeddingsApi) {
+            return match ($this->model()) {
+                'voyage-3-lite' => 512,
+                'voyage-large-2', 'voyage-code-2' => 1536,
+                default => 1024,
+            };
+        }
+
+        if ($this->realApi instanceof CohereEmbeddingsApi) {
+            return match ($this->model()) {
+                'embed-v5.0-fast', 'embed-v5.0-pro' => 2048,
+                'embed-v4.0' => 1536,
+                'embed-english-light-v3.0', 'embed-multilingual-light-v3.0' => 384,
+                'embed-english-v2.0' => 4096,
+                'embed-multilingual-v2.0' => 768,
+                default => 1024,
+            };
+        }
+
+        return $this->realApi instanceof JinaClipApi ? 512 : 384;
     }
 
     protected function vector(string $text, int $dimensions): array
     {
+        if ($this->realApi instanceof OpenAIEmbeddingsApi) {
+            $this->realApi->requestDimensions($dimensions);
+        }
+
+        if ($this->realApi instanceof JinaClipApi
+            || ($this->realApi instanceof CohereEmbeddingsApi && ! in_array($dimensions, $this->realApi->supportedDimensions(), true))
+            || ($this->realApi instanceof VoyageEmbeddingsApi && ! $this->realApi->supportsDimensions($dimensions))) {
+            $dimensions = $this->defaultDimensions();
+        }
+
         $dimensions = max(1, $dimensions);
         $vector = array_fill(0, $dimensions, 0.001);
-        $normalized = $this->normalize($text);
-        $tokens = $this->tokens($normalized);
+        $tokens = $this->tokens($text);
 
         foreach ($tokens as $token) {
             $vector[crc32($token) % $dimensions] += 0.25;
@@ -193,16 +239,6 @@ class FakeEmbeddingsApi implements EmbeddingsApi
         $magnitude = sqrt(array_sum(array_map(fn (float $value): float => $value * $value, $vector)));
 
         return array_map(fn (float $value): float => $value / $magnitude, $vector);
-    }
-
-    protected function normalize(string $text): string
-    {
-        return trim((string) preg_replace('/[^a-z0-9]+/', ' ', strtolower($text)));
-    }
-
-    protected function tokens(string $text): array
-    {
-        return array_values(array_filter(explode(' ', $text)));
     }
 
     protected function semanticGroups(): array

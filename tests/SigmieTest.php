@@ -18,6 +18,7 @@ use Sigmie\Enums\SearchEngineType;
 use Sigmie\Index\ListedIndex;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\Type;
 use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
 
@@ -162,7 +163,7 @@ class SigmieTest extends TestCase
                 {
                     public function shouldRun(Properties $properties): bool
                     {
-                        return $properties->get('package_marker') !== null;
+                        return $properties->get('package_marker') instanceof Type;
                     }
 
                     public function beforeBatch(string $indexName, Sigmie $sigmie, Properties $properties, array $apis): void {}

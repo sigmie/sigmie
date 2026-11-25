@@ -26,6 +26,33 @@ use stdClass;
 
 class IndexActionsTest extends TestCase
 {
+    public function test_audit_index_collection_uses_the_filtered_alias(): void
+    {
+        $alias = uniqid('audit-index-base-filtered-');
+        $physical = $alias.'_source';
+        $this->indexAPICall($physical, 'PUT', [
+            'settings' => ['number_of_replicas' => 0],
+            'aliases' => [$alias => ['filter' => ['term' => ['visible' => true]]]],
+        ]);
+
+        try {
+            $this->sigmie->collect($physical, true)->merge([
+                new Document(['visible' => true], _id: 'public'),
+                new Document(['visible' => false], _id: 'private'),
+            ]);
+
+            $index = $this->sigmie->index($alias);
+            $this->assertSame(1, $index->collect()->count());
+        } finally {
+            $this->indexAPICall($physical, 'DELETE');
+        }
+    }
+
+    public function test_audit_index_lookup_with_no_wildcard_matches_returns_null(): void
+    {
+        $this->assertNull($this->sigmie->index(uniqid('audit-index-base-missing-').'*'));
+    }
+
     /**
      * @test
      */

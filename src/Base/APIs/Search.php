@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\APIs;
 
-use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\PointInTimeRequests;
 use Sigmie\Base\Http\Requests\Search as SearchRequest;
@@ -16,9 +15,7 @@ trait Search
 
     protected function searchAPICall(string $index, array $query): SearchResponse
     {
-        $esRequest = $this->searchRequest($index, $query);
-
-        return $this->elasticsearchCall($esRequest);
+        return $this->elasticsearchCall($this->searchRequest($index, $query), SearchResponse::class);
     }
 
     protected function pitSearchAPICall(array $body): ElasticsearchResponse
@@ -43,15 +40,15 @@ trait Search
 
     protected function searchRequest(string $index, array $query): SearchRequest
     {
-        $uri = new Uri(sprintf('/%s/_search', $index));
+        $uri = $this->indexUri(isset($query['pit']) ? '' : $index, '_search');
 
         return new SearchRequest('POST', $uri, $query);
     }
 
     protected function searchTemplateRequest(string $index, array $query): SearchResponse
     {
-        $uri = new Uri(sprintf('/%s/_search/template', $index));
+        $uri = $this->indexUri($index, '_search/template');
 
-        return $this->elasticsearchCall(new SearchRequest('POST', $uri, $query));
+        return $this->elasticsearchCall(new SearchRequest('POST', $uri, $query), SearchResponse::class);
     }
 }

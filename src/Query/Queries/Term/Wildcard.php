@@ -6,6 +6,8 @@ namespace Sigmie\Query\Queries\Term;
 
 use Sigmie\Query\Queries\Query;
 
+use function Sigmie\Functions\keyed;
+
 class Wildcard extends Query
 {
     public function __construct(
@@ -16,12 +18,10 @@ class Wildcard extends Query
     public function toRaw(): array
     {
         return [
-            'wildcard' => [
-                $this->field => [
-                    'value' => $this->value,
-                    'boost' => $this->boost,
-                ],
-            ],
+            'wildcard' => keyed($this->field, [
+                'value' => $this->value,
+                'boost' => $this->boost,
+            ]),
         ];
     }
 }

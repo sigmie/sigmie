@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Aggregations\Bucket;
 
+use Sigmie\Query\Shared\OrdersBuckets;
+
 class MultiTerms extends Bucket
 {
-    protected int $size;
+    use OrdersBuckets;
 
-    protected array $order = [];
+    protected int $size;
 
     /**
      * @param  list<string>  $fields
@@ -25,28 +27,19 @@ class MultiTerms extends Bucket
         return $this;
     }
 
-    public function order(string $subaggregation, string $direction): self
-    {
-        $this->order = ['order' => [
-            $subaggregation => $direction,
-        ]];
-
-        return $this;
-    }
-
     protected function value(): array
     {
         $value = [
             'multi_terms' => [
                 'terms' => array_map(
                     fn (string $field): array => ['field' => $field],
-                    $this->fields,
+                    array_values($this->fields),
                 ),
                 ...$this->order,
             ],
         ];
 
-        if ($this->size ?? false) {
+        if (isset($this->size)) {
             $value['multi_terms']['size'] = $this->size;
         }
 

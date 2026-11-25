@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Sigmie\Query\Contracts;
 
 use Sigmie\Shared\Contracts\ToRaw;
+use stdClass;
 
 interface QueryClause extends ToRaw
 {
     public function boost(float $boost = 1): self;
 
-    public function toRaw(): array;
+    public function toRaw(): array|stdClass;
 }

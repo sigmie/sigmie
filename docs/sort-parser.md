@@ -68,7 +68,7 @@ One space separates the clauses. Each clause is one of these forms:
 
 An empty string sorts by `_score`.
 
-> **Note:** `_score:asc` is not allowed, because Elasticsearch cannot sort relevance ascending. Use `_score` or `_score:desc`.
+> **Note:** `_score:asc` is not allowed, because Sigmie restricts relevance sorting to descending order. Use `_score` or `_score:desc`.
 
 ## Field types
 
@@ -81,6 +81,8 @@ The parser picks the sort field from the property type:
 | `text()` without `makeSortable()` | Error: `Field <name> is not sortable.` |
 | `name()`, `title()`, `category()`, `email()`, `address()`, `searchableNumber()` | The `.sortable` sub-field. These types add it themselves. |
 | `id()` | `id.sortable`. |
+| `geoPoint()` | [Distance from a point](#geo-distance). |
+| `range()` | Sorting is unsupported. |
 | Other types, such as `number()`, `date()`, and `bool()` | The field itself. |
 
 A field inside a `nested()` property sorts with the nested path:

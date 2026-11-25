@@ -74,7 +74,8 @@ class ParallelRunner extends BaseRunner
                 }
 
                 $this->flushWorker($worker);
-                if ($this->exitcode > 0 && $this->options->stopOnFailure()) {
+                if (($this->exitcode > 0 && $this->options->stopOnFailure())
+                    || ($this->exitcode === TestRunner::EXCEPTION_EXIT && $this->options->stopOnError())) {
                     $this->pending = [];
                 } elseif (($pending = array_shift($this->pending)) !== null) {
                     $worker->assign($pending, $phpunit, $phpunitOptions, $this->options);

@@ -10,6 +10,7 @@ use Sigmie\Analytics\Analytics;
 use Sigmie\Base\APIs\MSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\ElasticsearchException;
+use Sigmie\Base\Http\Responses\Search;
 use Sigmie\Document\Hit;
 use Sigmie\Query\NewQuery;
 use Sigmie\Search\Contracts\LazyIterableQuery;
@@ -18,6 +19,7 @@ use Sigmie\Shared\UsesApis;
 use Sigmie\SigmieIndex;
 
 use function Sigmie\Functions\random_name;
+use function Sigmie\Functions\search_hits;
 
 class NewMultiSearch
 {
@@ -102,6 +104,15 @@ class NewMultiSearch
 
     public function get(): array
     {
+        return $this->execute(false);
+    }
+
+    private function execute(bool $forHits): array
+    {
+        if ($this->queries === []) {
+            return [];
+        }
+
         $body = [];
 
         foreach ($this->queries as $query) {
@@ -111,7 +122,15 @@ class NewMultiSearch
             ];
         }
 
-        $response = $this->msearchAPICall($body);
+        try {
+            $response = $this->msearchAPICall($body);
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->responseCode = $elasticsearchException->getCode();
+
+            throw $elasticsearchException;
+        }
+
+        $this->responseCode = $response->code();
 
         // @codeCoverageIgnoreStart
         if ($response->failed()) {
@@ -120,16 +139,26 @@ class NewMultiSearch
 
         // @codeCoverageIgnoreEnd
 
-        $this->responseCode = $response->code();
-
         $responses = $response->json('responses') ?? [];
+        foreach ($responses as $item) {
+            if (isset($item['error']) || ($item['status'] ?? 200) >= 400 || Search::isPartial($item)) {
+                throw new ElasticsearchException($item, $item['status'] ?? $response->code());
+            }
+        }
+
         $results = [];
         $responseIndex = 0;
 
         foreach ($this->queries as $query) {
             $searchResponses = array_slice($responses, $responseIndex, $query->multisearchResCount());
 
-            $result = $query->formatResponses(...$searchResponses, httpCode: $this->responseCode);
+            if ($forHits && $query instanceof NewSearch) {
+                $query = $query->forHits();
+            }
+
+            $result = $forHits && $query instanceof Analytics
+                ? $searchResponses[0]
+                : $query->formatResponses(...$searchResponses, httpCode: $this->responseCode);
 
             $results[] = $result;
             $responseIndex += $query->multisearchResCount();
@@ -140,12 +169,12 @@ class NewMultiSearch
 
     public function hits(): array
     {
-        $results = $this->get();
+        $results = $this->execute(true);
 
         $allHits = array_map(function ($result) {
             // Handle raw query results (arrays) vs formatted results (objects with hits() method)
             if (is_array($result)) {
-                return $result['hits']['hits'] ?? [];
+                return search_hits($result);
             }
 
             return $result->hits();
@@ -159,16 +188,16 @@ class NewMultiSearch
      */
     public function groupedHits(): array
     {
-        $results = $this->get();
+        $results = $this->execute(true);
         $grouped = [];
 
         foreach ($results as $index => $result) {
             $name = $this->names[$index] ?? random_name('srch');
             $hits = is_array($result)
-                ? ($result['hits']['hits'] ?? [])
+                ? search_hits($result)
                 : $result->hits();
 
-            $grouped[$name] = $hits;
+            $grouped[$name] = array_merge($grouped[$name] ?? [], $hits);
         }
 
         return $grouped;

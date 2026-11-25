@@ -13,9 +13,92 @@ use Sigmie\Testing\TestCase;
 
 class FacetsTest extends TestCase
 {
+    /** @test */
+    public function a_nested_facet_counts_matching_items_from_matching_root_documents(): void
+    {
+        $name = uniqid('nested_facet_');
+        $blueprint = new NewProperties;
+        $blueprint->keyword('status');
+        $blueprint->nested('items', function (NewProperties $items): void {
+            $items->keyword('color');
+            $items->keyword('size');
+        });
+        $this->sigmie->newIndex($name)->properties($blueprint)->create();
+        $this->sigmie->collect($name, refresh: true)->merge([
+            new Document(['status' => 'active', 'items' => [
+                ['color' => 'red', 'size' => 'small'],
+                ['color' => 'blue', 'size' => 'large'],
+            ]]),
+            new Document(['status' => 'inactive', 'items' => [
+                ['color' => 'red', 'size' => 'medium'],
+            ]]),
+        ]);
+
+        $response = $this->sigmie->newSearch($name)
+            ->properties($blueprint)
+            ->facets('items.size', 'status:active items.color:red')
+            ->get();
+
+        $this->assertSame(['small' => 1], $response->facet('items.size'));
+    }
+
+    /** @test */
+    public function a_deep_nested_facet_filters_each_matching_ancestor(): void
+    {
+        $name = uniqid('deep_nested_facet_');
+        $blueprint = new NewProperties;
+        $blueprint->nested('orders', function (NewProperties $orders): void {
+            $orders->keyword('state');
+            $orders->nested('items', function (NewProperties $items): void {
+                $items->keyword('sku');
+            });
+        });
+        $this->sigmie->newIndex($name)->properties($blueprint)->create();
+        $this->sigmie->collect($name, refresh: true)->merge([
+            new Document(['orders' => [
+                ['state' => 'open', 'items' => [['sku' => 'book']]],
+                ['state' => 'closed', 'items' => [['sku' => 'pen']]],
+            ]]),
+        ]);
+
+        $response = $this->sigmie->newSearch($name)
+            ->properties($blueprint)
+            ->facets('orders.items.sku', 'orders.state:open')
+            ->get();
+
+        $this->assertSame(['book' => 1], $response->facet('orders.items.sku'));
+    }
+
     use Explain;
     use Index;
     use Search;
+
+    public function test_field_type_audit_counts_documents_with_date_values(): void
+    {
+        $props = new NewProperties;
+        $props->date('published_at');
+
+        $index = uniqid('.type-facet-');
+        $this->sigmie->newIndex($index)->properties($props)->create();
+
+        try {
+            $this->sigmie->collect($index, refresh: true)->properties($props)->merge([
+                new Document(['published_at' => ['2024-01-01', '2024-02-01']], _id: 'published'),
+                new Document(['title' => 'Draft'], _id: 'unpublished'),
+            ]);
+
+            $facet = $this->sigmie->newSearch($index)->properties($props)->queryString('')
+                ->facets('published_at')->get()->facet('published_at');
+
+            $this->assertSame([
+                'count' => 1,
+                'min' => '2024-01-01T00:00:00.000Z',
+                'max' => '2024-02-01T00:00:00.000Z',
+            ], $facet);
+        } finally {
+            $this->sigmie->deleteIfExists($index);
+        }
+    }
 
     /**
      * @test

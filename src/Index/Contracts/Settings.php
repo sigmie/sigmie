@@ -17,7 +17,7 @@ interface Settings extends FromRaw, ToRaw
 
     public function replicaShards(): ?int;
 
-    public function config(string $name, string $value): self;
+    public function config(string $name, string|array|bool|int|float $value): self;
 
     public function analysis(): Analysis;
 }

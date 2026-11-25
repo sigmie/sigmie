@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use ReflectionMethod;
 use RuntimeException;
 use Sigmie\Document\Document;
+use Sigmie\Mappings\Field;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Mappings\Types\Nested;
+use Sigmie\Mappings\Types\Object_;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\ParseException;
 use Sigmie\Testing\TestCase;
@@ -17,6 +21,302 @@ use Throwable;
 
 class FilterParserTest extends TestCase
 {
+    public function test_inclusive_ipv6_range_accepts_unquoted_addresses(): void
+    {
+        $properties = new NewProperties;
+        $properties->range('network')->ip();
+        $name = uniqid('.ipv6-filter-');
+        $index = $this->sigmie->newIndex($name)->properties($properties)->create();
+        try {
+            $this->sigmie->collect($name, true)->merge([
+                new Document(['network' => 'fe80::/120'], 'in'),
+                new Document(['network' => 'fc00::/120'], 'out'),
+            ]);
+
+            $parser = new FilterParser($properties);
+            foreach (['network:fe80::1..fe80::ff', 'network:"fe80::1"..fe80::ff'] as $filter) {
+                $response = $this->sigmie->rawQuery($name, ['query' => $parser->parse($filter)->toRaw()]);
+                $this->assertSame(['in'], array_column($response->json('hits.hits'), '_id'));
+            }
+        } finally {
+            $index->delete();
+        }
+    }
+
+    public static function mappedOperands(): iterable
+    {
+        foreach ([
+            'stock:many', 'stock:[1,many]', 'stock>=false', 'stock:1..many',
+            'active:yes', 'active:[true,0]', 'created:"2023-02-29"',
+            'created>=now+1Q', 'host:["2001:db8::/129"]', 'host>="192.0.2.0/24"', 'network:"192.0.2.1/33"', 'ages:[1.5]', 'counts:1.00000000000000001',
+            'stock:"1*"', 'label:1km[0,0]', 'location:1km[91,0]',
+            'embedding:1', 'location:[1]', 'profile:name',
+        ] as $filter) {
+            yield $filter => [$filter, false];
+        }
+
+        foreach ([
+            'host:"192.0.2.0/24"', 'host:["2001:db8::/64"]', 'counts:100e-2', 'stock:1e2', 'stock>-1.5', 'active:[false,true]', 'network:"2001:db8::1"',
+            'created>="2024-02"', 'created>="2024-02-29T12:30:00+02:00"', 'created>=now-1d/d',
+            'location:1km[-90,180]', 'embedding:*', 'profile.name:"x"',
+            'created>="2024-02-29T12:30:00,500+02"',
+        ] as $filter) {
+            yield $filter => [$filter, true];
+        }
+    }
+
+    /**
+     * @withoutCluster
+     *
+     * @dataProvider mappedOperands
+     */
+    public function test_filter_operands_follow_the_mapping(string $filter, bool $valid): void
+    {
+        $props = new NewProperties;
+        $props->number('stock');
+        $props->bool('active');
+        $props->datetime('created');
+        $props->range('network')->ip();
+        $props->type(new Field('host', 'ip'));
+        $props->range('ages');
+        $props->range('counts')->long();
+        $props->keyword('label');
+        $props->geoPoint('location');
+        $props->object('profile', fn (NewProperties $p): Keyword => $p->keyword('name'));
+        $props->vector('embedding', 2);
+
+        $parser = new FilterParser($props, false);
+        $raw = $parser->parse($filter)->toRaw();
+        $this->assertSame($valid, $parser->errors() === []);
+        if (! $valid) {
+            $this->assertArrayHasKey('match_none', $raw['bool']['must'][0]);
+        }
+    }
+
+    /** @withoutCluster */
+    public function test_date_comparisons_keep_unquoted_epoch_milliseconds_numeric(): void
+    {
+        $properties = new NewProperties;
+        $properties->datetime('created_at');
+
+        $parser = new FilterParser($properties);
+
+        $body = $parser->parse("created_at>=-315619200000 AND created_at<'2040'")->toRaw();
+        $clauses = $body['bool']['must'];
+        $this->assertSame(-315619200000, $clauses[0]['range']['created_at']['gte']);
+        $this->assertSame('2040', $clauses[1]['range']['created_at']['lt']);
+
+        $range = $parser->parse('created_at:-315619200000..2208988800000')->toRaw();
+        $this->assertSame(2208988800000, $range['bool']['must'][0]['range']['created_at']['lte']);
+    }
+
+    /** @withoutCluster */
+    public function test_an_inclusive_date_range_accepts_unquoted_date_math(): void
+    {
+        $properties = new NewProperties;
+        $properties->datetime('created_at');
+
+        $parser = new FilterParser($properties);
+
+        $body = $parser->parse('created_at:now-7d/d..now/d')->toRaw();
+        $range = $body['bool']['must'][0]['range']['created_at'] ?? [];
+        $this->assertSame('now-7d/d', $range['gte'] ?? null);
+        $this->assertSame('now/d', $range['lte'] ?? null);
+    }
+
+    /** @test @withoutCluster */
+    public function mapped_integer_ids_use_numeric_range_bounds(): void
+    {
+        $props = new NewProperties;
+        $props->id('product');
+
+        $parser = new FilterParser($props);
+
+        foreach (['product>2', 'product:2..10'] as $filter) {
+            $query = $parser->parse($filter)->toRaw();
+            $this->assertArrayHasKey('product.sortable', $query['bool']['must'][0]['range']);
+        }
+    }
+
+    /** @test @withoutCluster */
+    public function quoted_values_preserve_literal_control_bytes(): void
+    {
+        $props = new NewProperties;
+        $props->nested('items', fn (NewProperties $p): Keyword => $p->keyword('name'));
+
+        $value = "a\x01s\x01d\x01b\x01\x02\x03";
+        $query = (new FilterParser($props))->parse('items:{ name:"'.$value.'" }')->toRaw();
+
+        $this->assertSame($value, $query['bool']['must'][0]['nested']['query']['bool']['must'][0]['term']['items.name']['value']);
+    }
+
+    /** @test @withoutCluster */
+    public function a_nested_clause_needs_an_operator_before_its_sibling(): void
+    {
+        $props = new NewProperties;
+        $props->nested('items', fn (NewProperties $p): Keyword => $p->keyword('name'));
+        $props->bool('active');
+
+        $this->expectException(ParseException::class);
+        (new FilterParser($props, false))->parse('items:{name:bolt} active:true');
+    }
+
+    /** @test @withoutCluster */
+    public function boolean_spelling_is_a_valid_document_id(): void
+    {
+        $query = (new FilterParser)->parse('_id:false')->toRaw();
+
+        $this->assertSame(['false'], $query['bool']['must'][0]['ids']['values']);
+    }
+
+    /** @test @withoutCluster */
+    public function document_ids_support_exists_without_a_mapping(): void
+    {
+        $query = (new FilterParser)->parse('NOT _id:*')->toRaw();
+
+        $this->assertSame('_id', $query['bool']['must'][0]['bool']['must_not'][0]['exists']['field']);
+    }
+
+    /** @test @withoutCluster */
+    public function nested_existence_checks_the_nested_documents(): void
+    {
+        $props = new NewProperties;
+        $props->nested('items', fn (NewProperties $p): Keyword => $p->keyword('name'));
+
+        $query = (new FilterParser($props))->parse('items:*')->toRaw();
+
+        $this->assertSame('items', $query['bool']['must'][0]['nested']['path'] ?? null);
+    }
+
+    /** @test @withoutCluster */
+    public function nested_paths_can_repeat_an_ancestor_name(): void
+    {
+        $props = new NewProperties;
+        $props->nested('items', fn (NewProperties $p): Object_ => $p->object('items', fn (NewProperties $p): Nested => $p->nested('parts', fn (NewProperties $p): Keyword => $p->keyword('name'))));
+
+        $query = (new FilterParser($props))->parse('items:{ items.parts:{ name:bolt } }')->toRaw();
+
+        $this->assertSame('items.items.parts', $query['bool']['must'][0]['nested']['query']['bool']['must'][0]['nested']['path']);
+    }
+
+    /** @test @withoutCluster */
+    public function a_space_after_the_colon_preserves_an_operator_word_value(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('label');
+
+        $query = (new FilterParser($props))->parse('label: OR')->toRaw();
+
+        $this->assertSame('OR', $query['bool']['must'][0]['term']['label']['value']);
+    }
+
+    /** @test @withoutCluster */
+    public function crossed_delimiters_are_syntax_errors_in_collect_mode(): void
+    {
+        $this->expectException(ParseException::class);
+        (new FilterParser(new NewProperties, false))->parse('([)]');
+    }
+
+    /** @test @withoutCluster */
+    public function an_escaped_final_quote_does_not_close_a_value(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('name');
+
+        $this->expectException(ParseException::class);
+        (new FilterParser($props, false))->parse('name:"Alice\\"');
+    }
+
+    /** @test @withoutCluster */
+    public function grouped_clauses_need_an_operator_after_an_exact_value(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('name');
+
+        $this->expectException(ParseException::class);
+        (new FilterParser($props, false))->parse('name:Alice(name:Bob)');
+    }
+
+    /** @test @withoutCluster */
+    public function and_not_counts_towards_the_depth_limit(): void
+    {
+        $props = new NewProperties;
+        $props->bool('active');
+
+        $groups = str_repeat('(', FilterParser::$maxNestingLevel).'active:true'.str_repeat(')', FilterParser::$maxNestingLevel);
+        $this->expectException(ParseException::class);
+        (new FilterParser($props))->parse('active:true AND NOT '.$groups);
+    }
+
+    /** @test @withoutCluster */
+    public function a_wildcard_after_a_literal_backslash_stays_active(): void
+    {
+        $properties = new NewProperties;
+        $properties->caseSensitiveKeyword('path');
+
+        $body = (new FilterParser($properties))
+            ->parse(<<<'FILTER'
+                path:'C:\\*'
+                FILTER)
+            ->toRaw();
+
+        $this->assertSame('C:\\\\*', $body['bool']['must'][0]['wildcard']['path']['value']);
+    }
+
+    /** @test @withoutCluster */
+    public function a_quoted_closing_brace_stays_inside_a_nested_filter(): void
+    {
+        $properties = new NewProperties;
+        $properties->nested('contact', function (NewProperties $contact): void {
+            $contact->keyword('name');
+            $contact->bool('active');
+        });
+
+        $body = (new FilterParser($properties))->parse("contact:{ name:'}' AND active:true }")->toRaw();
+        $clauses = $body['bool']['must'][0]['nested']['query']['bool']['must'];
+
+        $this->assertSame('}', $clauses[0]['term']['contact.name']['value']);
+        $this->assertTrue($clauses[1]['term']['contact.active']['value']);
+    }
+
+    /** @test @withoutCluster */
+    public function an_inclusive_range_accepts_decimals_without_a_leading_zero(): void
+    {
+        $properties = new NewProperties;
+        $properties->float('price');
+
+        $body = (new FilterParser($properties))->parse('price:-.5...5')->toRaw();
+
+        $this->assertSame('-.5', $body['bool']['must'][0]['range']['price']['gte'] ?? null);
+        $this->assertSame('.5', $body['bool']['must'][0]['range']['price']['lte'] ?? null);
+    }
+
+    /** @test @withoutCluster */
+    public function a_mapped_field_can_contain_a_hyphen_or_non_ascii_letters(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('in-OR-out');
+        $properties->number('café');
+
+        $body = (new FilterParser($properties))->parse("in-OR-out:'in' AND café>=7")->toRaw();
+
+        $this->assertSame('in', $body['bool']['must'][0]['term']['in-OR-out']['value']);
+        $this->assertSame('7', $body['bool']['must'][1]['range']['café']['gte']);
+    }
+
+    /** @test @withoutCluster */
+    public function a_field_named_not_stays_a_field_when_followed_by_a_colon(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('NOT');
+        $properties->keyword('status');
+
+        $body = (new FilterParser($properties))->parse("status:'open' AND NOT : 'value'")->toRaw();
+
+        $this->assertSame('value', $body['bool']['must'][1]['term']['NOT']['value']);
+        $this->assertArrayNotHasKey('must_not', $body['bool']);
+    }
+
     /**
      * @test
      */
@@ -86,6 +386,7 @@ class FilterParserTest extends TestCase
 
         $this->assertSame([
             'relation' => 'intersects',
+            'boost' => 1.0,
             'gte' => '2023-01-01',
             'lte' => '2023-12-31',
         ], $query['bool']['must'][0]['range']['created_at']);
@@ -191,6 +492,11 @@ class FilterParserTest extends TestCase
             'content after array' => ['status:["active"]garbage'],
             'content after quoted term' => ['status:"active"garbage'],
             'content after wildcard' => ['status:"active*"garbage'],
+            'two adjacent quoted values' => ['status:"open""closed"'],
+            'empty unquoted value' => ['status:'],
+            'two adjacent comparison bounds' => ['status>="a""b"'],
+            'two adjacent list items' => ['status:["a""b"]'],
+            'nested list' => ['_id:[["007"]]'],
             'content after geo filter' => ['location:1km[51.49,13.77]garbage'],
             'content after nested filter' => ['user:{name:"Nico"}garbage'],
         ];
@@ -3147,5 +3453,369 @@ class FilterParserTest extends TestCase
 
         // Unbalanced parentheses previously caused a raw "Undefined array key 0" PHP error.
         $parser->parse('(color:bar');
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_zero_distance_on_a_missing_field_names_the_field(): void
+    {
+        $props = new NewProperties;
+        $props->keyword('place');
+
+        $missing = new FilterParser($props, false);
+        $missing->parse('missing:0km[51.16,13.49]');
+
+        $this->assertSame('Field missing does not exist.', $missing->errors()[0]['message']);
+
+        $zero = (new FilterParser($props, false))->parse('place:0km[51.16,13.49]')->toRaw();
+
+        $this->assertArrayHasKey('match_none', $zero['bool']['must'][0]);
+    }
+
+    protected function setUp(): void
+    {
+        if ($this->withoutCluster()) {
+            return;
+        }
+
+        parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->withoutCluster()) {
+            return;
+        }
+
+        parent::tearDown();
+    }
+
+    private function withoutCluster(): bool
+    {
+        $comment = (new ReflectionMethod($this, $this->getName(false)))->getDocComment();
+
+        return is_string($comment) && str_contains($comment, '@withoutCluster');
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function nested_field_names_are_not_prefixed_twice(): void
+    {
+        (new FilterParserCorrectnessTest)->nested_field_names_are_not_prefixed_twice();
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function boolean_term_survives_an_active_facet_filter(): void
+    {
+        (new FilterParserCorrectnessTest)->boolean_term_survives_an_active_facet_filter();
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function escaped_asterisk_in_a_wildcard_stays_escaped(): void
+    {
+        (new FilterParserCorrectnessTest)->escaped_asterisk_in_a_wildcard_stays_escaped();
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function exists_on_an_unknown_field_names_the_field(): void
+    {
+        (new FilterParserCorrectnessTest)->exists_on_an_unknown_field_names_the_field();
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function unquoted_or_and_after_a_colon_are_field_values(): void
+    {
+        (new FilterParserCorrectnessTest)->unquoted_or_and_after_a_colon_are_field_values();
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function nested_facet_filter_drops_its_own_field(): void
+    {
+        (new FilterParserCorrectnessTest)->nested_facet_filter_drops_its_own_field();
+    }
+
+    /**
+     * @test
+     *
+     * @withoutCluster
+     */
+    public function a_not_clause_on_the_facet_field_is_ignored(): void
+    {
+        (new FilterParserCorrectnessTest)->a_not_clause_on_the_facet_field_is_ignored();
+    }
+
+    public function test_boolean_spellings_are_valid_document_ids(): void
+    {
+        $parser = new FilterParser(new NewProperties);
+
+        foreach (['true', 'false'] as $id) {
+            $query = $parser->parse('_id:'.$id)->toRaw();
+            $this->assertSame([$id], $query['bool']['must'][0]['ids']['values']);
+        }
+    }
+}
+
+class FilterParserCorrectnessTest extends \PHPUnit\Framework\TestCase
+{
+    /**
+     * @test
+     */
+    public function nested_field_names_are_not_prefixed_twice(): void
+    {
+        $properties = new NewProperties;
+        $properties->nested('contact', function (NewProperties $contact): void {
+            $contact->text('name')->keyword();
+            $contact->keyword('city');
+            $contact->keyword('email');
+        });
+        $properties->nested('driver', function (NewProperties $driver): void {
+            $driver->nested('vehicle', function (NewProperties $vehicle): void {
+                $vehicle->text('note')->keyword();
+                $vehicle->keyword('make');
+            });
+        });
+
+        $parser = new FilterParser($properties);
+
+        $name = $parser->parse("contact:{ name:'Jane Doe' }")->toRaw();
+        $nameTerm = $name['bool']['must'][0]['nested']['query']['bool']['must'][0]['term'] ?? [];
+
+        $this->assertSame(['contact.name.keyword'], array_keys($nameTerm));
+        $this->assertSame('Jane Doe', $nameTerm['contact.name.keyword']['value']);
+
+        $note = $parser->parse("driver:{ vehicle:{ note:'hi there' } }")->toRaw();
+        $noteTerm = $note['bool']['must'][0]['nested']['query']['bool']['must'][0]['nested']['query']['bool']['must'][0]['term'] ?? [];
+
+        $this->assertSame('driver', $note['bool']['must'][0]['nested']['path']);
+        $this->assertSame('driver.vehicle', $note['bool']['must'][0]['nested']['query']['bool']['must'][0]['nested']['path']);
+        $this->assertSame(['driver.vehicle.note.keyword'], array_keys($noteTerm));
+        $this->assertSame('hi there', $noteTerm['driver.vehicle.note.keyword']['value']);
+
+        $wildcard = $parser->parse("contact:{ name:'J*' }")->toRaw();
+        $wildcardClause = $wildcard['bool']['must'][0]['nested']['query']['bool']['must'][0]['wildcard'] ?? [];
+
+        $this->assertSame(['contact.name.keyword'], array_keys($wildcardClause));
+        $this->assertSame('J*', $wildcardClause['contact.name.keyword']['value']);
+
+        $email = $parser->parse('contact:{ email:* }')->toRaw();
+
+        $this->assertSame(
+            'contact.email',
+            $email['bool']['must'][0]['nested']['query']['bool']['must'][0]['exists']['field'],
+        );
+
+        $make = $parser->parse('driver:{ vehicle:{ make:* } }')->toRaw();
+
+        $this->assertSame(
+            'driver.vehicle.make',
+            $make['bool']['must'][0]['nested']['query']['bool']['must'][0]['nested']['query']['bool']['must'][0]['exists']['field'],
+        );
+
+        $city = $parser->parse("contact:{ city:'Berlin' }")->toRaw();
+        $cityTerm = $city['bool']['must'][0]['nested']['query']['bool']['must'][0]['term'] ?? [];
+
+        $this->assertSame(['contact.city'], array_keys($cityTerm));
+        $this->assertSame('Berlin', $cityTerm['contact.city']['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function boolean_term_survives_an_active_facet_filter(): void
+    {
+        $properties = new NewProperties;
+        $properties->category('category');
+        $properties->price('price');
+
+        $props = $properties->get();
+        $parser = new FilterParser($props);
+
+        $plain = $parser->parse('category:true')->toRaw();
+        $false = $parser->parse('category:false')->toRaw();
+
+        $this->assertTrue($plain['bool']['must'][0]['term']['category.keyword']['value']);
+        $this->assertFalse($false['bool']['must'][0]['term']['category.keyword']['value']);
+
+        $priceFacet = $parser->facetFilter($props->get('price'), 'category:true')->toRaw();
+
+        $this->assertSame($plain, $priceFacet);
+
+        $categoryFacet = $parser->facetFilter($props->get('category'), 'category:true')->toRaw();
+
+        $this->assertArrayHasKey('match_all', $categoryFacet['bool']['must'][0]);
+        $this->assertArrayNotHasKey('term', $categoryFacet['bool']['must'][0]);
+
+        $falseOnCategory = $parser->facetFilter($props->get('category'), 'category:false')->toRaw();
+        $falseOnPrice = $parser->facetFilter($props->get('price'), 'category:false')->toRaw();
+
+        $this->assertArrayHasKey('match_all', $falseOnCategory['bool']['must'][0]);
+        $this->assertSame($false, $falseOnPrice);
+
+        $mixed = $parser->facetFilter($props->get('category'), 'category:true AND price>10')->toRaw();
+
+        $this->assertArrayHasKey('match_all', $mixed['bool']['must'][0]);
+        $this->assertSame('10', $mixed['bool']['must'][1]['range']['price']['gt']);
+    }
+
+    /**
+     * @test
+     */
+    public function a_not_clause_on_the_facet_field_is_ignored(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('brand');
+        $properties->keyword('color');
+        $properties->bool('active');
+        $properties->keyword('email');
+        $properties->number('price');
+
+        $props = $properties->get();
+        $parser = new FilterParser($props);
+        $same = function (string $field, string $filter) use ($parser, $props): void {
+            $this->assertSame(
+                json_encode($parser->facetFilter($props->get($field), $filter)->toRaw()),
+                json_encode($parser->facetFilter($props->get($field), 'NOT '.$filter)->toRaw()),
+            );
+        };
+
+        $same('brand', "brand:'Nike'");
+        $same('brand', "brand:'Nike' AND color:'red'");
+        $same('active', 'active:true');
+        $same('email', 'email:*');
+        $same('price', 'price>10');
+
+        $this->assertSame(
+            json_encode($parser->facetFilter($props->get('brand'), "color:'red' AND brand:'Nike'")->toRaw()),
+            json_encode($parser->facetFilter($props->get('brand'), "color:'red' AND NOT brand:'Nike'")->toRaw()),
+        );
+
+        $kept = json_encode($parser->facetFilter($props->get('color'), "NOT brand:'Nike'")->toRaw());
+
+        $this->assertStringContainsString('must_not', $kept);
+        $this->assertStringContainsString('Nike', $kept);
+    }
+
+    /**
+     * @test
+     */
+    public function escaped_asterisk_in_a_wildcard_stays_escaped(): void
+    {
+        $properties = new NewProperties;
+        $properties->title('title');
+        $properties->keyword('category');
+
+        $parser = new FilterParser($properties);
+
+        $wildcard = $parser->parse("title:'*man\\*ager*'")->toRaw();
+        $term = $parser->parse("category:'A\\*B'")->toRaw();
+        $plain = $parser->parse("title:'*manager*'")->toRaw();
+
+        $this->assertSame('*man\\*ager*', $wildcard['bool']['must'][0]['wildcard']['title.keyword']['value']);
+        $this->assertSame('A*B', $term['bool']['must'][0]['term']['category']['value']);
+        $this->assertArrayNotHasKey('wildcard', $term['bool']['must'][0]);
+        $this->assertSame('*manager*', $plain['bool']['must'][0]['wildcard']['title.keyword']['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function exists_on_an_unknown_field_names_the_field(): void
+    {
+        $parser = new FilterParser(new NewProperties, false);
+        $query = $parser->parse('nope:*')->toRaw();
+
+        $this->assertArrayHasKey('match_none', $query['bool']['must'][0]);
+        $this->assertSame([
+            [
+                'message' => 'Field nope does not exist.',
+                'field' => 'nope',
+            ],
+            [
+                'message' => "Filter string 'nope:*' couldn't be parsed.",
+            ],
+        ], $parser->errors());
+    }
+
+    /**
+     * @test
+     */
+    public function unquoted_or_and_after_a_colon_are_field_values(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('color');
+
+        $parser = new FilterParser($properties);
+
+        foreach (['OR', 'AND', 'NOT', 'or'] as $value) {
+            $term = $parser->parse('color:'.$value)->toRaw();
+
+            $this->assertSame($value, $term['bool']['must'][0]['term']['color']['value']);
+        }
+
+        $quoted = $parser->parse('color:"OR"')->toRaw();
+
+        $this->assertSame('OR', $quoted['bool']['must'][0]['term']['color']['value']);
+
+        $joined = $parser->parse("color:'red' OR color:AND")->toRaw();
+
+        $this->assertSame('red', $joined['bool']['should'][0]['bool']['must'][0]['term']['color']['value']);
+        $this->assertSame('AND', $joined['bool']['should'][1]['bool']['must'][0]['term']['color']['value']);
+
+        $andNot = $parser->parse("color:'red' AND NOT color:'blue'")->toRaw();
+
+        $this->assertSame('red', $andNot['bool']['must'][0]['term']['color']['value']);
+        $this->assertSame('blue', $andNot['bool']['must_not'][0]['term']['color']['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function nested_facet_filter_drops_its_own_field(): void
+    {
+        $properties = new NewProperties;
+        $properties->nested('contact', function (NewProperties $contact): void {
+            $contact->keyword('city');
+            $contact->keyword('email');
+        });
+
+        $props = $properties->get();
+        $query = (new FilterParser($props))
+            ->facetFilter($props->get('contact.city'), "contact:{ city:'Berlin' AND email:'a@b.c' }")
+            ->toRaw();
+
+        $this->assertSame('contact', $query['bool']['must'][0]['nested']['path']);
+
+        $must = $query['bool']['must'][0]['nested']['query']['bool']['must'];
+
+        $this->assertArrayHasKey('match_all', $must[0]);
+        $this->assertArrayNotHasKey('term', $must[0]);
+        $this->assertSame(['contact.email'], array_keys($must[1]['term']));
+        $this->assertSame('a@b.c', $must[1]['term']['contact.email']['value']);
     }
 }

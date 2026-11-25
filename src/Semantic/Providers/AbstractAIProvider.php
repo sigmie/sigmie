@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Semantic\Providers;
 
+use ReflectionMethod;
+use Sigmie\Mappings\Types\Text;
+
 abstract class AbstractAIProvider
 {
     public function rerank(array $documents, string $queryString): array
@@ -24,9 +27,24 @@ abstract class AbstractAIProvider
     public function batchEmbed(array $payload): array
     {
         $embeddings = [];
+        // A one-argument embed() override receives the payload item unchanged.
+        $passType = (new ReflectionMethod($this, 'embed'))->getNumberOfParameters() >= 2;
+        $type = new Text('text');
 
         foreach ($payload as $item) {
-            $embeddings[] = $this->embed($item);
+            if (! $passType) {
+                $embeddings[] = $this->embed($item);
+
+                continue;
+            }
+
+            if (is_array($item)) {
+                $embeddings[] = $this->embed($item[0], $item[1]);
+
+                continue;
+            }
+
+            $embeddings[] = $this->embed($item, $type);
         }
 
         return $embeddings;

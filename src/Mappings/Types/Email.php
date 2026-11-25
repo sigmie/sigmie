@@ -15,18 +15,24 @@ class Email extends Text implements Analyze
     public function configure(): void
     {
         $this->unstructuredText()->indexPrefixes()->keyword();
+
+        $this->makeSortable();
     }
 
     public function analyze(NewAnalyzer $newAnalyzer): void
     {
         $newAnalyzer->tokenizeOnPattern('(@|\.)');
         $newAnalyzer->lowercase();
-
-        $this->makeSortable();
     }
 
     public function queries(array|string $queryString): array
     {
-        return [new Match_($this->name(), $queryString, analyzer: $this->searchAnalyzer()), new Prefix($this->name(), $queryString), new Term($this->name().'.keyword', $queryString)];
+        $keyword = $this->keywordName();
+
+        return $this->queryStrings($queryString, fn (string $queryString): array => [
+            new Match_($this->name(), $queryString, analyzer: $this->searchAnalyzer()),
+            new Prefix($this->name(), $this->lowercaseTerm($queryString)),
+            ...($keyword === null ? [] : [new Term($keyword, $queryString)]),
+        ]);
     }
 }

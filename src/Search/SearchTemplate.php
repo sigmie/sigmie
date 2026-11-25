@@ -18,7 +18,9 @@ class SearchTemplate
         protected array $raw,
         protected string $id,
         protected bool $matchNoneOnEmptyQueryString = false,
-        protected array $embeddingsTags = []
+        protected array $querySources = [],
+        protected ?string $emptyQuery = null,
+        protected array $overridable = [],
     ) {
         $this->elasticsearchConnection = $connection;
     }
@@ -39,66 +41,59 @@ class SearchTemplate
 
     public function source(): string
     {
-        $parsedSource = json_encode($this->raw);
+        $sections = [];
+        foreach ($this->raw as $name => $value) {
+            $json = json_encode($value, JSON_THROW_ON_ERROR);
+            $json = match ($name) {
+                'highlight', '_source' => str_replace('{{', '\u007b\u007b', $json),
+                default => $this->expandMarkers($json),
+            };
+            $sections[] = json_encode((string) $name, JSON_THROW_ON_ERROR).':'.$json;
+        }
 
-        $parsedSource = $this->handleQueryParameter(
-            'query_string',
-            json_encode(($this->matchNoneOnEmptyQueryString ? new MatchNone : new MatchAll)->toRaw()),
-            $parsedSource
+        return '{'.implode(',', $sections).'}';
+    }
+
+    /**
+     * Expand markers in generated JSON once. Defaults can themselves contain marker text.
+     */
+    private function expandMarkers(string $json): string
+    {
+        return preg_replace_callback(
+            '~(?<!\\\\)"@(query_string|size|from|filters|fixed_filter|sort|facets|minscore)\(((?:[^"\\\\]++|\\\\.)*+)"(?!:)~s',
+            function (array $matches): string {
+                [$literal, $tag, $body] = $matches;
+                $suffix = ')@end'.$tag;
+                if (! str_ends_with($body, $suffix)) {
+                    return $literal;
+                }
+
+                $default = json_decode('"'.substr($body, 0, -strlen($suffix)).'"', flags: JSON_THROW_ON_ERROR);
+
+                if ($tag === 'query_string') {
+                    $fallback = $this->emptyQuery ?? json_encode(($this->matchNoneOnEmptyQueryString ? new MatchNone : new MatchAll)->toRaw());
+                    $replacements = [];
+                    foreach ($this->querySources as $placeholder => $source) {
+                        // Vector queries can contain filter markers of their own.
+                        $replacements['"should":'.json_encode($placeholder)] = '"should":'.$this->expandMarkers($source);
+                    }
+
+                    return sprintf('{{#%1$s}}%2$s{{/%1$s}} {{^%1$s}}%3$s{{/%1$s}}', $tag, strtr($default, $replacements), strtr($fallback, $replacements));
+                }
+
+                $default = str_replace('{{', '\u007b\u007b', $default);
+                if ($tag === 'fixed_filter' || ! ($this->overridable[$tag] ?? true)) {
+                    return $default;
+                }
+
+                // An empty list is false in Mustache but has a size of zero.
+                $parameter = sprintf('{{#toJson}}%1$s{{/toJson}} {{^%1$s.size}}{{^%1$s}}%2$s{{/%1$s}}{{/%1$s.size}}', $tag, $default);
+
+                return $tag === 'sort'
+                    ? '{{#_sigmie_sort_field}}["{{sort}}"]{{/_sigmie_sort_field}}{{^_sigmie_sort_field}}'.$parameter.'{{/_sigmie_sort_field}}'
+                    : $parameter;
+            },
+            $json,
         );
-        $parsedSource = $this->handleParameter('size', $parsedSource);
-        $parsedSource = $this->handleParameter('from', $parsedSource);
-        $parsedSource = $this->handleParameter('filters', $parsedSource);
-        $parsedSource = $this->handleParameter('sort', $parsedSource);
-        $parsedSource = $this->handleParameter('facets', $parsedSource);
-        $parsedSource = $this->handleParameter('minscore', $parsedSource);
-
-        foreach ($this->embeddingsTags as $tag) {
-            $parsedSource = $this->handleParameter($tag, $parsedSource);
-        }
-
-        return $parsedSource;
-    }
-
-    private function handleQueryParameter(string $tag, string $fallback, string $parsedSource): string|array|null
-    {
-        if (preg_match('/"@'.$tag.'\((.+)\)@end'.$tag.'"/', $parsedSource, $sortMatches)) {
-            $default = stripslashes($sortMatches[1]);
-
-            // this in case we want to improve and still render the queries in case
-            // of an empty string.
-            // $rawDefault = "{{#{$tag}}}{$default}{{/{$tag}}} {{^{$tag}}}{$default}{{/{$tag}}}";
-            $rawDefault = sprintf('{{#%s}}%s{{/%s}} {{^%s}}%s{{/%s}}', $tag, $default, $tag, $tag, $fallback, $tag);
-
-            $parsedSource = preg_replace(
-                '/"@'.$tag.'\((.+)\)@end'.$tag.'"/',
-                $rawDefault,
-                $parsedSource
-            );
-        }
-
-        return $parsedSource;
-    }
-
-    private function handleParameter(string $tag, string $parsedSource): string
-    {
-        while (str_contains($parsedSource, '@'.$tag.'(')) {
-
-            if (preg_match('/"@'.$tag.'\((.+?)\)@end'.$tag.'"/s', $parsedSource, $sortMatches)) {
-
-                $default = stripslashes($sortMatches[1]);
-
-                $rawDefault = sprintf('{{^%s.isEmpty}}{{#toJson}}%s{{/toJson}}{{/%s.isEmpty}} {{^%s}}%s{{/%s}}', $tag, $tag, $tag, $tag, $default, $tag);
-
-                $parsedSource = preg_replace(
-                    '/"@'.$tag.'\((.+?)\)@end'.$tag.'"/s',
-                    $rawDefault,
-                    $parsedSource
-                );
-            }
-
-        }
-
-        return $parsedSource;
     }
 }

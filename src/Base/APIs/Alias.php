@@ -6,6 +6,7 @@ namespace Sigmie\Base\APIs;
 
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
+use Sigmie\Base\ElasticsearchException;
 use Sigmie\Base\Http\ElasticsearchRequest;
 
 trait Alias
@@ -18,6 +19,20 @@ trait Alias
 
         $esRequest = new ElasticsearchRequest($method, $uri, $body);
 
-        return $this->elasticsearchCall($esRequest);
+        $response = $this->elasticsearchCall($esRequest);
+
+        if ($response->json('errors') === true) {
+            $failure = current(array_filter(
+                $response->json('action_results') ?? [],
+                fn (array $result): bool => isset($result['error']) || ($result['status'] ?? 200) >= 400,
+            ));
+
+            throw new ElasticsearchException(
+                ['type' => $failure['error']['type'] ?? 'alias_action_failed', ...$response->json()],
+                $failure['status'] ?? $response->code(),
+            );
+        }
+
+        return $response;
     }
 }

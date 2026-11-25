@@ -19,6 +19,18 @@ trait HasQueries
 
     public function queryStringQueries(array|string $queryString): array
     {
+        if ($this->hasQueriesCallback && is_array($queryString)) {
+            $queries = [];
+
+            foreach ($queryString as $query) {
+                foreach ($this->queriesFromCallback($query) as $built) {
+                    $queries[] = $built;
+                }
+            }
+
+            return $queries;
+        }
+
         if ($this->hasQueriesCallback) {
             return $this->queriesFromCallback($queryString);
         }

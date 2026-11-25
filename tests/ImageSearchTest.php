@@ -118,6 +118,10 @@ class ImageSearchTest extends TestCase
 
         // Verify the clip API was called
         $this->clipApi->assertImageEmbedWasCalled(times: 2);
+        $this->assertSame(
+            $this->clipApi->embed($base64Image, 32),
+            $this->clipApi->embed('data:image/jpeg;base64,'.rawurlencode(base64_encode($basketballData)), 32),
+        );
 
         $hits = $this->sigmie->newSearch($indexName)
             ->properties($props)
@@ -361,7 +365,7 @@ class ImageSearchTest extends TestCase
     /**
      * @test
      */
-    public function query_image_scoped_to_non_vector_field_returns_sorted_elasticsearch_hits(): void
+    public function query_image_scoped_to_non_vector_field_matches_nothing(): void
     {
         $indexName = uniqid();
 
@@ -393,10 +397,8 @@ class ImageSearchTest extends TestCase
             ->get()
             ->json('hits');
 
-        $this->assertSame(['alpha', 'beta'], array_map(
-            fn (array $hit): string => $hit['_id'],
-            $hits
-        ));
+        // The image has no vector to search in the title, so no document matches it.
+        $this->assertSame([], $hits);
     }
 
     /**
@@ -457,7 +459,7 @@ class ImageSearchTest extends TestCase
         $this->clipApi->reset();
         $this->clipApi->embed('red vehicle', 512);
         $this->clipApi->assertTextEmbedWasCalled(1);
-        $this->clipApi->assertBatchEmbedWasCalledWith('red vehicle');
+        $this->clipApi->assertEmbedWasCalledWith('red vehicle');
     }
 
     /**

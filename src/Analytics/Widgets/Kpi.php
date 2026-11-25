@@ -32,7 +32,7 @@ class Kpi extends Widget
             $this->name,
             $this->from,
             $this->to,
-            fn (Aggs $aggs) => $this->metric->apply($aggs, 'metric', $this->field),
+            fn (Aggs $aggs) => $this->metric->apply($aggs, 'metric', $this->field, $this->countedField()),
         )->toRaw();
     }
 
@@ -43,7 +43,7 @@ class Kpi extends Widget
         return [
             'type' => 'kpi',
             'metric' => $this->metric->value,
-            'field' => $this->field,
+            'field' => $this->metric->resultField($this->field, $this->countedField()),
             'value' => $this->metric->extract($bucket['metric'] ?? []),
             'count' => $bucket['doc_count'] ?? 0,
         ];

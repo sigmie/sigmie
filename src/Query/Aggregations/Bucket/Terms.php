@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Sigmie\Query\Aggregations\Bucket;
 
 use Sigmie\Query\Shared\Missing;
+use Sigmie\Query\Shared\OrdersBuckets;
 
 class Terms extends Bucket
 {
     use Missing;
+    use OrdersBuckets;
 
     protected int $size;
 
-    protected array $order = [];
+    protected ?int $minDocCount = null;
 
     protected array|string|null $exclude = null;
 
@@ -28,18 +30,16 @@ class Terms extends Bucket
         return $this;
     }
 
-    public function order(string $subaggregation, string $direction): self
+    public function minDocCount(int $minDocCount): static
     {
-        $this->order = ['order' => [
-            $subaggregation => $direction,
-        ]];
+        $this->minDocCount = $minDocCount;
 
         return $this;
     }
 
     public function exclude(array|string $terms): self
     {
-        $this->exclude = $terms;
+        $this->exclude = is_array($terms) ? array_values($terms) : $terms;
 
         return $this;
     }
@@ -53,8 +53,12 @@ class Terms extends Bucket
             ],
         ];
 
-        if ($this->size ?? false) {
+        if (isset($this->size)) {
             $value['terms']['size'] = $this->size;
+        }
+
+        if ($this->minDocCount !== null) {
+            $value['terms']['min_doc_count'] = $this->minDocCount;
         }
 
         if (isset($this->missing)) {

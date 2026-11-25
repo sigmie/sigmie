@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Parse;
 
+use Sigmie\Mappings\DateBound;
+use Sigmie\Mappings\Types\Id;
 use Sigmie\Mappings\Types\Nested as TypesNested;
+use Sigmie\Mappings\Types\Number;
+use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\Queries\Compound\Boolean;
@@ -21,24 +25,38 @@ use Sigmie\Query\Queries\Term\Wildcard;
 use Sigmie\Query\Queries\Text\Nested;
 use Sigmie\Search\InnerHits;
 
+use function Sigmie\Functions\packed_ip_address;
+
 class FilterParser extends Parser
 {
-    // Placeholder bytes used to neutralize quote characters that live *inside*
+    // Placeholders used to neutralize quote characters that live *inside*
     // a quoted value (escaped quotes like \' or an apostrophe inside "..."),
     // so the parser's quote-parity counting only ever sees the real delimiters.
-    private const ESC_SINGLE = "\x01";
+    private const ESC_SINGLE = "\x01s";
 
-    private const ESC_DOUBLE = "\x02";
+    private const ESC_DOUBLE = "\x01d";
 
-    private const ESC_BACKSLASH = "\x03";
+    private const ESC_BACKSLASH = "\x01b";
+
+    // Quotes inside values have already been masked, so only delimiters remain.
+    private const OPERAND = <<<'REGEX'
+        (?:"[^"]*"|'[^']*'|[^'"\[\]{}\s]++)
+        REGEX;
+
+    private const GEO_FILTER = '/\A(?P<field>'.self::FIELD_PATH.'):(?P<distance>'.self::DECIMAL.'(?:km|m|cm|mm|mi|yd|ft|in|nmi))'
+        .'\[(?P<latitude>[+-]?'.self::DECIMAL.'),(?P<longitude>[+-]?'.self::DECIMAL.')\]\z/u';
 
     protected ?string $parentPath = null;
+
+    protected ?string $nestedFacetPath = null;
 
     protected ?InnerHits $innerHits = null;
 
     public static int $maxNestingLevel = 32;
 
     protected Type $facetField;
+
+    private int $facetConstraints = 0;
 
     public function parentPath(string $path): static
     {
@@ -59,7 +77,12 @@ class FilterParser extends Parser
 
     private function fieldName(string $field): string
     {
-        return $this->parentPath ? $this->parentPath.'.'.$field : $field;
+        // filterableName() and fullPath() already include the parent. Only a relative name gets the prefix.
+        if ($this->parentPath === null || $this->parentPath === '' || str_starts_with($field, $this->parentPath.'.')) {
+            return $field;
+        }
+
+        return $this->parentPath.'.'.$field;
     }
 
     // Guard against pathologically deep nesting (parentheses / NOT). This tracks
@@ -79,7 +102,7 @@ class FilterParser extends Parser
     // lookahead below is reliable.
     protected function normalizeWhitespace(string $query): string
     {
-        $query = preg_replace('/\s+(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)/', ' ', $query);
+        $query = preg_replace('/\s+(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)/u', ' ', $query) ?? $query;
 
         return trim($query);
     }
@@ -93,9 +116,7 @@ class FilterParser extends Parser
         $tokens = [];
         $buffer = '';
         $currentOp = null;
-        $paren = 0;
-        $brace = 0;
-        $bracket = 0;
+        $closing = [];
         $inQuote = false;
         $quoteChar = '';
         $length = strlen($query);
@@ -123,7 +144,7 @@ class FilterParser extends Parser
                 continue;
             }
 
-            if ($paren === 0 && $brace === 0 && $bracket === 0 && ($operator = $this->operatorAt($query, $i)) !== null) {
+            if ($closing === [] && ($operator = $this->operatorAt($query, $i)) !== null) {
                 $tokens[] = ['op' => $currentOp, 'expr' => trim($buffer)];
                 $buffer = '';
                 $currentOp = $operator;
@@ -132,17 +153,20 @@ class FilterParser extends Parser
                 continue;
             }
 
-            match ($char) {
-                '(' => $paren++,
-                ')' => $paren--,
-                '{' => $brace++,
-                '}' => $brace--,
-                '[' => $bracket++,
-                ']' => $bracket--,
-                default => null,
-            };
+            // A closed value or group can end a clause even without trailing whitespace.
+            if ($closing === [] && $i > 0 && str_contains(')]}\'"', $query[$i - 1])
+                && ! (str_contains('"\'', $query[$i - 1]) && preg_match('/\G\.\.(?:[+-]?(?:\d|\.\d)|[a-fA-F0-9]{0,4}:)/', $query, offset: $i))
+                && preg_match('/\G\s*'.self::FIELD_PATH.'\s*[:<>]/u', $query, offset: $i)) {
+                throw new ParseException(sprintf("Missing operator before '%s'.", substr($query, $i)));
+            }
 
-            if ($paren < 0 || $brace < 0 || $bracket < 0) {
+            if (str_contains('([{', $char)) {
+                $closing[] = match ($char) {
+                    '(' => ')',
+                    '[' => ']',
+                    '{' => '}',
+                };
+            } elseif (str_contains(')]}', $char) && array_pop($closing) !== $char) {
                 throw new ParseException(sprintf("Invalid filter: unbalanced delimiters in '%s'.", $query));
             }
 
@@ -150,7 +174,7 @@ class FilterParser extends Parser
             $i++;
         }
 
-        if ($paren !== 0 || $brace !== 0 || $bracket !== 0 || $inQuote) {
+        if ($closing !== [] || $inQuote) {
             throw new ParseException(sprintf("Invalid filter: unbalanced delimiters in '%s'.", $query));
         }
 
@@ -163,7 +187,7 @@ class FilterParser extends Parser
     // first, case-insensitive) when it stands as its own word, otherwise null.
     protected function operatorAt(string $query, int $position): ?string
     {
-        $isWord = fn (string $char): bool => ctype_alnum($char) || $char === '_';
+        $isWord = fn (string $char): bool => ctype_alnum($char) || str_contains('_@.-', $char) || ord($char) >= 128;
 
         foreach (['AND NOT', 'AND', 'OR'] as $operator) {
             $length = strlen($operator);
@@ -174,6 +198,16 @@ class FilterParser extends Parser
 
             $before = $position > 0 ? $query[$position - 1] : ' ';
             $after = $position + $length < strlen($query) ? $query[$position + $length] : ' ';
+
+            // In `or:OR` both words belong to the clause, even with space before the colon.
+            $valuePrefix = $before === ' ' && $position >= 2 ? $query[$position - 2] : $before;
+            if (str_contains(':<>=', $valuePrefix)) {
+                continue;
+            }
+
+            if (preg_match('/\G\s*[:.<>]/', $query, offset: $position + $length)) {
+                continue;
+            }
 
             if (! $isWord($before) && ! $isWord($after)) {
                 return $operator;
@@ -215,7 +249,11 @@ class FilterParser extends Parser
         $boolean = new Boolean;
 
         foreach ($groups as $group) {
-            $boolean->should()->query($this->parseAndGroup($group, $depth));
+            $before = $this->facetConstraints;
+            $alternative = $this->parseAndGroup($group, $depth);
+            if (! isset($this->facetField) || $this->facetConstraints > $before) {
+                $boolean->should()->query($alternative);
+            }
         }
 
         return $boolean;
@@ -227,11 +265,13 @@ class FilterParser extends Parser
         $boolean = new Boolean;
 
         foreach ($tokens as $index => $token) {
-            $query = $this->parseFactor($token['expr'], $depth);
+            $query = $this->parseFactor($token['expr'], $token['op'] === 'AND NOT' ? $depth + 1 : $depth);
 
             match (true) {
                 $index === 0, $token['op'] === 'AND' => $boolean->must()->query($query),
-                $token['op'] === 'AND NOT' => $boolean->mustNot()->query($query),
+                $token['op'] === 'AND NOT' => $query instanceof MatchAll
+                    ? $boolean->must()->query($query)
+                    : $boolean->mustNot()->query($query),
                 default => throw new ParseException(sprintf("Unmatched filter operator '%s'", $token['op'])),
             };
         }
@@ -248,18 +288,33 @@ class FilterParser extends Parser
         $expr = trim($expr);
 
         // A leading NOT (case-insensitive) followed by whitespace or a group.
-        if (preg_match('/^not(?=[\s(])/i', $expr)) {
+        if (preg_match('/^not(?=[\s(])(?!\s*:)/i', $expr)) {
+            $query = $this->parseFactor(substr($expr, 3), $depth + 1);
+
+            if ($query instanceof MatchAll) {
+                return $query;
+            }
+
             $boolean = new Boolean;
-            $boolean->mustNot()->query($this->parseFactor(substr($expr, 3), $depth + 1));
+            $boolean->mustNot()->query($query);
 
             return $boolean;
         }
 
         if (str_starts_with($expr, '(') && $this->isWholeGroup($expr)) {
-            return $this->parseExpression(substr($expr, 1, -1), $depth + 1);
+            $before = $this->facetConstraints;
+            $group = $this->parseExpression(substr($expr, 1, -1), $depth + 1);
+            $ignored = isset($this->facetField) && $this->facetConstraints === $before;
+
+            return $ignored ? new MatchAll : $group;
         }
 
-        return $this->stringToQueryClause($this->primaryString($expr));
+        $clause = $this->stringToQueryClause($this->primaryString($expr));
+        if (! $clause instanceof MatchAll) {
+            $this->facetConstraints++;
+        }
+
+        return $clause;
     }
 
     // True when the whole expression is wrapped in a single matching pair of
@@ -332,11 +387,11 @@ class FilterParser extends Parser
 
         if (
             preg_match(
-                '/\s/',
+                '/[\s()]/',
                 // Replace anything inside single/double quotes or {...} blocks
-                // with underscores so only genuinely unquoted spaces remain.
+                // with underscores before checking for stray whitespace or a second group.
                 preg_replace_callback(
-                    '/(["\'])(?:\\\\.|[^\\\\])*?\1|{(?:[^{}]|(?R))*}/',
+                    '/"[^"]*"|\'[^\']*\'|(\{(?:"[^"]*"|\'[^\']*\'|[^{}\'"]|(?1))*\})/',
                     fn ($m): string => str_repeat('_', strlen($m[0])),
                     $expr
                 )
@@ -348,47 +403,56 @@ class FilterParser extends Parser
         return $expr;
     }
 
-    public function parse(string $filterString): Boolean
+    public function parse(string $string): Boolean
+    {
+        return $this->parseMasked($this->normalizeWhitespace($this->maskQuotedValues($string)));
+    }
+
+    private function parseMasked(string $masked): Boolean
     {
         $this->errors = [];
-
-        if (trim($filterString) === '') {
+        $this->facetConstraints = 0;
+        if ($masked === '') {
             $bool = new Boolean;
             $bool->must->matchAll();
 
             return $bool;
         }
 
-        return $this->parseExpression(
-            $this->normalizeWhitespace($this->maskQuotedValues($filterString))
-        );
+        return $this->parseExpression($masked);
     }
 
     // Replace every quote character that appears *inside* a quoted value with a
-    // placeholder byte, leaving only the delimiting quotes in place. This keeps
+    // placeholder, leaving only the delimiting quotes in place. This keeps
     // the parser's quote-parity logic correct even when a value contains an
     // escaped quote (team:'O\'Brien') or an apostrophe inside double quotes
     // (team:"O'Brien"). Values are restored via unmaskQuotedValue() on extraction.
     protected function maskQuotedValues(string $filter): string
     {
+        // Double the escape prefix so a literal byte cannot become a quote.
+        $filter = str_replace("\x01", "\x01\x01", $filter);
+
         return preg_replace_callback(
-            '/(["\'])((?:\\\\.|(?!\1).)*)\1/s',
-            fn (array $m): string => $m[1].str_replace(
+            '/(["\'])((?:\\\\.|(?!\1)[^\\\\])*+)(\1)?/s',
+            fn (array $match): string => $match[1].str_replace(
                 ['\\\\', "\\'", '\\"', "'", '"'],
                 [self::ESC_BACKSLASH, self::ESC_SINGLE, self::ESC_DOUBLE, self::ESC_SINGLE, self::ESC_DOUBLE],
-                $m[2]
-            ).$m[1],
+                $match[2]
+            ).($match[3] ?? ''),
             $filter
         );
     }
 
-    protected function unmaskQuotedValue(string $value): string
+    protected function unmaskQuotedValue(string $value, bool $keepEscapedAsterisk = false): string
     {
-        return str_replace(
-            ['\\*', self::ESC_SINGLE, self::ESC_DOUBLE, self::ESC_BACKSLASH],
-            ['*', "'", '"', '\\'],
-            $value
-        );
+        return strtr($value, [
+            "\x01\x01" => "\x01",
+            self::ESC_SINGLE => "'",
+            self::ESC_DOUBLE => '"',
+            self::ESC_BACKSLASH => $keepEscapedAsterisk ? '\\\\' : '\\',
+            '\\*' => $keepEscapedAsterisk ? '\\*' : '*',
+            ...($keepEscapedAsterisk ? ['\\?' => '\\?', '\\\\' => '\\\\', '\\' => '\\\\'] : []),
+        ]);
     }
 
     protected function hasUnescapedWildcard(string $filter): bool
@@ -417,53 +481,227 @@ class FilterParser extends Parser
 
     protected function isWildcard(string $filter): bool
     {
-        if (! preg_match('/^[\w\.]+:(?:"[^"]*"|\'[^\']*\'|[^\'"\[\]{}]*)$/s', $filter)) {
-            return false;
-        }
-
-        return $this->hasUnescapedWildcard($filter);
+        return preg_match('/^'.self::FIELD_PATH.':'.self::OPERAND.'\z/su', $filter)
+            && $this->hasUnescapedWildcard($filter);
     }
 
-    // Split a comma-separated list on the commas that sit *outside* a quoted
-    // value, so ['Smith, John','Acme'] yields two items, not three.
-    protected function splitListValues(string $value): array
+    private function listValues(string $list): ?array
     {
-        return preg_split('/,(?=(?:[^"\']*["\'][^"\']*["\'])*[^"\']*$)/', $value);
+        $items = preg_split('/,(?=(?:[^"\']*["\'][^"\']*["\'])*[^"\']*$)/', substr($list, 1, -1));
+        $values = [];
+        foreach ($items as $item) {
+            $item = trim($item, ' ');
+            if ($item === '') {
+                continue;
+            }
+
+            if (! preg_match('/\A'.self::OPERAND.'\z/s', $item)) {
+                $this->handleError(sprintf("Invalid list item '%s'.", $item));
+
+                return null;
+            }
+
+            $values[] = $this->unmaskQuotedValue(trim($item, '\'"'));
+        }
+
+        return $values;
     }
 
     protected function betweenParts(string $range): ?array
     {
+        if (preg_match('/\A('.self::FIELD_PATH.'):(.*)\.\.(.*)\z/su', $range, $parts)
+            && in_array($this->properties->get($parts[1])?->type(), ['ip', 'ip_range'], true)) {
+            [, $field, $min, $max] = $parts;
+            if (filter_var(trim($min, '"\''), FILTER_VALIDATE_IP) !== false
+                && filter_var(trim($max, '"\''), FILTER_VALIDATE_IP) !== false) {
+                return [$field, $min, $max];
+            }
+        }
+
+        $bound = '[+-]?(?:\d|\.\d)|now(?=[+\-\/]|\.\.|$)';
+
         if (! preg_match(
-            '/^(?P<field>[\w\.]+):(?:"(?P<double_min>[^"]+)"|\'(?P<single_min>[^\']+)\'|(?P<plain_min>-?\d.*?))\.\.(?:"(?P<double_max>[^"]+)"|\'(?P<single_max>[^\']+)\'|(?P<plain_max>-?\d.*))$/s',
+            '/\A(?P<field>'.self::FIELD_PATH.'):(?P<min>"[^"]*"|\'[^\']*\'|(?:'.$bound.').*?)\.\.(?P<max>"[^"]*"|\'[^\']*\'|(?:'.$bound.').*)\z/su',
             $range,
             $matches,
-            PREG_UNMATCHED_AS_NULL,
         )) {
             return null;
         }
 
-        return [
-            $matches['field'],
-            $matches['double_min'] ?? $matches['single_min'] ?? $matches['plain_min'],
-            $matches['double_max'] ?? $matches['single_max'] ?? $matches['plain_max'],
-        ];
+        ['field' => $field, 'min' => $min, 'max' => $max] = $matches;
+        if ((str_starts_with($min, 'now') || str_starts_with($max, 'now')) && ! $this->isDateField($field)) {
+            return null;
+        }
+
+        return [$field, $min, $max];
+    }
+
+    private function isDateField(string $field): bool
+    {
+        return in_array($this->properties->get($field)?->type(), ['date', 'date_nanos', 'date_range'], true);
+    }
+
+    private function rangeValue(string $field, string $value): int|string
+    {
+        if ($this->isDateField($field)) {
+            $epoch = preg_replace('/\A([+-]?)0+(?=\d+\z)/', '$1', $value);
+
+            if (($epoch = filter_var($epoch, FILTER_VALIDATE_INT)) !== false) {
+                return $epoch;
+            }
+        }
+
+        return $this->unmaskQuotedValue(trim($value, '"\''));
     }
 
     public function facetFilter(Type $field, string $filterString): Boolean
     {
+        return $this->facetFilterMasked($field, $this->normalizeWhitespace($this->maskQuotedValues($filterString)));
+    }
+
+    private function facetFilterMasked(Type $field, string $filterString): Boolean
+    {
         $this->facetField = $field;
-        $this->errors = [];
 
-        if (trim($filterString) === '') {
-            $bool = new Boolean;
-            $bool->must->matchAll();
+        try {
+            return $this->parseMasked($filterString);
+        } finally {
+            unset($this->facetField);
+        }
+    }
 
-            return $bool;
+    /** @return array<string, bool> Filters keyed by their aggregation scope. */
+    public function nestedFacetFilters(Type $field, string $filterString, string $path): array
+    {
+        $masked = $this->normalizeWhitespace($this->maskQuotedValues($filterString));
+        if ($masked === '') {
+            return [$path => $this->facetFilter($field, '')];
         }
 
-        return $this->parseExpression(
-            $this->normalizeWhitespace($this->maskQuotedValues($filterString))
-        );
+        $tokens = $this->splitTopLevel($masked);
+        if (in_array('OR', array_column($tokens, 'op'), true)) {
+            $tokens = [['op' => null, 'expr' => $masked]];
+        }
+
+        $groups = [$path => []];
+
+        foreach ($tokens as $token) {
+            $expression = $token['op'] === 'AND NOT' ? 'NOT '.$token['expr'] : $token['expr'];
+            foreach ($this->nestedFacetConjuncts($expression, $path) as $conjunct) {
+                // Evaluate sibling and descendant selections inside their closest shared nested document.
+                $scope = $this->commonScope($this->filterScope($conjunct), $path);
+                $groups[$scope ?? ''][] = $conjunct;
+            }
+        }
+
+        ksort($groups, SORT_STRING);
+        $queries = [];
+        try {
+            foreach ($groups as $scope => $expressions) {
+                $this->nestedFacetPath = (string) $scope;
+                $queries[$scope] = $this->facetFilterMasked($field, implode(' AND ', $expressions));
+            }
+        } finally {
+            $this->nestedFacetPath = null;
+        }
+
+        return $queries;
+    }
+
+    private function nestedFacetConjuncts(string $expression, string $path, int $depth = 0): array
+    {
+        $this->guardDepth($depth);
+
+        $primary = str_starts_with($expression, '(') && $this->isWholeGroup($expression)
+            ? trim(substr($expression, 1, -1))
+            : $expression;
+
+        if (! preg_match('/\A('.self::FIELD_PATH.')\s*:\s*\{(.*)\}\z/su', $primary, $matches)
+            || count($this->splitTopLevel($primary)) !== 1) {
+            return [$expression];
+        }
+
+        $field = $this->properties->get($matches[1]);
+        if (! $field instanceof TypesNested || ! str_starts_with($path, $field->fullPath().'.')) {
+            return [$expression];
+        }
+
+        $tokens = $this->splitTopLevel(trim($matches[2]));
+        if (in_array('OR', array_column($tokens, 'op'), true)) {
+            return [$expression];
+        }
+
+        $child = new static($field->properties);
+        $conjuncts = [];
+        foreach ($tokens as $token) {
+            $inner = $token['op'] === 'AND NOT' ? 'NOT '.$token['expr'] : $token['expr'];
+            foreach ($child->nestedFacetConjuncts($inner, $path, $depth + 1) as $conjunct) {
+                $conjuncts[] = $matches[1].':{'.$conjunct.'}';
+            }
+        }
+
+        return $conjuncts;
+    }
+
+    private function commonScope(?string $scope, ?string $path): ?string
+    {
+        if ($path === null) {
+            return null;
+        }
+
+        while ($scope !== null && $scope !== $path && ! str_starts_with($path, $scope.'.')) {
+            $scope = $this->properties->get($scope)?->nestedPath();
+        }
+
+        return $scope;
+    }
+
+    private function filterScope(string $expression, int $depth = 0, bool $negated = false): ?string
+    {
+        $this->guardDepth($depth);
+
+        $expression = trim($expression);
+        if (preg_match('/^not(?=[\s(])/i', $expression)) {
+            return $this->filterScope(substr($expression, 3), $depth + 1, ! $negated);
+        }
+
+        if (str_starts_with($expression, '(') && $this->isWholeGroup($expression)) {
+            return $this->filterScope(substr($expression, 1, -1), $depth + 1, $negated);
+        }
+
+        // NOT nested(...) excludes the whole parent before its items are counted.
+        if ($negated) {
+            return null;
+        }
+
+        $tokens = $this->splitTopLevel($expression);
+        if (count($tokens) > 1) {
+            $scope = $this->filterScope(array_shift($tokens)['expr'], $depth + 1);
+            foreach ($tokens as $token) {
+                $scope = $this->commonScope($scope, $this->filterScope($token['expr'], $depth + 1, $token['op'] === 'AND NOT'));
+            }
+
+            return $scope;
+        }
+
+        if (! preg_match('/^('.self::FIELD_PATH.')\s*(?:[<>]=?|:)\s*(.*)$/su', $expression, $matches)) {
+            return null;
+        }
+
+        $field = $this->properties->get($matches[1]);
+
+        if ($field instanceof TypesNested && str_starts_with($matches[2], '{')) {
+            $inner = trim(substr($matches[2], 1, -1));
+            // A single positive child clause selects those child documents. Several
+            // nested clauses may match different children of the same parent.
+            if (preg_match('/^'.self::FIELD_PATH.'\s*[:<>]/u', $inner) && count($this->splitTopLevel($inner)) === 1) {
+                return (new static($field->properties))->filterScope($inner, $depth + 1) ?? $field->fullPath();
+            }
+
+            return $field->fullPath();
+        }
+
+        return $field?->nestedPath();
     }
 
     protected function stringToQueryClause(string $string): QueryClause
@@ -471,21 +709,22 @@ class FilterParser extends Parser
         // The `s` modifier lets `.` match newlines, so a value that legitimately
         // contains a newline (kept intact by normalizeWhitespace) still routes
         // to the right handler.
+        $field = self::FIELD_PATH;
+        $operand = self::OPERAND;
+
         $query = match (1) {
-            preg_match('/^[\w\.]+:\{.*\}$/s', $string) => $this->handleNested($string),
-            preg_match('/^[\w\.]+:\*$/', $string) => $this->handleHas($string),
-            preg_match('/^[\w\.]+:true$/', $string) => $this->handleIs($string),
-            preg_match('/^[\w\.]+:false$/', $string) => $this->handleIsNot($string),
-            preg_match('/^([\w\.]+)([<>]=?)(?!=)(.+)$/s', $string) => $this->handleRange($string),
+            preg_match('/^'.$field.':\{.*\}$/su', $string) => $this->handleNested($string),
+            preg_match('/^'.$field.':\*$/u', $string) => $this->handleHas($string),
+            preg_match('/^_id:'.$operand.'\z/s', $string) => $this->handleID($string),
+            preg_match('/^'.$field.':true$/u', $string) => $this->handleIs($string),
+            preg_match('/^'.$field.':false$/u', $string) => $this->handleIsNot($string),
+            preg_match('/^'.$field.'[<>]=?(?!=)'.$operand.'\z/su', $string) => $this->handleRange($string),
             preg_match('/^_id:\[.*\]$/s', $string) => $this->handleIDs($string),
-            preg_match('/^_id:(?:"[^"]+"|\'[^\']+\'|[^\s\'"\[\]{}()]+)$/s', $string) => $this->handleID($string),
-            preg_match('/^[\w\.]+:\[.*\]$/s', $string) => $this->handleIn($string),
+            preg_match('/^'.$field.':\[.*\]$/su', $string) => $this->handleIn($string),
             (int) ($this->betweenParts($string) !== null) => $this->handleBetween($string),
             (int) $this->isWildcard($string) => $this->handleWildcard($string),
-            preg_match('/^[\w\.]+:".*"$/s', $string) => $this->handleTerm($string),
-            preg_match('/^[\w\.]+:\'.*\'$/s', $string) => $this->handleTerm($string),
-            preg_match('/^[\w\.]+:\d+(?:\.\d+)?(km|m|cm|mm|mi|yd|ft|in|nmi)\[\-?\d+(\.\d+)?\,\-?\d+(\.\d+)?\]$/', $string) => $this->handleGeo($string),
-            preg_match('/^[\w\.]+:[^\'"\[\]{}]*$/s', $string) => $this->handleTerm($string),
+            preg_match(self::GEO_FILTER, $string) => $this->handleGeo($string),
+            preg_match('/^'.$field.':'.$operand.'\z/su', $string) => $this->handleTerm($string),
             default => null
         };
 
@@ -498,10 +737,10 @@ class FilterParser extends Parser
         return new MatchNone;
     }
 
-    public function handleNested(string $string): MatchNone|Nested
+    public function handleNested(string $string): Boolean|MatchAll|MatchNone|Nested
     {
         preg_match(
-            '/(?P<field>[\w\.]+):\{(?P<filters>.*)\}/s',
+            '/(?P<field>'.self::FIELD_PATH.'):\{(?P<filters>.*)\}/su',
             $string,
             $matches
         );
@@ -517,50 +756,134 @@ class FilterParser extends Parser
             return new MatchNone;
         }
 
-        $parentPath = $this->parentPath ? $this->parentPath.'.'.$field : $field;
+        $parentPath = $this->fieldName($type->fullPath());
 
         $parser = new static($type->properties, $this->throwOnError);
 
         $parser->parentPath($parentPath);
 
+        $parser->nestedFacetPath = $this->nestedFacetPath;
+
+        // The child parses the clauses inside the braces, so it has to ignore the same facet field.
+        if (isset($this->facetField)) {
+            $parser->facetField = $this->facetField;
+        }
+
         if ($this->innerHits instanceof InnerHits) {
             $parser->innerHits($this->innerHits);
         }
 
-        $query = $parser->parse($filters);
+        $query = $parser->parseMasked($filters);
 
         $this->errors = [...$this->errors, ...$parser->errors()];
+
+        // Ignoring the only field inside braces also removes the enclosing nested clause.
+        if (isset($this->facetField) && $filters !== '' && $parser->facetConstraints === 0) {
+            return new MatchAll;
+        }
+
+        if ($this->nestedFacetPath === $parentPath || str_starts_with($this->nestedFacetPath ?? '', $parentPath.'.')) {
+            return $query;
+        }
 
         return new Nested($parentPath, $query, innerHits: $this->innerHits);
     }
 
     public function handleGeo(string $geo): MatchNone|null|Query
     {
-        preg_match(
-            '/(?P<field>[\w\.]+):(?P<distance>\d+(?:\.\d+)?(?:km|m|cm|mm|mi|yd|ft|in|nmi))\[(?P<latitude>-?\d+(\.\d+)?),(?P<longitude>-?\d+(\.\d+)?)\]/',
-            $geo,
-            $matches
-        );
+        preg_match(self::GEO_FILTER, $geo, $matches);
 
         $field = $matches['field'];
         $distance = $matches['distance'];
         $latitude = $matches['latitude'];
         $longitude = $matches['longitude'];
 
-        if (preg_match('/^0+(?:\.0+)?(?:km|m|cm|mm|mi|yd|ft|in|nmi)$/', $distance)) {
-            return new MatchNone;
-        }
-
         $realFieldName = $this->handleFieldName($field);
 
-        // @codeCoverageIgnoreStart
         if (is_null($realFieldName)) {
             return null;
         }
 
-        // @codeCoverageIgnoreEnd
+        if (! in_array($this->properties->get($field)->type(), ['geo_point', 'geo_shape', 'alias'], true)) {
+            $this->handleError(sprintf('Field %s does not support geo distance filters.', $field));
+
+            return new MatchNone;
+        }
+
+        if (abs((float) $latitude) > 90 || abs((float) $longitude) > 180 || ! is_finite((float) $distance)) {
+            $this->handleError(sprintf('Invalid distance or coordinates for field %s.', $field));
+
+            return new MatchNone;
+        }
+
+        if ((float) $distance === 0.0) {
+            return new MatchNone;
+        }
 
         return $this->prepareQuery($field, new GeoDistance($this->fieldName($realFieldName), $distance, $latitude, $longitude));
+    }
+
+    private function valueFieldName(string $field, array $values, bool $range = false): ?string
+    {
+        $name = $this->handleFieldName($field);
+        if ($name === null) {
+            return null;
+        }
+
+        $property = $this->properties->get($field);
+        $type = $property->type();
+        if (in_array($type, ['object', 'nested', 'dense_vector', 'knn_vector', 'geo_point', 'geo_shape'], true)) {
+            $this->handleError(sprintf('Field %s of type %s does not support scalar filters.', $field, $type));
+
+            return null;
+        }
+
+        if ($range && $property instanceof Id) {
+            $type = 'long';
+            $name = $property->sortableName();
+        }
+
+        foreach ($values as $value) {
+            $valid = match ($type) {
+                'boolean' => in_array($value, ['true', 'false'], true),
+                'float' => Number::fitsMapping($range ? 'double' : 'float', $value),
+                'integer', 'long', 'double', 'scaled_float' => Number::fitsMapping($type, $value),
+                'integer_range', 'long_range', 'float_range', 'double_range' => Number::fitsMapping(substr($type, 0, -6), $value)
+                    && (! in_array($type, ['integer_range', 'long_range'], true) || $this->isIntegralOperand($value)),
+                'ip', 'ip_range' => $this->validIpOperand($value, $type === 'ip' && ! $range),
+                'date', 'date_nanos', 'date_range' => is_int($value) || DateBound::accepts(
+                    $value, $property->toRaw()[$property->name]['format'] ?? 'strict_date_optional_time||epoch_millis', query: true,
+                ),
+                default => true,
+            };
+
+            if (! $valid) {
+                $this->handleError(sprintf("Invalid %s filter value '%s' for field %s.", $type, $value, $field));
+
+                return null;
+            }
+        }
+
+        return $name;
+    }
+
+    private function isIntegralOperand(string $value): bool
+    {
+        [$mantissa, $exponent] = array_pad(preg_split('/e/i', trim($value), 2), 2, '0');
+        [$whole, $fraction] = array_pad(explode('.', $mantissa, 2), 2, '');
+        $digits = ltrim($whole.$fraction, '+-0');
+        $trailingZeros = strlen($digits) - strlen(rtrim($digits, '0'));
+
+        return $digits === '' || (int) $exponent >= strlen($fraction) - $trailingZeros;
+    }
+
+    private function validIpOperand(string $value, bool $allowsCidr): bool
+    {
+        [$address, $prefix] = array_pad(explode('/', $value, 2), 2, null);
+
+        return packed_ip_address($address) !== null
+            && ($prefix === null || ($allowsCidr && ctype_digit($prefix)
+                && (int) $prefix <= (str_contains($address, ':') ? 128 : 32)));
     }
 
     public function handleBetween(string $range): ?Query
@@ -568,10 +891,9 @@ class FilterParser extends Parser
         [$field, $min, $max] = $this->betweenParts($range)
             ?? throw new ParseException(sprintf("Invalid inclusive range '%s'.", $range));
 
-        $min = $this->unmaskQuotedValue($min);
-        $max = $this->unmaskQuotedValue($max);
-
-        $realFieldName = $this->handleFieldName($field);
+        $min = $this->rangeValue($field, $min);
+        $max = $this->rangeValue($field, $max);
+        $realFieldName = $this->valueFieldName($field, [$min, $max], range: true);
 
         // @codeCoverageIgnoreStart
         if (is_null($realFieldName)) {
@@ -591,13 +913,13 @@ class FilterParser extends Parser
 
     public function handleRange(string $range): ?Query
     {
-        preg_match('/^([\w\.]+)([<>]=?)(?!=)(("|\')?.+("|\')?)/s', $range, $matches);
+        preg_match('/^('.self::FIELD_PATH.')([<>]=?)(?!=)(.+)$/su', $range, $matches);
 
         $field = $matches[1];
         $operator = $matches[2];
-        $value = $this->unmaskQuotedValue(trim($matches[3], '"\''));
+        $value = $this->rangeValue($field, $matches[3]);
 
-        $realFieldName = $this->handleFieldName($field);
+        $realFieldName = $this->valueFieldName($field, [$value], range: true);
         if (is_null($realFieldName)) {
             return null;
         }
@@ -614,47 +936,47 @@ class FilterParser extends Parser
         return new IDs([$value]);
     }
 
-    public function handleIDs(string $ids): IDs
+    public function handleIDs(string $ids): IDs|MatchNone
     {
-        [, $value] = explode(':', $ids, 2);
+        [, $list] = explode(':', $ids, 2);
+        $values = $this->listValues($list);
 
-        $value = trim($value, '[]');
-        $values = $this->splitListValues($value);
-
-        $values = array_values(array_filter($values, fn ($value): bool => $value !== ''));
-
-        $values = array_map(fn ($value): string => trim($value, ' '), $values);
-        $values = array_map(fn ($value): string => trim($value, "'"), $values);
-        $values = array_map(fn ($value): string => trim($value, '"'), $values);
-        $values = array_map(fn ($value): string => $this->unmaskQuotedValue($value), $values);
-
-        return new IDs($values);
+        return $values === null ? new MatchNone : new IDs($values);
     }
 
     public function handleIs(string $is): ?Query
     {
         [$field] = explode(':', $is);
 
-        $field = $this->handleFieldName($field);
+        $realFieldName = $this->valueFieldName($field, ['true']);
 
-        // @codeCoverageIgnoreStart
-        if (is_null($field)) {
+        if (is_null($realFieldName)) {
             return null;
         }
 
-        // @codeCoverageIgnoreEnd
-
-        return $this->prepareQuery($field, new Term($this->fieldName($field), true));
+        return $this->prepareQuery($field, new Term($this->fieldName($realFieldName), true));
     }
 
     public function handleHas(string $has): ?Query
     {
         [$field] = explode(':', $has);
 
+        if ($field === '_id') {
+            return new Exists('_id');
+        }
+
         $type = $this->properties->get($field);
 
         if (is_null($type)) {
+            $this->handleError(sprintf('Field %s does not exist.', $field), [
+                'field' => $field,
+            ]);
+
             return null;
+        }
+
+        if ($type instanceof TypesNested) {
+            return $this->prepareQuery($field, new Nested($type->fullPath(), new MatchAll, innerHits: $this->innerHits));
         }
 
         // Use fullPath() for Exists query - checks if field has any value
@@ -665,7 +987,7 @@ class FilterParser extends Parser
     {
         [$field] = explode(':', $is);
 
-        $realFieldName = $this->handleFieldName($field);
+        $realFieldName = $this->valueFieldName($field, ['false']);
 
         if (is_null($realFieldName)) {
             return null;
@@ -677,21 +999,12 @@ class FilterParser extends Parser
     public function handleIn(string $terms): ?Query
     {
         [$field, $value] = explode(':', $terms, 2);
-        $value = trim($value, '[]');
-        $values = $this->splitListValues($value);
+        $values = $this->listValues($value);
+        if ($values === null) {
+            return new MatchNone;
+        }
 
-        $values = array_values(array_filter($values, fn ($value): bool => $value !== ''));
-
-        // Remove whitespaces from values
-        $values = array_map(fn ($value): string => trim($value, ' '), $values);
-        // Remove doublue quotes from values
-        $values = array_map(fn ($value): string => trim($value, "'"), $values);
-        // Remove single quotes from values
-        $values = array_map(fn ($value): string => trim($value, '"'), $values);
-        // Restore any quote characters that lived inside the values
-        $values = array_map(fn ($value): string => $this->unmaskQuotedValue($value), $values);
-
-        $realFieldName = $this->handleFieldName($field);
+        $realFieldName = $this->valueFieldName($field, $values);
 
         if (is_null($realFieldName)) {
             return null;
@@ -709,6 +1022,12 @@ class FilterParser extends Parser
             return new MatchAll;
         }
 
+        $nestedPath = $fieldType->nestedPath();
+
+        if ($nestedPath !== null && $nestedPath !== $this->parentPath && $nestedPath !== $this->nestedFacetPath) {
+            return new Nested($nestedPath, $query, innerHits: $this->innerHits);
+        }
+
         return $query;
     }
 
@@ -723,7 +1042,7 @@ class FilterParser extends Parser
         // Restore any quote characters that lived inside the value
         $value = $this->unmaskQuotedValue($value);
 
-        $realFieldName = $this->handleFieldName($field);
+        $realFieldName = $this->valueFieldName($field, [$value]);
 
         if (is_null($realFieldName)) {
             return null;
@@ -740,13 +1059,22 @@ class FilterParser extends Parser
         $value = trim($value, "'");
         // Remove quotes from value
         $value = trim($value, '"');
-        // Restore any quote characters that lived inside the value
-        $value = $this->unmaskQuotedValue($value);
+        // A wildcard keeps `\*` so the escaped star stays literal. A term turns it into `*`.
+        $value = $this->unmaskQuotedValue($value, keepEscapedAsterisk: true);
 
         $realFieldName = $this->handleFieldName($field);
 
         if (is_null($realFieldName)) {
             return null;
+        }
+
+        $property = $this->properties->get($field);
+        if (! $property instanceof Text && ! in_array($property->type(), [
+            'text', 'keyword', 'constant_keyword', 'wildcard', 'flattened', 'flat_object', 'version', 'match_only_text', 'alias',
+        ], true)) {
+            $this->handleError(sprintf('Field %s does not support wildcard filters.', $field));
+
+            return new MatchNone;
         }
 
         return $this->prepareQuery($field, new Wildcard($this->fieldName($realFieldName), $value));

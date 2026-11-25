@@ -14,6 +14,11 @@ class Boost extends Number
         $this->float();
     }
 
+    public function typeName(): string
+    {
+        return 'boost';
+    }
+
     public function isFacetable(): bool
     {
         return false;
@@ -21,7 +26,7 @@ class Boost extends Number
 
     public function scriptScoreSource(): string
     {
-        return sprintf("doc.containsKey('%s') && doc['%s'].size() > 0 ? doc['%s'].value : 1", $this->name, $this->name, $this->name);
+        return 'doc.containsKey(params.field) && doc[params.field].size() > 0 ? doc[params.field].value : 1';
     }
 
     public function scriptScoreBoostMode(): string

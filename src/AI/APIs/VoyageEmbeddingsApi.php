@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Sigmie\AI\APIs;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Promise\Promise;
+use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\RequestOptions;
 use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\AI\VoyageEmbeddingRequest;
 
 class VoyageEmbeddingsApi implements EmbeddingsApi
 {
+    use VoyageEmbeddingRequest {
+        supportsDimensions as public;
+    }
+
     protected Client $client;
 
     public function __construct(
@@ -34,79 +39,44 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
 
     public function embed(string $text, int $dimensions): array
     {
-        $response = $this->client->post('/v1/embeddings', [
-            RequestOptions::JSON => [
-                'model' => $this->model,
-                'input' => $text,
-                'input_type' => 'document', // Can be 'query' or 'document'
-            ],
-        ]);
-
-        $data = json_decode($response->getBody()->getContents(), true);
-
-        // Voyage returns embeddings in a slightly different format
-        $embedding = $data['data'][0]['embedding'];
-
-        // If dimensions are specified and different from the model's output, truncate or pad
-        if ($dimensions > 0 && count($embedding) !== $dimensions) {
-            if (count($embedding) > $dimensions) {
-                // Truncate to requested dimensions
-                $embedding = array_slice($embedding, 0, $dimensions);
-            } else {
-                // Pad with zeros if needed (though this is unusual)
-                $embedding = array_pad($embedding, $dimensions, 0.0);
-            }
-        }
-
-        return $embedding;
+        return $this->embedInput($text, $dimensions, 'document');
     }
 
     public function batchEmbed(array $payload): array
+    {
+        return $this->batchEmbedInput($payload, 'document');
+    }
+
+    public function batchEmbedQueries(array $payload): array
+    {
+        return $this->batchEmbedInput($payload, 'query');
+    }
+
+    private function batchEmbedInput(array $payload, string $inputType): array
     {
         if ($payload === []) {
             return [];
         }
 
-        $texts = array_map(fn ($item) => $item['text'] ?? '', $payload);
+        foreach ($this->batchRequests($payload, $this->maxBatchSize(), $inputType) as $group) {
+            $dimensions = $group['dims'];
 
-        $dimensions = (int) ($payload[0]['dims'] ?? 0);
+            $response = $this->client->post('/v1/embeddings', [
+                RequestOptions::JSON => $this->requestBody($group['texts'], $dimensions, $inputType),
+            ]);
 
-        $response = $this->client->post('/v1/embeddings', [
-            RequestOptions::JSON => [
-                'model' => $this->model,
-                'input' => $texts,
-                'input_type' => 'document',
-            ],
-        ]);
-
-        $data = json_decode($response->getBody()->getContents(), true);
-
-        foreach ($data['data'] as $index => $result) {
-            $embedding = $result['embedding'];
-
-            // Apply dimension adjustment if needed
-            if ($dimensions > 0 && count($embedding) !== $dimensions) {
-                if (count($embedding) > $dimensions) {
-                    $embedding = array_slice($embedding, 0, $dimensions);
-                } else {
-                    $embedding = array_pad($embedding, $dimensions, 0.0);
-                }
+            foreach (ApiResponse::embeddings($response, count($group['keys'])) as $index => $vector) {
+                $payload[$group['keys'][$index]]['vector'] = ApiResponse::resizeEmbedding($vector, $dimensions);
             }
-
-            $payload[$index]['vector'] = $embedding;
         }
 
         return $payload;
     }
 
-    public function promiseEmbed(string $text, int $dimensions): Promise
+    public function promiseEmbed(string $text, int $dimensions): PromiseInterface
     {
         return $this->client->postAsync('/v1/embeddings', [
-            RequestOptions::JSON => [
-                'model' => $this->model,
-                'input' => $text,
-                'input_type' => 'document',
-            ],
+            RequestOptions::JSON => $this->requestBody($text, $dimensions, 'document'),
         ]);
     }
 
@@ -115,30 +85,20 @@ class VoyageEmbeddingsApi implements EmbeddingsApi
      */
     public function embedQuery(string $query, int $dimensions = 0): array
     {
+        return $this->embedInput($query, $dimensions, 'query');
+    }
+
+    private function embedInput(string $text, int $dimensions, string $inputType): array
+    {
         $response = $this->client->post('/v1/embeddings', [
-            RequestOptions::JSON => [
-                'model' => $this->model,
-                'input' => $query,
-                'input_type' => 'query', // Optimized for queries
-            ],
+            RequestOptions::JSON => $this->requestBody($text, $dimensions, $inputType),
         ]);
 
-        $data = json_decode($response->getBody()->getContents(), true);
-        $embedding = $data['data'][0]['embedding'];
-
-        if ($dimensions > 0 && count($embedding) !== $dimensions) {
-            if (count($embedding) > $dimensions) {
-                $embedding = array_slice($embedding, 0, $dimensions);
-            } else {
-                $embedding = array_pad($embedding, $dimensions, 0.0);
-            }
-        }
-
-        return $embedding;
+        return ApiResponse::resizeEmbedding(ApiResponse::embeddings($response, 1)[0], $dimensions);
     }
 
     public function maxBatchSize(): int
     {
-        return 128;
+        return 1000;
     }
 }

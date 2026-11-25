@@ -11,8 +11,8 @@ class Id extends CaseSensitiveKeyword
         $raw = parent::toRaw();
 
         $raw[$this->name]['fields'] = [
-            ...($raw[$this->name]['fields'] ?? []),
-            ...(new Number('sortable'))->integer()->toRaw(),
+            ...(array) ($raw[$this->name]['fields'] ?? []),
+            ...(new Number('sortable'))->long()->toRaw(),
         ];
 
         return $raw;
@@ -20,12 +20,7 @@ class Id extends CaseSensitiveKeyword
 
     public function sortableName(): ?string
     {
-        return 'id.sortable';
-    }
-
-    public function filterableName(): ?string
-    {
-        return $this->fullPath();
+        return $this->fullPath().'.sortable';
     }
 
     public function validate(string $key, mixed $value): array

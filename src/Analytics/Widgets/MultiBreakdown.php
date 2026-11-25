@@ -9,10 +9,20 @@ use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Query\Aggs;
 use Sigmie\Shared\Collection;
 
+use function Sigmie\Functions\object_map;
+
 class MultiBreakdown extends Widget
 {
     /**
+     * Names the caller passed. The aggregation fields may be `.keyword` subfields.
+     *
+     * @var list<string>
+     */
+    protected array $keyNames;
+
+    /**
      * @param  list<string>  $groupBy
+     * @param  list<string>|null  $keyNames
      */
     public function __construct(
         string $name,
@@ -25,17 +35,20 @@ class MultiBreakdown extends Widget
         protected string $field,
         protected int $limit,
         protected string $direction,
+        ?array $keyNames = null,
     ) {
         parent::__construct($name, $dateField, $from, $to, $dateFormat);
+
+        $this->keyNames = $keyNames ?? $groupBy;
     }
 
     public function toRaw(): array
     {
         return $this->scoped($this->name, $this->from, $this->to, function (Aggs $aggs): void {
-            $aggs->multiTerms('groups', $this->groupBy)
+            $terms = $aggs->multiTerms('groups', $this->groupBy)
                 ->size($this->limit)
-                ->order($this->metric->orderKey('metric'), $this->direction)
-                ->aggregate(fn (Aggs $sub) => $this->metric->apply($sub, 'metric', $this->field));
+                ->aggregate(fn (Aggs $sub) => $this->metric->apply($sub, 'metric', $this->field, $this->countedField()));
+            $this->metric->rank($terms, 'metric', $this->field, $this->direction);
         })->toRaw();
     }
 
@@ -46,7 +59,7 @@ class MultiBreakdown extends Widget
         return [
             'type' => 'multi_breakdown',
             'metric' => $this->metric->value,
-            'field' => $this->field,
+            'field' => $this->metric->resultField($this->field, $this->countedField()),
             'group_by' => $this->groupBy,
             'rows' => $groups->map(fn (array $bucket): array => $this->row($bucket))->toArray(),
         ];
@@ -60,12 +73,9 @@ class MultiBreakdown extends Widget
         $values = (array) ($bucket['key'] ?? []);
 
         return [
-            'key' => array_combine($this->groupBy, $values) ?: [],
+            'key' => object_map(array_combine($this->keyNames, $values) ?: []),
             'key_values' => array_values($values),
-            'label' => (string) ($bucket['key_as_string'] ?? implode(' / ', array_map(
-                static fn (mixed $value): string => (string) $value,
-                $values,
-            ))),
+            'label' => implode(' / ', array_map(self::bucketLabel(...), $values)),
             'value' => $this->metric->extract($bucket['metric'] ?? []),
             'count' => $bucket['doc_count'] ?? 0,
         ];
