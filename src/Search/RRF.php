@@ -29,8 +29,11 @@ class RRF
 
             foreach (array_values($rankedList) as $rank => $hit) {
                 $docId = is_array($hit) ? ($hit['_id'] ?? null) : ($hit->_id ?? null);
+                if ($docId === null) {
+                    continue;
+                }
 
-                if ($docId === null || $docId === '') {
+                if ($docId === '') {
                     continue;
                 }
 

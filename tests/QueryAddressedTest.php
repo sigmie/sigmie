@@ -16,34 +16,37 @@ use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Base\Http\Requests\MSearch;
 use Sigmie\Base\Http\Requests\Search as SearchRequest;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Types\Text;
+use Sigmie\Parse\FilterParser;
+use Sigmie\Query\Aggregations\Metrics\Sum;
 use Sigmie\Query\Aggs;
+use Sigmie\Query\BooleanQueryBuilder;
 use Sigmie\Query\Contracts\Aggs as AggsContract;
 use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\FunctionScore;
 use Sigmie\Query\NewQuery;
 use Sigmie\Query\Queries\Compound\Boolean;
-use Sigmie\Query\BooleanQueryBuilder;
-use Sigmie\Query\Queries\Term\Term;
-use Sigmie\Query\Queries\Term\Terms;
-use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\ElasticsearchKnn;
 use Sigmie\Query\Queries\GeoDistance;
 use Sigmie\Query\Queries\MatchAll;
-use Sigmie\Query\Queries\Raw;
 use Sigmie\Query\Queries\OpenSearchKnn;
+use Sigmie\Query\Queries\Raw;
+use Sigmie\Query\Queries\Term\Fuzzy;
+use Sigmie\Query\Queries\Term\Range;
+use Sigmie\Query\Queries\Term\Term;
+use Sigmie\Query\Queries\Term\Terms;
+use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MatchBoolPrefix;
 use Sigmie\Query\Queries\Text\MatchPhrase;
 use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
 use Sigmie\Query\Queries\Text\Nested;
-use Sigmie\Search\InnerHits;
-use Sigmie\Query\Queries\Term\Fuzzy;
-use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Search;
 use Sigmie\Query\Suggest;
-use Sigmie\Sigmie;
 use Sigmie\Query\Suggesters\Completion;
 use Sigmie\Query\Suggesters\Phrase;
 use Sigmie\Query\Suggesters\Term as TermSuggester;
+use Sigmie\Search\InnerHits;
+use Sigmie\Sigmie;
 
 class QueryAddressedTest extends TestCase
 {
@@ -78,8 +81,8 @@ class QueryAddressedTest extends TestCase
                 $query->must()->term('status', 'draft');
                 throw new RuntimeException('cancel clause');
             });
-        } catch (RuntimeException $exception) {
-            $this->assertSame('cancel clause', $exception->getMessage());
+        } catch (RuntimeException $runtimeException) {
+            $this->assertSame('cancel clause', $runtimeException->getMessage());
         }
 
         $this->assertSame($before, $builder->toRaw());
@@ -158,10 +161,12 @@ class QueryAddressedTest extends TestCase
     public function test_reused_nested_clause_has_distinct_inner_hits_names(): void
     {
         $props = new NewProperties;
-        $props->nested('reviews', fn (NewProperties $reviews) => $reviews->text('body'));
+        $props->nested('reviews', fn (NewProperties $reviews): Text => $reviews->text('body'));
+
         $hits = new InnerHits;
         $hits->request(['reviews'], 2);
         $hits->resolve($props->get());
+
         $nested = new Nested('reviews', new MatchAll, innerHits: $hits);
 
         $query = new Boolean;
@@ -216,7 +221,8 @@ class QueryAddressedTest extends TestCase
 
         $properties = new NewProperties;
         $properties->geoPoint('distance');
-        $parsed = (new \Sigmie\Parse\FilterParser($properties))->parse('distance:10km[51.49,13.77]')->toRaw();
+
+        $parsed = (new FilterParser($properties))->parse('distance:10km[51.49,13.77]')->toRaw();
 
         $this->assertSame('10km', $parsed['bool']['must'][0]['geo_distance']['distance']);
         $this->assertSame('51.49', $parsed['bool']['must'][0]['geo_distance']['distance.lat']);
@@ -358,6 +364,7 @@ class QueryAddressedTest extends TestCase
 
         $only = new Aggs;
         $only->terms('0', 'genre');
+
         $onlyBody = json_decode(json_encode($this->search()->aggs($only)->toRaw()), true);
 
         $nested = new Aggs;
@@ -475,11 +482,11 @@ class QueryAddressedTest extends TestCase
     {
         $aggs = new class implements AggsContract
         {
-            public function min(string $name, string $field) {}
+            public function min(string $name, string $field): void {}
 
-            public function max(string $name, string $field) {}
+            public function max(string $name, string $field): void {}
 
-            public function avg(string $name, string $field) {}
+            public function avg(string $name, string $field): void {}
 
             public function toRaw(): array
             {
@@ -819,7 +826,8 @@ class QueryAddressedTest extends TestCase
     {
         $builder = (new NewQuery($this->connection(), 'orders'))->sort([['price' => 'asc']]);
         $first = $builder->term('status', 'paid')->size(3);
-        $first->aggregate(fn (Aggs $aggs) => $aggs->sum('total', 'price'));
+        $first->aggregate(fn (Aggs $aggs): Sum => $aggs->sum('total', 'price'));
+
         $firstRaw = $first->getDSL();
         $second = $builder->term('status', 'open');
 
@@ -830,6 +838,7 @@ class QueryAddressedTest extends TestCase
         $this->assertSame([['price' => 'asc']], $second->getDSL()['sort']);
         $this->assertSame($second->getDSL(), $builder->toMultiSearch()[1]);
     }
+
     public function test_range_queries_serialize_php_date_bounds_as_instants(): void
     {
         $bound = new DateTimeImmutable('2040-02-29T12:34:56.123456+05:45');

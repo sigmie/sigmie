@@ -11,6 +11,7 @@ use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\Responses\Search;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\NewSemanticField;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Term\Terms;
 use Sigmie\Testing\TestCase;
@@ -80,6 +81,7 @@ class TemplateTest extends TestCase
         $props->bool('available');
         $props->bool('Available');
         $props->bool('featured');
+
         $index = $this->sigmie->newIndex($name)->properties($props)->create();
         $script = $this->sigmie->template($name);
         try {
@@ -105,6 +107,7 @@ class TemplateTest extends TestCase
         $name = uniqid('.template_prefix_text_');
         $props = new NewProperties;
         $props->email('email');
+
         $index = $this->sigmie->newIndex($name)->properties($props)->create();
         $script = $this->sigmie->template($name);
         try {
@@ -129,6 +132,7 @@ class TemplateTest extends TestCase
         $name = uniqid('.template_sort_field_');
         $props = new NewProperties;
         $props->integer('rank');
+
         $index = $this->sigmie->newIndex($name)->properties($props)->create();
         $script = $this->sigmie->template($name);
         try {
@@ -153,6 +157,7 @@ class TemplateTest extends TestCase
         $name = uniqid('.fixed_template_filter_');
         $props = new NewProperties;
         $props->caseSensitiveKeyword('label');
+
         $sourceField = '@size(1)@endsize';
         $props->text($sourceField);
         $index = $this->sigmie->newIndex($name)->properties($props)->create();
@@ -204,6 +209,7 @@ class TemplateTest extends TestCase
     {
         $properties = new NewProperties;
         $properties->keyword('category');
+
         $source = $this->sigmie->newTemplate('empty_lists')
             ->properties($properties)
             ->sort('category:desc')
@@ -252,6 +258,7 @@ class TemplateTest extends TestCase
     {
         $props = new NewProperties;
         $props->text('title');
+
         $id = uniqid('audit_');
         $this->sigmie->newTemplate($id)->properties($props)->semantic()->autocomplete(false)->get()->save();
 
@@ -640,6 +647,7 @@ class TemplateTest extends TestCase
         $templateId = uniqid('attribute_highlight_');
         $props = new NewProperties;
         $props->text('title');
+
         $script = $this->sigmie->template($templateId);
 
         try {
@@ -683,6 +691,7 @@ class TemplateTest extends TestCase
         $templateId = uniqid('no_vectors_');
         $props = new NewProperties;
         $props->text('title');
+
         $script = $this->sigmie->template($templateId);
 
         try {
@@ -835,6 +844,7 @@ class TemplateTest extends TestCase
         $this->assertSame('replace', $rendered['query']['bool']['must'][1]['bool']['should'][0]['function_score']['boost_mode']);
         $this->assertSame(['matching'], array_map(fn ($hit): string => $hit->_id, $response->hits()));
     }
+
     public function test_template_applies_the_mapped_boost_to_hit_scores(): void
     {
         $index = uniqid();
@@ -857,6 +867,7 @@ class TemplateTest extends TestCase
     {
         $props = new NewProperties;
         $props->keyword('category');
+
         $id = uniqid('fixed_');
         $this->sigmie->newTemplate($id)->properties($props)->filters("category:'books'")
             ->filterable(false)->sort('category:asc')->sortable(false)->get()->save();
@@ -874,7 +885,7 @@ class TemplateTest extends TestCase
     {
         $props = new NewProperties;
         $props->text('ab')->semantic(api: 'embeddings', dimensions: 128);
-        $props->object('a', fn (NewProperties $a) => $a->text('b')->semantic(api: 'embeddings', dimensions: 128));
+        $props->object('a', fn (NewProperties $a): NewSemanticField => $a->text('b')->semantic(api: 'embeddings', dimensions: 128));
         $id = uniqid('paths_');
         $this->sigmie->newTemplate($id)->properties($props)->semantic()->get()->save();
 
@@ -920,5 +931,4 @@ class TemplateTest extends TestCase
             $this->sigmie->deleteIfExists($index);
         }
     }
-
 }

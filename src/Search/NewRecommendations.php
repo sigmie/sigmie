@@ -206,7 +206,7 @@ class NewRecommendations
 
         foreach ($this->docs as $doc) {
             $search = $this->seedSearch([$doc], $window);
-            if ($search !== null) {
+            if ($search instanceof NewSearch) {
                 $multi->add($search);
                 $hasSearches = true;
             }

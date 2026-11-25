@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use ArrayAccess;
 use Carbon\Carbon;
-use Countable;
 use GuzzleHttp\Psr7\Response;
+use Http\Promise\FulfilledPromise;
+use Http\Promise\Promise;
 use InvalidArgumentException;
-use IteratorAggregate;
+use PHPUnit\Framework\TestCase;
 use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\Testing\FakeEmbeddingsApi;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
+use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Base\Drivers\Elasticsearch;
 use Sigmie\Base\ElasticsearchException;
 use Sigmie\Document\AliveCollection;
@@ -25,17 +25,17 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\DateTime;
 use Sigmie\Mappings\Types\FlatObject;
+use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Range;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Semantic\DocumentProcessor;
-use Sigmie\Mappings\Properties;
-use Sigmie\Sigmie;
-use Sigmie\Testing\TestCase;
+use Sigmie\Testing\FakeEmbeddingsApi;
 use stdClass;
 
-class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
+class AliveCollectionCorrectnessTest extends TestCase
 {
     public function test_read_keeps_nested_json_objects_distinct_from_lists(): void
     {
@@ -51,7 +51,7 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function test_embedding_boost_reads_an_object_in_a_record_list(): void
     {
         $props = new NewProperties;
-        $props->nested('items', fn (NewProperties $item) => $item->integer('weight'));
+        $props->nested('items', fn (NewProperties $item): Number => $item->integer('weight'));
         $props->text('title')->semantic(api: 'fake', dimensions: 8, accuracy: 1)
             ->normalizeVector(false)->boostedBy('items.weight');
         $api = new FakeEmbeddingsApi($this->createStub(EmbeddingsApi::class), 10);
@@ -82,8 +82,9 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function test_combo_reads_all_source_representations(): void
     {
         $props = new NewProperties;
-        $props->object('info', fn (NewProperties $info) => $info->keyword('x'));
+        $props->object('info', fn (NewProperties $info): Keyword => $info->keyword('x'));
         $props->combo('summary', ['info.x']);
+
         $doc = new Document(['info.x' => 'Ada', 'info' => (object) ['x' => 'Grace']]);
         (new DocumentProcessor($props->get()))->populateComboFields($doc);
 
@@ -116,6 +117,7 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $props->keyword('genre');
         $props->keyword('language');
+
         $parser = new FilterParser($props);
         $genre = $parser->parse("genre:'drama'");
         $language = $parser->parse("language:'French'");
@@ -208,6 +210,7 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @test
+     *
      * @dataProvider partialShardCounts
      */
     public function count_rejects_a_partial_shard_response(int $failed): void
@@ -372,10 +375,10 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
         try {
             $collection->merge([new Document([], 'bad-mapping'), new Document([], 'conflict'), new Document([], 'overloaded')]);
             $this->fail('All three writes failed.');
-        } catch (ElasticsearchException $exception) {
-            $this->assertSame(400, $exception->getCode());
-            $this->assertSame([400, 409, 429], array_column($exception->json('failures') ?? [], 'status'));
-            $this->assertSame(['bad-mapping', 'conflict', 'overloaded'], array_column($exception->json('failures'), '_id'));
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame(400, $elasticsearchException->getCode());
+            $this->assertSame([400, 409, 429], array_column($elasticsearchException->json('failures') ?? [], 'status'));
+            $this->assertSame(['bad-mapping', 'conflict', 'overloaded'], array_column($elasticsearchException->json('failures'), '_id'));
         }
     }
 
@@ -393,8 +396,8 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
         try {
             $collection->add($document);
             $this->fail('The replica write failed.');
-        } catch (ElasticsearchException $exception) {
-            $this->assertSame(1, $exception->json('_shards.failed'));
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame(1, $elasticsearchException->json('_shards.failed'));
             $this->assertSame('generated', $document->_id);
             $this->assertSame('movies-01', $document->_index);
         }
@@ -507,8 +510,8 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
         try {
             $collection->merge([$bad, $created, $updated]);
             $this->fail('Expected the failed item to throw.');
-        } catch (ElasticsearchException $error) {
-            $this->assertSame(400, $error->getCode());
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame(400, $elasticsearchException->getCode());
         }
 
         $this->assertFalse(isset($bad->_id));
@@ -549,9 +552,9 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
                 new Document(['body' => $largeBody], 'last'),
             ]);
             $this->fail('Expected the failed items to throw.');
-        } catch (ElasticsearchException $error) {
-            $this->assertSame(400, $error->getCode());
-            $this->assertSame(['first', 'last'], array_column($error->json('failures'), '_id'));
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame(400, $elasticsearchException->getCode());
+            $this->assertSame(['first', 'last'], array_column($elasticsearchException->json('failures'), '_id'));
         }
 
         $this->assertSame(3, $calls);
@@ -606,7 +609,7 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         [$collection, $captured] = $this->movies('{"items":[{"create":{"_id":"1","_index":"movies","status":201}}]}');
         $properties = new NewProperties;
-        $properties->nested('cast', fn (NewProperties $fields) => $fields->keyword('actor'));
+        $properties->nested('cast', fn (NewProperties $fields): Keyword => $fields->keyword('actor'));
         $properties->combo('summary', ['cast.actor']);
 
         $collection->properties($properties)->add(new Document(['cast' => [
@@ -626,6 +629,7 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
             'contexts' => [['name' => 'genre', 'type' => 'category']],
         ]]);
         $suggest->semantic(api: 'e', dimensions: 128, accuracy: 1);
+
         $properties->add($suggest);
         $api = new FakeEmbeddingsApi($this->createStub(EmbeddingsApi::class), 10);
         $source = ['suggest' => [
@@ -673,6 +677,7 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
         $properties = new NewProperties;
         $properties->add(new Date('archived', ['epoch_millis']));
         $properties->add(new DateTime('released', ['epoch_second']));
+
         $time = Carbon::parse('1969-12-31T23:59:59.750Z');
 
         $collection->properties($properties)->add(new Document(['archived' => $time, 'released' => $time]));
@@ -686,8 +691,9 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         [$collection, $captured] = $this->movies('{"items":[{"create":{"_id":"1","_index":"movies","status":201}}]}');
         $properties = new NewProperties;
-        $properties->nested('cast', fn (NewProperties $fields) => $fields->keyword('actor'));
-        $properties->object('crew', fn (NewProperties $fields) => $fields->keyword('name'));
+        $properties->nested('cast', fn (NewProperties $fields): Keyword => $fields->keyword('actor'));
+        $properties->object('crew', fn (NewProperties $fields): Keyword => $fields->keyword('name'));
+
         $source = ['cast' => [null, ['actor' => 'Ada']], 'crew' => [['name' => 'Grace'], null]];
         $collection->properties($properties)->add(new Document($source));
 
@@ -699,7 +705,7 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
         [$collection, $captured] = $this->movies('{"items":[{"update":{"_id":"1","_index":"movies","status":200}}]}');
         $properties = new NewProperties;
         $properties->keyword('tags');
-        $properties->object('details', fn (NewProperties $fields) => $fields->number('ratings'));
+        $properties->object('details', fn (NewProperties $fields): Number => $fields->number('ratings'));
         $collection->properties($properties)->merge([
             new Document(['tags' => [2 => 'drama', 7 => 'noir'], 'details' => ['ratings' => [3 => 5, 1 => 2]]], '1'),
         ]);
@@ -713,6 +719,7 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
         $properties = new NewProperties;
         $children = new NewProperties;
         $children->number('rating');
+
         $properties->add(new Object_('payload', $children, ['enabled' => false]));
         $collection->properties($properties);
 
@@ -728,6 +735,7 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
         [$collection, $captured] = $this->movies('{"items":[{"create":{"_id":"1","_index":"movies","status":201}}]}');
         $properties = new NewProperties;
         $properties->geoPoint('location');
+
         $source = ['location' => ['type' => 'Point', 'coordinates' => [-71.34, 41.12]]];
         $collection->properties($properties)->add(new Document($source));
 
@@ -739,9 +747,11 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
         [$collection, $captured] = $this->movies('{"items":[{"create":{"_id":"1","_index":"movies","status":201}}]}');
         $properties = new NewProperties;
         $properties->add(new FlatObject('metadata'));
+
         $collection->properties($properties);
 
         $collection->add(new Document(['metadata' => ['0' => 'value']]));
+
         $numericKey = json_decode(explode("\n", $captured->bodies[0])[1])->metadata;
         $this->assertInstanceOf(stdClass::class, $numericKey);
         $this->assertSame('value', $numericKey->{'0'});
@@ -757,6 +767,7 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
         [$collection, $captured] = $this->movies('{"items":[{"create":{"_id":"1","_index":"movies","status":201}}]}');
         $properties = new NewProperties;
         $properties->datetime('released');
+
         $source = ['released' => ['2024-01-01T12:34:56+01:00:30', '2024-01-01T12:34:56+010030']];
 
         $collection->properties($properties)->add(new Document($source));
@@ -804,6 +815,7 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
         $properties = new NewProperties;
         $properties->add((new Range('archived', 'epoch_millis'))->date());
         $properties->add((new Range('released', 'epoch_second'))->date());
+
         $time = Carbon::parse('1969-12-31T23:59:59.750Z');
 
         $collection->properties($properties)->merge([
@@ -819,7 +831,7 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         [$collection, $captured] = $this->movies('{"items":[{"create":{"_id":"1","_index":"movies","status":201}}]}');
         $properties = new NewProperties;
-        $properties->nested('cast', fn (NewProperties $fields) => $fields->keyword('actor'));
+        $properties->nested('cast', fn (NewProperties $fields): Keyword => $fields->keyword('actor'));
 
         $document = new Document(['cast' => ['actor' => 'Sigourney Weaver']]);
         $collection->properties($properties)->merge([$document]);
@@ -832,8 +844,8 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         [$collection, $captured] = $this->movies('{"items":[{"create":{"_id":"1","_index":"movies","status":201}}]}');
         $properties = new NewProperties;
-        $properties->object('director', fn (NewProperties $fields) => $fields->keyword('0'));
-        $properties->nested('cast', fn (NewProperties $fields) => $fields->keyword('0'));
+        $properties->object('director', fn (NewProperties $fields): Keyword => $fields->keyword('0'));
+        $properties->nested('cast', fn (NewProperties $fields): Keyword => $fields->keyword('0'));
 
         $collection->properties($properties)->add(new Document([
             'director' => ['0' => 'Ridley Scott'],
@@ -869,7 +881,7 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         [$collection, $captured] = $this->movies('{"items":[{"create":{"_id":"1","_index":"movies","status":201}}]}');
         $properties = new NewProperties;
-        $properties->object('credits', fn (NewProperties $fields) => $fields->keyword('actor'));
+        $properties->object('credits', fn (NewProperties $fields): Keyword => $fields->keyword('actor'));
         $collection->properties($properties)->add(new Document(['credits' => []]));
 
         $this->assertSame(['credits' => []], $this->ndjson($captured->bodies[0])[1]);
@@ -1004,10 +1016,10 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
         try {
             $collection->replace($doc);
             $this->fail('The failed create must throw.');
-        } catch (ElasticsearchException $exception) {
-            $this->assertSame(400, $exception->getCode());
-            $this->assertSame('illegal_argument_exception', $exception->json('type'));
-            $this->assertSame('target index is missing', $exception->json('reason'));
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame(400, $elasticsearchException->getCode());
+            $this->assertSame('illegal_argument_exception', $elasticsearchException->json('type'));
+            $this->assertSame('target index is missing', $elasticsearchException->json('reason'));
             $this->assertFalse(isset($doc->_id));
             $this->assertFalse(isset($doc->_index));
         }
@@ -1168,6 +1180,7 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $props->add(new FlatObject('metadata'));
         $props->keyword('title');
+
         $processor = new DocumentProcessor($props->get());
 
         $document = new Document([
@@ -1202,11 +1215,11 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
         $captured->bodies = [];
         $captured->paths = [];
 
-        $connection = new class($json, $captured, $mget) implements \Sigmie\Base\Contracts\ElasticsearchConnection
+        $connection = new class($json, $captured, $mget) implements ElasticsearchConnection
         {
             public function __construct(private string $json, private stdClass $captured, private ?string $mget) {}
 
-            public function __invoke(\Sigmie\Base\Contracts\ElasticsearchRequest $request): \Sigmie\Base\Contracts\ElasticsearchResponse
+            public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse
             {
                 $this->captured->paths[] = $request->getUri()->getPath();
                 $this->captured->bodies[] = (string) $request->getBody();
@@ -1218,17 +1231,17 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
                     default => $this->json,
                 };
 
-                return $request->response(new \GuzzleHttp\Psr7\Response(200, ['Content-Type' => 'application/json'], $json));
+                return $request->response(new Response(200, ['Content-Type' => 'application/json'], $json));
             }
 
-            public function promise(\Sigmie\Base\Contracts\ElasticsearchRequest $request): \Http\Promise\Promise
+            public function promise(ElasticsearchRequest $request): Promise
             {
-                return new \Http\Promise\FulfilledPromise($this($request));
+                return new FulfilledPromise($this($request));
             }
 
-            public function driver(): \Sigmie\Base\Contracts\SearchEngine
+            public function driver(): SearchEngine
             {
-                return new \Sigmie\Base\Drivers\Elasticsearch;
+                return new Elasticsearch;
             }
 
             public function isServerless(): bool
@@ -1253,7 +1266,7 @@ class AliveCollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $doc = new Document(['price' => 0, 'note' => null]);
 
-        $this->assertTrue(isset($doc->price));
+        $this->assertTrue(property_exists($doc, 'price') && $doc->price !== null);
         $this->assertFalse(isset($doc->note));
         $this->assertSame(0, $doc->price ?? -1);
 

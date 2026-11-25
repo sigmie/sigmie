@@ -7,13 +7,6 @@ namespace Sigmie\Tests;
 use Generator;
 use Http\Promise\Promise;
 use InvalidArgumentException;
-use RuntimeException;
-use Sigmie\AI\Contracts\RerankApi;
-use Sigmie\Base\Contracts\ElasticsearchRequest;
-use Sigmie\Base\Contracts\ElasticsearchResponse as ElasticsearchResponseContract;
-use Sigmie\Base\Contracts\SearchEngine;
-use Sigmie\Base\Drivers\Elasticsearch;
-use Sigmie\Base\Http\ElasticsearchConnection;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Document\RerankedHit;
@@ -21,7 +14,6 @@ use Sigmie\Languages\English\English;
 use Sigmie\Languages\German\German;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\NewSemanticField;
-use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Parse\InputParser;
 use Sigmie\Parse\ParseException;
@@ -31,13 +23,7 @@ use Sigmie\Query\Queries\Term\Range;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Search\Formatters\RawElasticsearchFormat;
-use Sigmie\Search\Formatters\SigmieSearchResponse;
-use Sigmie\Search\InnerHits;
-use Sigmie\Search\MMR;
-use Sigmie\Search\NewRerank;
 use Sigmie\Search\NewSearch;
-use Sigmie\Search\RRF;
-use Sigmie\Search\SearchContext;
 use Sigmie\Search\VectorPool;
 use Sigmie\Shared\Collection;
 use Sigmie\Testing\Assert;
@@ -70,6 +56,7 @@ class SearchTest extends TestCase
                 $this->assertSame([$hit->_id], array_column($page, '_id'));
                 $this->assertSame($hit->_score, $page[0]->_score);
             }
+
             $this->assertSame([], $search->from(3)->hits());
         } finally {
             $index->delete();
@@ -83,6 +70,7 @@ class SearchTest extends TestCase
         $props->text('title');
         $props->keyword('edition');
         $props->integer('year');
+
         $index = $this->sigmie->newIndex($name)->properties($props)->create();
         try {
             $this->sigmie->collect($name, refresh: true)->merge([
@@ -178,6 +166,7 @@ class SearchTest extends TestCase
         $props->text('title')->semantic(api: 'test-embeddings', dimensions: 128);
         $props->keyword('group');
         $props->integer('order');
+
         $vector = [1.0, ...array_fill(0, 127, 0.0)];
         $opposite = [-1.0, ...array_fill(0, 127, 0.0)];
         $field = $props->get()->get('title')->vectorFields()->first()->name;
@@ -3146,9 +3135,10 @@ class SearchTest extends TestCase
             INPUT);
 
         $this->assertSame('RESORT GUIDE', trim($parsed['query_string']));
-        $this->assertSame(<<<'FILTER'
-            title:"Keep the FILTER and the SORT order \"as is\""
-            FILTER, $parsed['filter_string']);
+        $this->assertSame(<<<'FILTER_WRAP'
+title:"Keep the FILTER and the SORT order \"as is\""
+FILTER_WRAP
+            , $parsed['filter_string']);
         $this->assertSame('rank:desc', $parsed['sort_string']);
 
         $parsed = (new InputParser)->parse("O'Reilly FILTER title:'Guide'");
@@ -3322,6 +3312,4 @@ class SearchTest extends TestCase
             '_rerank_score' => 0.9,
         ], $reranked->toArray());
     }
-
 }
-

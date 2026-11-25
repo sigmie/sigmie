@@ -63,7 +63,7 @@ class IndexBuilderTest extends TestCase
         try {
             $this->sigmie->newIndex($name)->replicas(0)->create();
             $this->fail('The alias name already belongs to a concrete index.');
-        } catch (AliasAlreadyExists $exception) {
+        } catch (AliasAlreadyExists) {
             $this->assertNull($this->sigmie->index($name.'_*'));
         } finally {
             $this->indexAPICall($name, 'DELETE');

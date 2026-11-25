@@ -7,6 +7,7 @@ namespace Sigmie\Search;
 use Closure;
 use Generator;
 use Http\Promise\Promise;
+use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\PointInTimeRequests;
@@ -17,6 +18,7 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\BaseVector;
+use Sigmie\Mappings\Types\Boost;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\Text;
@@ -387,7 +389,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         }
 
         $collapsedSort = $this->openSearchCollapsedSort();
-        if ($collapsedSort !== null && count($this->searchContext->searchAfter) === 1) {
+        if ($collapsedSort instanceof CollapsedSort && count($this->searchContext->searchAfter) === 1) {
             // OpenSearch 3.2 rejects native search_after with collapse.
             $postFilter = $this->searchContext->facetFilterString !== '' ? $this->facetFilters->toRaw() : null;
             $search->postFilter(new Raw($collapsedSort->postFilter($this->searchContext->searchAfter[0], $postFilter)));
@@ -661,7 +663,11 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         $textItems = [];
 
         foreach ([...$this->searchContext->queryStrings, ...$this->searchContext->queryImages] as $query) {
-            if ($query->hasVector() || trim_text((string) $query) === '') {
+            if ($query->hasVector()) {
+                continue;
+            }
+
+            if (trim_text((string) $query) === '') {
                 continue;
             }
 
@@ -674,7 +680,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
                 if (! isset($this->vectorPools[$apiName])) {
                     $api = $this->getApi($apiName);
-                    if ($api === null) {
+                    if (! $api instanceof EmbeddingsApi) {
                         continue;
                     }
 
@@ -683,6 +689,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
                 if ($query instanceof QueryImage) {
                     $this->vectorPools[$apiName]->get($query->imageSource(), $field->dims());
+
                     continue;
                 }
 
@@ -760,9 +767,10 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
             $combined->filter()->query($filter)->query($this->facetFilters);
             $filter = $combined;
         }
+
         // Document boosts and collapse expansion need vector scores inside the main query.
         $useTopLevelKnn = $driver->engine() === SearchEngineType::Elasticsearch
-            && ! isset($this->properties->boostField)
+            && ! $this->properties->boostField instanceof Boost
             && $this->collapseTop === 0;
 
         foreach ($this->semanticFields($input->fields()) as $text) {
@@ -897,13 +905,14 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         search_hits($searchResponse);
         search_hits($facetsResponse);
 
-        if (($collapsedSort = $this->openSearchCollapsedSort()) !== null && isset($searchResponse['hits']['hits'])) {
+        if (($collapsedSort = $this->openSearchCollapsedSort()) instanceof CollapsedSort && isset($searchResponse['hits']['hits'])) {
             foreach ($searchResponse['hits']['hits'] as &$hit) {
                 // Numeric missing values use a sort sentinel that can also be a real value.
                 if (isset($hit['sort']) && ! isset($hit['fields'][$collapsedSort->field])) {
                     $hit['sort'][0] = null;
                 }
             }
+
             unset($hit);
         }
 
@@ -975,6 +984,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
                 $facetsResponse['aggregations'][$name] = $facetsResponse['aggregations'][$alias];
                 unset($facetsResponse['aggregations'][$alias]);
             }
+
             unset($response['aggregations'][$alias]);
         }
 
@@ -1104,9 +1114,10 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
             $this->vectorPools[$apiName] = $pool;
         } elseif ($apiName !== null) {
-            if (! isset($this->vectorPools[$apiName]) && ($api = $this->getApi($apiName)) !== null) {
+            if (! isset($this->vectorPools[$apiName]) && ($api = $this->getApi($apiName)) instanceof EmbeddingsApi) {
                 $this->vectorPools[$apiName] = new VectorPool($api, ensureNormalized: false);
             }
+
             ($this->vectorPools[$apiName] ?? null)?->setPool($pool);
         } else {
             // An unnamed seed applies to each existing pool.

@@ -14,13 +14,12 @@ use Sigmie\Base\ElasticsearchException;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Contracts\CollectionHook;
 use Sigmie\Document\Document;
-use Sigmie\Document\Hit;
 use Sigmie\Index\AliasedIndex;
+use Sigmie\Index\Index;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Sigmie;
 use Sigmie\Testing\TestCase;
-use stdClass;
 
 class AliveCollectionTest extends TestCase
 {
@@ -71,6 +70,7 @@ class AliveCollectionTest extends TestCase
         $props->text('first');
         $props->text('last');
         $props->combo('name', ['first', 'last']);
+
         $alias = uniqid('numeric_write_');
         $readIndex = '.'.$alias.'_read';
         $writeIndex = (string) random_int(1000000000, PHP_INT_MAX);
@@ -110,6 +110,7 @@ class AliveCollectionTest extends TestCase
         $props->text('last');
         $props->combo('given', ['first']);
         $props->combo('full', ['given', 'last']);
+
         $collection = $this->sigmie->collect($this->roundtripIndex($props), true)->properties($props);
         $collection->add(new Document(['first' => 'Ada', 'last' => 'Lovelace'], '1'));
         $collection->merge([new Document(['first' => 'Augusta'], '1')]);
@@ -213,7 +214,7 @@ class AliveCollectionTest extends TestCase
         $collection->clear();
 
         $this->assertSame(0, $collection->count());
-        $this->assertTrue($this->sigmie->index($name) !== null);
+        $this->assertTrue($this->sigmie->index($name) instanceof Index);
     }
 
     /**

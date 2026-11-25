@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use ReflectionMethod;
 use RuntimeException;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\Field;
@@ -11,7 +12,8 @@ use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Keyword;
-use ReflectionMethod;
+use Sigmie\Mappings\Types\Nested;
+use Sigmie\Mappings\Types\Object_;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\ParseException;
 use Sigmie\Testing\TestCase;
@@ -65,6 +67,7 @@ class FilterParserTest extends TestCase
 
     /**
      * @withoutCluster
+     *
      * @dataProvider mappedOperands
      */
     public function test_filter_operands_follow_the_mapping(string $filter, bool $valid): void
@@ -79,7 +82,7 @@ class FilterParserTest extends TestCase
         $props->range('counts')->long();
         $props->keyword('label');
         $props->geoPoint('location');
-        $props->object('profile', fn (NewProperties $p) => $p->keyword('name'));
+        $props->object('profile', fn (NewProperties $p): Keyword => $p->keyword('name'));
         $props->vector('embedding', 2);
 
         $parser = new FilterParser($props, false);
@@ -95,6 +98,7 @@ class FilterParserTest extends TestCase
     {
         $properties = new NewProperties;
         $properties->datetime('created_at');
+
         $parser = new FilterParser($properties);
 
         $body = $parser->parse("created_at>=-315619200000 AND created_at<'2040'")->toRaw();
@@ -111,6 +115,7 @@ class FilterParserTest extends TestCase
     {
         $properties = new NewProperties;
         $properties->datetime('created_at');
+
         $parser = new FilterParser($properties);
 
         $body = $parser->parse('created_at:now-7d/d..now/d')->toRaw();
@@ -124,6 +129,7 @@ class FilterParserTest extends TestCase
     {
         $props = new NewProperties;
         $props->id('product');
+
         $parser = new FilterParser($props);
 
         foreach (['product>2', 'product:2..10'] as $filter) {
@@ -136,7 +142,8 @@ class FilterParserTest extends TestCase
     public function quoted_values_preserve_literal_control_bytes(): void
     {
         $props = new NewProperties;
-        $props->nested('items', fn (NewProperties $p) => $p->keyword('name'));
+        $props->nested('items', fn (NewProperties $p): Keyword => $p->keyword('name'));
+
         $value = "a\x01s\x01d\x01b\x01\x02\x03";
         $query = (new FilterParser($props))->parse('items:{ name:"'.$value.'" }')->toRaw();
 
@@ -147,7 +154,7 @@ class FilterParserTest extends TestCase
     public function a_nested_clause_needs_an_operator_before_its_sibling(): void
     {
         $props = new NewProperties;
-        $props->nested('items', fn (NewProperties $p) => $p->keyword('name'));
+        $props->nested('items', fn (NewProperties $p): Keyword => $p->keyword('name'));
         $props->bool('active');
 
         $this->expectException(ParseException::class);
@@ -174,7 +181,7 @@ class FilterParserTest extends TestCase
     public function nested_existence_checks_the_nested_documents(): void
     {
         $props = new NewProperties;
-        $props->nested('items', fn (NewProperties $p) => $p->keyword('name'));
+        $props->nested('items', fn (NewProperties $p): Keyword => $p->keyword('name'));
 
         $query = (new FilterParser($props))->parse('items:*')->toRaw();
 
@@ -185,9 +192,7 @@ class FilterParserTest extends TestCase
     public function nested_paths_can_repeat_an_ancestor_name(): void
     {
         $props = new NewProperties;
-        $props->nested('items', fn (NewProperties $p) =>
-            $p->object('items', fn (NewProperties $p) =>
-                $p->nested('parts', fn (NewProperties $p) => $p->keyword('name'))));
+        $props->nested('items', fn (NewProperties $p): Object_ => $p->object('items', fn (NewProperties $p): Nested => $p->nested('parts', fn (NewProperties $p): Keyword => $p->keyword('name'))));
 
         $query = (new FilterParser($props))->parse('items:{ items.parts:{ name:bolt } }')->toRaw();
 

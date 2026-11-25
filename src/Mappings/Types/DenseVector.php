@@ -67,12 +67,14 @@ class DenseVector extends AbstractType implements Type
             if (! ctype_xdigit($value) || strlen($value) % 2 !== 0) {
                 return $invalid;
             }
+
             $value = array_values(unpack('c*', hex2bin($value)));
         }
 
         if (! is_array($value) || ! array_is_list($value) || $value === []) {
             return $invalid;
         }
+
         $dimensions = count($value) * ($element === 'bit' ? 8 : 1);
         if (($this->mapping === null || isset($this->mapping['dims'])) && $dimensions !== $this->dims) {
             return $invalid;
@@ -83,19 +85,24 @@ class DenseVector extends AbstractType implements Type
             if ((! is_int($coordinate) && ! is_float($coordinate)) || ! Number::fitsMapping('float', $coordinate)) {
                 return $invalid;
             }
+
             if ($packed && ($coordinate < -128 || $coordinate > 127 || (int) $coordinate != $coordinate)) {
                 return $invalid;
             }
+
             $single = unpack('f', pack('f', (float) $coordinate))[1];
             $magnitudeSquared += $single * $single;
         }
+
         $magnitudeSquared = unpack('f', pack('f', $magnitudeSquared))[1];
         if ($this->index && ! is_finite($magnitudeSquared)) {
             return $invalid;
         }
+
         if ($element !== 'bit' && $this->index && $this->similarity === VectorSimilarity::Cosine && $magnitudeSquared == 0.0) {
             return $invalid;
         }
+
         if (! $packed && $this->index && $this->similarity === VectorSimilarity::DotProduct && abs($magnitudeSquared - 1) > 0.001) {
             return $invalid;
         }

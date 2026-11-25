@@ -33,6 +33,7 @@ class Settings implements SettingsInterface
         if ($key === 'default_pipeline') {
             unset($this->configs['index.default_pipeline']);
         }
+
         $this->configs[$key] = $value;
 
         return $this;
@@ -64,6 +65,7 @@ class Settings implements SettingsInterface
         foreach ($flat as $name => $value) {
             $nested->set(substr($name, 6), $value);
         }
+
         $settings = $nested->all();
 
         $analysis = Analysis::fromRaw($settings['analysis'] ?? []);
@@ -124,6 +126,7 @@ class Settings implements SettingsInterface
                 if (! is_array($value)) {
                     throw new InvalidArgumentException('The analysis setting requires an array of named components.');
                 }
+
                 foreach ($value as $group => $components) {
                     $analysis->set($group, array_replace($analysis->get($group, []), (array) $components));
                 }

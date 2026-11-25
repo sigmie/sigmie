@@ -11,11 +11,11 @@ use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\Aggregations\Bucket\RareTerms;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
+use Sigmie\Query\Aggregations\Metrics\Rate;
 use Sigmie\Query\Aggregations\Pipeline\SortBucket;
 use Sigmie\Query\Aggs as SearchAggregation;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Testing\TestCase;
-use TypeError;
 
 class AggregationTest extends TestCase
 {
@@ -39,7 +39,7 @@ class AggregationTest extends TestCase
 
             $response = $this->sigmie->newQuery($index)->matchAll()->size(0)
                 ->aggregate(fn (SearchAggregation $aggs) => $aggs->dateHistogram('dates', 'date', CalendarInterval::Day)
-                    ->aggregate(fn (SearchAggregation $days) => $days->rate('sales', 'amount')))
+                    ->aggregate(fn (SearchAggregation $days): Rate => $days->rate('sales', 'amount')))
                 ->get();
 
             $this->assertEquals(75, $response->aggregation('dates.buckets.0.sales.value'));

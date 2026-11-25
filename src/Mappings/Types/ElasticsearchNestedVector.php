@@ -49,14 +49,14 @@ class ElasticsearchNestedVector extends TypesNested implements Type
     protected function mapSimilarityToScript(VectorSimilarity $similarity): string
     {
         $fullPath = addcslashes($this->fullPath(), "'\\");
-        $dotProduct = "dotProduct(params.query_vector, '_embeddings.{$fullPath}.vector')";
-        $innerProductScore = "double value = {$dotProduct}; return value < 0 ? 1 / (1 + -value) : value + 1;";
+        $dotProduct = sprintf("dotProduct(params.query_vector, '_embeddings.%s.vector')", $fullPath);
+        $innerProductScore = sprintf('double value = %s; return value < 0 ? 1 / (1 + -value) : value + 1;', $dotProduct);
 
         return match ($similarity) {
             VectorSimilarity::Cosine => sprintf("Math.max(0.0, cosineSimilarity(params.query_vector, '_embeddings.%s.vector') + 1.0)", $fullPath),
             VectorSimilarity::Euclidean => sprintf("1 / (1 + l2norm(params.query_vector, '_embeddings.%s.vector'))", $fullPath),
             VectorSimilarity::DotProduct => $this->autoNormalizeVector
-                ? "Math.max(0.0, {$dotProduct} + 1.0)"
+                ? sprintf('Math.max(0.0, %s + 1.0)', $dotProduct)
                 : $innerProductScore,
             VectorSimilarity::MaxInnerProduct => $innerProductScore,
         };

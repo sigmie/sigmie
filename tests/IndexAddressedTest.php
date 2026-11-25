@@ -8,39 +8,43 @@ use Carbon\Carbon;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Http\Promise\FulfilledPromise;
 use Http\Promise\Promise;
+use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use ReflectionProperty;
 use RuntimeException;
-use Sigmie\Base\ElasticsearchException;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Base\Drivers\Elasticsearch;
-use Sigmie\Enums\SearchEngineType;
+use Sigmie\Base\ElasticsearchException;
 use Sigmie\Document\Document;
+use Sigmie\Enums\SearchEngineType;
+use Sigmie\Index\Alias\Actions as AliasActions;
+use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\BuiltInAnalyzer;
 use Sigmie\Index\Analysis\Tokenizers\Noop;
-use Sigmie\Index\Alias\Actions as AliasActions;
-use Sigmie\Index\Mappings;
-use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Index;
 use Sigmie\Index\IndexRebuild;
-use Sigmie\Index\RebuildLost;
 use Sigmie\Index\IndexTemplate;
 use Sigmie\Index\IndexUpdateTask;
 use Sigmie\Index\ListedIndex;
+use Sigmie\Index\Mappings;
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Index\NewIndex;
-use Sigmie\Mappings\Types\Text;
+use Sigmie\Index\RebuildLost;
 use Sigmie\Index\Settings;
 use Sigmie\Index\UpdateIndex;
 use Sigmie\Languages\English\English;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Types\Text;
 use Sigmie\Sigmie;
+use stdClass;
+use Throwable;
 
-class IndexAddressedTest extends \PHPUnit\Framework\TestCase
+class IndexAddressedTest extends TestCase
 {
     public function test_human_readable_creation_date_is_not_replayed_as_an_index_setting(): void
     {
@@ -69,6 +73,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
             if ($request->getMethod() === 'HEAD') {
                 return $request->response(new PsrResponse(404));
             }
+
             $body = json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR);
             $this->assertGreaterThanOrEqual(1, $body['settings']['number_of_replicas']);
 
@@ -125,6 +130,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
                     'type' => 'illegal_state_exception', 'reason' => 'alias [movies] has more than one write index',
                 ], 500);
             }
+
             $response = match ($request->getMethod().' '.$path) {
                 'HEAD /_alias/movies' => new PsrResponse(404),
                 'HEAD /movies' => new PsrResponse($createdBeforePut ? 200 : 404),
@@ -147,7 +153,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $name = (string) PHP_INT_MAX;
         $props = new NewProperties;
-        $props->text('title')->withNewAnalyzer(fn (NewAnalyzer $analyzer) => $analyzer->name($name));
+        $props->text('title')->withNewAnalyzer(fn (NewAnalyzer $analyzer): NewAnalyzer => $analyzer->name($name));
         $index = (new NewIndex($this->connection()))->alias('books')->properties($props)->make();
         $analyzers = $index->settings->analysis()->analyzers();
         $this->assertArrayHasKey($name, $analyzers);
@@ -167,6 +173,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->keyword('isbn');
+
         $index = (new NewIndex($this->connection()))->alias('books')
             ->properties($props)->meta(['edition' => 2])->config('refresh_interval', '30s')
             ->lowercase('fold')->searchSynonyms(['book, volume'])
@@ -184,6 +191,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->keyword('isbn');
+
         $builder = (new NewIndex($this->connection()))->alias('books')->properties($props);
         $first = $builder->make();
         unset($first->mappings->properties()['isbn']);
@@ -193,7 +201,8 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
     public function test_nested_field_analyzers_are_exposed_by_the_mapping(): void
     {
         $props = new NewProperties;
-        $props->object('book', fn (NewProperties $book) => $book->title('title'));
+        $props->object('book', fn (NewProperties $book): Text => $book->title('title'));
+
         $index = (new NewIndex($this->connection()))->alias('books')->properties($props)->make();
         $analyzer = $index->mappings->properties()->get('book.title')->analyzer();
         $this->assertContains($analyzer, $index->mappings->analyzers());
@@ -215,6 +224,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
             if (str_starts_with($path, '/source/_alias/')) {
                 return $request->response(new PsrResponse(404));
             }
+
             $target = $path === '/books' ? 'next' : 'dest';
             $body = [$target => ['aliases' => ['books' => []], 'mappings' => [], 'settings' => []]];
 
@@ -230,7 +240,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $connection = $this->createMock(ElasticsearchConnection::class);
         $connection->expects($this->once())->method('__invoke')
-            ->willReturnCallback(fn (ElasticsearchRequest $request) => $request->response(new PsrResponse(
+            ->willReturnCallback(fn (ElasticsearchRequest $request): ElasticsearchResponse => $request->response(new PsrResponse(
                 200, [], '{"original":{"aliases":{"movies":{}}},"additional":{"aliases":{"movies":{}}}}',
             )));
         $client = new class
@@ -296,12 +306,15 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
             if ($request->getMethod() === 'PUT' && ! str_contains($path, '/_')) {
                 $dest = ltrim($path, '/');
             }
+
             if ($request->getMethod() === 'DELETE' && ++$deletes === 1) {
                 throw new RuntimeException('Lost delete response');
             }
+
             if (str_ends_with($path, '/_block/write')) {
                 return $request->response(new PsrResponse(200, [], '{"shards_acknowledged":true}'));
             }
+
             $body = match ($path) {
                 '/movies' => [$dest => ['aliases' => ['movies' => []], 'settings' => ['index' => []], 'mappings' => []]],
                 '/_reindex' => ['took' => 1, 'total' => 0, 'created' => 0, 'timed_out' => false, 'failures' => []],
@@ -309,17 +322,20 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
                 default => ['acknowledged' => true],
             };
             $status = $request->getMethod() === 'HEAD' ? 404 : 200;
+
             return $request->response(new PsrResponse($status, [], json_encode($body)));
         });
         $source = new AliasedIndex('movies_old', 'movies');
         $source->setElasticsearchConnection($connection);
-        $configure = fn (UpdateIndex $update) => $update;
+
+        $configure = fn (UpdateIndex $update): UpdateIndex => $update;
         try {
             $source->update($configure);
             $this->fail('Expected the delete response to be lost.');
-        } catch (RuntimeException $exception) {
-            $this->assertSame('Lost delete response', $exception->getMessage());
+        } catch (RuntimeException $runtimeException) {
+            $this->assertSame('Lost delete response', $runtimeException->getMessage());
         }
+
         $this->assertSame($dest, $source->update($configure)->name);
         $this->assertSame(1, $deletes);
     }
@@ -333,18 +349,20 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
             if (str_ends_with($path, '/_block/write')) {
                 return $request->response(new PsrResponse(200, [], '{"shards_acknowledged":true}'));
             }
+
             $body = match ($path) {
                 '/movies' => ['later' => ['aliases' => ['movies' => []], 'settings' => ['index' => []], 'mappings' => []]],
                 '/_reindex' => ['took' => 1, 'total' => 0, 'created' => 0, 'timed_out' => false, 'failures' => []],
                 '/_alias/movies' => ['movies_old' => ['aliases' => ['movies' => []]]],
                 default => ['acknowledged' => true],
             };
+
             return $request->response(new PsrResponse(200, [], json_encode($body)));
         });
         $index = new AliasedIndex('movies_old', 'movies');
         $index->setElasticsearchConnection($connection);
         $this->expectException(RebuildLost::class);
-        $index->update(fn (UpdateIndex $update) => $update);
+        $index->update(fn (UpdateIndex $update): UpdateIndex => $update);
     }
 
     public function test_language_builder_accepts_an_alias_after_language_selection(): void
@@ -581,6 +599,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
             $this->assertArrayHasKey($name, $serialized);
             $this->assertSame($value, $serialized[$name]);
         }
+
         $this->assertSame('{"0":{"type":"long"}}', json_encode($serialized['runtime']));
     }
 
@@ -609,6 +628,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
             if (in_array('dataset.size', explode(',', $query['h'] ?? ''), true)) {
                 $row['dataset.size'] = '20mb';
             }
+
             $body = str_starts_with($request->getUri()->getPath(), '/_cat/indices') ? [$row] : [];
 
             return $request->response(new PsrResponse(200, [], json_encode($body, JSON_THROW_ON_ERROR)));
@@ -790,7 +810,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
         $analyzers = $made->settings->analysis()->toRaw()['analyzer'];
         $mappings = json_decode(json_encode($made->mappings->toRaw(new Elasticsearch)), true);
         $subfield = function (string $name) use ($made): Text {
-            $property = new \ReflectionProperty(Text::class, 'fields');
+            $property = new ReflectionProperty(Text::class, 'fields');
 
             foreach ($property->getValue($made->mappings->properties()->get($name)) as $sub) {
                 if ($sub instanceof Text) {
@@ -902,6 +922,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
             $this->assertSame('-1', $payload['settings']['refresh_interval']);
             $this->assertSame(2, $payload['mappings']['_meta'][IndexRebuild::META_REPLICAS]);
         }
+
         $this->assertSame(2, $after['number_of_replicas']);
         $this->assertArrayNotHasKey('refresh_interval', $after);
         $this->assertArrayNotHasKey(IndexRebuild::META_REPLICAS, $builder->make()->mappings->meta());
@@ -948,8 +969,8 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
             {
                 $body = [
                     'logs-2026.11.23' => [
-                        'aliases' => ['logs' => new \stdClass],
-                        'mappings' => ['properties' => new \stdClass],
+                        'aliases' => ['logs' => new stdClass],
+                        'mappings' => ['properties' => new stdClass],
                         'settings' => ['index' => [
                             'number_of_shards' => '1',
                             'number_of_replicas' => '0',
@@ -1131,7 +1152,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
                 if ($method === 'GET' && in_array($path, ['/_alias/movies', '/movies'], true)) {
                     $data = [];
                     foreach ($this->aliasTargets as $index) {
-                        $data[$index] = ['aliases' => ['movies' => new \stdClass]];
+                        $data[$index] = ['aliases' => ['movies' => new stdClass]];
                         if ($path === '/movies') {
                             $data[$index] += ['settings' => ['index' => []], 'mappings' => []];
                         }
@@ -1148,6 +1169,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
                                 fn (string $index): bool => $index !== $action['remove']['index'],
                             ));
                         }
+
                         if (($action['add']['alias'] ?? null) === 'movies'
                             && ! in_array($action['add']['index'], $this->aliasTargets, true)) {
                             $this->aliasTargets[] = $action['add']['index'];
@@ -1224,7 +1246,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
                 if ($method === 'GET' && in_array($path, ['/_alias/movies', '/movies'], true)) {
                     $data = [];
                     foreach ($this->aliasTargets as $index) {
-                        $data[$index] = ['aliases' => ['movies' => new \stdClass]];
+                        $data[$index] = ['aliases' => ['movies' => new stdClass]];
                         if ($path === '/movies') {
                             $data[$index] += ['settings' => ['index' => []], 'mappings' => []];
                         }
@@ -1241,6 +1263,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
                                 fn (string $index): bool => $index !== $action['remove']['index'],
                             ));
                         }
+
                         if (($action['add']['alias'] ?? null) === 'movies'
                             && ! in_array($action['add']['index'], $this->aliasTargets, true)) {
                             $this->aliasTargets[] = $action['add']['index'];
@@ -1281,7 +1304,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
 
         try {
             $returned = $slow->finish();
-        } catch (\Throwable $throwable) {
+        } catch (Throwable $throwable) {
             $thrown = $throwable;
         }
 
@@ -1298,7 +1321,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
 
         try {
             $later->finish();
-        } catch (\Throwable $throwable) {
+        } catch (Throwable $throwable) {
             $thrown = $throwable;
         }
 
@@ -1337,7 +1360,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
                 if ($method === 'GET' && in_array($path, ['/_alias/films', '/films'], true)) {
                     $data = [];
                     foreach ($this->aliasTargets as $index) {
-                        $data[$index] = ['aliases' => ['films' => new \stdClass]];
+                        $data[$index] = ['aliases' => ['films' => new stdClass]];
                         if ($path === '/films') {
                             $data[$index] += ['settings' => ['index' => []], 'mappings' => []];
                         }
@@ -1354,6 +1377,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
                                 fn (string $index): bool => $index !== $action['remove']['index'],
                             ));
                         }
+
                         if (($action['add']['alias'] ?? null) === 'films'
                             && ! in_array($action['add']['index'], $this->aliasTargets, true)) {
                             $this->aliasTargets[] = $action['add']['index'];
@@ -1418,9 +1442,11 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
                 if ($request->getMethod() === 'PUT' && ! str_contains($path, '/_')) {
                     $this->destination = ltrim($path, '/');
                 }
+
                 if (str_ends_with($path, '/_block/write')) {
                     return $request->response(new PsrResponse(200, [], '{"shards_acknowledged":true}'));
                 }
+
                 $json = match ($path) {
                     '/_reindex' => str_contains($request->getUri()->getQuery(), 'wait_for_completion=false')
                         ? '{"task":"node:1"}'
@@ -1493,8 +1519,8 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
 
                     return $request->response(new PsrResponse(200, ['Content-Type' => 'application/json'], (string) json_encode([
                         $name => [
-                            'aliases' => ['movies' => new \stdClass],
-                            'mappings' => ['properties' => new \stdClass],
+                            'aliases' => ['movies' => new stdClass],
+                            'mappings' => ['properties' => new stdClass],
                             'settings' => ['index' => ['number_of_shards' => '1', 'number_of_replicas' => '3']],
                         ],
                     ])));
@@ -1503,6 +1529,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
                 if (str_ends_with($path, '/_block/write')) {
                     return $request->response(new PsrResponse(200, [], '{"shards_acknowledged":true}'));
                 }
+
                 $json = match ($path) {
                     '/_reindex' => str_contains($request->getUri()->getQuery(), 'wait_for_completion=false')
                         ? '{"task":"node:1"}'
@@ -1533,8 +1560,10 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
 
         $index = new AliasedIndex('movies_old', 'movies');
         $index->setElasticsearchConnection($connection);
+
         $props = new NewProperties;
         $props->title('title');
+
         $declare = function (UpdateIndex $update) use ($props): UpdateIndex {
             $update->properties($props);
             $update->lowercase('lower');
@@ -1703,6 +1732,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
         $driver = new Elasticsearch;
         $props = new NewProperties;
         $props->text('1');
+
         $mapping = (new Mappings(properties: $props->get(new Analysis)))->toRaw($driver);
         $json = json_encode($mapping['properties']);
 
@@ -1747,6 +1777,7 @@ class IndexAddressedTest extends \PHPUnit\Framework\TestCase
             }
         };
     }
+
     public function test_literal_dotted_alias_in_index_metadata(): void
     {
         $index = new AliasedIndex('products', 'store.eu', raw: ['aliases' => ['store.eu' => ['is_write_index' => true]]]);

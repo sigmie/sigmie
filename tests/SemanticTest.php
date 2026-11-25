@@ -4,24 +4,27 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use DateTime;
+use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
+use GuzzleHttp\Promise\FulfilledPromise;
 use GuzzleHttp\Promise\Promise;
 use GuzzleHttp\Psr7\Response;
-use Carbon\CarbonImmutable;
+use RuntimeException;
 use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\Document\Document;
-use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse as ElasticsearchResponseContract;
 use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Base\Drivers\Elasticsearch;
 use Sigmie\Base\Drivers\Opensearch;
 use Sigmie\Base\Http\ElasticsearchConnection;
+use Sigmie\Document\Document;
+use Sigmie\Enums\VectorSimilarity;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\DenseVector;
-use Sigmie\Search\NewSearch;
 use Sigmie\Mappings\Types\ElasticsearchNestedVector;
 use Sigmie\Mappings\Types\FlatObject;
 use Sigmie\Mappings\Types\Image;
@@ -30,6 +33,7 @@ use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
+use Sigmie\Search\NewSearch;
 use Sigmie\Search\VectorPool;
 use Sigmie\Semantic\DocumentProcessor;
 use Sigmie\Semantic\Providers\Noop;
@@ -50,6 +54,7 @@ class SemanticTest extends TestCase
         foreach ([['a', [1, 0]], ['a', [1, 0]], ['b', [0, 1]]] as [$brand, $vector]) {
             $documents[] = new Document(['title' => $brand, 'brand' => $brand, '_embeddings' => ['title' => [$field => $vector]]]);
         }
+
         $this->sigmie->collect($index, refresh: true)->properties($props)->merge($documents);
 
         $hits = $this->sigmie->newSearch($index)->properties($props)->semantic()->disableKeywordSearch()
@@ -111,6 +116,7 @@ class SemanticTest extends TestCase
                 'title' => [$field => $title], 'summary' => [$field => $summary],
             ]], $id);
         }
+
         $this->sigmie->collect($index, refresh: true)->properties($props)->merge($documents);
 
         $hits = $this->sigmie->newSearch($index)->properties($props)->semantic()->disableKeywordSearch()
@@ -309,6 +315,7 @@ class SemanticTest extends TestCase
         $props = new NewProperties;
         $props->type(new FlatObject('metadata'));
         $props->combo('summary', ['metadata']);
+
         $processor = new DocumentProcessor($props->get());
         $document = new Document(['metadata' => (object) [
             'label' => 'report',
@@ -401,8 +408,9 @@ class SemanticTest extends TestCase
     public function test_combo_reads_dotted_fields_through_json_objects(): void
     {
         $props = new NewProperties;
-        $props->object('authors', fn (NewProperties $inner) => $inner->text('name'));
+        $props->object('authors', fn (NewProperties $inner): Text => $inner->text('name'));
         $props->combo('full', ['authors.name']);
+
         $document = new Document(['authors' => [(object) ['name' => 'Ada'], (object) ['name' => 'Grace']]]);
         (new DocumentProcessor($props->get()))->populateComboFields($document);
 
@@ -425,6 +433,7 @@ class SemanticTest extends TestCase
     {
         $props = new NewProperties;
         $props->text('tags');
+
         $document = new Document(['tags' => ['book', null]]);
         $this->assertSame($document, (new DocumentProcessor($props->get()))->validateFields($document));
     }
@@ -483,6 +492,7 @@ class SemanticTest extends TestCase
         $props = new NewProperties;
         $props->text('name');
         $props->combo('full', ['name']);
+
         $processor = new DocumentProcessor($props->get());
         $document = $processor->populateComboFields(new Document(['name' => 'Ada']));
         $this->assertSame('Ada', $document->_source['full']);
@@ -1600,8 +1610,8 @@ class SemanticTest extends TestCase
             $props->datetime('started_at');
         });
 
-        $at = new \DateTime('2024-01-15 12:30:45.123456', new \DateTimeZone('UTC'));
-        $carbon = \Carbon\Carbon::parse('2024-01-15 12:30:45.123456', 'UTC');
+        $at = new DateTime('2024-01-15 12:30:45.123456', new DateTimeZone('UTC'));
+        $carbon = Carbon::parse('2024-01-15 12:30:45.123456', 'UTC');
         $processor = new DocumentProcessor($props->get());
         $document = $processor->formatDateTimeFields(new Document([
             'published' => $at,
@@ -1640,7 +1650,7 @@ class SemanticTest extends TestCase
                     $this->texts[] = $item['text'];
                 }
 
-                foreach ($payload as $key => $item) {
+                foreach (array_keys($payload) as $key) {
                     $payload[$key]['vector'] = [1.0, 0.0, 0.0, 0.0];
                 }
 
@@ -1649,7 +1659,7 @@ class SemanticTest extends TestCase
 
             public function promiseEmbed(string $text, int $dimensions): Promise
             {
-                return new \GuzzleHttp\Promise\FulfilledPromise(null);
+                return new FulfilledPromise(null);
             }
 
             public function model(): string
@@ -1786,11 +1796,12 @@ class SemanticTest extends TestCase
         $props = new NewProperties;
         $props->datetime('published');
         $props->date('on');
+
         $processor = new DocumentProcessor($props->get());
 
         $immutable = $processor->formatDateTimeFields(new Document([
-            'published' => new \DateTimeImmutable('2020-01-02T03:04:05.123456+02:00'),
-            'on' => new \DateTimeImmutable('2020-05-06'),
+            'published' => new DateTimeImmutable('2020-01-02T03:04:05.123456+02:00'),
+            'on' => new DateTimeImmutable('2020-05-06'),
         ]));
         $this->assertSame('2020-01-02T03:04:05.123456+02:00', $immutable->_source['published']);
         $this->assertSame('2020-05-06', $immutable->_source['on']);
@@ -1829,6 +1840,7 @@ class SemanticTest extends TestCase
             $props->text('name');
         });
         $props->combo('full', ['authors.name']);
+
         $out = (new DocumentProcessor($props->get()))->populateComboFields(new Document([
             'authors' => [
                 ['name' => 'Ada'],
@@ -1893,7 +1905,7 @@ class SemanticTest extends TestCase
             $props->date('day');
             $props->range('span')->date();
         });
-        $at = new \DateTime('2024-06-15 13:45:30.123456', new \DateTimeZone('UTC'));
+        $at = new DateTime('2024-06-15 13:45:30.123456', new DateTimeZone('UTC'));
         $out = (new DocumentProcessor($props->get()))->formatDateTimeFields(new Document([
             'jobs' => [[
                 'day' => $at,
@@ -2184,12 +2196,12 @@ class SemanticTest extends TestCase
 
             public function __invoke(ElasticsearchRequest $request): ElasticsearchResponseContract
             {
-                throw new \RuntimeException('The search must not call Elasticsearch.');
+                throw new RuntimeException('The search must not call Elasticsearch.');
             }
 
             public function promise(ElasticsearchRequest $request): \Http\Promise\Promise
             {
-                throw new \RuntimeException('The search must not call Elasticsearch.');
+                throw new RuntimeException('The search must not call Elasticsearch.');
             }
         };
 
@@ -2209,9 +2221,9 @@ class SemanticTest extends TestCase
                 return $payload;
             }
 
-            public function promiseEmbed(string $text, int $dimensions): \GuzzleHttp\Promise\Promise
+            public function promiseEmbed(string $text, int $dimensions): Promise
             {
-                return new \GuzzleHttp\Promise\FulfilledPromise([1.0]);
+                return new FulfilledPromise([1.0]);
             }
 
             public function model(): string
@@ -2227,7 +2239,7 @@ class SemanticTest extends TestCase
 
         $builder = (new NewSearch($connection))->index('articles')->apis(['embeddings' => $api, 'clip' => $api]);
 
-        if ($props !== null) {
+        if ($props instanceof NewProperties) {
             $builder->properties($props);
         }
 
@@ -2274,7 +2286,7 @@ class SemanticTest extends TestCase
 
             public function promiseEmbed(string $text, int $dimensions): Promise
             {
-                return new \GuzzleHttp\Promise\FulfilledPromise([1.0]);
+                return new FulfilledPromise([1.0]);
             }
 
             public function model(): string
@@ -2309,10 +2321,12 @@ class SemanticTest extends TestCase
 
         return null;
     }
+
     public function test_historical_offsets_preserve_the_document_instant(): void
     {
         $properties = new NewProperties;
         $properties->datetime('created_at');
+
         $date = new DateTime('1900-01-01 12:00:00.123456', new DateTimeZone('Europe/Paris'));
         $document = (new DocumentProcessor($properties->get()))
             ->formatDateTimeFields(new Document(['created_at' => $date]));

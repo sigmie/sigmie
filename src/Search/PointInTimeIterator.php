@@ -59,7 +59,7 @@ class PointInTimeIterator
         $collapseField = ((array) ($baseBody['collapse'] ?? []))['field'] ?? null;
         $sort = $baseBody['sort'] ?? [];
         $collapsedSort = CollapsedSort::fromSort($collapseField, $sort);
-        $excludeSeenGroups = $collapseField !== null && $collapsedSort === null;
+        $excludeSeenGroups = $collapseField !== null && ! $collapsedSort instanceof CollapsedSort;
         $seenGroups = [];
         $seenMissingGroup = false;
         $passedMissing = false;
@@ -76,6 +76,7 @@ class PointInTimeIterator
                     : (object) array_diff_key((array) $innerHits, ['highlight' => true]);
                 $baseBody['collapse'] = $collapse;
             }
+
             $pageSize = $baseBody['size'] ?? null;
             $searchAfter = null;
 
@@ -94,15 +95,17 @@ class PointInTimeIterator
                     if ($seenGroups !== []) {
                         $excluded[] = ['terms' => keyed($collapseField, $seenGroups)];
                     }
+
                     if ($seenMissingGroup) {
                         $excluded[] = ['bool' => ['must_not' => [['exists' => ['field' => $collapseField]]]]];
                     }
+
                     $body['post_filter'] = ['bool' => [
                         'filter' => isset($body['post_filter']) ? [$body['post_filter']] : [],
                         'must_not' => $excluded,
                     ]];
                 } elseif ($searchAfter !== null) {
-                    if ($collapsedSort !== null) {
+                    if ($collapsedSort instanceof CollapsedSort) {
                         $body['post_filter'] = $collapsedSort->postFilter($searchAfter[0], $body['post_filter'] ?? null, $passedMissing, $includeTie);
                     } else {
                         $body['search_after'] = $searchAfter;
@@ -129,7 +132,7 @@ class PointInTimeIterator
 
                 $lastHit = $hits[array_key_last($hits)];
                 $lastSort = $lastHit['sort'] ?? [];
-                $lastGroupMissing = $collapsedSort !== null && ! isset($lastHit['fields'][$collapsedSort->field]);
+                $lastGroupMissing = $collapsedSort instanceof CollapsedSort && ! isset($lastHit['fields'][$collapsedSort->field]);
                 // Integer sorts use a representable boundary value for a missing group.
                 $missingCanTie = $collapsedSort?->customMissing || is_int($lastSort[0] ?? null);
                 if (
@@ -155,7 +158,7 @@ class PointInTimeIterator
                         } else {
                             $seenGroups[] = $group;
                         }
-                    } elseif ($collapsedSort !== null) {
+                    } elseif ($collapsedSort instanceof CollapsedSort) {
                         if (isset($data['fields'][$collapsedSort->field])) {
                             $lastPresent = $data['sort'][0] ?? null;
                         } else {
@@ -170,10 +173,10 @@ class PointInTimeIterator
                 $includeTie = $lastGroupMissing && $missingCanTie && $lastPresent !== $lastSort[0];
                 $searchAfter = $excludeSeenGroups ? null : $lastSort;
             }
-        } catch (Throwable $exception) {
+        } catch (Throwable $throwable) {
             $scanFailed = true;
 
-            throw $exception;
+            throw $throwable;
         } finally {
             try {
                 $closePit($pitId);

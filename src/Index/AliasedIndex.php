@@ -93,8 +93,8 @@ class AliasedIndex extends Index
             $this->restoreReindexSettings($index->name, $requestedReplicas, $requestedRefresh, $deferredBlocks, $finalPipeline);
             $this->moveAlias($newAlias, [$this->name], $index->name, $this->alias, pendingAlias: $this->updateLock($this->name),
                 markRetired: true, sourceMarker: $this->updateSourceAlias($index->name));
-        } catch (Throwable $exception) {
-            $this->rollbackWriteBlock($exception, $sourceWasWriteBlocked, $index->name);
+        } catch (Throwable $throwable) {
+            $this->rollbackWriteBlock($throwable, $sourceWasWriteBlocked, $index->name);
         }
 
         $this->pendingCutover = ['alias' => $newAlias, 'destination' => $index->name, 'sourceDeleted' => false];
@@ -141,8 +141,8 @@ class AliasedIndex extends Index
                 finalPipeline: $finalPipeline,
                 ownsUpdateLock: true,
             );
-        } catch (Throwable $exception) {
-            $this->rollbackWriteBlock($exception, $sourceWasWriteBlocked, $index->name);
+        } catch (Throwable $throwable) {
+            $this->rollbackWriteBlock($throwable, $sourceWasWriteBlocked, $index->name);
         }
     }
 
@@ -162,11 +162,8 @@ class AliasedIndex extends Index
     {
         try {
             $this->releaseUpdate($this->name, $destination, $sourceWasWriteBlocked);
-        } catch (Throwable $rollbackError) {
-            throw new RuntimeException(
-                "Could not restore writes to '{$this->name}' after the update failed. ".$rollbackError->getMessage(),
-                previous: $cause,
-            );
+        } catch (Throwable $throwable) {
+            throw new RuntimeException(sprintf("Could not restore writes to '%s' after the update failed. ", $this->name).$throwable->getMessage(), $throwable->getCode(), previous: $cause);
         }
 
         throw $cause;
@@ -235,7 +232,7 @@ class AliasedIndex extends Index
 
         $alreadyBlocked = $response->json('acknowledged') === true && $response->json('indices') === [];
         if ($response->json('shards_acknowledged') !== true && ! $alreadyBlocked) {
-            throw new RuntimeException("Write block for '{$this->name}' was not acknowledged by all shards.");
+            throw new RuntimeException(sprintf("Write block for '%s' was not acknowledged by all shards.", $this->name));
         }
     }
 

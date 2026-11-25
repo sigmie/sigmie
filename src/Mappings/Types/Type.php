@@ -81,7 +81,7 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
      * An array is one query string per element. Each element takes the string
      * path. The array|string signature does not say what the array holds.
      *
-     * @param Closure(string): list<mixed> $one
+     * @param  Closure(string): list<mixed>  $one
      */
     protected function queryStrings(array|string $queryString, Closure $one): array
     {
@@ -192,6 +192,7 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
         if (isset($mapping['fields'])) {
             $mapping['fields'] = object_map((array) $mapping['fields']);
         }
+
         $this->storedMapping = $mapping;
         $this->meta = array_diff_key((array) ($mapping['meta'] ?? []), ['type' => true]);
     }
@@ -257,9 +258,14 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
         $mapping = $this->toRaw()[$this->name];
         foreach ([$mapping, ...(array) ($mapping['fields'] ?? [])] as $name => $field) {
             $field = (array) $field;
-            if ($field['type'] !== 'keyword' || (! ($field['index'] ?? true) && ! ($field['doc_values'] ?? true))) {
+            if ($field['type'] !== 'keyword') {
                 continue;
             }
+
+            if (! ($field['index'] ?? true) && ! ($field['doc_values'] ?? true)) {
+                continue;
+            }
+
             if (isset($field['ignore_above']) && strlen(mb_convert_encoding($value, 'UTF-16BE', 'UTF-8')) / 2 > $field['ignore_above']) {
                 continue;
             }
@@ -269,6 +275,7 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
             if ($normalizer !== null && $normalizer !== $this->analysisComponentName($fieldName, '_field_normalizer') && $normalizer !== 'lowercase') {
                 continue;
             }
+
             $term = $normalizer === null ? $value : $this->lowercaseTerm($value);
             if (strlen($term) > 32766) {
                 return [false, sprintf('The field %s exceeds the keyword term limit of 32766 bytes', $key)];

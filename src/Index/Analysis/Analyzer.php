@@ -11,8 +11,8 @@ use Sigmie\Index\Analysis\TokenFilter\Trim;
 use Sigmie\Index\Analysis\TokenFilter\Unique;
 use Sigmie\Index\Analysis\TokenFilter\Uppercase;
 use Sigmie\Index\Analysis\Tokenizers\Generic as GenericTokenizer;
-use Sigmie\Index\Analysis\Tokenizers\Noop;
 use Sigmie\Index\Analysis\Tokenizers\NonLetter;
+use Sigmie\Index\Analysis\Tokenizers\Noop;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
 use Sigmie\Index\Contracts\CustomAnalyzer as CustomAnalyzerInterface;
@@ -101,7 +101,7 @@ class Analyzer implements CustomAnalyzerInterface
 
         foreach (analysis_list($config['char_filter'] ?? []) as $filterName) {
             $analyzerCharFilters[] = match ($filterName) {
-                'html_strip' => $charFilters[$filterName] ?? new HTMLStrip((string) $filterName),
+                'html_strip' => $charFilters[$filterName] ?? new HTMLStrip($filterName),
                 default => $charFilters[$filterName] ?? new FilterReference($filterName),
             };
         }

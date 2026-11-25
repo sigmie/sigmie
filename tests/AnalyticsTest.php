@@ -13,14 +13,14 @@ use RuntimeException;
 use Sigmie\Analytics\Analytics;
 use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Analytics\Enums\Period;
-use Sigmie\Analytics\WindowBound;
 use Sigmie\Analytics\Widgets\Cumulative;
 use Sigmie\Analytics\Widgets\GroupedMetrics;
+use Sigmie\Analytics\Widgets\HistogramMetric;
+use Sigmie\Analytics\Widgets\Kpi;
 use Sigmie\Analytics\Widgets\MultiBreakdown;
 use Sigmie\Analytics\Widgets\Retention;
 use Sigmie\Analytics\Widgets\Trend;
-use Sigmie\Analytics\Widgets\HistogramMetric;
-use Sigmie\Analytics\Widgets\Kpi;
+use Sigmie\Analytics\WindowBound;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
@@ -28,6 +28,7 @@ use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\Field;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\NewQuery;
@@ -57,7 +58,7 @@ class AnalyticsTest extends TestCase
 
     public function test_offset_conversion_preserves_nanosecond_window(): void
     {
-        $index = $this->indexWith(fn (NewProperties $props) => $props->add(new Field('time', 'date_nanos')), [
+        $index = $this->indexWith(fn (NewProperties $props): NewProperties => $props->add(new Field('time', 'date_nanos')), [
             new Document(['time' => '2024-01-01T00:00:00.000000001Z']),
         ]);
         $zone = new DateTimeZone('+00:00:30');
@@ -150,7 +151,8 @@ class AnalyticsTest extends TestCase
     {
         $properties = new NewProperties;
         $properties->keyword('0');
-        $properties->object('details', fn (NewProperties $details) => $details->keyword('0'));
+        $properties->object('details', fn (NewProperties $details): Keyword => $details->keyword('0'));
+
         $analytics = (new Analytics(new NewQuery($this->disconnectedConnection(), 'sales'), $properties, 'date'))
             ->table('orders');
         $document = ['_id' => '1', '_source' => ['0' => 'paid', 'details' => ['0' => 'online']]];
@@ -199,6 +201,7 @@ class AnalyticsTest extends TestCase
     {
         $properties = new NewProperties;
         $properties->bool('active');
+
         $analytics = (new Analytics(new NewQuery($this->disconnectedConnection(), 'sales'), $properties, 'date'))
             ->breakdown('rank', 'active', Metric::Count)
             ->groupedTrend('trends', Metric::Count, '', 'active')
@@ -349,7 +352,7 @@ class AnalyticsTest extends TestCase
             $analytics = $index->analytics('created_at', $this->date('2024-01-01T00:00:00.000100Z'), $this->date('2024-01-01T00:00:00.001100Z'));
             $result = $analytics->kpi('total', Metric::Sum, 'amount')
                 ->trend('trend', Metric::Sum, 'amount', '1ms')
-                ->search(fn (Search $search) => $search->size(10)->postFilter($analytics->hitsQuery('')))
+                ->search(fn (Search $search): Search => $search->size(10)->postFilter($analytics->hitsQuery('')))
                 ->getWithHits();
 
             $this->assertEquals(2, $result['widgets']['total']['value']);
@@ -387,7 +390,7 @@ class AnalyticsTest extends TestCase
 
     public function test_analytics_accepts_an_expanded_year_at_the_window_boundary(): void
     {
-        $index = $this->indexWith(fn (NewProperties $props) => $props->date('created_at'), [
+        $index = $this->indexWith(fn (NewProperties $props): Date => $props->date('created_at'), [
             new Document(['created_at' => '9999-12-31']),
         ]);
 
@@ -425,7 +428,8 @@ class AnalyticsTest extends TestCase
             $this->date('2024-01-01'),
             $this->date('2024-02-01'),
         );
-        $analytics->search(fn (Search $search) => $search->postFilter($analytics->hitsQuery('')));
+        $analytics->search(fn (Search $search): Search => $search->postFilter($analytics->hitsQuery('')));
+
         $body = fn (): array => $analytics->toMultiSearch()[1];
 
         $this->assertSame('2024-01-01T00:00:00+00:00', $body()['post_filter']['range']['date']['gte']);
@@ -460,6 +464,7 @@ class AnalyticsTest extends TestCase
             $this->assertSame(['Merged', 'other'], array_column($result[$widget]['rows'], 'key'));
             $this->assertSame([2, 1], array_column($result[$widget]['rows'], 'count'));
         }
+
         $this->assertContains('οσ', array_column($result['codes']['rows'], 'key'));
     }
 
@@ -520,6 +525,7 @@ class AnalyticsTest extends TestCase
     {
         $index = $this->createSalesIndex();
         $index->merge([new Document(['product' => 'missing', 'created_at' => '2024-01-02'])], refresh: true);
+
         $analytics = $index->analytics('created_at')
             ->from($this->date('2024-01-01'))->to($this->date('2024-02-01'));
 
@@ -527,6 +533,7 @@ class AnalyticsTest extends TestCase
             $direction = $metric === Metric::Max ? 'asc' : 'desc';
             $analytics->breakdown($metric->value, 'product', $metric, 'amount', limit: 1, direction: $direction);
         }
+
         $analytics->groupedMetrics('grouped', 'product', [['key' => 'metric_present', 'metric' => Metric::Median, 'field' => 'amount']], 'metric_present', limit: 1);
 
         foreach ($analytics->get() as $name => $widget) {
@@ -540,7 +547,7 @@ class AnalyticsTest extends TestCase
             $analytics = (new Analytics(new NewQuery($this->disconnectedConnection(), 'sales'), new NewProperties, 'date'))
                 ->breakdown('rank', 'code', Metric::Count)
                 ->groupedMetrics('grouped', 'code', []);
-            $buckets = array_map(fn ($key) => ['key' => $key, 'doc_count' => 1, 'metric' => ['doc_count' => 1]], $keys);
+            $buckets = array_map(fn ($key): array => ['key' => $key, 'doc_count' => 1, 'metric' => ['doc_count' => 1]], $keys);
             $groups = ['groups' => ['buckets' => $buckets]];
             $widgets = $analytics->formatResponse(['aggregations' => ['rank' => $groups, 'grouped' => $groups]]);
             $expected = is_int($keys[0]) ? [2, 10] : ['10', '2'];
@@ -554,6 +561,7 @@ class AnalyticsTest extends TestCase
     {
         $properties = new NewProperties;
         $properties->category('product');
+
         $analytics = new Analytics(new NewQuery($this->disconnectedConnection(), 'sales'), $properties, 'date');
         $aggs = $analytics->kpi('products', Metric::Count, 'product')->toMultiSearch()[1]['aggs'];
 
@@ -727,6 +735,7 @@ class AnalyticsTest extends TestCase
         $name = uniqid('date_only_window_');
         $props = new NewProperties;
         $props->datetime('created_at');
+
         $index = $this->sigmie->newIndex($name)->properties($props)->create();
         try {
             $this->sigmie->collect($name, refresh: true)->merge([
@@ -2224,6 +2233,7 @@ class AnalyticsTest extends TestCase
         );
 
         $analytics->kpi('first', Metric::Count);
+
         $firstSearch = $analytics->toSearch();
         $first = $firstSearch->toMultiSearch()[1];
 
@@ -2275,6 +2285,7 @@ class AnalyticsTest extends TestCase
         $keyword = new NewProperties;
         $keyword->date('created_at');
         $keyword->keyword('status');
+
         $text = new NewProperties;
         $text->date('created_at');
         $text->text('status')->keyword();
@@ -2299,7 +2310,7 @@ class AnalyticsTest extends TestCase
      */
     public function a_multi_breakdown_label_joins_the_key_values(): void
     {
-        $widget = new \Sigmie\Analytics\Widgets\MultiBreakdown(
+        $widget = new MultiBreakdown(
             'groups',
             'created_at',
             new DateTimeImmutable('2024-01-01T00:00:00+00:00'),
@@ -2332,7 +2343,7 @@ class AnalyticsTest extends TestCase
      */
     public function a_multi_breakdown_boolean_label_stays_true_or_false(): void
     {
-        $widget = new \Sigmie\Analytics\Widgets\MultiBreakdown(
+        $widget = new MultiBreakdown(
             'groups',
             'created_at',
             new DateTimeImmutable('2024-01-01T00:00:00+00:00'),
@@ -2502,6 +2513,7 @@ class AnalyticsTest extends TestCase
         $to = new DateTimeImmutable('1969-12-31T23:59:59.900000+00:00');
         $properties = new NewProperties;
         $properties->date('created_at');
+
         $previous = (new Analytics(new NewQuery($this->disconnectedConnection(), 'sales'), $properties, 'created_at'))
             ->format('Y-m-d\TH:i:s.vP')
             ->kpiDelta('delta', Metric::Count, window: [$from, $to])
@@ -2686,6 +2698,7 @@ class AnalyticsTest extends TestCase
     {
         $properties = new NewProperties;
         $properties->date('created_at');
+
         $to = new DateTimeImmutable('2024-01-31T12:00:00.750000+00:00');
         $analytics = (new Analytics(new NewQuery($this->disconnectedConnection(), 'sales'), $properties, 'created_at', null, $to))
             ->format('Y-m-d\TH:i:s.vP')
@@ -2703,6 +2716,7 @@ class AnalyticsTest extends TestCase
     {
         $properties = new NewProperties;
         $properties->keyword('product');
+
         $analytics = new Analytics(new NewQuery($this->disconnectedConnection(), 'sales'), $properties, 'created_at');
         $analytics->groupedMetrics('groups', 'product', [
             ['key' => 'orders', 'label' => '0', 'metric' => Metric::Count],
@@ -2801,6 +2815,7 @@ class AnalyticsTest extends TestCase
             new DateTimeImmutable('2024-02-01T00:00:00+00:00'),
         );
         $zero->table('rows', sort: '0:asc');
+
         $sort = $zero->toSearch()->toMultiSearch()[1]['aggs']['rows']['aggs']['hits']['top_hits']['sort'];
 
         $this->assertSame('[{"0":"asc"}]', json_encode($sort));
@@ -2813,6 +2828,7 @@ class AnalyticsTest extends TestCase
             new DateTimeImmutable('2024-02-01T00:00:00+00:00'),
         );
         $price->table('rows', sort: 'price:asc');
+
         $named = $price->toSearch()->toMultiSearch()[1]['aggs']['rows']['aggs']['hits']['top_hits']['sort'];
 
         $this->assertSame('[{"price":"asc"}]', json_encode($named));
@@ -3011,8 +3027,10 @@ class AnalyticsTest extends TestCase
     {
         $properties = new NewProperties;
         $properties->nested('items', fn (NewProperties $items) => $items->text('name')->makeSortable());
+
         $analytics = new Analytics(new NewQuery($this->disconnectedConnection(), 'sales'), $properties, 'created_at');
         $analytics->table('rows', sort: 'items.name:asc');
+
         $sort = $analytics->toSearch()->toMultiSearch()[1]['aggs']['rows']['aggs']['hits']['top_hits']['sort'];
 
         $this->assertSame([['items.name.sortable' => ['nested' => ['path' => 'items'], 'order' => 'asc']]], $sort);
@@ -3047,7 +3065,7 @@ class AnalyticsTest extends TestCase
     {
         $index = $this->createSalesIndex();
         $index->merge(array_map(
-            fn (int $i): Document => new Document(['created_at' => '2024-01-02', 'product' => "singleton-$i", 'amount' => 1000]),
+            fn (int $i): Document => new Document(['created_at' => '2024-01-02', 'product' => 'singleton-'.$i, 'amount' => 1000]),
             range(1, 101),
         ), refresh: true);
 
@@ -3427,6 +3445,7 @@ class AnalyticsTest extends TestCase
             foreach (['missing' => null, 'present' => $value] as $key => $metric) {
                 $buckets[] = ['key' => $key, 'doc_count' => 1, 'metric' => ['value' => $metric], 'avg' => ['value' => $metric]];
             }
+
             $groups = ['groups' => ['buckets' => $buckets]];
             $results = $analytics->formatResponse(['aggregations' => ['rank' => $groups, 'grouped' => $groups]]);
             foreach ($results as $widget) {
@@ -3594,8 +3613,10 @@ class AnalyticsTest extends TestCase
         $to = new DateTime('2024-02-01T00:00:00Z');
         $properties = new NewProperties;
         $properties->date('created_at');
+
         $analytics = new Analytics(new NewQuery($this->disconnectedConnection(), 'sales'), $properties, 'created_at', $from, $to);
         $analytics->kpi('january', Metric::Count, window: [$from, $to]);
+
         $search = $analytics->toSearch();
 
         $from->modify('+1 month');
@@ -3609,6 +3630,7 @@ class AnalyticsTest extends TestCase
             $this->assertSame('2024-02-01T00:00:00+00:00', $range['lt']);
         }
     }
+
     public function test_periods_start_at_the_first_valid_instant_when_a_gap_crosses_midnight(): void
     {
         $now = new DateTimeImmutable('1919-03-31 12:00:00', new DateTimeZone('America/Toronto'));

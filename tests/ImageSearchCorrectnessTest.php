@@ -8,21 +8,16 @@ use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise\Promise;
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
-use ReflectionMethod;
-use ReflectionObject;
 use ReflectionProperty;
 use Sigmie\AI\APIs\InfinityClipApi;
 use Sigmie\AI\APIs\JinaClipApi;
 use Sigmie\AI\Contracts\EmbeddingsApi;
-use Sigmie\Document\Document;
 use Sigmie\Helpers\ImageHelper;
-use Sigmie\Mappings\NewProperties;
-use Sigmie\Testing\Assert;
 use Sigmie\Testing\FakeClipApi;
-use Sigmie\Testing\TestCase;
 
-class ImageSearchCorrectnessTest extends \PHPUnit\Framework\TestCase
+class ImageSearchCorrectnessTest extends TestCase
 {
     public function test_clip_fake_embeds_literal_and_escaped_image_filenames_identically(): void
     {
@@ -171,7 +166,7 @@ class ImageSearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $api = new InfinityClipApi('http://example.com');
         $bodies = [];
-        $client = new Client(['handler' => function (RequestInterface $request) use (&$bodies) {
+        $client = new Client(['handler' => function (RequestInterface $request) use (&$bodies): Promise {
             $body = json_decode((string) $request->getBody(), true);
             $bodies[] = $body;
             $inputs = is_array($body['input']) ? $body['input'] : [$body['input']];
@@ -182,7 +177,7 @@ class ImageSearchCorrectnessTest extends \PHPUnit\Framework\TestCase
 
             return $promise;
         }]);
-        (new \ReflectionProperty($api, 'client'))->setValue($api, $client);
+        (new ReflectionProperty($api, 'client'))->setValue($api, $client);
 
         $api->batchEmbed([
             ['text' => 'portable computer', 'dims' => 512],

@@ -516,6 +516,7 @@ class AnalyticsRequest
             if (isset($metric['field']) && ! is_string($metric['field'])) {
                 throw new InvalidArgumentException('Each grouped_metrics metric field must be a string.');
             }
+
             $field = trim($metric['field'] ?? '');
 
             if ($label !== null && ! is_string($label)) {

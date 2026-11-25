@@ -218,18 +218,23 @@ class NewSemanticField
         if (isset($definition['accuracy'])) {
             $this->accuracy($definition['accuracy']);
         }
+
         if (isset($definition['similarity'])) {
             $this->similarity(VectorSimilarity::from($definition['similarity']));
         }
+
         if (isset($definition['m'])) {
             $this->m($definition['m']);
         }
+
         if (isset($definition['ef_construction'])) {
             $this->efConstruction($definition['ef_construction']);
         }
+
         if (isset($definition['boosted_by'])) {
             $this->boostedBy($definition['boosted_by']);
         }
+
         $this->indexType($definition['index_type'])
             ->api($definition['api'])
             ->searchApi($definition['search_api'])
@@ -261,6 +266,7 @@ class NewSemanticField
             $m = min((int) round($m * $scale), 64);
             $efConstruction = min((int) round($efConstruction * $scale), 500);
         }
+
         $m = $this->m ?? $m;
         $efConstruction = $this->efConstruction ?? $efConstruction;
 

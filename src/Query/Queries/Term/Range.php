@@ -40,6 +40,7 @@ class Range extends Query
             } elseif (is_int($value) || is_float($value)) {
                 $numericBound = true;
             }
+
             $bounds[$operator] = $value;
         }
 

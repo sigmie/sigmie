@@ -4,58 +4,59 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Mappings\NewProperties;
-use Sigmie\Index\Analysis\TokenFilter\Keywords;
-use Sigmie\Index\Analysis\TokenFilter\AsciiFolding;
 use Exception;
+use PHPUnit\Framework\TestCase;
+use Sigmie\Base\Drivers\Elasticsearch;
+use Sigmie\Base\Http\ElasticsearchConnection;
+use Sigmie\Http\JSONClient;
 use Sigmie\Index\Analysis\Analysis;
-use Sigmie\Index\Analysis\SimpleAnalyzer;
-use Sigmie\Index\NewAnalyzer;
-use Sigmie\Index\Settings;
 use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\CharFilter\CharFilter;
 use Sigmie\Index\Analysis\CharFilter\HTMLStrip;
 use Sigmie\Index\Analysis\CharFilter\Mapping;
+use Sigmie\Index\Analysis\Normalizer\Normalizer;
 use Sigmie\Index\Analysis\NormalizerFilter\Lowercase as NormalizerLowercase;
+use Sigmie\Index\Analysis\SimpleAnalyzer;
 use Sigmie\Index\Analysis\Standard;
-use Sigmie\Base\Drivers\Elasticsearch;
-use Sigmie\Base\Http\ElasticsearchConnection;
-use Sigmie\Http\JSONClient;
-use Sigmie\Index\NewIndex;
-use Sigmie\Index\Index;
-use Sigmie\Index\Contracts\Normalizer as NormalizerContract;
-use Sigmie\Index\Contracts\CustomAnalyzer;
+use Sigmie\Index\Analysis\TokenFilter\AsciiFolding;
+use Sigmie\Index\Analysis\TokenFilter\Generic;
+use Sigmie\Index\Analysis\TokenFilter\Keywords;
 use Sigmie\Index\Analysis\TokenFilter\Lowercase;
+use Sigmie\Index\Analysis\TokenFilter\Ngram as TokenFilterNgram;
+use Sigmie\Index\Analysis\TokenFilter\Shingle;
+use Sigmie\Index\Analysis\TokenFilter\Stemmer;
+use Sigmie\Index\Analysis\TokenFilter\Stopwords;
+use Sigmie\Index\Analysis\TokenFilter\SynonymGraph;
+use Sigmie\Index\Analysis\TokenFilter\Synonyms;
+use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
 use Sigmie\Index\Analysis\TokenFilter\Trim;
 use Sigmie\Index\Analysis\TokenFilter\Truncate;
+use Sigmie\Index\Analysis\TokenFilter\Unique;
 use Sigmie\Index\Analysis\TokenFilter\Uppercase;
-use Sigmie\Index\Analysis\Tokenizers\Noop;
-use Sigmie\Index\Analysis\Tokenizers\Tokenizer;
+use Sigmie\Index\Analysis\Tokenizers\Ngram;
 use Sigmie\Index\Analysis\Tokenizers\NonLetter;
+use Sigmie\Index\Analysis\Tokenizers\Noop;
+use Sigmie\Index\Analysis\Tokenizers\PathHierarchy;
+use Sigmie\Index\Analysis\Tokenizers\Pattern;
+use Sigmie\Index\Analysis\Tokenizers\Tokenizer;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
-use Sigmie\Index\Analysis\Normalizer\Normalizer;
-use Sigmie\Index\Analysis\TokenFilter\Shingle;
-use Sigmie\Index\Analysis\TokenFilter\Stopwords;
-use Sigmie\Index\Analysis\TokenFilter\Stemmer;
-use Sigmie\Index\Analysis\TokenFilter\Generic;
-use Sigmie\Index\Analysis\TokenFilter\TokenFilter;
+use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Index\Contracts\CustomAnalyzer;
+use Sigmie\Index\Contracts\Normalizer as NormalizerContract;
+use Sigmie\Index\Index;
+use Sigmie\Index\NewAnalyzer;
+use Sigmie\Index\NewIndex;
+use Sigmie\Index\Settings;
 use Sigmie\Languages\English\Filter\Stemmer as EnglishStemmer;
 use Sigmie\Languages\English\Filter\Stopwords as EnglishStopwords;
 use Sigmie\Languages\German\Filter\Stopwords as GermanStopwords;
 use Sigmie\Languages\Greek\Filter\Stopwords as GreekStopwords;
-use Sigmie\Index\Analysis\TokenFilter\Ngram as TokenFilterNgram;
-use Sigmie\Index\Analysis\TokenFilter\SynonymGraph;
-use Sigmie\Index\Analysis\TokenFilter\Synonyms;
-use Sigmie\Index\Analysis\TokenFilter\Unique;
-use Sigmie\Index\Analysis\Tokenizers\Ngram;
-use Sigmie\Index\Analysis\Tokenizers\PathHierarchy;
-use Sigmie\Index\Analysis\Tokenizers\Pattern;
-use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Testing\Assert;
-use Sigmie\Testing\TestCase;
 
-class AnalysisAddressedTest extends \PHPUnit\Framework\TestCase
+class AnalysisAddressedTest extends TestCase
 {
     public function test_builtin_shingle_survives_replaying_a_saved_index(): void
     {
@@ -149,7 +150,7 @@ class AnalysisAddressedTest extends \PHPUnit\Framework\TestCase
 
     public function test_loaded_keyword_exposes_the_configured_normalizer(): void
     {
-        $builder = $this->indexBuilder()->mapping(fn (NewProperties $properties) => $properties->keyword('code'))
+        $builder = $this->indexBuilder()->mapping(fn (NewProperties $properties): Keyword => $properties->keyword('code'))
             ->config('analysis', [
                 'normalizer' => ['code_field_normalizer' => ['type' => 'custom', 'filter' => ['uppercase']]],
             ]);
@@ -1358,6 +1359,7 @@ class AnalysisAddressedTest extends \PHPUnit\Framework\TestCase
         $analyzer->addFilters([new Unique('unique')]);
         $analyzer->addCharFilters([new Mapping('map', ['a' => 'b'])]);
         $analyzer->addCharFilters([new HTMLStrip('other_html')]);
+
         $normalizer = new Normalizer('norm', [new NormalizerLowercase], [new HTMLStrip('html')]);
         $normalizer->addFilters([new Stopwords('stops', ['the'])]);
         $normalizer->addCharFilters([new Mapping('map', ['a' => 'b'])]);
@@ -1534,7 +1536,7 @@ class AnalysisAddressedTest extends \PHPUnit\Framework\TestCase
         $analysis = new Analysis;
         $properties = new NewProperties;
         $properties->text('title')->withNewAnalyzer(
-            fn (NewAnalyzer $analyzer) => $analyzer->lowercase('title_lower')->stripHTML('title_html')
+            fn (NewAnalyzer $analyzer): NewAnalyzer => $analyzer->lowercase('title_lower')->stripHTML('title_html')
         );
 
         $first = $properties->get($analysis)->toRaw();
@@ -1572,9 +1574,10 @@ class AnalysisAddressedTest extends \PHPUnit\Framework\TestCase
     public function test_replacing_properties_discards_previous_field_components(): void
     {
         $props = new NewProperties;
-        $props->text('body')->withNewAnalyzer(fn (NewAnalyzer $a) => $a->lowercase()->stripHTML());
+        $props->text('body')->withNewAnalyzer(fn (NewAnalyzer $a): NewAnalyzer => $a->lowercase()->stripHTML());
         $builder = $this->indexBuilder()->properties($props);
         $builder->make();
+
         $analysis = $builder->properties($props)->make()->settings->analysis();
 
         $this->assertCount(1, $analysis->filters());
@@ -1593,6 +1596,7 @@ class AnalysisAddressedTest extends \PHPUnit\Framework\TestCase
                 $this->assertSame('default_with_synonyms', $raw['search_analyzer'] ?? null);
                 $this->assertSame('default_with_synonyms', $field->searchAnalyzer());
             }
+
             $this->assertEqualsCanonicalizing(['car', 'auto'], $index->analyze('car', 'default_with_synonyms'));
         } finally {
             $index->delete();
@@ -1788,6 +1792,7 @@ class AnalysisAddressedTest extends \PHPUnit\Framework\TestCase
             $index->delete();
         }
     }
+
     public function test_literal_character_mapping_operands(): void
     {
         $filter = new Mapping('punctuation', ["\u{2028}" => ' ', '\\' => "a=>b\n"]);
@@ -1807,5 +1812,4 @@ class AnalysisAddressedTest extends \PHPUnit\Framework\TestCase
             'east\\,west, back\\\\slash => a\\=>b',
         ], $filter->toRaw()['terms']['synonyms']);
     }
-
 }

@@ -10,9 +10,13 @@ use Elastic\Transport\TransportBuilder;
 use GuzzleHttp\Client as GuzzleHttpClient;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Promise\Create;
+use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Uri;
 use Http\Adapter\Guzzle7\Client as AsyncClient;
+use Psr\Http\Client\ClientInterface;
 use Psr\Http\Client\NetworkExceptionInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Analytics\Analytics;
@@ -208,7 +212,7 @@ class Sigmie
     ): Search {
         $search = new Search($this->elasticsearchConnection);
 
-        if ($query !== null) {
+        if ($query instanceof Query) {
             $search->query($query);
         }
 
@@ -330,11 +334,11 @@ class Sigmie
         // false, so those two config values never replace the defaults.
         $transport = TransportBuilder::create()
             ->setHosts($hosts)
-            ->setClient(new class($guzzle) implements \Psr\Http\Client\ClientInterface
+            ->setClient(new class($guzzle) implements ClientInterface
             {
                 public function __construct(private GuzzleHttpClient $guzzle) {}
 
-                public function sendRequest(\Psr\Http\Message\RequestInterface $request): \Psr\Http\Message\ResponseInterface
+                public function sendRequest(RequestInterface $request): ResponseInterface
                 {
                     return $this->guzzle->send($request);
                 }
@@ -377,7 +381,7 @@ class Sigmie
     {
         return new class
         {
-            public ?\Throwable $error = null;
+            public ?Throwable $error = null;
         };
     }
 
@@ -388,20 +392,18 @@ class Sigmie
             ? clone $handler
             : HandlerStack::create(is_callable($handler) ? $handler : null);
 
-        $stack->push(static function (callable $next) use ($captured): callable {
-            return static function ($request, array $options) use ($next, $captured) {
-                if (! ($options['synchronous'] ?? false)) {
-                    return $next($request, $options);
+        $stack->push(static fn (callable $next): callable => static function ($request, array $options) use ($next, $captured) {
+            if (! ($options['synchronous'] ?? false)) {
+                return $next($request, $options);
+            }
+
+            return $next($request, $options)->then(null, static function ($reason) use ($captured): PromiseInterface {
+                if ($reason instanceof NetworkExceptionInterface) {
+                    $captured->error = $reason;
                 }
 
-                return $next($request, $options)->then(null, static function ($reason) use ($captured) {
-                    if ($reason instanceof NetworkExceptionInterface) {
-                        $captured->error = $reason;
-                    }
-
-                    return Create::rejectionFor($reason);
-                });
-            };
+                return Create::rejectionFor($reason);
+            });
         });
 
         $config['handler'] = $stack;

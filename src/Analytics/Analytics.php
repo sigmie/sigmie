@@ -33,6 +33,7 @@ use Sigmie\Analytics\Widgets\Widget;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\Mappings\Types\Type;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
@@ -44,8 +45,8 @@ use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Search;
 use Sigmie\Search\Contracts\MultiSearchable;
 
-use function Sigmie\Functions\trim_text;
 use function Sigmie\Functions\keyed;
+use function Sigmie\Functions\trim_text;
 
 /**
  * Dashboard analytics for an index. Compose one or more widgets — KPIs, trends, breakdowns,
@@ -104,8 +105,8 @@ class Analytics implements MultiSearchable
         ?DateTimeInterface $from = null,
         ?DateTimeInterface $to = null,
     ) {
-        $this->to = $to === null ? new DateTimeImmutable('now', new DateTimeZone('UTC')) : WindowBound::copy($to);
-        $this->from = $from === null ? $this->to->sub(new DateInterval('P30D')) : WindowBound::copy($from);
+        $this->to = $to instanceof DateTimeInterface ? WindowBound::copy($to) : new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        $this->from = $from instanceof DateTimeInterface ? WindowBound::copy($from) : $this->to->sub(new DateInterval('P30D'));
     }
 
     public function from(DateTimeInterface $from): static
@@ -217,7 +218,7 @@ class Analytics implements MultiSearchable
     {
         $this->timeZone = $timeZone;
 
-        return $this->period === null ? $this : $this->range($this->period);
+        return $this->period instanceof Period ? $this->range($this->period) : $this;
     }
 
     /**
@@ -491,7 +492,7 @@ class Analytics implements MultiSearchable
         if (! in_array($field, ['_score', '_doc'], true) && ! str_contains($field, '[')) {
             $this->resolvedProperties ??= $this->properties->get();
 
-            if ($this->resolvedProperties->get($field) === null) {
+            if (! $this->resolvedProperties->get($field) instanceof Type) {
                 return [keyed($field, ['order' => $direction])];
             }
 

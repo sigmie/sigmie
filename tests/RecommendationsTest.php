@@ -4,21 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Http\Promise\Promise;
 use ReflectionProperty;
-use RuntimeException;
-use Sigmie\Base\Contracts\ElasticsearchRequest;
-use Sigmie\Base\Contracts\ElasticsearchResponse as ElasticsearchResponseContract;
-use Sigmie\Base\Contracts\SearchEngine;
-use Sigmie\Base\Drivers\Elasticsearch;
-use Sigmie\Base\Http\ElasticsearchConnection;
-use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Document\Document;
-use Sigmie\Document\Hit;
-use Sigmie\Http\NdJSONRequest;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Query\Search;
-use Sigmie\Search\NewRecommendations;
 use Sigmie\Testing\TestCase;
 
 class RecommendationsTest extends TestCase
@@ -273,6 +261,4 @@ class RecommendationsTest extends TestCase
 
         $this->assertSame(0, $response->json('hits.total.value'));
     }
-
 }
-

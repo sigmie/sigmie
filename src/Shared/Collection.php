@@ -335,7 +335,11 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
 
         foreach ($this->elements as $element) {
             $fields = is_object($element) ? get_object_vars($element) : $element;
-            if (! is_array($fields) || ! array_key_exists($key, $fields)) {
+            if (! is_array($fields)) {
+                continue;
+            }
+
+            if (! array_key_exists($key, $fields)) {
                 continue;
             }
 
@@ -355,7 +359,11 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
 
         foreach ($this->elements as $element) {
             $fields = is_object($element) ? get_object_vars($element) : $element;
-            if (! is_array($fields) || ! array_key_exists($key, $fields)) {
+            if (! is_array($fields)) {
+                continue;
+            }
+
+            if (! array_key_exists($key, $fields)) {
                 continue;
             }
 

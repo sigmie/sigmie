@@ -75,11 +75,12 @@ class VectorMath
             $sum += $corrections[$i];
             if (is_finite($sum)) {
                 $mean[$i] = $sum / $count;
+
                 continue;
             }
 
             // The mean fits even when its intermediate sum overflows.
-            $components = array_map(fn ($vector) => array_values($vector)[$i], $vectors);
+            $components = array_map(fn ($vector): mixed => array_values($vector)[$i], $vectors);
             $peak = self::peak($components);
             $scaled = array_map(fn ($value): float => $value / $peak, $components);
             $mean[$i] = (array_sum($scaled) / $count) * $peak;
@@ -118,7 +119,7 @@ class VectorMath
         }
 
         // Identical finite vectors are 1. Scaling still leaves a double rounding short of 1.
-        if ($vectorA == $vectorB && is_finite($peakA) && is_finite($peakB)) {
+        if ($vectorA === $vectorB && is_finite($peakA) && is_finite($peakB)) {
             return 1.0;
         }
 

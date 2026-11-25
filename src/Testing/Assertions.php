@@ -15,9 +15,9 @@ trait Assertions
     {
         try {
             $json = $this->indexAPICall($index, 'GET')->json();
-        } catch (ElasticsearchException $exception) {
-            if ($exception->getCode() !== 404) {
-                throw $exception;
+        } catch (ElasticsearchException $elasticsearchException) {
+            if ($elasticsearchException->getCode() !== 404) {
+                throw $elasticsearchException;
             }
 
             $this->fail(sprintf("Index '%s' does not exist.", $index));

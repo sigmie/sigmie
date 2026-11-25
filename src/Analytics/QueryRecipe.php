@@ -25,8 +25,8 @@ use Sigmie\SigmieIndex;
 
 use function Sigmie\Functions\csv_fields;
 use function Sigmie\Functions\is_iso_date_or_timestamp;
-use function Sigmie\Functions\parse_integer;
 use function Sigmie\Functions\merge_named;
+use function Sigmie\Functions\parse_integer;
 
 class QueryRecipe
 {
@@ -193,7 +193,7 @@ class QueryRecipe
         } elseif (in_array($widget, ['distribution', 'stats'], true)) {
             $this->requireFieldType($fields, $field, ['number'], 'field');
         } elseif ($field !== '' && ($metric !== '' && $metric !== 'count')) {
-            $this->requireFieldType($fields, $field, self::metricFieldTypes($metric), 'field');
+            $this->requireFieldType($fields, $field, $this->metricFieldTypes($metric), 'field');
         }
 
         if (($template['bucket_field'] ?? '') !== '') {
@@ -263,7 +263,7 @@ class QueryRecipe
                     continue;
                 }
 
-                $types = self::metricFieldTypes($groupedMetricName);
+                $types = $this->metricFieldTypes($groupedMetricName);
                 $this->requireFieldType($fields, $field, $types, 'metrics.field');
             }
         }
@@ -327,6 +327,7 @@ class QueryRecipe
         if (is_string($validationTemplate['widget'] ?? null)) {
             $validationTemplate['widget'] = trim($validationTemplate['widget']);
         }
+
         $validationTemplate = self::normalizeRankingSort($validationTemplate);
         $originalTemplate = $validationTemplate;
 
@@ -861,7 +862,7 @@ class QueryRecipe
     /**
      * @return list<string>
      */
-    private static function metricFieldTypes(string $metric): array
+    private function metricFieldTypes(string $metric): array
     {
         return match ($metric) {
             'unique' => self::TERM_FIELD_TYPES,

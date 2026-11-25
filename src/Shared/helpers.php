@@ -159,6 +159,7 @@ namespace Sigmie\Functions {
         if (! is_string($value)) {
             return null;
         }
+
         [$address, $scope] = array_pad(explode('%', $value, 2), 2, null);
         if ($scope !== null && ($scope === '' || ! str_contains($address, ':') || str_contains($address, '.'))) {
             return null;
@@ -172,8 +173,9 @@ namespace Sigmie\Functions {
         if (! is_numeric($value)) {
             return false;
         }
+
         $text = is_float($value) ? json_encode($value) : (string) $value;
-        if (! is_string($text) || ! preg_match('/^(-?)([0-9]{1,19})(?:\.([0-9]*))?\z/', $text, $parts)) {
+        if (! is_string($text) || ! preg_match('/^(-?)(\d{1,19})(?:\.(\d*))?\z/', $text, $parts)) {
             return false;
         }
 
@@ -189,6 +191,7 @@ namespace Sigmie\Functions {
         if (strlen($millis) > 19) {
             return false;
         }
+
         // The parser reads the unsigned magnitude as a Java long before applying its sign.
         if (! $seconds || $parts[1] !== '-') {
             return strcmp($millis, '9223372036854775807') <= 0;
@@ -217,6 +220,7 @@ namespace Sigmie\Functions {
         if ($fallback === 'Y-m-d') {
             $isoFormats = [...$isoFormats, 'date', 'strict_date', 'yyyy-MM-dd', 'uuuu-MM-dd'];
         }
+
         if ($epochFormats === [] || array_intersect($formats, $isoFormats) !== []) {
             return $value->format($fallback);
         }
@@ -259,8 +263,7 @@ namespace Sigmie\Functions {
     {
         $format = match (true) {
             preg_match('/\A\d{4}-\d{2}-\d{2}\z/', $value) === 1 => '!Y-m-d',
-            preg_match('/\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?(?:Z|[+-](?:(?:0\d|1[0-7]):[0-5]\d|18:00))\z/', $value, $parts) === 1
-                => isset($parts[1]) ? '!Y-m-d\TH:i:s.uP' : '!Y-m-d\TH:i:sP',
+            preg_match('/\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?(?:Z|[+-](?:(?:0\d|1[0-7]):[0-5]\d|18:00))\z/', $value, $parts) === 1 => isset($parts[1]) ? '!Y-m-d\TH:i:s.uP' : '!Y-m-d\TH:i:sP',
             default => null,
         };
 
@@ -296,7 +299,7 @@ namespace Sigmie\Functions {
      * A one-key map whose key is "0" is a PHP list. json_encode then drops the key.
      * Keep the key by encoding that map as an object.
      */
-    function keyed(string $key, mixed $value): array|\stdClass
+    function keyed(string $key, mixed $value): array|stdClass
     {
         $map = [$key => $value];
 
@@ -324,7 +327,7 @@ namespace Sigmie\Functions {
     /**
      * A key "0" is the only key, so the map is a PHP list. json_encode drops it.
      */
-    function object_map(array $map): array|\stdClass
+    function object_map(array $map): array|stdClass
     {
         if ($map !== [] && array_is_list($map)) {
             return (object) $map;
@@ -370,8 +373,8 @@ namespace Sigmie\Functions {
     }
 
     /**
-     * @param Closure(list<string>, ?int): list<array{index: int, score: int|float}> $request
-     * @param Closure(string): int|null $tokenCost
+     * @param  Closure(list<string>, ?int): list<array{index: int, score: int|float}>  $request
+     * @param  Closure(string): int|null  $tokenCost
      * @return list<array{index: int, score: int|float}>
      */
     function rerank_batches(
@@ -389,9 +392,9 @@ namespace Sigmie\Functions {
         $texts = rerank_texts($documents);
         $results = [];
         $offset = 0;
-        $chunks = $tokenCost === null
-            ? array_chunk($texts, $maxDocuments)
-            : budgeted_text_batches($texts, $maxDocuments, $maxTokens, $tokenCost);
+        $chunks = $tokenCost instanceof Closure
+            ? budgeted_text_batches($texts, $maxDocuments, $maxTokens, $tokenCost)
+            : array_chunk($texts, $maxDocuments);
         foreach ($chunks as $chunk) {
             if (count($chunk) === count($texts)) {
                 return $request($chunk, $topK);
@@ -402,6 +405,7 @@ namespace Sigmie\Functions {
                 $result['index'] += $offset;
                 $results[] = $result;
             }
+
             $offset += count($chunk);
         }
 
@@ -447,8 +451,8 @@ namespace Sigmie\Functions {
     }
 
     /**
-     * @param list<array{dims: int|null, keys: list<int|string>, texts: list<string>}> $groups
-     * @param Closure(string): int $tokenCost
+     * @param  list<array{dims: int|null, keys: list<int|string>, texts: list<string>}>  $groups
+     * @param  Closure(string): int  $tokenCost
      * @return Generator<array{dims: int|null, keys: list<int|string>, texts: list<string>}>
      */
     function budgeted_embedding_batches(array $groups, int $maxTokens, Closure $tokenCost): Generator
@@ -467,8 +471,8 @@ namespace Sigmie\Functions {
     }
 
     /**
-     * @param list<string> $texts
-     * @param Closure(string): int $tokenCost
+     * @param  list<string>  $texts
+     * @param  Closure(string): int  $tokenCost
      * @return Generator<list<string>>
      */
     function budgeted_text_batches(array $texts, int $maxInputs, int $maxTokens, Closure $tokenCost): Generator
@@ -509,9 +513,7 @@ namespace Sigmie\Functions {
         }
 
         $path = implode('/', array_map(static function (string $segment): string {
-            $names = array_map(static function (string $name): string {
-                return implode('*', array_map(rawurlencode(...), explode('*', $name)));
-            }, explode(',', $segment));
+            $names = array_map(static fn (string $name): string => implode('*', array_map(rawurlencode(...), explode('*', $name))), explode(',', $segment));
 
             return implode(',', $names);
         }, preg_split('~/(?![^<>]*>)~', $value)));
@@ -541,7 +543,7 @@ namespace Sigmie\Functions {
         if (! array_is_list($sort)) {
             $optionKeys = ['order', 'mode', 'missing', 'unmapped_type', 'numeric_type', 'format', 'nested'];
             $isSortOption = static fn (mixed $value): bool => $value === 'asc' || $value === 'desc'
-                || ((is_array($value) || $value instanceof \stdClass)
+                || ((is_array($value) || $value instanceof stdClass)
                     && array_diff(array_keys((array) $value), $optionKeys) === []);
 
             // Integer keys may be sparse list offsets or actual field names.

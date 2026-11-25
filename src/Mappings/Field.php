@@ -48,19 +48,25 @@ class Field extends Type
                 if (preg_match('/^\s*point\s+empty\s*\z/i', $value)) {
                     return true;
                 }
+
                 if (! preg_match('/^\s*point(?:\s+(z))?\s*\(([^()]*)\)\s*\z/i', $value, $parts)) {
                     return false;
                 }
+
                 $coordinates = preg_split('/\s+/', trim($parts[2]));
+
                 return ($parts[1] === '' || count($coordinates) === 3)
                     && count(array_filter($coordinates, is_numeric(...))) === count($coordinates)
                     && $this->hasCoordinates(array_map(floatval(...), $coordinates), 0);
             }
+
             return preg_match('/^\s*(?:multipoint|linestring|multilinestring|polygon|multipolygon|bbox|geometrycollection)\s*(?:z\s*)?(?:empty|\(.*\))\s*\z/is', $value) === 1;
         }
+
         if (! is_array($value) && ! $value instanceof stdClass) {
             return false;
         }
+
         $shape = (array) $value;
         $type = $shape['type'] ?? null;
         if (! is_string($type)) {
@@ -85,9 +91,11 @@ class Field extends Type
         if (! is_array($coordinates) || ! array_is_list($coordinates) || $coordinates === []) {
             return false;
         }
+
         if ($depth === 0 && (count($coordinates) < 2 || count($coordinates) > (($this->options['ignore_z_value'] ?? true) ? 3 : 2))) {
             return false;
         }
+
         foreach ($coordinates as $coordinate) {
             if ($depth === 0 ? (! is_int($coordinate) && ! is_float($coordinate)) : ! $this->hasCoordinates($coordinate, $depth - 1)) {
                 return false;

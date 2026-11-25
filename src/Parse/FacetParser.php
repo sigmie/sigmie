@@ -56,11 +56,9 @@ class FacetParser extends Parser
         $res = [];
         $parser = new FilterParser($this->properties, throwOnError: false);
         foreach ($fields as $field => $values) {
-            $field = (string) $field;
-
             $type = $this->properties->get($field);
 
-            if ($type === null && $field !== '_id') {
+            if (! $type instanceof Type && $field !== '_id') {
                 $this->handleError(sprintf("Facet field '%s' was not found.", $field), [
                     'field' => $field,
                 ]);
@@ -79,8 +77,10 @@ class FacetParser extends Parser
                         continue;
                     }
                 }
+
                 $fieldFilters[] = $value;
             }
+
             if ($fieldFilters === []) {
                 continue;
             }
@@ -184,7 +184,7 @@ class FacetParser extends Parser
                 foreach (array_reverse($queries, preserve_keys: true) as $scope => $query) {
                     $scope = (string) $scope;
                     $filter = new Filter($scope === '' ? $name : '_nested', $query);
-                    $filter->aggregate(fn (Aggs $aggs) => $aggs->add($bucket));
+                    $filter->aggregate(fn (Aggs $aggs): Aggs => $aggs->add($bucket));
                     $bucket = $scope === ''
                         ? $filter
                         : new Nested($scope === $outerScope ? $name : '_nested', $scope, (new Aggs)->add($filter));

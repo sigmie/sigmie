@@ -68,8 +68,8 @@ class SigmieIndexSchemaTool implements Tool
                 'facets' => 'field1 field2:20 (space-separated; :size for term fields, :interval for price; number, date, and datetime take no parameter)',
             ],
             'notes' => [
-                "Equality on keyword() is case-insensitive because its normalizer lowercases. Equality on a text field's keyword subfield and on caseSensitiveKeyword() is case-sensitive. If a filter returns 0 unexpectedly, call {$this->toolName('discover_filter_values')} on that field to confirm the exact stored values (including casing).",
-                "Use {$this->toolName('discover_filter_values')} to list a field's valid values; use {$this->toolName('sample_documents')} to see example records.",
+                sprintf("Equality on keyword() is case-insensitive because its normalizer lowercases. Equality on a text field's keyword subfield and on caseSensitiveKeyword() is case-sensitive. If a filter returns 0 unexpectedly, call %s on that field to confirm the exact stored values (including casing).", $this->toolName('discover_filter_values')),
+                sprintf("Use %s to list a field's valid values; use %s to see example records.", $this->toolName('discover_filter_values'), $this->toolName('sample_documents')),
             ],
         ];
     }

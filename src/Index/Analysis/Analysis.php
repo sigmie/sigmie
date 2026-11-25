@@ -18,6 +18,7 @@ use Sigmie\Index\Contracts\Normalizer as NormalizerInterface;
 use Sigmie\Index\Contracts\TokenFilter as TokenFilterInterface;
 use Sigmie\Index\Contracts\Tokenizer as TokenizerInterface;
 use Sigmie\Shared\Collection;
+use stdClass;
 
 class Analysis implements AnalysisInterface
 {
@@ -111,7 +112,7 @@ class Analysis implements AnalysisInterface
             $copy->addCharFilters($sharedStages($analyzer->charFilters()));
 
             $tokenizer = $analyzer->tokenizer();
-            if ($tokenizer !== null && isset($components[spl_object_id($tokenizer)])) {
+            if ($tokenizer instanceof TokenizerInterface && isset($components[spl_object_id($tokenizer)])) {
                 $copy->setTokenizer($components[spl_object_id($tokenizer)]);
             }
         }
@@ -129,7 +130,7 @@ class Analysis implements AnalysisInterface
     {
         $tokenizers = $this->tokenizers->toArray();
         foreach ($this->analyzers as $analyzer) {
-            if ($analyzer instanceof CustomAnalyzerInterface && ($tokenizer = $analyzer->tokenizer()) !== null) {
+            if ($analyzer instanceof CustomAnalyzerInterface && ($tokenizer = $analyzer->tokenizer()) instanceof TokenizerInterface) {
                 $tokenizers[$tokenizer->name()] = $tokenizer;
             }
         }
@@ -235,7 +236,7 @@ class Analysis implements AnalysisInterface
             $this->addCharFilters($analyzer->charFilters());
             $this->addFilters($analyzer->filters());
             $tokenizer = $analyzer->tokenizer();
-            if ($tokenizer !== null) {
+            if ($tokenizer instanceof TokenizerInterface) {
                 $this->tokenizers->set($tokenizer->name(), $tokenizer);
             }
         }
@@ -370,7 +371,7 @@ class Analysis implements AnalysisInterface
      *
      * @param  array<string|int, mixed>  $map
      */
-    private function keepNames(array $map): array|\stdClass
+    private function keepNames(array $map): array|stdClass
     {
         if ($map !== [] && array_is_list($map)) {
             return (object) $map;

@@ -237,6 +237,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
                 $ids[$document->_id] = true;
             }
         }
+
         array_push($written, ...$this->mergeBatch($batch, $needsCurrent, $processor, $activeHooks));
 
         foreach ($activeHooks as $hook) {

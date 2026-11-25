@@ -124,10 +124,10 @@ class NewMultiSearch
 
         try {
             $response = $this->msearchAPICall($body);
-        } catch (ElasticsearchException $exception) {
-            $this->responseCode = $exception->getCode();
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->responseCode = $elasticsearchException->getCode();
 
-            throw $exception;
+            throw $elasticsearchException;
         }
 
         $this->responseCode = $response->code();

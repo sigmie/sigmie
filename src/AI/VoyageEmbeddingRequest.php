@@ -36,8 +36,7 @@ trait VoyageEmbeddingRequest
 
         // Bound bytes after either NFC normalization or replacement of spaces with a three-byte marker.
         // Reserve room for the tokenizer's start/end markers and leading space.
-        return budgeted_embedding_batches($groups, $maxTokens, static fn (string $text): int =>
-            (strlen($text) + strlen($prefix)) * ($legacy || ! mb_check_encoding($text, 'ASCII') ? 3 : 1) + 5
+        return budgeted_embedding_batches($groups, $maxTokens, static fn (string $text): int => (strlen($text) + strlen($prefix)) * ($legacy || ! mb_check_encoding($text, 'ASCII') ? 3 : 1) + 5
         );
     }
 

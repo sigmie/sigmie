@@ -63,7 +63,7 @@ class Text extends Type implements FromRaw
     {
         $this->fields = $this->fields->mapWithKeys(static fn (Type $field): array => [$field->name => clone $field]);
         $this->vectors = array_map(static fn (NewSemanticField|BaseVector|NestedVector $field): NewSemanticField|BaseVector|NestedVector => clone $field, $this->vectors);
-        $this->analyzer = $this->analyzer === null ? null : clone $this->analyzer;
+        $this->analyzer = $this->analyzer instanceof Analyzer ? clone $this->analyzer : null;
     }
 
     public function facetSearchable(): static
@@ -71,6 +71,7 @@ class Text extends Type implements FromRaw
         if ($this->raw === null) {
             $this->enableKeyword();
         }
+
         $this->facetLogic = FacetLogic::Searchable;
 
         $field = new Text('facet_search');
@@ -185,6 +186,7 @@ class Text extends Type implements FromRaw
         } elseif ($type->name === $this->raw && $type->type() !== 'keyword') {
             $this->raw = null;
         }
+
         if ($type->name === 'sortable') {
             $this->sortable = $type->type() === 'keyword';
         }
@@ -239,6 +241,7 @@ class Text extends Type implements FromRaw
 
         $fields = array_map(static fn (array|stdClass $mapping): array => (array) $mapping, (array) ($configs['fields'] ?? []));
         $instance->fields = new Collection;
+
         $keyword = ($fields['keyword']['type'] ?? null) === 'keyword' ? 'keyword' : null;
         $instance->sortable = false;
 
@@ -336,7 +339,7 @@ class Text extends Type implements FromRaw
     {
         unset($this->mappingOptions['analyzer']);
         $this->analyzer = $analyzer;
-        $this->explicitAnalyzer = $analyzer !== null;
+        $this->explicitAnalyzer = $analyzer instanceof Analyzer;
         $this->searchAnalyzer = $analyzer?->name();
         $this->explicitSearchAnalyzer = false;
     }
@@ -378,6 +381,7 @@ class Text extends Type implements FromRaw
         if ($this->type !== 'completion') {
             unset($options['analyzer']);
         }
+
         $raw[$this->name] += $options;
 
         $searchAnalyzer = $this->searchSynonyms ? $this->searchAnalyzer() : $this->searchAnalyzer;
@@ -432,7 +436,7 @@ class Text extends Type implements FromRaw
                 $fields = [$this->name()];
                 $maxShingleSize = $this->restoredType === $this->type ? ($this->mappingOptions['max_shingle_size'] ?? 3) : 3;
                 for ($size = 2; $size <= min($maxShingleSize, 4); $size++) {
-                    $fields[] = $this->name()."._{$size}gram";
+                    $fields[] = $this->name().sprintf('._%dgram', $size);
                 }
 
                 // Each shingle field adds its own shingle filter to the mapped search analyzer.
@@ -497,7 +501,7 @@ class Text extends Type implements FromRaw
     private function validCompletionInput(mixed $value): bool
     {
         if (is_string($value)) {
-            return self::validSuggestion($value);
+            return $this->validSuggestion($value);
         }
 
         if (! $value instanceof stdClass && (! is_array($value) || array_is_list($value))) {
@@ -521,9 +525,10 @@ class Text extends Type implements FromRaw
 
         if (array_key_exists('weight', $definition)) {
             $weight = $definition['weight'];
-            if (! is_int($weight) && (! is_string($weight) || preg_match('/^[+-]?[0-9]+\z/', $weight) !== 1)) {
+            if (! is_int($weight) && (! is_string($weight) || preg_match('/^[+-]?\d+\z/', $weight) !== 1)) {
                 return false;
             }
+
             if ($weight < 0 || $weight > 2147483647) {
                 return false;
             }
@@ -537,7 +542,7 @@ class Text extends Type implements FromRaw
 
         $inputs = is_array($input) && array_is_list($input) ? $input : [$input];
         foreach ($inputs as $entry) {
-            if (! self::validSuggestion($entry)) {
+            if (! $this->validSuggestion($entry)) {
                 return false;
             }
         }
@@ -545,7 +550,7 @@ class Text extends Type implements FromRaw
         return true;
     }
 
-    private static function validSuggestion(mixed $value): bool
+    private function validSuggestion(mixed $value): bool
     {
         return is_string($value) && strcspn($value, "\0\x1e\x1f") === strlen($value);
     }

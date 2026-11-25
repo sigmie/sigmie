@@ -6,8 +6,8 @@ namespace Sigmie\Analytics\Widgets;
 
 use DateTimeInterface;
 use Sigmie\Analytics\Enums\Metric;
-use Sigmie\Query\Aggs;
 use Sigmie\Query\Aggregations\Bucket\Filter;
+use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\MatchAll;
 
 /**

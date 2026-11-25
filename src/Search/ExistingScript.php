@@ -80,6 +80,7 @@ class ExistingScript
                 $params[$name] = trim_text($value) === '' ? '' : $value;
                 $lowercase[$name] = lowercase_term($params[$name]);
             }
+
             if ($isOpenSearch && $isEmbedding && is_array($value) && array_is_list($value)) {
                 $dimensions[$name] = (object) [count($value) => true];
             }
@@ -92,6 +93,7 @@ class ExistingScript
         if ($lowercase !== []) {
             $params['_sigmie_lowercase'] = $lowercase;
         }
+
         if (($lowercase['query_string'] ?? '') !== '') {
             $params['_sigmie_boolean_field'] = (object) [bin2hex(fold_text($params['query_string'])) => true];
         }

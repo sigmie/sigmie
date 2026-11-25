@@ -39,7 +39,7 @@ class SigmieGetDocumentsTool implements Tool
     public function description(): string
     {
         return sprintf(
-            "Retrieve specific documents from the '%s' index by their `_id`. Pass the ids you already learned from {$this->toolName('search_index')} or {$this->toolName('sample_documents')}. Ids that do not exist are omitted from the result.",
+            sprintf("Retrieve specific documents from the '%%s' index by their `_id`. Pass the ids you already learned from %s or %s. Ids that do not exist are omitted from the result.", $this->toolName('search_index'), $this->toolName('sample_documents')),
             $this->index->name()
         );
     }
@@ -84,6 +84,7 @@ class SigmieGetDocumentsTool implements Tool
                 $order[$id] = $position;
             }
         }
+
         $hits = $search->get()->hits();
 
         usort($hits, fn (Hit $a, Hit $b): int => $order[$a->_id] <=> $order[$b->_id]);

@@ -73,7 +73,7 @@ class SigmieIndexTool implements Tool
             ."Output: each hit holds `_id` plus the source fields in `fields` (null uses the index default).\n"
             ."Matches: to see WHICH items of a nested field matched the query or a nested filter, list nested paths in `matches` (e.g. 'sections' for whole items, 'sections.text' for one field of them), each optionally with ':size' to cap its items (1-".InnerHits::MAX_SIZE.', default '.InnerHits::MAX_SIZE."), e.g. 'sections.text:5 comments'. Each hit then holds `_matches` with, per path, `total` (all matching items) and `items` (each with `_offset`, its position in that array), e.g. {\"_matches\": {\"sections\": {\"total\": 2, \"items\": [{\"_offset\": 4, \"text\": \"...\"}]}}}. Combine with `fields` that leave the nested field out to get only the matching items instead of the whole array. `total` above the number of items means the list is capped.\n"
             ."Discovering valid values: if you do not know a field's valid values, call {$this->toolName('discover_filter_values')} with the field name and optional `filters` before filtering.\n"
-            ."Schema: call {$this->toolName('describe_index')} for the full structured field list, types and filter syntax.");
+            .sprintf('Schema: call %s for the full structured field list, types and filter syntax.', $this->toolName('describe_index')));
     }
 
     public function schema(JsonSchema $schema): array

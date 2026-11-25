@@ -103,6 +103,7 @@ class IndexRebuild
                 // A previous finish may have restored the block before its alias move failed.
                 $this->indexAPICall($this->name.'/_settings', 'PUT', ['blocks.read' => false]);
             }
+
             $count = $this->count();
 
             if ($count < $minDocuments) {
@@ -137,13 +138,13 @@ class IndexRebuild
                 ['remove' => ['index' => $this->name, 'alias' => self::pendingAlias($this->name), 'must_exist' => true]],
                 ['add' => ['index' => $this->name, 'alias' => $aborted, 'is_hidden' => true]],
             ]);
-        } catch (ElasticsearchException $exception) {
-            if ($exception->json('type') === 'index_not_found_exception') {
+        } catch (ElasticsearchException $elasticsearchException) {
+            if ($elasticsearchException->json('type') === 'index_not_found_exception') {
                 return;
             }
 
-            if ($exception->json('type') !== 'aliases_not_found_exception') {
-                throw $exception;
+            if ($elasticsearchException->json('type') !== 'aliases_not_found_exception') {
+                throw $elasticsearchException;
             }
 
             // Only a completed abort can leave this marker. Finish needs the
@@ -154,7 +155,7 @@ class IndexRebuild
             }
 
             if ($status !== 200) {
-                throw new RuntimeException("Could not resolve abort status for '{$this->name}'.");
+                throw new RuntimeException(sprintf("Could not resolve abort status for '%s'.", $this->name), $elasticsearchException->getCode(), $elasticsearchException);
             }
         }
 

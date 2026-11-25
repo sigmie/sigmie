@@ -43,12 +43,12 @@ class NewAnalyzer
 
     public function create(): CustomAnalyzer
     {
-        $analyzer = clone (new Analyzer(
+        $analyzer = clone new Analyzer(
             $this->name,
             $this->pipeline->tokenizer(),
             $this->filters(),
             $this->charFilters(),
-        ));
+        );
         $this->analysis()->addAnalyzer($analyzer);
 
         return $analyzer;

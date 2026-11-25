@@ -70,6 +70,7 @@ class NewClassification
         if (is_int($topLabel)) {
             $topLabel = (string) $topLabel;
         }
+
         $confidence = $similarities[$topLabel];
 
         return new ClassificationResult(

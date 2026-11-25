@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Traits;
 
-use DateTimeInterface;
-
 use const Sigmie\Functions\CALENDAR_DATE_PATTERNS;
 use const Sigmie\Functions\EPOCH_DATE_FORMATS;
+
+use DateTimeInterface;
 
 use function Sigmie\Functions\fits_epoch_date;
 use function Sigmie\Functions\format_date_value;
@@ -58,6 +58,7 @@ trait HasDateFormats
         if ($this->ignoresMalformedScalar($value)) {
             return true;
         }
+
         $iso = false;
         foreach (explode('||', implode('||', $this->formats)) as $format) {
             if (in_array($format, ['strict_date_optional_time', 'strict_date_optional_time_nanos'], true)) {
@@ -72,6 +73,7 @@ trait HasDateFormats
                     // Leave other Java patterns to the engine.
                     return true;
                 }
+
                 $regex = strtr(preg_quote($pattern, '~'), ['Y' => '(?<year>\d{4}|\+\d{5,9})', 'm' => '(?<month>\d{2})', 'd' => '(?<day>\d{2})']);
                 if (preg_match('~^'.$regex.'\z~', $value, $date) && (int) $date['year'] > 0
                     && checkdate((int) $date['month'], (int) $date['day'], 2000 + (int) $date['year'] % 400)

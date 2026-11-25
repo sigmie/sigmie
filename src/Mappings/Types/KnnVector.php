@@ -49,10 +49,12 @@ class KnnVector extends DenseVector
             $method['parameters'] = $parameters;
             $mapping['method'] = $method;
         }
+
         if (($method['parameters'] ?? null) === []) {
             $method['parameters'] = (object) [];
             $mapping['method'] = $method;
         }
+
         $field->restoreMapping($mapping);
 
         return $field;

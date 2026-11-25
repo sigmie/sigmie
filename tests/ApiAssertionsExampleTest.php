@@ -36,6 +36,7 @@ class ApiAssertionsExampleTest extends TestCase
         for ($i = 0; $i < 24; $i++) {
             $this->indexAPICall($prefix.$i, 'PUT', ['settings' => ['number_of_replicas' => 0]]);
         }
+
         $this->clearElasticsearch($this->getElasticsearchConnection());
         $this->assertIndexNotExists($prefix.'*');
     }
@@ -57,7 +58,7 @@ class ApiAssertionsExampleTest extends TestCase
     {
         $name = uniqid('projected-');
         $this->indexAPICall($name, 'PUT', ['mappings' => ['properties' => ['title' => ['type' => 'text']]]]);
-        $index = $this->assertIndex($name.'?filter_path=*.mappings', fn (IndexAssert $index) => $index);
+        $index = $this->assertIndex($name.'?filter_path=*.mappings', fn (IndexAssert $index): IndexAssert => $index);
         $this->expectException(AssertionFailedError::class);
         $index->assertIndexHasPipeline('ingest');
     }
@@ -161,7 +162,7 @@ class ApiAssertionsExampleTest extends TestCase
         mkdir($directory);
         try {
             foreach (['First', 'Second'] as $name) {
-                file_put_contents("$directory/{$name}Test.php", <<<PHP
+                file_put_contents(sprintf('%s/%sTest.php', $directory, $name), <<<PHP
                     <?php
                     class {$name}Test extends \PHPUnit\Framework\TestCase
                     {
@@ -179,11 +180,12 @@ class ApiAssertionsExampleTest extends TestCase
                 '--processes', '1', '--stop-on-error', '--no-coverage', $directory,
             ], dirname(__DIR__));
             $this->assertSame(2, $process->run(), $process->getOutput().$process->getErrorOutput());
-            $this->assertCount(1, file("$directory/started"));
+            $this->assertCount(1, file($directory.'/started'));
         } finally {
-            foreach (glob("$directory/*") as $file) {
+            foreach (glob($directory.'/*') as $file) {
                 unlink($file);
             }
+
             rmdir($directory);
         }
     }
@@ -267,7 +269,7 @@ class ApiAssertionsExampleTest extends TestCase
     {
         $name = uniqid('assert-name-');
         $this->indexAPICall($name, 'PUT');
-        $this->assertSame($name, $this->assertIndex($name.'*', fn (IndexAssert $index) => $index->name()));
+        $this->assertSame($name, $this->assertIndex($name.'*', fn (IndexAssert $index): string => $index->name()));
     }
 
     public function test_index_assertions_accept_flat_settings(): void
@@ -497,13 +499,14 @@ class ApiAssertionsExampleTest extends TestCase
         foreach (['date', 'search_as_you_type', 'text', 'integer', 'float', 'boolean'] as $type) {
             $properties[$type] = ['type' => $type];
         }
+
         $properties['code'] = ['type' => 'keyword', 'normalizer' => 'normalized', 'meta' => ['format' => '01']];
         $properties['_embeddings'] = ['properties' => ['title' => ['type' => 'text']]];
 
         $this->indexAPICall($name, 'PUT', ['settings' => $settings, 'mappings' => ['properties' => $properties]]);
-        $configured = $this->assertIndex($name, fn (IndexAssert $index) => $index);
+        $configured = $this->assertIndex($name, fn (IndexAssert $index): IndexAssert => $index);
         $this->indexAPICall($emptyName, 'PUT', ['settings' => ['number_of_shards' => 1, 'number_of_replicas' => 1]]);
-        $empty = $this->assertIndex($emptyName, fn (IndexAssert $index) => $index);
+        $empty = $this->assertIndex($emptyName, fn (IndexAssert $index): IndexAssert => $index);
 
         $checks = [
             'assertIndexHasMappings' => [],
@@ -663,13 +666,14 @@ class ApiAssertionsExampleTest extends TestCase
     public function an_index_callback_requires_one_matching_index(): void
     {
         $name = uniqid('.assert-one-');
-        $this->assertRejects(fn () => $this->assertIndex($name, fn () => true), 'missing index');
-        $this->assertRejects(fn () => $this->assertIndex($name.'*', fn () => true), 'no matching index');
+        $this->assertRejects(fn () => $this->assertIndex($name, fn (): bool => true), 'missing index');
+        $this->assertRejects(fn () => $this->assertIndex($name.'*', fn (): bool => true), 'no matching index');
         try {
             foreach (['-a', '-b'] as $suffix) {
                 $this->indexAPICall($name.$suffix, 'PUT', ['settings' => ['index.hidden' => true]]);
             }
-            $this->assertRejects(fn () => $this->assertIndex($name.'*', fn () => true), 'two matching indices');
+
+            $this->assertRejects(fn () => $this->assertIndex($name.'*', fn (): bool => true), 'two matching indices');
         } finally {
             $this->indexAPICall($name.'-a,'.$name.'-b?ignore_unavailable=true', 'DELETE');
         }

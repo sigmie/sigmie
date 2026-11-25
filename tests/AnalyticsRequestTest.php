@@ -472,6 +472,7 @@ class AnalyticsRequestTest extends TestCase
             [[...$base, 'limit' => 101], 'limit] must be between 1 and 100'],
         ];
     }
+
     public function test_windows_reject_invalid_iso_offsets(): void
     {
         $this->expectException(InvalidArgumentException::class);

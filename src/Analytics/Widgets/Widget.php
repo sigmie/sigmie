@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use Sigmie\Analytics\WindowBound;
+use Sigmie\Index\Contracts\Normalizer;
 use Sigmie\Mappings\Types\Boolean as BooleanField;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\DateTime;
@@ -307,7 +308,7 @@ abstract class Widget implements ToRaw
 
         $keyword = $groupType instanceof Text ? $groupType->keywordField() : $groupType;
 
-        if (! $keyword instanceof Keyword || $keyword->normalizer() === null) {
+        if (! $keyword instanceof Keyword || ! $keyword->normalizer() instanceof Normalizer) {
             return $values;
         }
 

@@ -4,30 +4,22 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Mappings\NewProperties;
+use PHPUnit\Framework\TestSuite;
 use Sigmie\Index\Analysis\Analysis;
-use Sigmie\Index\Analysis\Analyzer;
-use Sigmie\Index\Analysis\CharFilter\Mapping;
-use Sigmie\Index\Analysis\Normalizer\Normalizer;
 use Sigmie\Index\Analysis\TokenFilter\Keywords;
-use Sigmie\Index\Analysis\TokenFilter\Shingle;
-use Sigmie\Index\Analysis\TokenFilter\Stemmer;
-use Sigmie\Index\Analysis\TokenFilter\SynonymGraph;
-use Sigmie\Index\Analysis\TokenFilter\Synonyms;
 use Sigmie\Index\Analysis\TokenFilter\Truncate;
 use Sigmie\Index\Analysis\TokenFilter\Unique;
-use Sigmie\Index\Analysis\Tokenizers\Ngram;
-use Sigmie\Index\Analysis\Tokenizers\PathHierarchy;
 use Sigmie\Index\Analysis\Tokenizers\Pattern;
-use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Types\Text;
 use Sigmie\Testing\Assert;
 use Sigmie\Testing\TestCase;
 
 class AnalysisTest extends TestCase
 {
-    public static function suite(string $className = ''): \PHPUnit\Framework\TestSuite
+    public static function suite(string $className = ''): TestSuite
     {
-        $suite = new \PHPUnit\Framework\TestSuite(self::class);
+        $suite = new TestSuite(self::class);
         $suite->addTestSuite(AnalysisAddressedTest::class);
 
         return $suite;
@@ -35,6 +27,7 @@ class AnalysisTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider storedAnalysisSettings
      */
     public function stored_analysis_settings_survive_restoration(
@@ -42,8 +35,7 @@ class AnalysisTest extends TestCase
         array $settings,
         array $expected,
         ?string $component = null,
-    ): void
-    {
+    ): void {
         $index = uniqid('analysis-settings-');
         $this->indexAPICall($index, 'PUT', [
             'settings' => ['analysis' => [$section => ['example' => $settings]]],
@@ -192,7 +184,7 @@ class AnalysisTest extends TestCase
     public function test_analyzer_on_an_object_field_runs_in_elasticsearch(): void
     {
         $props = new NewProperties;
-        $props->object('author', fn (NewProperties $author) => $author->text('bio')
+        $props->object('author', fn (NewProperties $author): Text => $author->text('bio')
             ->withNewAnalyzer(fn ($analyzer) => $analyzer->lowercase()));
         $index = $this->sigmie->newIndex(uniqid())->properties($props)->create();
 

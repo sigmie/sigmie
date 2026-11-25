@@ -19,6 +19,7 @@ use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Search;
 use Sigmie\Search\Contracts\SearchBuilder;
 use Sigmie\Shared\Collection;
+
 use function Sigmie\Functions\object_map;
 
 abstract class AbstractSearchBuilder implements SearchBuilder

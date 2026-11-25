@@ -40,7 +40,7 @@ trait Actions
         $response = $this->templateAPICall($name, 'PUT', $body);
 
         if ($response->json('acknowledged') !== true) {
-            throw new RuntimeException("Index template '$name' was not acknowledged.");
+            throw new RuntimeException(sprintf("Index template '%s' was not acknowledged.", $name));
         }
 
         return new IndexTemplate($name, $patterns, $settings, $mappings);
@@ -160,11 +160,11 @@ trait Actions
     {
         try {
             if (! $this->deleteIndex($name)) {
-                throw new RuntimeException("Deletion of '{$name}' was not acknowledged.");
+                throw new RuntimeException(sprintf("Deletion of '%s' was not acknowledged.", $name));
             }
-        } catch (ElasticsearchException $exception) {
-            if ($exception->json('type') !== 'index_not_found_exception') {
-                throw $exception;
+        } catch (ElasticsearchException $elasticsearchException) {
+            if ($elasticsearchException->json('type') !== 'index_not_found_exception') {
+                throw $elasticsearchException;
             }
         }
     }
@@ -183,8 +183,9 @@ trait Actions
                 if ($status === 404) {
                     continue;
                 }
+
                 if ($status !== 200) {
-                    throw new RuntimeException("Could not confirm retirement of '{$index}'.");
+                    throw new RuntimeException(sprintf("Could not confirm retirement of '%s'.", $index));
                 }
             }
 
@@ -204,7 +205,7 @@ trait Actions
             $aliases = $sources[$index]['aliases'] ?? [];
             unset($aliases[$alias]);
             if ($aliases !== []) {
-                throw new RuntimeException("Index '{$index}' also serves alias '".array_key_first($aliases)."'.");
+                throw new RuntimeException(sprintf("Index '%s' also serves alias '", $index).array_key_first($aliases)."'.");
             }
 
             if (! $copyDocuments) {
@@ -215,7 +216,7 @@ trait Actions
             $included = (array) ($source['includes'] ?? []);
             $includesAll = $included === [] || in_array('*', $included, true);
             if (($source['enabled'] ?? true) === false || ! $includesAll || ($source['excludes'] ?? []) !== []) {
-                throw new RuntimeException("Cannot copy every indexed field from '{$index}' because _source is disabled or filtered. Rebuild '{$alias}' from its original documents.");
+                throw new RuntimeException(sprintf("Cannot copy every indexed field from '%s' because _source is disabled or filtered. Rebuild '%s' from its original documents.", $index, $alias));
             }
         }
 
@@ -246,9 +247,9 @@ trait Actions
                 ['remove' => ['index' => $source, 'alias' => $owner, 'must_exist' => true]],
                 ['remove' => ['index' => $destination, 'alias' => $this->updateLock($source), 'must_exist' => true]],
             ]);
-        } catch (ElasticsearchException $exception) {
-            if ($exception->getCode() !== 404) {
-                throw $exception;
+        } catch (ElasticsearchException $elasticsearchException) {
+            if ($elasticsearchException->getCode() !== 404) {
+                throw $elasticsearchException;
             }
 
             // The source may have been deleted. Release this destination's
@@ -269,8 +270,7 @@ trait Actions
         ?string $refresh,
         array $deferredBlocks = [],
         ?string $finalPipeline = null,
-    ): void
-    {
+    ): void {
         $serverless = $this->elasticsearchConnection->isServerless();
         $settings = ['refresh_interval' => $refresh ?? ($serverless ? '5s' : '1s')];
 
@@ -289,7 +289,7 @@ trait Actions
         $response = $this->indexAPICall($index.'/_settings', 'PUT', $settings);
 
         if ($response->json('acknowledged') !== true) {
-            throw new RuntimeException("Destination settings for '{$index}' were not acknowledged.");
+            throw new RuntimeException(sprintf("Destination settings for '%s' were not acknowledged.", $index));
         }
     }
 

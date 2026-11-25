@@ -18,22 +18,22 @@ class EmbeddingPromise implements Promise
 
     public function __construct(PromiseInterface $promise, ?Closure $transform = null)
     {
-        $this->promise = self::chain($promise, static function (ResponseInterface $response) use ($transform): array {
+        $this->promise = $this->chain($promise, static function (ResponseInterface $response) use ($transform): array {
             $vector = ApiResponse::embeddings($response, 1)[0];
 
-            return ['_embeddings' => $transform === null ? $vector : $transform($vector)];
+            return ['_embeddings' => $transform instanceof Closure ? $transform($vector) : $vector];
         });
     }
 
     public function then(?callable $onFulfilled = null, ?callable $onRejected = null): Promise
     {
         $child = clone $this;
-        $child->promise = self::chain($this->promise, $onFulfilled, $onRejected);
+        $child->promise = $this->chain($this->promise, $onFulfilled, $onRejected);
 
         return $child;
     }
 
-    private static function chain(PromiseInterface $promise, ?callable $onFulfilled, ?callable $onRejected = null): PromiseInterface
+    private function chain(PromiseInterface $promise, ?callable $onFulfilled, ?callable $onRejected = null): PromiseInterface
     {
         $invoke = static function (callable $callback, mixed $value): mixed {
             $result = $callback($value);
@@ -48,8 +48,8 @@ class EmbeddingPromise implements Promise
         if ($promise->getState() === PromiseInterface::PENDING) {
             // Forward settlement from any promise returned by a callback.
             return $promise->then(
-                $onFulfilled === null ? null : fn ($value) => $invoke($onFulfilled, $value),
-                $onRejected === null ? null : fn ($reason) => $invoke($onRejected, Create::exceptionFor($reason)),
+                $onFulfilled === null ? null : fn ($value): mixed => $invoke($onFulfilled, $value),
+                $onRejected === null ? null : fn ($reason): mixed => $invoke($onRejected, Create::exceptionFor($reason)),
             )->then();
         }
 
@@ -57,8 +57,8 @@ class EmbeddingPromise implements Promise
         try {
             $value = $promise->wait();
             $callback = $onFulfilled;
-        } catch (Throwable $reason) {
-            $value = $reason;
+        } catch (Throwable $throwable) {
+            $value = $throwable;
             $callback = $onRejected;
         }
 
@@ -68,8 +68,8 @@ class EmbeddingPromise implements Promise
 
         try {
             return Create::promiseFor($invoke($callback, $value));
-        } catch (Throwable $reason) {
-            return Create::rejectionFor($reason);
+        } catch (Throwable $throwable) {
+            return Create::rejectionFor($throwable);
         }
     }
 

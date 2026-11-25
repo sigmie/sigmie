@@ -63,7 +63,7 @@ trait OpenAIEmbeddingRequest
 
         if (in_array($this->model, ['text-embedding-3-small', 'text-embedding-3-large'], true)
             && $dimensions > $this->defaultDimensions()) {
-            throw new InvalidArgumentException("$this->model supports at most {$this->defaultDimensions()} dimensions.");
+            throw new InvalidArgumentException(sprintf('%s supports at most %s dimensions.', $this->model, $this->defaultDimensions()));
         }
 
         return $dimensions;

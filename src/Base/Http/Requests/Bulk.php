@@ -17,6 +17,7 @@ class Bulk extends NdJSONRequest
         foreach ($data as $position => $line) {
             if (! $actionLine) {
                 $actionLine = true;
+
                 continue;
             }
 
@@ -26,6 +27,7 @@ class Bulk extends NdJSONRequest
                 $metadata[$action] = (object) [];
                 $data[$position] = $metadata;
             }
+
             $actionLine = $action === 'delete';
         }
 

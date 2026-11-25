@@ -183,6 +183,7 @@ class DocumentProcessor
                 $merged = $this->mergeSource((array) $previous, (array) $value, $children);
                 $value = array_is_list($merged) ? (object) $merged : $merged;
             }
+
             $source[$key] = $value;
         }
 
@@ -435,7 +436,7 @@ class DocumentProcessor
         foreach ($this->properties->fieldNames(withParent: false) as $fieldPath) {
             $field = $this->properties->get($fieldPath);
 
-            if (! $field) {
+            if (! $field instanceof Type) {
                 continue;
             }
 
@@ -457,7 +458,11 @@ class DocumentProcessor
             }
 
             $container = $properties->get($key);
-            if (! $container instanceof FieldContainer || ($container instanceof Object_ && ! $container->isEnabled())) {
+            if (! $container instanceof FieldContainer) {
+                continue;
+            }
+
+            if ($container instanceof Object_ && ! $container->isEnabled()) {
                 continue;
             }
 
@@ -494,7 +499,7 @@ class DocumentProcessor
         foreach ($this->properties->fieldNames(withParent: true) as $fieldPath) {
             $field = $this->properties->get($fieldPath);
 
-            if (! $field) {
+            if (! $field instanceof Type) {
                 continue;
             }
 
@@ -810,7 +815,7 @@ class DocumentProcessor
     {
         $field = $this->properties->get($boostField);
 
-        if ($field === null) {
+        if (! $field instanceof Type) {
             throw new Exception(sprintf("Boost field '%s' referenced by semantic field '%s' does not exist in properties", $boostField, $fieldPath));
         }
 

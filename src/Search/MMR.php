@@ -77,6 +77,7 @@ class MMR
                         $selectedVectors[$space][count($vector)][] = $vector;
                     }
                 }
+
                 unset($remaining[$maxIndex]);
                 $remaining = array_values($remaining);
             } else {

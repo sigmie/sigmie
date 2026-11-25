@@ -50,7 +50,7 @@ class Keyword extends Type
 
     public function normalizer(): ?NormalizerInterface
     {
-        if ($this->restoredNormalizer !== null) {
+        if ($this->restoredNormalizer instanceof NormalizerInterface) {
             return $this->restoredNormalizer;
         }
 

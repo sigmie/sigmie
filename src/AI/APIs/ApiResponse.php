@@ -116,7 +116,7 @@ final class ApiResponse
     private static function embeddingRows(mixed $rows, int $expected): array
     {
         if (! is_array($rows) || count($rows) !== $expected) {
-            throw new UnexpectedValueException("Embedding response must contain $expected vector(s).");
+            throw new UnexpectedValueException(sprintf('Embedding response must contain %d vector(s).', $expected));
         }
 
         return $rows;

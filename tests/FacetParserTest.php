@@ -7,6 +7,7 @@ namespace Sigmie\Tests;
 use ReflectionMethod;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\ParseException;
@@ -60,6 +61,7 @@ class FacetParserTest extends TestCase
         $properties = new NewProperties;
         $properties->price();
         $properties->keyword('brand');
+
         $index = uniqid('invalid-price-facet-');
         $this->sigmie->newIndex($index)->properties($properties)->create();
         $this->sigmie->collect($index, true)->merge([new Document(['price' => 10, 'brand' => 'acme'])]);
@@ -75,6 +77,7 @@ class FacetParserTest extends TestCase
     {
         $properties = new NewProperties;
         $properties->keyword('brand');
+
         $index = uniqid('id-facet-');
         $this->sigmie->newIndex($index)->properties($properties)->create();
         $this->sigmie->collect($index, true)->merge([
@@ -120,7 +123,8 @@ class FacetParserTest extends TestCase
     public function test_qualified_nested_facet_selections_group_by_the_mapped_field(): void
     {
         $properties = new NewProperties;
-        $properties->nested('items', fn (NewProperties $items) => $items->keyword('color')->facetDisjunctive());
+        $properties->nested('items', fn (NewProperties $items): Keyword => $items->keyword('color')->facetDisjunctive());
+
         $name = uniqid('.qualified-nested-facet-');
         $index = $this->sigmie->newIndex($name)->properties($properties)->create();
         try {
@@ -162,7 +166,8 @@ class FacetParserTest extends TestCase
     public function test_a_negated_nested_selection_leaves_its_own_facet_unfiltered(): void
     {
         $properties = new NewProperties;
-        $properties->nested('items', fn (NewProperties $items) => $items->keyword('color'));
+        $properties->nested('items', fn (NewProperties $items): Keyword => $items->keyword('color'));
+
         $index = uniqid('all-item-colors-');
         $this->sigmie->newIndex($index)->properties($properties)->create();
         $this->sigmie->collect($index, true)->merge([new Document(['items' => [['color' => 'blue']]])]);
@@ -178,6 +183,7 @@ class FacetParserTest extends TestCase
     {
         $properties = new NewProperties;
         $properties->keyword('author');
+
         $filter = <<<'FILTER'
             author:"She said \"Hi (again\""
             FILTER;
@@ -764,10 +770,10 @@ class FacetParserCorrectnessTest extends \PHPUnit\Framework\TestCase
         try {
             $throwing->parseFilterString("color:'red' or color:'blue'");
             $this->fail('A lowercase OR must throw the logical-operator error.');
-        } catch (ParseException $exception) {
+        } catch (ParseException $parseException) {
             $this->assertSame(
                 sprintf($message, "color:'red' or color:'blue'"),
-                $exception->getMessage(),
+                $parseException->getMessage(),
             );
         }
     }

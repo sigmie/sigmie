@@ -36,7 +36,7 @@ class FacetsTest extends TestCase
 
         $response = $this->sigmie->newSearch($name)
             ->properties($blueprint)
-            ->facets('items.size', "status:active items.color:red")
+            ->facets('items.size', 'status:active items.color:red')
             ->get();
 
         $this->assertSame(['small' => 1], $response->facet('items.size'));

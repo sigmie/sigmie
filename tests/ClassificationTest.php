@@ -31,6 +31,7 @@ class ClassificationTest extends TestCase
 
         parent::tearDown();
     }
+
     /**
      * @test
      */

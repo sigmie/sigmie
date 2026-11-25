@@ -24,6 +24,7 @@ trait OrdersBuckets
         foreach ($criteria as $name => $direction) {
             $order[] = keyed((string) $name, $direction);
         }
+
         $this->order = ['order' => $order];
 
         return $this;

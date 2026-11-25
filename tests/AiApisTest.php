@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\FulfilledPromise;
 use GuzzleHttp\Promise\Promise;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -85,6 +87,7 @@ class AiApisTest extends TestCase
         $pool = new VectorPool($api);
         $pool->get('first', 2);
         $pool->getMany([['text' => 'second', 'dims' => 2]]);
+
         $api->embed('document', 2);
 
         $this->assertSame(['search_query', 'search_query', 'search_document'], array_column($requests, 'input_type'));
@@ -123,7 +126,7 @@ class AiApisTest extends TestCase
     {
         $http = new Promise;
         $embedding = new EmbeddingPromise($http);
-        $child = $embedding->then(null, static fn (Throwable $reason) => $reason);
+        $child = $embedding->then(null, static fn (Throwable $reason): Throwable => $reason);
         $http->reject('provider unavailable');
 
         $reason = $child->wait();
@@ -138,7 +141,7 @@ class AiApisTest extends TestCase
         $secondHttp = new Promise;
         $first = new EmbeddingPromise($firstHttp);
         $second = new EmbeddingPromise($secondHttp);
-        $child = $first->then(static fn () => $second);
+        $child = $first->then(static fn (): EmbeddingPromise => $second);
 
         $firstHttp->resolve(new Response(200, [], '{"data":[{"embedding":[1]}]}'));
         Utils::queue()->run();
@@ -164,7 +167,7 @@ class AiApisTest extends TestCase
             new VoyageEmbeddingsApi('test'),
         ];
         $response = new Response(200, [], '{"data":[{"embedding":[1]}],"embeddings":{"float":[[1]]}}');
-        $client = new Client(['handler' => static fn () => new FulfilledPromise($response)]);
+        $client = new Client(['handler' => static fn (): FulfilledPromise => new FulfilledPromise($response)]);
 
         foreach ($apis as $api) {
             (new ReflectionProperty($api, 'client'))->setValue($api, $client);
@@ -335,6 +338,7 @@ class AiApisTest extends TestCase
             if ($api instanceof InfinityRerankApi) {
                 $api->rerank(['book'], 'book');
                 $this->assertSame(['/models/v1/rerank'], $paths);
+
                 continue;
             }
 
@@ -353,7 +357,7 @@ class AiApisTest extends TestCase
         $requests = [];
         $this->recordAdapterRequests($provider, $requests);
         $first = $provider->promiseEmbed('first', 1);
-        $child = $first->then(fn () => $provider->promiseEmbed('second', 1));
+        $child = $first->then(fn (): HttpPromise => $provider->promiseEmbed('second', 1));
 
         $this->assertSame(['_embeddings' => [1]], $child->wait());
     }
@@ -937,22 +941,22 @@ class AiApisTest extends TestCase
     {
         $bodies = [];
         $api = new OpenAIEmbeddingsApi('test-key');
-        $client = new Client(['handler' => HandlerStack::create(function (RequestInterface $request) use (&$bodies) {
+        $client = new Client(['handler' => HandlerStack::create(function (RequestInterface $request) use (&$bodies): PromiseInterface {
             $body = json_decode((string) $request->getBody(), true);
             $bodies[] = $body;
             $dims = (int) $body['dimensions'];
             $data = [];
 
-            foreach (array_values($body['input']) as $index => $text) {
+            foreach (array_keys(array_values($body['input'])) as $index) {
                 $data[] = [
                     'embedding' => array_fill(0, $dims, $index === 0 ? 1 : 2),
                     'index' => $index,
                 ];
             }
 
-            return \GuzzleHttp\Promise\Create::promiseFor(new Response(200, [], json_encode(['data' => $data])));
+            return Create::promiseFor(new Response(200, [], json_encode(['data' => $data])));
         })]);
-        (new \ReflectionProperty($api, 'client'))->setValue($api, $client);
+        (new ReflectionProperty($api, 'client'))->setValue($api, $client);
 
         $sparse = $api->batchEmbed([
             1 => ['text' => 'alpha', 'dims' => 3],
@@ -975,18 +979,18 @@ class AiApisTest extends TestCase
 
         $voyageBodies = [];
         $voyage = new VoyageEmbeddingsApi('test-key');
-        $voyageClient = new Client(['handler' => HandlerStack::create(function (RequestInterface $request) use (&$voyageBodies) {
+        $voyageClient = new Client(['handler' => HandlerStack::create(function (RequestInterface $request) use (&$voyageBodies): PromiseInterface {
             $body = json_decode((string) $request->getBody(), true);
             $voyageBodies[] = $body;
 
-            return \GuzzleHttp\Promise\Create::promiseFor(new Response(200, [], json_encode([
+            return Create::promiseFor(new Response(200, [], json_encode([
                 'data' => [
                     ['embedding' => [1, 0, 0]],
                     ['embedding' => [0, 1, 0]],
                 ],
             ])));
         })]);
-        (new \ReflectionProperty($voyage, 'client'))->setValue($voyage, $voyageClient);
+        (new ReflectionProperty($voyage, 'client'))->setValue($voyage, $voyageClient);
 
         $voyageResult = $voyage->batchEmbed([
             1 => ['text' => 'alpha', 'dims' => 3],
@@ -1026,17 +1030,17 @@ class AiApisTest extends TestCase
 
         $openai = new OpenAIEmbeddingsApi('test-key');
         $openaiBodies = [];
-        (new \ReflectionProperty($openai, 'client'))->setValue($openai, $this->recordingEmbeddingsClient($openaiBodies));
+        (new ReflectionProperty($openai, 'client'))->setValue($openai, $this->recordingEmbeddingsClient($openaiBodies));
         $openai->batchEmbed($payload);
 
         $provider = new OpenAIProvider('test-key');
         $providerBodies = [];
-        (new \ReflectionProperty($provider, 'client'))->setValue($provider, $this->recordingEmbeddingsClient($providerBodies));
+        (new ReflectionProperty($provider, 'client'))->setValue($provider, $this->recordingEmbeddingsClient($providerBodies));
         $provider->batchEmbed($payload);
 
         $cohere = new CohereEmbeddingsApi('test-key', CohereInputType::SearchDocument, 'embed-v4.0');
         $cohereBodies = [];
-        (new \ReflectionProperty($cohere, 'client'))->setValue($cohere, $this->recordingEmbeddingsClient($cohereBodies));
+        (new ReflectionProperty($cohere, 'client'))->setValue($cohere, $this->recordingEmbeddingsClient($cohereBodies));
         $cohere->batchEmbed([
             ['text' => 'unset', 'dims' => null],
             ['text' => 'custom', 'dims' => 256],
@@ -1061,7 +1065,7 @@ class AiApisTest extends TestCase
         {
             use HandlesToolErrors;
 
-            public function run(\Throwable $e): string
+            public function run(Throwable $e): string
             {
                 return $this->guard(static function () use ($e): string {
                     throw $e;
@@ -1070,7 +1074,7 @@ class AiApisTest extends TestCase
         };
 
         $expected = '{"error":"0 Check the field names and the filter/sort syntax in this tool\'s description, then try again."}';
-        $raw = new \Exception(json_encode([
+        $raw = new Exception(json_encode([
             'error' => [
                 'root_cause' => [
                     ['type' => 'parsing_exception', 'reason' => '0'],
@@ -1106,7 +1110,7 @@ class AiApisTest extends TestCase
         {
             use HandlesToolErrors;
 
-            public function run(\Throwable $e): string
+            public function run(Throwable $e): string
             {
                 return $this->guard(static function () use ($e): string {
                     throw $e;
@@ -1114,7 +1118,7 @@ class AiApisTest extends TestCase
             }
         };
 
-        $json = $tool->run(new \Exception("bad \xB1 bytes"));
+        $json = $tool->run(new Exception("bad \xB1 bytes"));
 
         $this->assertIsArray(json_decode($json, true));
         $this->assertStringStartsWith('{"error":', $json);
@@ -1168,7 +1172,7 @@ class AiApisTest extends TestCase
             $requests = [];
             $payload = [];
             for ($i = 0; $i < $size; $i++) {
-                $payload["doc-$i"] = ['text' => "document $i"];
+                $payload['doc-'.$i] = ['text' => 'document '.$i];
             }
 
             $result = $api->batchEmbed($payload);
@@ -1191,6 +1195,7 @@ class AiApisTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider indexedAdapters
      */
     public function indexed_batch_vectors_follow_the_input_index(Embedder|EmbeddingsApi $api, bool $images = false): void
@@ -1212,8 +1217,9 @@ class AiApisTest extends TestCase
         $this->recordAdapterRequests($api, $requests);
         $payload = [];
         foreach (range(1, 33) as $index) {
-            $payload[] = ['text' => "https://example.com/$index.png"];
+            $payload[] = ['text' => sprintf('https://example.com/%s.png', $index)];
         }
+
         $result = $api->batchEmbed($payload);
         $this->assertSame([32, 1], array_map('count', array_column($requests, 'input')));
         $this->assertSame([32], $result[31]['vector']);
@@ -1278,6 +1284,7 @@ class AiApisTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider openAIAdapters
      */
     public function ada_native_width_omits_dimensions(string $class): void
@@ -1301,7 +1308,7 @@ class AiApisTest extends TestCase
             $requests[] = ['path' => $request->getUri()->getPath(), ...$body];
             $data = [];
             $width = $body['output_dimension'] ?? ($body['model'] === 'voyage-3-large' ? 1024 : 1);
-            foreach ((array) ($body['input'] ?? $body['texts']) as $index => $input) {
+            foreach (array_keys((array) ($body['input'] ?? $body['texts'])) as $index) {
                 $data[] = ['index' => $index, 'embedding' => array_fill(0, $width, $index + 1)];
             }
 
@@ -1313,17 +1320,17 @@ class AiApisTest extends TestCase
 
             return $promise;
         }]);
-        (new \ReflectionProperty($api, 'client'))->setValue($api, $client);
+        (new ReflectionProperty($api, 'client'))->setValue($api, $client);
     }
 
     private function recordingEmbeddingsClient(array &$bodies): Client
     {
-        return new Client(['handler' => function ($request) use (&$bodies) {
+        return new Client(['handler' => function ($request) use (&$bodies): PromiseInterface {
             $body = json_decode((string) $request->getBody(), true);
             $bodies[] = $body;
             $vectors = array_fill(0, count((array) ($body['input'] ?? $body['texts'])), [1, 0]);
 
-            return \GuzzleHttp\Promise\Create::promiseFor(new Response(200, [], json_encode([
+            return Create::promiseFor(new Response(200, [], json_encode([
                 'data' => array_map(static fn (array $vector): array => ['embedding' => $vector], $vectors),
                 'embeddings' => ['float' => $vectors],
             ])));
@@ -1440,7 +1447,8 @@ class AiApisTest extends TestCase
 
     public function test_string_cluster_error_returns_its_reason(): void
     {
-        $tool = new class {
+        $tool = new class
+        {
             use HandlesToolErrors { toolErrorMessage as public; }
         };
         $error = new ElasticsearchException(['json' => ['error' => 'Index is closed'], 'request' => ['size' => 10]], 400);
@@ -1513,7 +1521,7 @@ class AiApisTest extends TestCase
     {
         $api = new JinaClipApi;
         $requests = [];
-        $this->mockAdapterResponses($api, $requests, array_map(static fn () => new Response(200, [], '{"data":[{"embedding":[1]}]}'), range(1, 3)));
+        $this->mockAdapterResponses($api, $requests, array_map(static fn (): Response => new Response(200, [], '{"data":[{"embedding":[1]}]}'), range(1, 3)));
         $api->embed('book', 512);
         $api->promiseEmbed('book', 512)->wait();
         $api->batchEmbed([['text' => 'book']]);
@@ -1526,7 +1534,7 @@ class AiApisTest extends TestCase
     {
         $api = new JinaClipApi;
         $requests = [];
-        $this->mockAdapterResponses($api, $requests, array_map(static fn () => new Response(200, [], '{"data":[{"embedding":[1]}]}'), range(1, 3)));
+        $this->mockAdapterResponses($api, $requests, array_map(static fn (): Response => new Response(200, [], '{"data":[{"embedding":[1]}]}'), range(1, 3)));
         $gif = 'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         $path = tempnam(sys_get_temp_dir(), 'sigmie-jina-');
         try {
@@ -1643,9 +1651,10 @@ class AiApisTest extends TestCase
         $firstError = null;
         try {
             $promise->wait();
-        } catch (Throwable $error) {
-            $firstError = $error;
+        } catch (Throwable $throwable) {
+            $firstError = $throwable;
         }
+
         $this->assertNotNull($firstError);
 
         $this->expectException(UnexpectedValueException::class);
@@ -1662,7 +1671,7 @@ class AiApisTest extends TestCase
             new Response(429, ['Retry-After' => '2'], $body),
         ]);
 
-        foreach ([fn () => $api->embed('book', 1), fn () => $api->promiseEmbed('book', 1)->wait()] as $embed) {
+        foreach ([fn (): array => $api->embed('book', 1), fn () => $api->promiseEmbed('book', 1)->wait()] as $embed) {
             try {
                 $embed();
                 $this->fail('A rate-limited request resolved successfully.');
@@ -1698,8 +1707,8 @@ class AiApisTest extends TestCase
             new Response(503, ['Content-Type' => 'text/plain'], 'Service unavailable'),
         ]);
         $request = $api instanceof EmbeddingsApi
-            ? fn () => $api->batchEmbed([['text' => 'book', 'dims' => 1]])
-            : fn () => $api->rerank(['book'], 'book');
+            ? fn (): array => $api->batchEmbed([['text' => 'book', 'dims' => 1]])
+            : fn (): array => $api->rerank(['book'], 'book');
 
         $this->assertSame([], $api instanceof EmbeddingsApi ? $api->batchEmbed([]) : $api->rerank([], 'book'));
         $this->assertSame([], $requests);
@@ -1707,18 +1716,18 @@ class AiApisTest extends TestCase
         try {
             $request();
             $this->fail('The rate-limited request returned data.');
-        } catch (ClientException $error) {
-            $this->assertSame(429, $error->getResponse()->getStatusCode());
-            $this->assertSame('2', $error->getResponse()->getHeaderLine('Retry-After'));
-            $this->assertSame('{"message":"rate limit exceeded"}', (string) $error->getResponse()->getBody());
+        } catch (ClientException $clientException) {
+            $this->assertSame(429, $clientException->getResponse()->getStatusCode());
+            $this->assertSame('2', $clientException->getResponse()->getHeaderLine('Retry-After'));
+            $this->assertSame('{"message":"rate limit exceeded"}', (string) $clientException->getResponse()->getBody());
         }
 
         try {
             $request();
             $this->fail('The unavailable service returned data.');
-        } catch (ServerException $error) {
-            $this->assertSame(503, $error->getResponse()->getStatusCode());
-            $this->assertSame('Service unavailable', (string) $error->getResponse()->getBody());
+        } catch (ServerException $serverException) {
+            $this->assertSame(503, $serverException->getResponse()->getStatusCode());
+            $this->assertSame('Service unavailable', (string) $serverException->getResponse()->getBody());
         }
     }
 
@@ -1809,8 +1818,8 @@ class AiApisTest extends TestCase
         $image = 'https://example.com/book.png';
 
         foreach ([
-            fn () => $api->embed($image, 512),
-            fn () => $api->batchEmbed([['text' => $image, 'dims' => 512]]),
+            fn (): array => $api->embed($image, 512),
+            fn (): array => $api->batchEmbed([['text' => $image, 'dims' => 512]]),
             fn () => $api->promiseEmbed($image, 512)->wait(),
         ] as $embed) {
             try {

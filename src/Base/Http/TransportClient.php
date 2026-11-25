@@ -54,8 +54,8 @@ final class TransportClient extends JSONClient
 
         try {
             $promise = $transport->sendAsyncRequest($jsonRequest);
-        } catch (NoNodeAvailableException $exception) {
-            return new RejectedPromise($exception);
+        } catch (NoNodeAvailableException $noNodeAvailableException) {
+            return new RejectedPromise($noNodeAvailableException);
         }
 
         // Elastic treats a rejected transport promise as an unreachable node.

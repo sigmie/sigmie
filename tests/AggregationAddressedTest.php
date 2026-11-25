@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use DateTimeImmutable;
+use PHPUnit\Framework\TestCase;
 use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Analytics\Widgets\Breakdown;
 use Sigmie\Analytics\Widgets\Trend;
-use PHPUnit\Framework\TestCase;
 use Sigmie\Base\Http\Responses\Search;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Date;
@@ -16,16 +16,18 @@ use Sigmie\Mappings\Types\Price;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Query\Aggregations\Bucket\AutoDateHistogram;
 use Sigmie\Query\Aggregations\Bucket\MultiTerms;
+use Sigmie\Query\Aggregations\Bucket\Nested;
 use Sigmie\Query\Aggregations\Bucket\RareTerms;
 use Sigmie\Query\Aggregations\Bucket\Sort;
 use Sigmie\Query\Aggregations\Bucket\Terms;
 use Sigmie\Query\Aggregations\Bucket\UnionTerms;
 use Sigmie\Query\Aggregations\Enums\MinimumInterval;
+use Sigmie\Query\Aggregations\Metrics\Max;
+use Sigmie\Query\Aggregations\Metrics\Min;
 use Sigmie\Query\Aggregations\Metrics\Rate;
 use Sigmie\Query\Aggregations\Pipeline\SortBucket;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\Aggs as AggsContract;
-use Sigmie\Query\Aggregations\Bucket\Nested;
 use Sigmie\Query\Queries\Raw;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Search\Formatters\RawElasticsearchFormat;
@@ -54,6 +56,7 @@ class AggregationAddressedTest extends TestCase
             $this->assertSame(7, $widget->extract([$name => ['series' => ['buckets' => $buckets]]])['series'][0]['value']);
             $names[] = $name;
         }
+
         $this->assertSame($names, array_unique($names));
     }
 
@@ -131,6 +134,7 @@ class AggregationAddressedTest extends TestCase
         $aggs = new Aggs;
         $aggs->topHits('hits', sort: $sort);
         $aggs->sort('page', $sort);
+
         $raw = $aggs->toRaw();
 
         $this->assertSame(array_values($sort), $raw['hits']['top_hits']['sort']);
@@ -141,7 +145,7 @@ class AggregationAddressedTest extends TestCase
     {
         $aggs = new Aggs;
         $aggs->dateHistogram('days', 'date', '1d')->aggregate(
-            fn (Aggs $daily) => $daily->rate('sales', 'amount', unit: 'day')
+            fn (Aggs $daily): Rate => $daily->rate('sales', 'amount', unit: 'day')
         );
 
         $this->assertSame('day', $aggs->toRaw()['days']['aggs']['sales']['rate']['unit']);
@@ -152,6 +156,7 @@ class AggregationAddressedTest extends TestCase
         $aggs = new Aggs;
         $aggs->topHits('hits', sort: [['_score' => []]]);
         $aggs->sort('page', [['_key' => []]]);
+
         $raw = $aggs->toRaw();
 
         $this->assertSame('[{"_score":{}}]', json_encode($raw['hits']['top_hits']['sort']));
@@ -187,8 +192,8 @@ class AggregationAddressedTest extends TestCase
 
     public function test_bucket_aggregate_keeps_previous_subaggregations(): void
     {
-        $nested = (new Aggs)->nested('items', 'items', fn (Aggs $sub) => $sub->min('low', 'items.price'));
-        $nested->aggregate(fn (Aggs $sub) => $sub->max('high', 'items.price'));
+        $nested = (new Aggs)->nested('items', 'items', fn (Aggs $sub): Min => $sub->min('low', 'items.price'));
+        $nested->aggregate(fn (Aggs $sub): Max => $sub->max('high', 'items.price'));
 
         $this->assertSame(['low', 'high'], array_keys($nested->toRaw()['items']['aggs']));
     }
@@ -208,6 +213,7 @@ class AggregationAddressedTest extends TestCase
         $aggs = new Aggs;
         $aggs->histogram('prices', 'price', 5, extendedBounds: []);
         $aggs->dateHistogram('days', 'date', '1d', extendedBounds: []);
+
         $raw = $aggs->toRaw();
 
         $this->assertArrayNotHasKey('extended_bounds', $raw['prices']['histogram']);
@@ -246,6 +252,7 @@ class AggregationAddressedTest extends TestCase
         $aggs->percentileRanks('ranks', 'price', [2 => 20]);
         $aggs->topHits('hits', sourceIncludes: [2 => 'price'], sourceExcludes: [2 => 'brand']);
         $aggs->composite('page', [2 => ['brand' => ['terms' => ['field' => 'brand']]]]);
+
         $raw = $aggs->toRaw();
 
         $this->assertSame(['a'], $raw['brands']['terms']['exclude']);
@@ -275,6 +282,7 @@ class AggregationAddressedTest extends TestCase
     {
         $properties = new NewProperties;
         $properties->price();
+
         $raw = (new FacetParser($properties))->parse('price:0.5')->toRaw();
 
         $this->assertSame(0.5, $raw['price']['aggs']['price_histogram']['histogram']['interval']);
@@ -507,6 +515,7 @@ class AggregationAddressedTest extends TestCase
         $this->assertSame(0, $union['either']['terms']['size']);
         $this->assertSame(0, $sort['sorted']['bucket_sort']['size']);
     }
+
     public function test_histogram_bounds_accept_php_dates_without_using_the_display_format(): void
     {
         $aggs = new Aggs;

@@ -7,6 +7,7 @@ namespace Sigmie\Analytics\Enums;
 use Sigmie\Query\Aggregations\Bucket\MultiTerms;
 use Sigmie\Query\Aggregations\Bucket\Terms;
 use Sigmie\Query\Aggregations\Bucket\UnionTerms;
+use Sigmie\Query\Aggregations\Metrics\Max;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Exists;
 
@@ -117,7 +118,7 @@ enum Metric: string
 
         // Elasticsearch ranks empty buckets by a metric-specific sentinel (NaN or infinity).
         // Every measured group has the same primary key, regardless of its population.
-        $terms->aggregate(fn (Aggs $aggs) => $aggs->max($presence, $field)->script('1'));
+        $terms->aggregate(fn (Aggs $aggs): Max => $aggs->max($presence, $field)->script('1'));
         $terms->orderBy([$presence => 'desc', $key => $direction]);
     }
 

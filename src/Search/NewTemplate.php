@@ -317,6 +317,7 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             if (($path = $field->nestedPath()) !== null) {
                 $query = new Nested($path, $query);
             }
+
             $queries[] = $query;
         }
 

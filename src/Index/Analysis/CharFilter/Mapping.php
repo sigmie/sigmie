@@ -25,11 +25,11 @@ class Mapping extends ConfigurableCharFilter
         $this->rules = [];
 
         foreach ($settings as $key => $value) {
-            $this->rules[] = self::literal((string) $key).' => '.self::literal((string) $value);
+            $this->rules[] = $this->literal((string) $key).' => '.$this->literal((string) $value);
         }
     }
 
-    private static function literal(string $text): string
+    private function literal(string $text): string
     {
         // Elasticsearch trims the rule sides, splits on => and interprets backslash escapes.
         return preg_replace_callback('/\A | \z|[\x00-\x1f\x{85}\x{2028}\x{2029}]|=(?=>)/u',

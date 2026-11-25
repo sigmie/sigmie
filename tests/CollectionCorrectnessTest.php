@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Document\Document;
-use Sigmie\Document\Hit;
-use Sigmie\Mappings\NewProperties;
+use PHPUnit\Framework\TestCase;
 use Sigmie\Shared\Collection;
-use Sigmie\Testing\TestCase;
 
-class CollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
+class CollectionCorrectnessTest extends TestCase
 {
     public function test_decimal_group_values_keep_distinct_keys(): void
     {
@@ -36,10 +33,7 @@ class CollectionCorrectnessTest extends \PHPUnit\Framework\TestCase
 
     public function test_grouping_and_uniqueness_skip_inaccessible_object_fields(): void
     {
-        $private = new class
-        {
-            private string $category = 'private';
-        };
+        $private = new class {};
         $uninitialized = new class
         {
             public string $category;

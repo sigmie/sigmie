@@ -90,8 +90,10 @@ class Mappings implements MappingsInterface
             if ($field instanceof Combo) {
                 $definition['combo'] = ['name' => $field->name, 'sources' => $field->sourceFields()];
             }
+
             $definitions[$field->fullPath()] = $definition;
         }
+
         if ($definitions !== []) {
             // Elasticsearch mappings hold no embedding providers or combo sources.
             ksort($definitions, SORT_STRING);
@@ -156,6 +158,7 @@ class Mappings implements MappingsInterface
                 $field = new Combo($name, $sources, $container[$name] ?? null);
                 $container[$name] = $field;
             }
+
             if ($field instanceof Text) {
                 foreach ($definition['vectors'] as $vector) {
                     $field->newSemantic(static fn (NewSemanticField $semantic) => $semantic->restoreDefinition($vector));
@@ -171,6 +174,7 @@ class Mappings implements MappingsInterface
                     $rule[$key] = $options === [] ? (object) [] : $options;
                 }
             }
+
             $raw['dynamic_templates'][$position] = object_map([$name => $rule]);
         }
 

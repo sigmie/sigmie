@@ -55,6 +55,7 @@ class Hit extends Document
                 );
             }
         }
+
         $hit['inner_hits'] = object_map($groups);
 
         return $hit;

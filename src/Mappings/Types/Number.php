@@ -115,6 +115,7 @@ class Number extends Type
         if (is_int($value)) {
             return true;
         }
+
         if (is_string($value) && trim($value) !== $value) {
             return false;
         }

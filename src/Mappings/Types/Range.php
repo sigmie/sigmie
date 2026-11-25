@@ -119,6 +119,7 @@ class Range extends Type
         if ($value instanceof stdClass) {
             $value = (array) $value;
         }
+
         if (! is_array($value)) {
             return [false, sprintf("The field %s mapped as %s must be an array with 'gte', 'gt', 'lte', or 'lt' keys", $key, $this->typeName())];
         }
@@ -164,11 +165,13 @@ class Range extends Type
         if ($this->dateFormat !== null && $this->dateFormat !== 'strict_date_optional_time||epoch_millis') {
             return true;
         }
+
         $milliseconds = [];
         foreach ($bounds as $operator => $bound) {
             if ($bound === null) {
                 continue;
             }
+
             $text = is_float($bound) ? json_encode($bound) : (string) $bound;
             if (preg_match('/^-?\d{4}-\d{2}-\d{2}\z/', $text)) {
                 $start = (new DateTimeImmutable($text, new DateTimeZone('UTC')))->getTimestamp() * 1000;
@@ -194,11 +197,13 @@ class Range extends Type
             if ($value === null) {
                 continue;
             }
+
             $address = packed_ip_address($value);
             // Lucene sorts IPv4 addresses in IPv4-mapped IPv6 space.
             if (strlen($address) === 4) {
                 $address = str_repeat("\0", 10)."\xff\xff".$address;
             }
+
             if ($operator === 'gt' || $operator === 'lt') {
                 $step = $operator === 'gt' ? 1 : -1;
                 for ($i = 15; $i >= 0; $i--) {
@@ -208,10 +213,12 @@ class Range extends Type
                         break;
                     }
                 }
+
                 if ($i < 0) {
                     return false;
                 }
             }
+
             if ($operator === 'gte' || $operator === 'gt') {
                 $lower = $address;
             } else {
@@ -224,13 +231,16 @@ class Range extends Type
 
     private function hasNumericInterval(string $type, array $bounds): bool
     {
-        $lower = $upper = null;
-        $lowerOpen = $upperOpen = false;
+        $lower = null;
+        $upper = null;
+        $lowerOpen = false;
+        $upperOpen = false;
         $discrete = in_array($type, ['integer', 'long'], true);
         foreach ($bounds as $operator => $bound) {
             if ($bound === null) {
                 continue;
             }
+
             $number = match ($type) {
                 'integer', 'long' => (int) $bound,
                 'float' => unpack('f', pack('f', (float) $bound))[1],
@@ -248,6 +258,7 @@ class Range extends Type
         if ($lower === null || $upper === null) {
             return true;
         }
+
         if ($lower === $upper) {
             return ! $lowerOpen && ! $upperOpen;
         }
@@ -255,6 +266,7 @@ class Range extends Type
         if ($lower >= $upper || ! ($lowerOpen && $upperOpen)) {
             return $lower < $upper;
         }
+
         if ($discrete) {
             return $lower + 1 !== $upper;
         }

@@ -48,6 +48,7 @@ class FlatObject extends Type
         if (! array_is_list($value)) {
             return $value;
         }
+
         foreach ($value as $item) {
             if ($item !== null && ! is_array($item) && ! is_object($item)) {
                 return (object) $value;
@@ -62,6 +63,7 @@ class FlatObject extends Type
         if (! ($options['index'] ?? true) && ! ($options['doc_values'] ?? true)) {
             return true;
         }
+
         if (is_array($value) && array_is_list($value)) {
             foreach ($value as $item) {
                 if (! self::acceptsFlattenedValue($item, $options, $path, $depth)) {
@@ -71,10 +73,12 @@ class FlatObject extends Type
 
             return true;
         }
+
         if (is_array($value) || is_object($value)) {
             if ($depth > ($options['depth_limit'] ?? 20)) {
                 return false;
             }
+
             foreach ((array) $value as $key => $item) {
                 $name = $path === null ? (string) $key : $path.'.'.$key;
                 if (! self::acceptsFlattenedValue($item, $options, $name, $depth + 1)) {
@@ -89,9 +93,11 @@ class FlatObject extends Type
         if ($value === null) {
             return true;
         }
+
         if ($path === null || str_contains($path, "\0")) {
             return false;
         }
+
         $text = is_string($value) ? $value : json_encode($value);
         if (strlen($path) + 1 + strlen($text) <= 32766) {
             return true;

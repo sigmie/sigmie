@@ -15,8 +15,11 @@ class Search extends ElasticsearchResponse
     public function failed(): bool
     {
         $payload = $this->json();
+        if (parent::failed()) {
+            return true;
+        }
 
-        return parent::failed() || (is_array($payload) && self::isPartial($payload));
+        return is_array($payload) && self::isPartial($payload);
     }
 
     public static function isPartial(array $payload): bool

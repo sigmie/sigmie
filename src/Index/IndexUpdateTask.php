@@ -103,14 +103,14 @@ class IndexUpdateTask
     {
         try {
             $status = $this->indexAPICall('_tasks/'.$this->task, 'GET')->json();
-        } catch (ElasticsearchException $exception) {
+        } catch (ElasticsearchException $elasticsearchException) {
             // A missing result can reappear on retry. Reopening writes before
             // then would let finish() promote a copy made before those writes.
-            if ($exception->json('completed') === true || $exception->json('json.completed') === true) {
+            if ($elasticsearchException->json('completed') === true || $elasticsearchException->json('json.completed') === true) {
                 $this->restoreSourceWrites();
             }
 
-            throw $exception;
+            throw $elasticsearchException;
         }
 
         if (! is_array($status) || ! is_bool($status['completed'] ?? null)) {
@@ -120,10 +120,10 @@ class IndexUpdateTask
         if ($status['completed']) {
             try {
                 $this->assertReindexSucceeded($status['response'] ?? null);
-            } catch (RuntimeException $exception) {
+            } catch (RuntimeException $elasticsearchException) {
                 $this->restoreSourceWrites();
 
-                throw $exception;
+                throw $elasticsearchException;
             }
         }
 

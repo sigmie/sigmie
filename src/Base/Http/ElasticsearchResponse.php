@@ -66,10 +66,10 @@ class ElasticsearchResponse extends JSONResponse implements ElasticsearchRespons
             }
 
             return json_decode($body, true, flags: JSON_BIGINT_AS_STRING | JSON_THROW_ON_ERROR);
-        } catch (JsonException $error) {
+        } catch (JsonException $jsonException) {
             if ($this->code() >= 200 && $this->code() < 300
                 && stripos($this->getHeaderLine('Content-Type'), 'json') !== false) {
-                throw new ElasticsearchException(['type' => 'invalid_json_response', 'reason' => $error->getMessage()], $this->code());
+                throw new ElasticsearchException(['type' => 'invalid_json_response', 'reason' => $jsonException->getMessage()], $this->code());
             }
 
             return null;

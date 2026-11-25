@@ -31,10 +31,10 @@ use Sigmie\Languages\English\Filter\Stemmer;
 use Sigmie\Languages\English\Filter\Stopwords;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
-
-use function Sigmie\Functions\merge_named;
 use Sigmie\Shared\UsesApis;
 use Throwable;
+
+use function Sigmie\Functions\merge_named;
 
 class NewIndex
 {
@@ -79,6 +79,7 @@ class NewIndex
 
         $this->analysis = new Analysis;
         $this->analysis->defaultAnalyzer();
+
         $this->fieldAnalysis = new Analysis;
 
         $this->properties = new Properties;
@@ -128,7 +129,7 @@ class NewIndex
             }
 
             if (! is_int($value) && (! is_string($value) || ! preg_match('/^[+-]?\d+$/D', $value))) {
-                throw new InvalidArgumentException("The index setting '$name' requires an integer.");
+                throw new InvalidArgumentException(sprintf("The index setting '%s' requires an integer.", $name));
             }
 
             return $key === 'number_of_shards'
@@ -164,6 +165,7 @@ class NewIndex
                 $builder->properties = $this->properties->copy();
                 $builder->fieldAnalysis = clone $this->fieldAnalysis;
             }
+
             $builder->searchSynonyms = $this->searchSynonyms ?? $builder->searchSynonyms;
 
             $analysis = clone $this->analysis;
@@ -174,10 +176,11 @@ class NewIndex
                 $defaultAnalyzer->addFilters($languageAnalyzer->filters());
                 $defaultAnalyzer->addCharFilters($languageAnalyzer->charFilters());
                 $tokenizer = $languageAnalyzer->tokenizer();
-                if ($tokenizer !== null && $tokenizer != new WordBoundaries) {
+                if ($tokenizer instanceof Contracts\Tokenizer && $tokenizer != new WordBoundaries) {
                     $defaultAnalyzer->setTokenizer($tokenizer);
                 }
             }
+
             $analysis->addAnalyzer($defaultAnalyzer);
             $builder->analysis = $analysis;
         }
@@ -222,6 +225,7 @@ class NewIndex
         if ($routing !== null) {
             $pendingSettings['index_routing'] = $routing;
         }
+
         $config = $this->config;
         $meta = $this->customMeta;
 
@@ -276,10 +280,7 @@ class NewIndex
             try {
                 $rebuild->abort();
             } catch (Throwable $abortError) {
-                throw new RuntimeException(
-                    "Rebuild fill failed and abort of '{$rebuild->name}' also failed. ".$abortError->getMessage(),
-                    previous: $throwable,
-                );
+                throw new RuntimeException(sprintf("Rebuild fill failed and abort of '%s' also failed. ", $rebuild->name).$abortError->getMessage(), $throwable->getCode(), previous: $throwable);
             }
 
             throw $throwable;

@@ -13,6 +13,7 @@ use Sigmie\Mappings\Types\HTML;
 use Sigmie\Search\NewRerank;
 use Sigmie\Search\QueryString;
 use Sigmie\Search\SearchContext;
+use stdClass;
 
 use function Sigmie\Functions\object_map;
 use function Sigmie\Functions\response_value;
@@ -207,7 +208,7 @@ class SigmieSearchResponse extends AbstractFormatter
      * fields as `nested[name] -> filter[name] -> field aggs`. Additional
      * ancestor scopes wrap that path under `_nested`.
      */
-    public function facet(string $field): array|\stdClass|null
+    public function facet(string $field): array|stdClass|null
     {
         $type = $this->properties->get($field);
 

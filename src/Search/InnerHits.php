@@ -7,6 +7,8 @@ namespace Sigmie\Search;
 use InvalidArgumentException;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Nested;
+use Sigmie\Mappings\Types\Type;
+use stdClass;
 
 use function Sigmie\Functions\hit_score;
 use function Sigmie\Functions\merge_named;
@@ -90,7 +92,7 @@ class InnerHits
      */
     public static function matchList(mixed $matches): array
     {
-        if ($matches instanceof \stdClass) {
+        if ($matches instanceof stdClass) {
             return get_object_vars($matches);
         }
 
@@ -149,7 +151,7 @@ class InnerHits
 
         foreach ($this->requests as $request) {
             foreach ($request['fields'] as $field) {
-                if ($properties->get($field) === null) {
+                if (! $properties->get($field) instanceof Type) {
                     throw new InvalidArgumentException(sprintf("Field '%s' does not exist.", $field));
                 }
 
@@ -258,6 +260,7 @@ class InnerHits
             if ($clause === null) {
                 continue;
             }
+
             [$path, $returned] = $clause;
 
             if ($returned) {

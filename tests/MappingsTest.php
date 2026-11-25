@@ -187,6 +187,7 @@ class MappingsTest extends TestCase
     {
         $properties = new NewProperties;
         $properties->type((new Range('available', 'dd/MM/uuuu||epoch_millis'))->date());
+
         $alias = uniqid('.date-range-epoch-fallback-');
         $index = $this->sigmie->newIndex($alias)->properties($properties)->create();
         try {
@@ -206,7 +207,7 @@ class MappingsTest extends TestCase
     public function test_search_as_you_type_uses_shingles_with_a_custom_analyzer(): void
     {
         $properties = new NewProperties;
-        $properties->searchAsYouType('title')->withNewAnalyzer(fn (NewAnalyzer $a) => $a->lowercase());
+        $properties->searchAsYouType('title')->withNewAnalyzer(fn (NewAnalyzer $a): NewAnalyzer => $a->lowercase());
         $name = uniqid('.custom-shingle-search-');
         $index = $this->sigmie->newIndex($name)->properties($properties)->create();
         try {

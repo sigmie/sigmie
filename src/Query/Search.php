@@ -15,7 +15,6 @@ use Sigmie\Parse\SortParser;
 use Sigmie\Query\Contracts\Aggs as AggsContract;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\MatchAll;
-use stdClass;
 
 use function Sigmie\Functions\merge_named;
 use function Sigmie\Functions\object_map;
@@ -323,7 +322,7 @@ class Search
         }
 
         $result = merge_named([
-            ...$query !== null ? ['query' => $query->toRaw()] : [],
+            ...$query instanceof Query ? ['query' => $query->toRaw()] : [],
             'from' => $this->from,
             'size' => $this->size,
             'min_score' => $this->minScore,

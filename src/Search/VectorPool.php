@@ -46,7 +46,11 @@ class VectorPool
         foreach ($items as $item) {
             $text = $item['text'];
             $dims = $item['dims'];
-            if ($this->has($text, $dims) || isset($seen[$text][$dims])) {
+            if ($this->has($text, $dims)) {
+                continue;
+            }
+
+            if (isset($seen[$text][$dims])) {
                 continue;
             }
 

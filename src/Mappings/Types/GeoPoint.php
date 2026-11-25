@@ -18,12 +18,11 @@ class GeoPoint extends Type
     public function validate(string $key, mixed $value): array
     {
         if (($this->storedMapping['ignore_malformed'] ?? false) === true) {
-            if (is_array($value) && array_is_list($value) && (is_int($value[0] ?? null) || is_float($value[0] ?? null))) {
-                // A leading number commits the parser to a coordinate tuple before normalization.
-                if (! is_numeric($value[1] ?? null) || (array_key_exists(2, $value) && ! is_int($value[2]) && ! is_float($value[2]))) {
-                    return [false, sprintf('The field %s has invalid numeric coordinates.', $key)];
-                }
+            // A leading number commits the parser to a coordinate tuple before normalization.
+            if (is_array($value) && array_is_list($value) && (is_int($value[0] ?? null) || is_float($value[0] ?? null)) && (! is_numeric($value[1] ?? null) || (array_key_exists(2, $value) && ! is_int($value[2]) && ! is_float($value[2])))) {
+                return [false, sprintf('The field %s has invalid numeric coordinates.', $key)];
             }
+
             return [true, ''];
         }
 
@@ -43,11 +42,14 @@ class GeoPoint extends Type
         if ($point instanceof stdClass) {
             $point = (array) $point;
         }
+
         if (is_string($point)) {
             if (str_contains($point, ',')) {
                 $coords = array_map('trim', explode(',', $point));
+
                 return $this->validTuple($coords, latitudeFirst: true);
             }
+
             if (preg_match('/^point(?:\s+(z))?\s*\(([^()]*)\)\z/i', trim($point), $match)) {
                 $coordinates = preg_split('/\s+/', trim($match[2]));
 
@@ -61,16 +63,19 @@ class GeoPoint extends Type
         if (! is_array($point)) {
             return false;
         }
+
         if (array_is_list($point)) {
             return (is_int($point[0] ?? null) || is_float($point[0] ?? null))
                 && (count($point) !== 3 || is_float($point[2]) || is_int($point[2]))
                 && $this->validTuple($point);
         }
+
         if (isset($point['type'], $point['coordinates'])) {
             return count($point) === 2 && is_string($point['type']) && strcasecmp($point['type'], 'point') === 0
                 && is_array($point['coordinates']) && array_is_list($point['coordinates'])
                 && $this->validTuple($point['coordinates']);
         }
+
         if (! isset($point['lat'], $point['lon']) || array_diff_key($point, ['lat' => true, 'lon' => true, 'z' => true]) !== []) {
             return false;
         }
@@ -79,6 +84,7 @@ class GeoPoint extends Type
         if (array_key_exists('z', $point)) {
             $coords[] = $point['z'];
         }
+
         return $this->validTuple($coords);
     }
 
@@ -88,6 +94,7 @@ class GeoPoint extends Type
             || ($this->storedMapping['ignore_z_value'] ?? true) === false)) {
             return false;
         }
+
         [$lon, $lat] = $latitudeFirst ? [$coordinates[1], $coordinates[0]] : $coordinates;
 
         return is_numeric($lat) && is_numeric($lon)

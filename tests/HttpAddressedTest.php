@@ -4,32 +4,38 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Carbon\Carbon;
 use Elastic\Transport\Exception\NoNodeAvailableException;
 use Elastic\Transport\NodePool\NodePoolInterface;
 use Elastic\Transport\TransportBuilder;
-use GuzzleHttp\Exception\RequestException as GuzzleRequestException;
-use Http\Client\Exception\RequestException;
-use GuzzleHttp\Psr7\NoSeekStream;
 use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException as GuzzleRequestException;
 use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\PromiseInterface;
-use GuzzleHttp\Psr7\Uri;
-use GuzzleHttp\Psr7\Utils;
-use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\NoSeekStream;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response as PsrResponse;
+use GuzzleHttp\Psr7\Uri;
+use GuzzleHttp\Psr7\UriResolver;
+use GuzzleHttp\Psr7\Utils;
+use Http\Client\Exception\HttpException;
+use Http\Client\Exception\RequestException;
+use Http\Client\HttpAsyncClient;
 use Http\Promise\FulfilledPromise;
 use Http\Promise\Promise;
-use Http\Client\HttpAsyncClient;
-use Http\Client\Exception\HttpException;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use RuntimeException;
 use Sigmie\Base\APIs\Analyze;
 use Sigmie\Base\APIs\Bulk;
 use Sigmie\Base\APIs\Cat;
-use Sigmie\Base\APIs\Count;
 use Sigmie\Base\APIs\Cluster;
+use Sigmie\Base\APIs\Count;
+use Sigmie\Base\APIs\Delete;
+use Sigmie\Base\APIs\Doc;
+use Sigmie\Base\APIs\Explain;
 use Sigmie\Base\APIs\Index as IndexApi;
 use Sigmie\Base\APIs\Ingest;
 use Sigmie\Base\APIs\Mget as MgetApi;
@@ -40,33 +46,32 @@ use Sigmie\Base\APIs\Stats;
 use Sigmie\Base\APIs\Tasks;
 use Sigmie\Base\APIs\Template;
 use Sigmie\Base\APIs\Update;
-use Sigmie\Base\Drivers\Elasticsearch;
-use Sigmie\Base\Drivers\Opensearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
-use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
-use Sigmie\Search\Autocomplete\NewPipeline;
-use Sigmie\Search\ExistingScript;
-use Sigmie\Search\NewSearch;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Contracts\SearchEngine;
-use Sigmie\Base\Http\ElasticsearchResponse as Response;
+use Sigmie\Base\Drivers\Elasticsearch;
+use Sigmie\Base\Drivers\Opensearch;
+use Sigmie\Base\ElasticsearchException;
+use Sigmie\Base\Http\ElasticsearchConnection as HttpConnection;
 use Sigmie\Base\Http\ElasticsearchRequest as HttpRequest;
+use Sigmie\Base\Http\ElasticsearchResponse as Response;
 use Sigmie\Base\Http\PointInTimeRequests;
-use Sigmie\Base\Http\TransportClient;
 use Sigmie\Base\Http\Requests\Bulk as BulkRequest;
 use Sigmie\Base\Http\Requests\MSearch as MSearchRequest;
 use Sigmie\Base\Http\Responses\Mget;
 use Sigmie\Base\Http\Responses\Search;
+use Sigmie\Base\Http\TransportClient;
 use Sigmie\Document\Document;
-use Sigmie\Index\AliasedIndex;
 use Sigmie\Document\Hit;
-use Sigmie\Base\ElasticsearchException;
 use Sigmie\Http\Contracts\JSONClient;
 use Sigmie\Http\JSONResponse;
+use Sigmie\Index\AliasedIndex;
+use Sigmie\Search\Autocomplete\NewPipeline;
+use Sigmie\Search\ExistingScript;
+use Sigmie\Search\NewSearch;
 use Sigmie\Sigmie;
 use Sigmie\Testing\Assert as IndexAssert;
-use Carbon\Carbon;
 use Sigmie\Testing\ClearElasticsearch;
 use Sigmie\Testing\ParallelRunner;
 use Sigmie\Testing\TestCase as SigmieTestCase;
@@ -83,8 +88,8 @@ class HttpAddressedTest extends TestCase
         );
         $api = new class
         {
-            use MgetApi;
             use Bulk { bulkAPICall as public; }
+            use MgetApi;
         };
         $api->setElasticsearchConnection($connection);
 
@@ -190,8 +195,8 @@ class HttpAddressedTest extends TestCase
         try {
             $promise->wait();
             $this->fail('Expected a network error.');
-        } catch (NoNodeAvailableException $error) {
-            $this->assertSame($failure, $error->getPrevious());
+        } catch (NoNodeAvailableException $noNodeAvailableException) {
+            $this->assertSame($failure, $noNodeAvailableException->getPrevious());
         }
     }
 
@@ -205,9 +210,10 @@ class HttpAddressedTest extends TestCase
         try {
             $client->query('movies')->promise()->wait();
             $this->fail('Expected a transfer failure.');
-        } catch (RequestException $error) {
-            $this->assertSame($failure, $error->getPrevious());
+        } catch (RequestException $requestException) {
+            $this->assertSame($failure, $requestException->getPrevious());
         }
+
         $this->assertTrue($client->isConnected());
     }
 
@@ -250,8 +256,8 @@ class HttpAddressedTest extends TestCase
         try {
             $sigmie->query('movies')->promise()->wait();
             $this->fail('Expected HTTP 403.');
-        } catch (HttpException $error) {
-            $this->assertSame('https://localhost:9243/proxy/movies/_search', (string) $error->getRequest()->getUri());
+        } catch (HttpException $httpException) {
+            $this->assertSame('https://localhost:9243/proxy/movies/_search', (string) $httpException->getRequest()->getUri());
         }
     }
 
@@ -372,6 +378,7 @@ class HttpAddressedTest extends TestCase
 
     /**
      * @dataProvider searchRequests
+     *
      * @withoutCluster
      */
     public function test_search_accepts_a_connection_response_implementing_the_contract(string $entryPoint): void
@@ -979,8 +986,8 @@ class HttpAddressedTest extends TestCase
         try {
             $first->indexAPICall('movies', 'GET');
             $this->fail('The node pool is empty.');
-        } catch (NoNodeAvailableException $exception) {
-            $this->assertNull($exception->getPrevious());
+        } catch (NoNodeAvailableException $noNodeAvailableException) {
+            $this->assertNull($noNodeAvailableException->getPrevious());
         }
     }
 
@@ -1049,6 +1056,7 @@ class HttpAddressedTest extends TestCase
             $client->indexAPICall('movies', 'GET');
             $ports[] = $handler->getLastRequest()->getUri()->getPort();
         }
+
         sort($ports);
         $this->assertSame([9100, 9101], $ports);
     }
@@ -1100,9 +1108,9 @@ class HttpAddressedTest extends TestCase
         try {
             $sigmie->indexAPICall('movies', 'GET');
             $this->fail('The request failed.');
-        } catch (ElasticsearchException $exception) {
-            $this->assertSame('Request failed with code 502.', $exception->json('type'));
-            $this->assertSame('Bad gateway', $exception->json('body'));
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame('Request failed with code 502.', $elasticsearchException->json('type'));
+            $this->assertSame('Bad gateway', $elasticsearchException->json('body'));
         }
     }
 
@@ -1226,12 +1234,12 @@ class HttpAddressedTest extends TestCase
      */
     public function an_exception_keeps_the_request_body(): void
     {
-        $request = new \Sigmie\Base\Http\ElasticsearchRequest('POST', new \GuzzleHttp\Psr7\Uri('/movies/_search'), [
+        $request = new HttpRequest('POST', new Uri('/movies/_search'), [
             'query' => ['match_all' => (object) []],
         ]);
-        (string) $request->getBody();
+        $request->getBody();
 
-        $response = Response::fromPsrResponse(new \GuzzleHttp\Psr7\Response(400, ['Content-Type' => 'application/json'], json_encode([
+        $response = Response::fromPsrResponse(new PsrResponse(400, ['Content-Type' => 'application/json'], json_encode([
             'error' => ['type' => 'search_phase_execution_exception'],
         ])));
 
@@ -1245,15 +1253,15 @@ class HttpAddressedTest extends TestCase
      */
     public function an_ndjson_exception_keeps_the_operations(): void
     {
-        $bulk = new \Sigmie\Base\Http\Requests\Bulk('POST', new \GuzzleHttp\Psr7\Uri('/movies/_bulk'), [
+        $bulk = new BulkRequest('POST', new Uri('/movies/_bulk'), [
             ['index' => ['_id' => '1']],
             ['title' => 'Matrix'],
         ]);
-        $msearch = new \Sigmie\Base\Http\Requests\MSearch('POST', new \GuzzleHttp\Psr7\Uri('/_msearch'), [
+        $msearch = new MSearchRequest('POST', new Uri('/_msearch'), [
             ['index' => 'movies'],
             ['query' => ['match_all' => (object) []]],
         ]);
-        $response = \Sigmie\Base\Http\Responses\Bulk::fromPsrResponse(new \GuzzleHttp\Psr7\Response(400, [], json_encode([
+        $response = \Sigmie\Base\Http\Responses\Bulk::fromPsrResponse(new PsrResponse(400, [], json_encode([
             'error' => ['type' => 'illegal_argument_exception', 'reason' => 'malformed'],
         ])));
 
@@ -1314,7 +1322,7 @@ class HttpAddressedTest extends TestCase
                 $code = $request->getMethod() === 'HEAD' ? 404 : 200;
 
                 if (str_ends_with($path, '/_mget')) {
-                    return new \Sigmie\Base\Http\Responses\Mget($code, [], '{}');
+                    return new Mget($code, [], '{}');
                 }
 
                 if (str_ends_with($path, '/_bulk')) {
@@ -1322,7 +1330,7 @@ class HttpAddressedTest extends TestCase
                 }
 
                 if (str_contains($path, '/_search')) {
-                    return new \Sigmie\Base\Http\Responses\Search($code, [], '{}');
+                    return new Search($code, [], '{}');
                 }
 
                 return new Response($code, [], '{}');
@@ -1346,23 +1354,24 @@ class HttpAddressedTest extends TestCase
 
         $client = new class
         {
-            use \Sigmie\Base\APIs\Doc;
-            use \Sigmie\Base\APIs\Delete;
-            use \Sigmie\Base\APIs\Explain;
             use Analyze;
             use Bulk;
             use Count;
+            use Delete;
+            use Doc;
+            use Explain;
             use IndexApi;
             use Ingest;
             use MgetApi;
             use Script;
             use SearchApi;
-            use SearchTemplate, Template {
-                SearchTemplate::templateAPICall insteadof Template;
+            use SearchTemplate {
                 SearchTemplate::templateAPICall as searchTemplateCall;
-                Template::templateAPICall as storedTemplateCall;
             }
             use Stats;
+            use Template {
+                Template::templateAPICall as storedTemplateCall;
+            }
             use Update;
 
             public function send(string $id): void
@@ -1507,7 +1516,7 @@ class HttpAddressedTest extends TestCase
         $connection = $this->capturingConnection();
         $client = new class
         {
-            use \Sigmie\Base\APIs\Cat;
+            use Cat;
 
             public function send(string $pattern): void
             {
@@ -1700,7 +1709,7 @@ class HttpAddressedTest extends TestCase
      */
     public function an_empty_pit_index_stays_on_the_cluster_host(): void
     {
-        $base = new \GuzzleHttp\Psr7\Uri('https://localhost:9200');
+        $base = new Uri('https://localhost:9200');
 
         foreach ([new Elasticsearch, new Opensearch] as $engine) {
             $connection = new class($engine) implements ElasticsearchConnection
@@ -1713,7 +1722,7 @@ class HttpAddressedTest extends TestCase
                 {
                     $this->uris[] = $request->getUri();
 
-                    return $request->response(new \GuzzleHttp\Psr7\Response(200, [], '{}'));
+                    return $request->response(new PsrResponse(200, [], '{}'));
                 }
 
                 public function promise(ElasticsearchRequest $request): Promise
@@ -1732,10 +1741,10 @@ class HttpAddressedTest extends TestCase
                 }
             };
 
-            (new \Sigmie\Base\Http\PointInTimeRequests($connection))->open('', '1m');
+            (new PointInTimeRequests($connection))->open('', '1m');
 
             $uri = $connection->uris[0];
-            $resolved = (string) \GuzzleHttp\Psr7\UriResolver::resolve($base, $uri);
+            $resolved = (string) UriResolver::resolve($base, $uri);
             $path = $engine instanceof Opensearch ? '/_search/point_in_time' : '/_pit';
             $query = $engine instanceof Opensearch
                 ? 'keep_alive=1m&allow_partial_pit_creation=false'
@@ -1748,7 +1757,7 @@ class HttpAddressedTest extends TestCase
             $this->assertSame('https://localhost:9200'.$openPath.'?'.$query, $resolved);
 
             $connection->uris = [];
-            (new \Sigmie\Base\Http\PointInTimeRequests($connection))->open('movies', '1m');
+            (new PointInTimeRequests($connection))->open('movies', '1m');
             $this->assertSame('', $connection->uris[0]->getHost());
             $this->assertSame('/movies'.$path, $connection->uris[0]->getPath());
         }
@@ -1759,11 +1768,11 @@ class HttpAddressedTest extends TestCase
      */
     public function an_exception_body_with_invalid_utf8_is_constructed(): void
     {
-        $request = new \Sigmie\Base\Http\ElasticsearchRequest('GET', new \GuzzleHttp\Psr7\Uri('/movies'));
-        $response = $request->response(new \GuzzleHttp\Psr7\Response(502, [], "bad \xB1 bytes"));
+        $request = new HttpRequest('GET', new Uri('/movies'));
+        $response = $request->response(new PsrResponse(502, [], "bad \xB1 bytes"));
         $exception = $response->exception($request);
 
-        $this->assertInstanceOf(\Sigmie\Base\ElasticsearchException::class, $exception);
+        $this->assertInstanceOf(ElasticsearchException::class, $exception);
         $this->assertSame(502, $exception->getCode());
     }
 
@@ -1772,33 +1781,33 @@ class HttpAddressedTest extends TestCase
      */
     public function a_single_node_connection_error_keeps_the_curl_error(): void
     {
-        $one = new \GuzzleHttp\Handler\MockHandler([
-            new \GuzzleHttp\Exception\ConnectException(
+        $one = new MockHandler([
+            new ConnectException(
                 'cURL error 7: Failed to connect',
-                new \GuzzleHttp\Psr7\Request('GET', 'http://10.0.0.9:9200/'),
+                new Request('GET', 'http://10.0.0.9:9200/'),
             ),
         ]);
-        $sigmie = \Sigmie\Sigmie::create(['http://10.0.0.9:9200'], config: [
+        $sigmie = Sigmie::create(['http://10.0.0.9:9200'], config: [
             'handler' => $one,
         ]);
 
         try {
             $sigmie->indices();
             $this->fail('indices() returned');
-        } catch (\Elastic\Transport\Exception\NoNodeAvailableException $exception) {
-            $previous = $exception->getPrevious();
+        } catch (NoNodeAvailableException $noNodeAvailableException) {
+            $previous = $noNodeAvailableException->getPrevious();
             $this->assertNotNull($previous);
             $this->assertStringContainsString('cURL error 7', $previous->getMessage());
         }
 
-        $two = new \GuzzleHttp\Handler\MockHandler([
-            new \GuzzleHttp\Exception\ConnectException(
+        $two = new MockHandler([
+            new ConnectException(
                 'cURL error 7: Failed to connect',
-                new \GuzzleHttp\Psr7\Request('GET', 'http://10.0.0.1:9200/'),
+                new Request('GET', 'http://10.0.0.1:9200/'),
             ),
-            new \GuzzleHttp\Psr7\Response(200, [], '[]'),
+            new PsrResponse(200, [], '[]'),
         ]);
-        $pair = \Sigmie\Sigmie::create(
+        $pair = Sigmie::create(
             ['http://10.0.0.1:9200', 'http://10.0.0.2:9200'],
             config: ['handler' => $two],
         );
@@ -1806,8 +1815,8 @@ class HttpAddressedTest extends TestCase
         try {
             $pair->indices();
             $this->fail('indices() returned');
-        } catch (\Elastic\Transport\Exception\NoNodeAvailableException $exception) {
-            $previous = $exception->getPrevious();
+        } catch (NoNodeAvailableException $noNodeAvailableException) {
+            $previous = $noNodeAvailableException->getPrevious();
             $this->assertNotNull($previous);
             $this->assertStringContainsString('cURL error 7', $previous->getMessage());
         }
@@ -1821,14 +1830,14 @@ class HttpAddressedTest extends TestCase
     public function config_redirect_and_http_error_values_replace_the_defaults(): void
     {
         $defaults = null;
-        $defaultHandler = static function ($request, array $options) use (&$defaults) {
+        $defaultHandler = static function ($request, array $options) use (&$defaults): PromiseInterface {
             $defaults = $options;
 
-            return \GuzzleHttp\Promise\Create::promiseFor(
-                new \GuzzleHttp\Psr7\Response(200, ['Content-Type' => 'application/json'], '[]')
+            return Create::promiseFor(
+                new PsrResponse(200, ['Content-Type' => 'application/json'], '[]')
             );
         };
-        \Sigmie\Sigmie::create(['http://127.0.0.1:9200'], config: [
+        Sigmie::create(['http://127.0.0.1:9200'], config: [
             'handler' => $defaultHandler,
         ])->indices();
 
@@ -1836,14 +1845,14 @@ class HttpAddressedTest extends TestCase
         $this->assertFalse($defaults['http_errors']);
 
         $overrides = null;
-        $overrideHandler = static function ($request, array $options) use (&$overrides) {
+        $overrideHandler = static function ($request, array $options) use (&$overrides): PromiseInterface {
             $overrides = $options;
 
-            return \GuzzleHttp\Promise\Create::promiseFor(
-                new \GuzzleHttp\Psr7\Response(200, ['Content-Type' => 'application/json'], '[]')
+            return Create::promiseFor(
+                new PsrResponse(200, ['Content-Type' => 'application/json'], '[]')
             );
         };
-        \Sigmie\Sigmie::create(['http://127.0.0.1:9200'], config: [
+        Sigmie::create(['http://127.0.0.1:9200'], config: [
             'handler' => $overrideHandler,
             'allow_redirects' => true,
             'http_errors' => true,
@@ -1875,11 +1884,11 @@ class HttpAddressedTest extends TestCase
 
     private function cloudHost(string $cloudId): string
     {
-        $sigmie = \Sigmie\Sigmie::createForCloud($cloudId, 'your-encoded-api-key');
-        $connection = (new \ReflectionProperty($sigmie, 'elasticsearchConnection'))->getValue($sigmie);
-        $jsonClient = (new \ReflectionProperty($connection, 'http'))->getValue($connection);
-        $transport = (new \ReflectionProperty($jsonClient, 'http'))->getValue($jsonClient);
-        $nodes = (new \ReflectionProperty($transport->getNodePool(), 'nodes'))->getValue($transport->getNodePool());
+        $sigmie = Sigmie::createForCloud($cloudId, 'your-encoded-api-key');
+        $connection = (new ReflectionProperty($sigmie, 'elasticsearchConnection'))->getValue($sigmie);
+        $jsonClient = (new ReflectionProperty($connection, 'http'))->getValue($connection);
+        $transport = (new ReflectionProperty($jsonClient, 'http'))->getValue($jsonClient);
+        $nodes = (new ReflectionProperty($transport->getNodePool(), 'nodes'))->getValue($transport->getNodePool());
 
         return (string) $nodes[0]->getUri();
     }
@@ -1927,6 +1936,7 @@ class HttpAddressedTest extends TestCase
 
         $this->assertSame(['18446744073709551615', 42], $response->json('sort'));
     }
+
     public function test_literal_dotted_index_in_exception_json(): void
     {
         $error = new ElasticsearchException(['failures' => ['logs.2024' => ['reason' => 'closed']]], 400);
@@ -1964,12 +1974,12 @@ class HttpAddressedTest extends TestCase
     public function test_cleanup_continues_when_a_listed_resource_disappears(array $responses, array $expectedRequests): void
     {
         $queue = new MockHandler(array_map(
-            fn (array $response) => new PsrResponse($response[0], [], json_encode($response[1], JSON_THROW_ON_ERROR)),
+            fn (array $response): PsrResponse => new PsrResponse($response[0], [], json_encode($response[1], JSON_THROW_ON_ERROR)),
             $responses,
         ));
         $requests = [];
         $sigmie = Sigmie::create('http://localhost:9200', config: [
-            'handler' => function ($request, array $options) use ($queue, &$requests) {
+            'handler' => function ($request, array $options) use ($queue, &$requests): PromiseInterface {
                 $requests[] = $request->getMethod().' '.$request->getUri()->getPath();
 
                 return $queue($request, $options);
@@ -2035,8 +2045,8 @@ class HttpAddressedTest extends TestCase
         try {
             $fixture->runBare();
             $this->fail('The fixture did not report the setup failure.');
-        } catch (RuntimeException $exception) {
-            $this->assertSame('Setup failed', $exception->getMessage());
+        } catch (RuntimeException $runtimeException) {
+            $this->assertSame('Setup failed', $runtimeException->getMessage());
             $this->assertFalse(Carbon::hasTestNow());
         } finally {
             Carbon::setTestNow();
@@ -2052,26 +2062,28 @@ class HttpAddressedTest extends TestCase
         $log = $directory.'/results.xml';
 
         try {
-            file_put_contents($first, <<<'PHP'
-                <?php
-                final class FirstTest extends \PHPUnit\Framework\TestCase
-                {
-                    public function test_it_errors(): void
-                    {
-                        throw new \RuntimeException('First worker error');
-                    }
-                }
-                PHP);
-            file_put_contents($second, <<<'PHP'
-                <?php
-                final class SecondTest extends \PHPUnit\Framework\TestCase
-                {
-                    public function test_it_passes(): void
-                    {
-                        self::assertTrue(true);
-                    }
-                }
-                PHP);
+            file_put_contents($first, <<<'PHP_WRAP'
+<?php
+final class FirstTest extends \PHPUnit\Framework\TestCase
+{
+    public function test_it_errors(): void
+    {
+        throw new \RuntimeException('First worker error');
+    }
+}
+PHP_WRAP
+            );
+            file_put_contents($second, <<<'PHP_WRAP'
+<?php
+final class SecondTest extends \PHPUnit\Framework\TestCase
+{
+    public function test_it_passes(): void
+    {
+        self::assertTrue(true);
+    }
+}
+PHP_WRAP
+            );
 
             $process = new Process([
                 PHP_BINARY, 'vendor/bin/paratest', '--runner='.ParallelRunner::class,
@@ -2084,6 +2096,7 @@ class HttpAddressedTest extends TestCase
             foreach (glob($directory.'/*') as $file) {
                 unlink($file);
             }
+
             rmdir($directory);
         }
     }
@@ -2098,9 +2111,9 @@ class HttpAddressedTest extends TestCase
         try {
             $sigmie->newQuery('movies')->matchAll()->promise()->wait();
             $this->fail('Expected an HTTP error.');
-        } catch (HttpException $exception) {
-            $this->assertSame(404, $exception->getCode());
-            $this->assertStringContainsString('Missing movies', (string) $exception->getResponse()->getBody());
+        } catch (HttpException $httpException) {
+            $this->assertSame(404, $httpException->getCode());
+            $this->assertStringContainsString('Missing movies', (string) $httpException->getResponse()->getBody());
         }
     }
 

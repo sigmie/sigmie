@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\Mappings\Types\DateTime;
+use Sigmie\Mappings\Types\Keyword;
+
 require_once __DIR__.'/Stubs/LaravelAiStubs.php';
 
 use InvalidArgumentException;
@@ -34,12 +37,12 @@ class QueryRecipeTest extends TestCase
 
         $this->assertSame(2, $recipe->bind([])->toArray()['limit']);
         $this->assertSame(3, $recipe->bind(['rows' => 3.0])->toArray()['limit']);
-        $this->assertInvalid(fn () => $recipe->bind(['rows' => 2.5]), 'Query recipe binding [rows] must be an integer.');
+        $this->assertInvalid(fn (): AnalyticsRequest => $recipe->bind(['rows' => 2.5]), 'Query recipe binding [rows] must be an integer.');
     }
 
     public function test_explicit_slot_defaults_are_validated_as_request_arguments(): void
     {
-        $this->assertInvalid(fn () => QueryRecipe::fromArray($this->definition('events', [
+        $this->assertInvalid(fn (): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
             'widget' => 'table', 'date_field' => 'date', 'limit' => 5,
         ], [[
             'name' => 'rows', 'target' => 'limit', 'type' => 'integer', 'default' => 0,
@@ -49,13 +52,14 @@ class QueryRecipeTest extends TestCase
     public function test_recipe_rejects_a_nested_timeline_that_the_tool_cannot_query(): void
     {
         $properties = new NewProperties;
-        $properties->nested('events', fn (NewProperties $events) => $events->datetime('occurred_at'));
+        $properties->nested('events', fn (NewProperties $events): DateTime => $events->datetime('occurred_at'));
+
         $recipe = QueryRecipe::fromArray($this->definition('events', [
             'widget' => 'trend', 'date_field' => 'events.occurred_at', 'metric' => 'count',
         ]));
 
         $this->assertInvalid(
-            fn () => $recipe->validateAgainst($this->eventsIndex($properties)),
+            fn (): QueryRecipe => $recipe->validateAgainst($this->eventsIndex($properties)),
             'Query recipe date_field [events.occurred_at] must be outside nested documents.',
         );
     }
@@ -78,6 +82,7 @@ class QueryRecipeTest extends TestCase
         $props->date('date');
         $props->number('amount');
         $props->keyword('status');
+
         $recipe = QueryRecipe::fromArray($this->definition('events', [
             'widget' => 'histogram_metric', 'date_field' => 'date', 'metric' => 'count',
             'field' => 'status', 'bucket_field' => 'amount', 'bucket_size' => 50,
@@ -90,6 +95,7 @@ class QueryRecipeTest extends TestCase
     {
         $props = new NewProperties;
         $props->date('date');
+
         $recipe = QueryRecipe::fromArray($this->definition('events', [
             'widget' => 'percentiles', 'date_field' => 'date', 'field' => 'date',
         ]));
@@ -102,6 +108,7 @@ class QueryRecipeTest extends TestCase
         $props = new NewProperties;
         $props->date('date');
         $props->caseSensitiveKeyword('code');
+
         $definition = $this->definition('events', [
             'widget' => 'kpi', 'date_field' => 'date', 'metric' => 'count',
         ], [['name' => 'code', 'type' => 'string', 'default' => ' A ']]);
@@ -298,6 +305,7 @@ class QueryRecipeTest extends TestCase
         $props = new NewProperties;
         $props->date('occurred_at');
         $props->geoPoint('location');
+
         $index = $this->eventsIndex($props);
         $sort = 'location[+.5,-.75]:m:asc';
 
@@ -1085,6 +1093,7 @@ class QueryRecipeTest extends TestCase
         $props->keyword('customer_id');
         $props->category('product');
         $props->bool('active');
+
         $index = $this->eventsIndex($props);
 
         foreach (['customer_id', 'product', 'active', 'amount'] as $field) {
@@ -1200,6 +1209,7 @@ class QueryRecipeTest extends TestCase
         $props->date('occurred_at');
         $props->keyword('category');
         $props->keyword('user');
+
         $recipe = QueryRecipe::fromArray($this->definition('events', [
             'widget' => 'grouped_metrics',
             'date_field' => 'occurred_at',
@@ -1215,7 +1225,8 @@ class QueryRecipeTest extends TestCase
     {
         $props = new NewProperties;
         $props->date('occurred_at');
-        $props->nested('items', fn (NewProperties $items) => $items->keyword('sku'));
+        $props->nested('items', fn (NewProperties $items): Keyword => $items->keyword('sku'));
+
         $definition = $this->definition('events', [
             'widget' => 'kpi',
             'date_field' => 'occurred_at',
@@ -1236,6 +1247,7 @@ class QueryRecipeTest extends TestCase
         $first = new NewProperties;
         $first->date('01');
         $first->keyword('1');
+
         $second = new NewProperties;
         $second->keyword('1');
         $second->date('01');
@@ -1259,6 +1271,7 @@ class QueryRecipeTest extends TestCase
         $properties = new NewProperties;
         $properties->date('day');
         $properties->keyword('region');
+
         $index = $this->eventsIndex($properties);
         foreach ([
             ['widget' => 'breakdown', 'group_by' => 'day'],
@@ -1274,6 +1287,7 @@ class QueryRecipeTest extends TestCase
         $properties = new NewProperties;
         $properties->date('date');
         $properties->keyword('group');
+
         $index = $this->eventsIndex($properties);
 
         foreach (['min', 'max', 'median'] as $metric) {
@@ -1439,6 +1453,7 @@ class QueryRecipeTest extends TestCase
             'geo' => [...$base, 'widget' => 'geo', 'field' => 'location', 'precision' => 5],
         ];
     }
+
     public function test_date_filter_slots_reject_invalid_iso_offsets(): void
     {
         $definition = $this->definition('events', [

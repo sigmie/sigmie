@@ -5,23 +5,21 @@ declare(strict_types=1);
 namespace Sigmie\Mappings;
 
 use ArrayAccess;
-use stdClass;
 use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Index\Analysis\BuiltInAnalyzer;
-use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Index\Analysis\SimpleAnalyzer;
 use Sigmie\Index\Analysis\Standard;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Index\Contracts\Analyzer;
 use Sigmie\Mappings\Contracts\FieldContainer;
 use Sigmie\Mappings\Contracts\Type as ContractsType;
-use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Address;
+use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\Boost;
-use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
+use Sigmie\Mappings\Types\Category;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\DateTime;
 use Sigmie\Mappings\Types\DenseVector;
@@ -30,12 +28,10 @@ use Sigmie\Mappings\Types\FlatObject;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\HTML;
 use Sigmie\Mappings\Types\Id;
-use Sigmie\Mappings\Types\LongText;
-use Sigmie\Mappings\Types\ShortText;
 use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\KnnVector;
-use Sigmie\Mappings\Types\SearchableNumber;
+use Sigmie\Mappings\Types\LongText;
 use Sigmie\Mappings\Types\Name;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
@@ -43,11 +39,14 @@ use Sigmie\Mappings\Types\Object_;
 use Sigmie\Mappings\Types\Path;
 use Sigmie\Mappings\Types\Price;
 use Sigmie\Mappings\Types\Range;
+use Sigmie\Mappings\Types\SearchableNumber;
+use Sigmie\Mappings\Types\ShortText;
 use Sigmie\Mappings\Types\Tags;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Title;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
+use stdClass;
 
 use function Sigmie\Functions\declared_list;
 use function Sigmie\Functions\path_key;
@@ -56,17 +55,13 @@ class Properties extends Type implements ArrayAccess, FieldContainer
 {
     public const ROOT_NAME = 'mappings';
 
-    protected array $fields = [];
-
     public ?Boost $boostField = null;
 
-    public function __construct(string $name = self::ROOT_NAME, array $fields = [])
+    public function __construct(string $name = self::ROOT_NAME, protected array $fields = [])
     {
         parent::__construct($name);
 
         $this->type = ElasticsearchMappingType::PROPERTIES->value;
-
-        $this->fields = $fields;
         $this->setFieldPaths($this->isRoot() ? '' : $this->name);
         $this->refreshBoostField();
     }
@@ -172,7 +167,11 @@ class Properties extends Type implements ArrayAccess, FieldContainer
         }
 
         // Prefer a list of records when every item could be an object in this mapping.
-        return ! $this->isSourceObjectList($value) || array_filter($value, fn (mixed $item): bool => $item !== null) === [];
+        if (! $this->isSourceObjectList($value)) {
+            return true;
+        }
+
+        return array_filter($value, fn (mixed $item): bool => $item !== null) === [];
     }
 
     public function isSourceObjectList(array $value): bool
@@ -185,6 +184,7 @@ class Properties extends Type implements ArrayAccess, FieldContainer
             if ($item === null) {
                 continue;
             }
+
             if (! $item instanceof stdClass && (
                 ! is_array($item) || ($item !== [] && array_is_list($item) && ! declared_list($item, $this->fields))
             )) {
@@ -199,7 +199,7 @@ class Properties extends Type implements ArrayAccess, FieldContainer
     {
         foreach ($source as $name => $value) {
             $field = $this->get((string) $name);
-            if ($name === '_embeddings' && $field === null && is_array($value) && $value !== []) {
+            if ($name === '_embeddings' && ! $field instanceof Type && is_array($value) && $value !== []) {
                 $source[$name] = $this->embeddingSourceObject($value);
 
                 continue;
@@ -215,14 +215,18 @@ class Properties extends Type implements ArrayAccess, FieldContainer
                 continue;
             }
 
-            if ($field !== null && ! $field instanceof Field && ! $field instanceof FieldContainer && ! $field instanceof FlatObject
+            if ($field instanceof Type && ! $field instanceof Field && ! $field instanceof FieldContainer && ! $field instanceof FlatObject
                 && is_array($value) && ! array_is_list($value) && array_keys($value) === array_filter(array_keys($value), 'is_int')) {
                 $source[$name] = array_values($value);
 
                 continue;
             }
 
-            if (! $field instanceof FieldContainer || ! (is_array($value) || $value instanceof stdClass)) {
+            if (! $field instanceof FieldContainer) {
+                continue;
+            }
+
+            if (! is_array($value) && ! $value instanceof stdClass) {
                 continue;
             }
 
@@ -452,10 +456,10 @@ class Properties extends Type implements ArrayAccess, FieldContainer
             ->toArray();
     }
 
-    public function get(string $fieldName)
+    public function get(string $fieldName): ?Type
     {
         $type = $this->relativeField($fieldName);
-        if ($type !== null || $this->path === '' || ! str_starts_with($fieldName, $this->path.'.')) {
+        if ($type instanceof Type || $this->path === '' || ! str_starts_with($fieldName, $this->path.'.')) {
             return $type;
         }
 

@@ -11,9 +11,9 @@ use Sigmie\Mappings\Types\Text;
 use Sigmie\Semantic\Contracts\AIProvider;
 use Sigmie\Shared\Collection;
 
-use function Sigmie\Functions\trim_text;
 use function Sigmie\Functions\object_map;
 use function Sigmie\Functions\source_field_values;
+use function Sigmie\Functions\trim_text;
 
 class Reranker
 {
@@ -96,7 +96,11 @@ class Reranker
         $rerankedHits = [];
         foreach ($res->json('hits.hits') as $index => $hit) {
             $score = $rerankedScores[$index] ?? null;
-            if ($score === null || $score < $this->rerankThreshold) {
+            if ($score === null) {
+                continue;
+            }
+
+            if ($score < $this->rerankThreshold) {
                 continue;
             }
 

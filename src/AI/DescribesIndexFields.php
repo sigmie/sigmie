@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\AI;
 
-use Sigmie\Mappings\Field;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Date;
@@ -360,8 +359,11 @@ trait DescribesIndexFields
             }
 
             $example = $this->filterExample($child, $childName);
+            if ($example === '') {
+                continue;
+            }
 
-            if ($example === '' || $example === 'query only') {
+            if ($example === 'query only') {
                 continue;
             }
 

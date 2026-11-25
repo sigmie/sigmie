@@ -46,6 +46,7 @@ class IndexUpdateTest extends TestCase
             } catch (RuntimeException $exception) {
                 $error = $exception;
             }
+
             $this->assertNotNull($error, 'Both copies started.');
 
             $task->waitAndFinish();
@@ -78,6 +79,7 @@ class IndexUpdateTest extends TestCase
             } catch (ElasticsearchException $exception) {
                 $this->assertSame('aliases_not_found_exception', $exception->json('type'));
             }
+
             $replacement = $this->sigmie->index($alias);
             $this->assertSame($source->name, $replacement->name);
             $updated = $replacement->update(fn (Update $update): Update => $update->replicas(0));
@@ -91,7 +93,7 @@ class IndexUpdateTest extends TestCase
 
     public function test_lifecycle_sync_update_rejects_a_superseded_destination(): void
     {
-        $connection = $this->offlineConnection(fn ($method, $path): array => match ("$method $path") {
+        $connection = $this->offlineConnection(fn ($method, $path): array => match (sprintf('%s %s', $method, $path)) {
             'PUT /source/_block/write' => ['shards_acknowledged' => true],
             'POST /_reindex' => ['failures' => [], 'timed_out' => false],
             'GET /_alias/movies' => ['source' => ['aliases' => ['movies' => []]]],
@@ -109,7 +111,7 @@ class IndexUpdateTest extends TestCase
     public function test_lifecycle_update_rejects_disabled_source_before_allocating_a_destination(): void
     {
         $connection = $this->offlineConnection(function (string $method, string $path): array {
-            $this->assertSame('GET /source', "$method $path");
+            $this->assertSame('GET /source', sprintf('%s %s', $method, $path));
 
             return ['source' => ['aliases' => ['movies' => []], 'mappings' => ['_source' => ['enabled' => false]]]];
         });
@@ -124,7 +126,7 @@ class IndexUpdateTest extends TestCase
     public function test_lifecycle_update_preserves_the_reindex_error_when_unblocking_also_fails(): void
     {
         $reindexError = new ElasticsearchException(['type' => 'search_phase_execution_exception'], 500);
-        $connection = $this->offlineConnection(fn (string $method, string $path): array => match ("$method $path") {
+        $connection = $this->offlineConnection(fn (string $method, string $path): array => match (sprintf('%s %s', $method, $path)) {
             'PUT /source/_block/write' => ['shards_acknowledged' => true],
             'POST /_reindex' => throw $reindexError,
             'PUT /source/_settings' => throw new ElasticsearchException(['type' => 'cluster_block_exception'], 403),
@@ -136,9 +138,9 @@ class IndexUpdateTest extends TestCase
         try {
             $index->update(fn (Update $update): Update => $update->replicas(0));
             $this->fail('The update failed.');
-        } catch (RuntimeException $exception) {
-            $this->assertSame($reindexError, $exception->getPrevious());
-            $this->assertStringContainsString('cluster_block_exception', $exception->getMessage());
+        } catch (RuntimeException $runtimeException) {
+            $this->assertSame($reindexError, $runtimeException->getPrevious());
+            $this->assertStringContainsString('cluster_block_exception', $runtimeException->getMessage());
         }
     }
 
@@ -146,8 +148,8 @@ class IndexUpdateTest extends TestCase
     public function test_lifecycle_update_does_not_release_a_preexisting_write_block(string $mode): void
     {
         $blocked = true;
-        $connection = $this->offlineConnection(function ($method, $path, $body) use ($mode, &$blocked): array|PsrResponse {
-            return match ("$method $path") {
+        $connection = $this->offlineConnection(function ($method, $path, array $body) use ($mode, &$blocked): array|PsrResponse {
+            return match (sprintf('%s %s', $method, $path)) {
                 'GET /source' => ['source' => [
                     'aliases' => ['movies' => []],
                     'settings' => ['index' => ['blocks' => ['write' => 'true']]],
@@ -167,6 +169,7 @@ class IndexUpdateTest extends TestCase
         });
         $index = new AliasedIndex('source', 'movies');
         $index->setElasticsearchConnection($connection);
+
         $configure = fn (Update $update): Update => $update;
 
         try {
@@ -176,8 +179,8 @@ class IndexUpdateTest extends TestCase
                 'async polling' => IndexUpdateTask::unpack($connection, $index->asyncUpdate($configure)->pack())->finish(),
             };
             $this->fail('Expected the reindex error.');
-        } catch (ElasticsearchException $error) {
-            $this->assertSame(400, $error->getCode());
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame(400, $elasticsearchException->getCode());
             $this->assertTrue($blocked);
         }
     }
@@ -189,9 +192,9 @@ class IndexUpdateTest extends TestCase
 
     public function test_lifecycle_an_existing_write_block_is_acknowledged(): void
     {
-        $connection = $this->offlineConnection(fn ($method, $path) => match ("$method $path") {
+        $connection = $this->offlineConnection(fn ($method, $path): array => match (sprintf('%s %s', $method, $path)) {
             'PUT /source/_block/write' => ['acknowledged' => true, 'shards_acknowledged' => false, 'indices' => []],
-            default => throw new RuntimeException("Unexpected request $method $path"),
+            default => throw new RuntimeException(sprintf('Unexpected request %s %s', $method, $path)),
         });
         $source = new AliasedIndex('source', 'movies');
         $source->setElasticsearchConnection($connection);
@@ -225,6 +228,7 @@ class IndexUpdateTest extends TestCase
                 if ($method === 'GET') {
                     return [$destination => ['settings' => ['index' => ['final_pipeline' => $pipeline]]]];
                 }
+
                 $pipeline = $body['final_pipeline'] ?? $pipeline;
             }
 
@@ -233,7 +237,7 @@ class IndexUpdateTest extends TestCase
                 $live = $destination;
             }
 
-            return match ("$method $path") {
+            return match (sprintf('%s %s', $method, $path)) {
                 'GET /_tasks/node:1' => ['completed' => true, 'response' => $result],
                 'PUT /source/_block/write' => ['shards_acknowledged' => true],
                 'GET /movies', 'GET /_alias/movies' => [$live => ['aliases' => ['movies' => []], 'settings' => [], 'mappings' => []]],
@@ -242,6 +246,7 @@ class IndexUpdateTest extends TestCase
         });
         $index = new AliasedIndex('source', 'movies');
         $index->setElasticsearchConnection($connection);
+
         $configure = fn (Update $update): Update => $setting === null ? $update : $update->config($setting, 'append-label');
 
         $updated = $async
@@ -260,7 +265,7 @@ class IndexUpdateTest extends TestCase
 
     public function test_lifecycle_rebuild_reports_the_fill_error_if_abort_fails(): void
     {
-        $connection = $this->offlineConnection(fn ($method, $path) => match ("$method $path") {
+        $connection = $this->offlineConnection(fn ($method, $path): PsrResponse|array => match (sprintf('%s %s', $method, $path)) {
             'HEAD /_alias/movies' => new PsrResponse(404),
             'POST /_aliases' => throw new ElasticsearchException(['type' => 'cluster_block_exception', 'reason' => 'abort blocked'], 403),
             default => ['acknowledged' => true],
@@ -309,7 +314,7 @@ class IndexUpdateTest extends TestCase
                 return new PsrResponse(404);
             }
 
-            return match ("$method $path") {
+            return match (sprintf('%s %s', $method, $path)) {
                 'GET /_alias/movies' => ['source' => ['aliases' => ['movies' => []]]],
                 'GET /movies' => [$destination => ['aliases' => ['movies' => []], 'mappings' => [], 'settings' => []]],
                 'PUT /source/_block/write' => ['shards_acknowledged' => true],
@@ -321,13 +326,14 @@ class IndexUpdateTest extends TestCase
         });
         $index = new AliasedIndex('source', 'movies');
         $index->setElasticsearchConnection($connection);
+
         $configure = fn (Update $update): Update => $update;
 
         try {
             $index->update($configure);
             $this->fail('Expected the deletion to be unacknowledged.');
-        } catch (RuntimeException $error) {
-            $this->assertStringContainsString('Deletion', $error->getMessage());
+        } catch (RuntimeException $runtimeException) {
+            $this->assertStringContainsString('Deletion', $runtimeException->getMessage());
         }
 
         $this->assertSame($destination, $index->update($configure)->name);
@@ -337,7 +343,7 @@ class IndexUpdateTest extends TestCase
     public function test_lifecycle_rebuild_compares_numeric_index_names_as_strings(): void
     {
         $sources = ['1' => ['aliases' => ['movies' => []]], '01' => ['aliases' => ['movies' => []]]];
-        $connection = $this->offlineConnection(fn ($method, $path) => match ("$method $path") {
+        $connection = $this->offlineConnection(fn ($method, $path): array => match (sprintf('%s %s', $method, $path)) {
             'GET /_alias/movies' => $sources,
             'GET /dest/_count' => ['count' => 0],
             'GET /movies' => ['dest' => ['aliases' => ['movies' => []], 'mappings' => [], 'settings' => []]],
@@ -357,8 +363,10 @@ class IndexUpdateTest extends TestCase
             if ($index === $sources[1]) {
                 $settings['is_hidden'] = false;
             }
+
             $this->indexAPICall($index, 'PUT', ['aliases' => [$alias => $settings]]);
         }
+
         $pending = $this->sigmie->newIndex($alias)->replicas(0)->startRebuild();
 
         try {
@@ -395,7 +403,7 @@ class IndexUpdateTest extends TestCase
         $alias = uniqid('.audit6-write-block-');
         $source = $this->sigmie->newIndex($alias)->replicas(0)->create();
         $this->indexAPICall($alias.'/_doc/1', 'PUT', ['title' => 'Film']);
-        $configure = fn (NewIndex $builder) => $builder->replicas(0)->config('index.blocks.write', true);
+        $configure = fn (NewIndex $builder): NewIndex => $builder->replicas(0)->config('index.blocks.write', true);
 
         try {
             if ($operation === 'rebuild') {
@@ -484,14 +492,14 @@ class IndexUpdateTest extends TestCase
     public function test_lifecycle_filtered_alias_keeps_an_unsigned_long_term(): void
     {
         $destination = 'source';
-        $connection = $this->offlineConnection(function ($method, $path, $body) use (&$destination): array|PsrResponse {
+        $connection = $this->offlineConnection(function ($method, $path, array $body) use (&$destination): array|PsrResponse {
             if ($method === 'POST' && $path === '/_aliases') {
                 $add = array_column($body['actions'], 'add')[0];
                 $this->assertSame('18446744073709551615', $add['filter']['term']['id']);
                 $destination = $add['index'];
             }
 
-            return match ("$method $path") {
+            return match (sprintf('%s %s', $method, $path)) {
                 'GET /_alias/movies' => new PsrResponse(200, [], '{"source":{"aliases":{"movies":{"filter":{"term":{"id":18446744073709551615}}}}}}'),
                 'PUT /source/_block/write' => ['shards_acknowledged' => true],
                 'POST /_reindex' => ['failures' => [], 'timed_out' => false],
@@ -501,7 +509,7 @@ class IndexUpdateTest extends TestCase
         });
         $index = new AliasedIndex('source', 'movies');
         $index->setElasticsearchConnection($connection);
-        $index->update(fn (Update $update) => $update);
+        $index->update(fn (Update $update): Update => $update);
     }
 
     /** @dataProvider sharedSourceOperations */
@@ -519,7 +527,7 @@ class IndexUpdateTest extends TestCase
                     $pending = $this->sigmie->newIndex($alias)->replicas(0)->startRebuild();
                     $pending->finish(0);
                 } else {
-                    $source->update(fn (Update $update) => $update->replicas(0));
+                    $source->update(fn (Update $update): Update => $update->replicas(0));
                 }
             } catch (RuntimeException $exception) {
                 $this->assertStringContainsString($other, $exception->getMessage());
@@ -545,7 +553,7 @@ class IndexUpdateTest extends TestCase
         $index = $this->sigmie->newIndex($alias)->properties($props)->replicas(0)->searchSynonyms(['car, auto'])->create();
 
         try {
-            $updated = $index->update(fn (Update $update) => $update->replicas(0)->properties($props)->searchSynonyms([]));
+            $updated = $index->update(fn (Update $update): NewIndex => $update->replicas(0)->properties($props)->searchSynonyms([]));
             $this->assertSame(['car'], $updated->analyze('car', 'default_with_synonyms'));
         } finally {
             $this->sigmie->index($alias)?->delete();
@@ -564,7 +572,7 @@ class IndexUpdateTest extends TestCase
         try {
             $this->indexAPICall($alias.'/_doc/1?refresh=true', 'PUT', ['tag' => 'live']);
             try {
-                $this->sigmie->index($alias)->update(fn (Update $update) => $update->replicas(0));
+                $this->sigmie->index($alias)->update(fn (Update $update): Update => $update->replicas(0));
             } catch (RuntimeException $exception) {
                 $this->assertStringContainsString('_source', $exception->getMessage());
             }
@@ -584,7 +592,7 @@ class IndexUpdateTest extends TestCase
         $source = $this->sigmie->newIndex($alias)->replicas(0)->create();
 
         try {
-            $index = $source->update(fn (Update $update) => $update->replicas(0)
+            $index = $source->update(fn (Update $update): Update => $update->replicas(0)
                 ->uppercase('caps')
                 ->config('analysis', ['normalizer' => ['fold' => ['type' => 'custom', 'filter' => ['lowercase']]]]));
 
@@ -601,7 +609,7 @@ class IndexUpdateTest extends TestCase
         $source = $this->sigmie->newIndex($alias)->replicas(0)->create();
 
         try {
-            $index = $source->update(fn (Update $update) => $update->replicas(0)
+            $index = $source->update(fn (Update $update): Update => $update->replicas(0)
                 ->config('max_result_window', 100)
                 ->config('index.max_result_window', 200));
 
@@ -621,7 +629,7 @@ class IndexUpdateTest extends TestCase
         try {
             $index = $this->sigmie->newIndex($alias)->replicas(0)->config('default_pipeline', $alias)->create();
             $this->indexAPICall($alias.'/_doc/1', 'PUT', ['events' => []]);
-            $index->update(fn (Update $update) => $update->replicas(0)->config('default_pipeline', $alias));
+            $index->update(fn (Update $update): Update => $update->replicas(0)->config('default_pipeline', $alias));
 
             $this->assertSame(['ingested'], $this->indexAPICall($alias.'/_doc/1', 'GET')->json('_source.events'));
             $this->indexAPICall($alias.'/_doc/2', 'PUT', ['events' => []]);
@@ -649,6 +657,7 @@ class IndexUpdateTest extends TestCase
         $alias = uniqid('audit-index-base-rebuild-schema-');
         $properties = new NewProperties;
         $properties->keyword('genre');
+
         $pending = $this->sigmie->newIndex($alias)->replicas(0)->shards(2)->properties($properties)->startRebuild();
 
         try {
@@ -685,19 +694,19 @@ class IndexUpdateTest extends TestCase
             if ($destination instanceof AliasedIndex) {
                 $destination->delete();
             }
+
             if ($this->indexAPICall($physical, 'HEAD')->code() === 200) {
                 $this->indexAPICall($physical, 'DELETE');
             }
         }
     }
 
-
     public function test_lifecycle_update_does_not_copy_after_a_failed_source_refresh(): void
     {
         $writesBlocked = false;
         $copied = false;
-        $connection = $this->offlineConnection(function ($method, $path, $body) use (&$writesBlocked, &$copied): array {
-            return match ("$method $path") {
+        $connection = $this->offlineConnection(function ($method, $path, array $body) use (&$writesBlocked, &$copied): array {
+            return match (sprintf('%s %s', $method, $path)) {
                 'PUT /source/_block/write' => ['shards_acknowledged' => $writesBlocked = true],
                 'PUT /source/_settings' => ['acknowledged' => ! ($writesBlocked = $body['index']['blocks.write'])],
                 'POST /source/_refresh' => ['_shards' => ['total' => 2, 'successful' => 1, 'failed' => 1]],
@@ -716,8 +725,8 @@ class IndexUpdateTest extends TestCase
         try {
             $index->update(fn (Update $builder): Update => $builder);
             $this->fail('The source refresh failed.');
-        } catch (ElasticsearchException $exception) {
-            $this->assertSame(1, $exception->json('_shards.failed'));
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame(1, $elasticsearchException->json('_shards.failed'));
             $this->assertFalse($copied);
             $this->assertFalse($writesBlocked);
         }
@@ -732,7 +741,7 @@ class IndexUpdateTest extends TestCase
         try {
             $routes = [];
             for ($candidate = 1; count($routes) < 2 && $candidate <= 100; $candidate++) {
-                $routing = "route-$candidate";
+                $routing = 'route-'.$candidate;
                 $shard = $this->indexAPICall($source->name.'/_search_shards?routing='.$routing, 'GET')->json('shards.0.0.shard');
                 $routes[$shard] = $routing;
             }
@@ -741,23 +750,22 @@ class IndexUpdateTest extends TestCase
             foreach ($routes as $routing) {
                 $this->indexAPICall($source->name.'/_doc/shared?routing='.$routing.'&refresh=true', 'PUT', ['route' => $routing]);
             }
+
             $this->assertSame(2, $this->sigmie->collect($alias)->count());
 
             try {
-                $source->update(function (Update $builder) use ($destination): Update {
-                    return new class($builder->getElasticsearchConnection(), $builder->getAlias(), $destination) extends Update
+                $source->update(fn (Update $builder): Update => new class($builder->getElasticsearchConnection(), $builder->getAlias(), $destination) extends Update
+                {
+                    public function __construct(ElasticsearchConnection $connection, string $alias, private string $destination)
                     {
-                        public function __construct(ElasticsearchConnection $connection, string $alias, private string $destination)
-                        {
-                            parent::__construct($connection);
-                            $this->alias($alias)->replicas(0)->shards(1);
-                        }
+                        parent::__construct($connection);
+                        $this->alias($alias)->replicas(0)->shards(1);
+                    }
 
-                        protected function createIndexName(): string
-                        {
-                            return $this->destination;
-                        }
-                    };
+                    protected function createIndexName(): string
+                    {
+                        return $this->destination;
+                    }
                 });
                 $this->fail('Two routed documents with the same ID cannot share a destination shard.');
             } catch (RuntimeException $exception) {
@@ -773,7 +781,6 @@ class IndexUpdateTest extends TestCase
             }
         }
     }
-
 
     protected function setUp(): void
     {
@@ -808,6 +815,7 @@ class IndexUpdateTest extends TestCase
 
                     return $request->response(new PsrResponse(200, [], '{"acknowledged":true}'));
                 }
+
                 $path = $owners[$path] ?? $path;
                 $data = $respond($method, $path, $body);
 
@@ -843,7 +851,7 @@ class IndexUpdateTest extends TestCase
         $actions = [];
         $dest = null;
         $connection = $this->offlineConnection(function ($method, $path, $body) use (&$writesBlocked, &$sourceVisible, &$copied, &$actions, &$dest, $newAlias): array {
-            return match ("$method $path") {
+            return match (sprintf('%s %s', $method, $path)) {
                 'PUT /source/_settings' => ['blocked' => $writesBlocked = $body['index']['blocks.write']],
                 'PUT /source/_block/write' => ['shards_acknowledged' => $writesBlocked = true],
                 'POST /source/_refresh' => ['visible' => $sourceVisible = $writesBlocked],
@@ -882,8 +890,8 @@ class IndexUpdateTest extends TestCase
     public function test_lifecycle_sync_reindex_failure_restores_source_writes(): void
     {
         $blocked = false;
-        $connection = $this->offlineConnection(function ($method, $path, $body) use (&$blocked): array {
-            return match ("$method $path") {
+        $connection = $this->offlineConnection(function ($method, $path, array $body) use (&$blocked): array {
+            return match (sprintf('%s %s', $method, $path)) {
                 'PUT /source/_settings' => ['blocked' => $blocked = $body['index']['blocks.write']],
                 'PUT /source/_block/write' => ['shards_acknowledged' => $blocked = true],
                 'POST /_reindex' => throw new RuntimeException('Reindex failed'),
@@ -897,8 +905,8 @@ class IndexUpdateTest extends TestCase
         try {
             $index->update(fn (Update $update): Update => $update);
             $this->fail('Expected reindex failure');
-        } catch (RuntimeException $exception) {
-            $this->assertSame('Reindex failed', $exception->getMessage());
+        } catch (RuntimeException $runtimeException) {
+            $this->assertSame('Reindex failed', $runtimeException->getMessage());
         }
 
         $this->assertFalse($blocked);
@@ -908,8 +916,8 @@ class IndexUpdateTest extends TestCase
     {
         $blocked = false;
         $refreshed = false;
-        $connection = $this->offlineConnection(function ($method, $path, $body) use (&$blocked, &$refreshed): array {
-            return match ("$method $path") {
+        $connection = $this->offlineConnection(function ($method, $path, array $body) use (&$blocked, &$refreshed): array {
+            return match (sprintf('%s %s', $method, $path)) {
                 'PUT /source/_settings' => ['blocked' => $blocked = $body['index']['blocks.write']],
                 'PUT /source/_block/write' => ['shards_acknowledged' => $blocked = true],
                 'POST /source/_refresh' => ['refreshed' => $refreshed = $blocked],
@@ -924,8 +932,8 @@ class IndexUpdateTest extends TestCase
         try {
             $index->asyncUpdate(fn (Update $update): Update => $update);
             $this->fail('Expected reindex submission to fail');
-        } catch (RuntimeException $exception) {
-            $this->assertSame('Could not start reindex', $exception->getMessage());
+        } catch (RuntimeException $runtimeException) {
+            $this->assertSame('Could not start reindex', $runtimeException->getMessage());
         }
 
         $this->assertFalse($blocked);
@@ -936,10 +944,10 @@ class IndexUpdateTest extends TestCase
     {
         $starts = 0;
         $connection = $this->offlineConnection(function ($method, $path) use (&$starts): array {
-            return match ("$method $path") {
+            return match (sprintf('%s %s', $method, $path)) {
                 'POST /_reindex' => ['task' => 'node:'.++$starts],
                 'GET /_tasks/node:1' => ['completed' => false],
-                default => throw new RuntimeException("Unexpected request $method $path"),
+                default => throw new RuntimeException(sprintf('Unexpected request %s %s', $method, $path)),
             };
         });
 
@@ -955,7 +963,7 @@ class IndexUpdateTest extends TestCase
         $live = 'source';
         $polls = 0;
         $connection = $this->offlineConnection(function ($method, $path) use (&$live, &$polls): array {
-            return match ("$method $path") {
+            return match (sprintf('%s %s', $method, $path)) {
                 'GET /_tasks/node:1' => ++$polls === 1
                     ? ['completed' => true, 'response' => ['failures' => [], 'timed_out' => false]]
                     : throw new ElasticsearchException(['type' => 'resource_not_found_exception'], 404),
@@ -964,7 +972,7 @@ class IndexUpdateTest extends TestCase
                 'GET /_alias/movies', 'GET /movies' => [$live => [
                     'aliases' => ['movies' => []], 'settings' => ['index' => []], 'mappings' => [],
                 ]],
-                default => throw new RuntimeException("Unexpected request $method $path"),
+                default => throw new RuntimeException(sprintf('Unexpected request %s %s', $method, $path)),
             };
         });
         $task = new IndexUpdateTask($connection, 'source', 'dest', 'movies', 'movies', 1, task: 'node:1');
@@ -983,11 +991,11 @@ class IndexUpdateTest extends TestCase
                 return new PsrResponse(404);
             }
 
-            return match ("$method $path") {
+            return match (sprintf('%s %s', $method, $path)) {
                 'GET /_tasks/node:1' => throw new ElasticsearchException(['type' => 'resource_not_found_exception'], 404),
                 'HEAD /_alias/movies' => [],
                 'GET /_alias/movies' => ['dest' => ['aliases' => ['movies' => []], 'checked' => $checkedAlias = true]],
-                default => throw new RuntimeException("Unexpected request $method $path"),
+                default => throw new RuntimeException(sprintf('Unexpected request %s %s', $method, $path)),
             };
         });
         $task = new IndexUpdateTask($connection, 'source', 'dest', 'movies', 'movies', 1, task: 'node:1');
@@ -1005,7 +1013,7 @@ class IndexUpdateTest extends TestCase
         $sourceExists = true;
         $swaps = 0;
         $deletes = 0;
-        $connection = $this->offlineConnection(function ($method, $path, $body) use (&$live, &$sourceExists, &$retiredAlias, &$swaps, &$deletes): array|PsrResponse {
+        $connection = $this->offlineConnection(function ($method, $path, array $body) use (&$live, &$sourceExists, &$retiredAlias, &$swaps, &$deletes): array|PsrResponse {
             if ($method === 'HEAD' && str_starts_with($path, '/source/_alias/')) {
                 return new PsrResponse($sourceExists && $path === '/source/_alias/'.$retiredAlias ? 200 : 404);
             }
@@ -1033,7 +1041,7 @@ class IndexUpdateTest extends TestCase
                 return ['acknowledged' => true];
             }
 
-            return match ("$method $path") {
+            return match (sprintf('%s %s', $method, $path)) {
                 'HEAD /_alias/movies', 'POST /dest/_refresh' => [],
                 'PUT /dest/_settings' => ['acknowledged' => true],
                 'GET /dest/_count' => ['count' => 1],
@@ -1041,18 +1049,18 @@ class IndexUpdateTest extends TestCase
                 'GET /source', 'GET /_alias/movies', 'GET /movies' => [$live => [
                     'aliases' => ['movies' => []], 'settings' => ['index' => []], 'mappings' => [],
                 ]],
-                default => throw new RuntimeException("Unexpected request $method $path"),
+                default => throw new RuntimeException(sprintf('Unexpected request %s %s', $method, $path)),
             };
         });
         $handle = $rebuild
-            ? fn () => new IndexRebuild($connection, 'movies', 'dest', 1, startedOn: ['source'], refresh: '1s')
-            : fn () => new IndexUpdateTask($connection, 'source', 'dest', 'movies', 'movies', 1, task: 'node:1');
+            ? fn (): IndexRebuild => new IndexRebuild($connection, 'movies', 'dest', 1, startedOn: ['source'], refresh: '1s')
+            : fn (): IndexUpdateTask => new IndexUpdateTask($connection, 'source', 'dest', 'movies', 'movies', 1, task: 'node:1');
 
         try {
             $handle()->finish();
             $this->fail('Expected source deletion to fail.');
-        } catch (ElasticsearchException $exception) {
-            $this->assertSame(429, $exception->getCode());
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame(429, $elasticsearchException->getCode());
         }
 
         $this->assertSame('dest', $handle()->finish()->name);
@@ -1089,12 +1097,12 @@ class IndexUpdateTest extends TestCase
 
             $finished = $path === '/movies';
 
-            return match ("$method $path") {
+            return match (sprintf('%s %s', $method, $path)) {
                 'HEAD /_alias/movies' => [],
                 'GET /_alias/movies', 'GET /movies' => [
                     'dest' => ['aliases' => ['movies' => []], 'mappings' => [], 'settings' => ['index' => []]],
                 ],
-                default => throw new RuntimeException("Unexpected request $method $path"),
+                default => throw new RuntimeException(sprintf('Unexpected request %s %s', $method, $path)),
             };
         });
 
@@ -1107,8 +1115,8 @@ class IndexUpdateTest extends TestCase
     public function test_task_polling_surfaces_async_reindex_failures_and_restores_writes(): void
     {
         $blocked = true;
-        $connection = $this->offlineConnection(function ($method, $path, $body) use (&$blocked): array {
-            return match ("$method $path") {
+        $connection = $this->offlineConnection(function ($method, $path, array $body) use (&$blocked): array {
+            return match (sprintf('%s %s', $method, $path)) {
                 'GET /_tasks/node:1' => ['completed' => true, 'response' => [
                     'timed_out' => false, 'version_conflicts' => 0,
                     'failures' => [['status' => 400, 'cause' => [
@@ -1117,7 +1125,7 @@ class IndexUpdateTest extends TestCase
                 ]],
                 'HEAD /source' => [],
                 'PUT /source/_settings' => ['acknowledged' => ! ($blocked = $body['index']['blocks.write'])],
-                default => throw new RuntimeException("Unexpected request $method $path"),
+                default => throw new RuntimeException(sprintf('Unexpected request %s %s', $method, $path)),
             };
         });
 
@@ -1126,9 +1134,9 @@ class IndexUpdateTest extends TestCase
         try {
             $task->isCompleted();
             $this->fail('Polling reported a failed copy as completed.');
-        } catch (ElasticsearchException $exception) {
-            $this->assertSame(400, $exception->getCode());
-            $this->assertStringContainsString('unexpected field', $exception->getMessage());
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame(400, $elasticsearchException->getCode());
+            $this->assertStringContainsString('unexpected field', $elasticsearchException->getMessage());
             $this->assertFalse($blocked);
         }
     }
@@ -1139,8 +1147,8 @@ class IndexUpdateTest extends TestCase
         $blocked = true;
         $deleted = [];
         $promoted = false;
-        $connection = $this->offlineConnection(function ($method, $path, $body) use ($result, &$blocked, &$deleted, &$promoted): array {
-            return match ("$method $path") {
+        $connection = $this->offlineConnection(function ($method, $path, array $body) use ($result, &$blocked, &$deleted, &$promoted): array {
+            return match (sprintf('%s %s', $method, $path)) {
                 'POST /_reindex' => ['task' => 'node:1'],
                 'GET /_tasks/node:1' => ['completed' => true, 'response' => $result],
                 'PUT /source/_settings' => ['blocked' => $blocked = $body['index']['blocks.write']],
@@ -1156,8 +1164,8 @@ class IndexUpdateTest extends TestCase
         try {
             $task->finish();
             $this->fail('Expected failed reindex result to be rejected');
-        } catch (ElasticsearchException $exception) {
-            $this->assertSame($result, $exception->json('response'));
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame($result, $elasticsearchException->json('response'));
             $this->assertFalse($promoted);
             $this->assertSame([], $deleted);
             $this->assertFalse($blocked);
@@ -1178,8 +1186,8 @@ class IndexUpdateTest extends TestCase
         $attempts = 0;
         $live = 'source';
         $sourceExists = true;
-        $connection = $this->offlineConnection(function ($method, $path, $body) use (&$blocked, &$attempts, &$live, &$sourceExists): array {
-            return match ("$method $path") {
+        $connection = $this->offlineConnection(function ($method, $path, array $body) use (&$blocked, &$attempts, &$live, &$sourceExists): array {
+            return match (sprintf('%s %s', $method, $path)) {
                 'HEAD /_alias/movies', 'HEAD /source' => [],
                 'GET /_alias/movies' => [$live => ['aliases' => ['movies' => new stdClass]]],
                 'GET /_tasks/node:1' => ++$attempts === 1
@@ -1194,7 +1202,7 @@ class IndexUpdateTest extends TestCase
                     'mappings' => ['properties' => new stdClass],
                     'settings' => ['index' => []],
                 ]],
-                default => throw new RuntimeException("Unexpected request $method $path"),
+                default => throw new RuntimeException(sprintf('Unexpected request %s %s', $method, $path)),
             };
         });
 
@@ -1203,8 +1211,8 @@ class IndexUpdateTest extends TestCase
         try {
             $task->finish();
             $this->fail('Expected the first task lookup to fail');
-        } catch (ElasticsearchException $exception) {
-            $this->assertSame(404, $exception->getCode());
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame(404, $elasticsearchException->getCode());
         }
 
         $this->assertTrue($blocked);
@@ -1243,9 +1251,9 @@ class IndexUpdateTest extends TestCase
             try {
                 $rebuild->finish();
                 $this->assertTrue($finishFirst, 'An aborted rebuild was promoted.');
-            } catch (ElasticsearchException $exception) {
-                $this->assertFalse($finishFirst, $exception->getMessage());
-                $this->assertSame(404, $exception->getCode());
+            } catch (ElasticsearchException $elasticsearchException) {
+                $this->assertFalse($finishFirst, $elasticsearchException->getMessage());
+                $this->assertSame(404, $elasticsearchException->getCode());
             }
         };
 
@@ -1272,6 +1280,7 @@ class IndexUpdateTest extends TestCase
                     if (isset($action['add'])) {
                         $updated[$index]['aliases'][$alias] = [];
                     }
+
                     if (isset($action['remove'])) {
                         if (! isset($updated[$index]['aliases'][$alias]) && ($change['must_exist'] ?? false)) {
                             throw new ElasticsearchException(['type' => 'aliases_not_found_exception'], 404);
@@ -1280,6 +1289,7 @@ class IndexUpdateTest extends TestCase
                         unset($updated[$index]['aliases'][$alias]);
                     }
                 }
+
                 $indices = $updated;
 
                 return ['acknowledged' => true];
@@ -1289,11 +1299,13 @@ class IndexUpdateTest extends TestCase
                 if (! $finishAttempted && ! $finishFirst) {
                     $finish();
                 }
+
                 if ($failDelete && ! $deleteFailed) {
                     $deleteFailed = true;
 
                     return ['acknowledged' => false];
                 }
+
                 unset($indices[$name]);
 
                 return ['acknowledged' => true];
@@ -1324,12 +1336,13 @@ class IndexUpdateTest extends TestCase
                 $started->abort();
                 $this->fail('Expected delete failure.');
             } catch (RuntimeException $exception) {
-                $this->assertSame("Deletion of '{$started->name}' was not acknowledged.", $exception->getMessage());
+                $this->assertSame(sprintf("Deletion of '%s' was not acknowledged.", $started->name), $exception->getMessage());
             }
 
             $this->assertArrayHasKey($started->name, $indices);
             $this->assertNull($sigmie->rebuilding('movies'));
         }
+
         $started->abort();
 
         $this->assertTrue($finishAttempted);
@@ -1342,8 +1355,8 @@ class IndexUpdateTest extends TestCase
     {
         $started = null;
         $live = 'source';
-        $connection = $this->offlineConnection(function ($method, $path, $body) use (&$started, &$live): array {
-            return match ("$method $path") {
+        $connection = $this->offlineConnection(function ($method, $path, array $body) use (&$started, &$live): array {
+            return match (sprintf('%s %s', $method, $path)) {
                 'HEAD /_alias/movies' => [],
                 'GET /_alias/movies' => [$live => ['aliases' => ['movies' => new stdClass]]],
                 'GET /movies' => [$live => ['aliases' => ['movies' => new stdClass], 'settings' => ['index' => []], 'mappings' => []]],
@@ -1365,8 +1378,8 @@ class IndexUpdateTest extends TestCase
     {
         $live = 'source';
         $attempts = 0;
-        $connection = $this->offlineConnection(function ($method, $path, $body) use (&$live, &$attempts): array {
-            return match ("$method $path") {
+        $connection = $this->offlineConnection(function ($method, $path, array $body) use (&$live, &$attempts): array {
+            return match (sprintf('%s %s', $method, $path)) {
                 'HEAD /_alias/movies' => [],
                 'GET /_alias/movies' => [$live => ['aliases' => ['movies' => new stdClass]]],
                 'GET /movies' => [$live => ['aliases' => ['movies' => new stdClass], 'settings' => ['index' => []], 'mappings' => []]],
@@ -1374,15 +1387,15 @@ class IndexUpdateTest extends TestCase
                 'PUT /dest/_settings' => ['acknowledged' => ++$attempts > 1],
                 'POST /_aliases' => ['acknowledged' => ($live = $body['actions'][1]['add']['index']) === 'dest'],
                 'DELETE /source' => ['acknowledged' => true],
-                default => throw new RuntimeException("Unexpected request $method $path"),
+                default => throw new RuntimeException(sprintf('Unexpected request %s %s', $method, $path)),
             };
         });
 
         $task = new IndexUpdateTask($connection, 'source', 'dest', 'movies', 'movies', 1, task: 'node:1');
         try {
             $task->finish();
-        } catch (ElasticsearchException $exception) {
-            $this->assertFalse($exception->json('acknowledged'));
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertFalse($elasticsearchException->json('acknowledged'));
         }
 
         $this->assertSame('source', $live);
@@ -1425,7 +1438,7 @@ class IndexUpdateTest extends TestCase
                 return ['acknowledged' => true];
             }
 
-            return match ("$method $path") {
+            return match (sprintf('%s %s', $method, $path)) {
                 'HEAD /_alias/movies' => [],
                 'GET /_alias/movies' => [$live => ['aliases' => ['movies' => new stdClass]]],
                 'GET /movies' => [$live => ['aliases' => ['movies' => new stdClass], 'settings' => ['index' => []], 'mappings' => []]],
@@ -1453,8 +1466,8 @@ class IndexUpdateTest extends TestCase
         $error = null;
         try {
             $finish();
-        } catch (RuntimeException $exception) {
-            $error = $exception;
+        } catch (RuntimeException $runtimeException) {
+            $error = $runtimeException;
         }
 
         $this->assertInstanceOf(RuntimeException::class, $error);
@@ -1511,13 +1524,11 @@ class IndexUpdateTest extends TestCase
 
     public function test_lifecycle_stale_rebuild_is_rejected_before_promotion(): void
     {
-        $connection = $this->offlineConnection(static function ($method, $path): array {
-            return match ("$method $path") {
-                'GET /_alias/movies' => ['winner' => []],
-                'GET /loser/_count' => ['count' => 1],
-                'POST /_aliases' => throw new RuntimeException('Stale promotion attempted'),
-                default => ['acknowledged' => true],
-            };
+        $connection = $this->offlineConnection(static fn ($method, $path): array => match (sprintf('%s %s', $method, $path)) {
+            'GET /_alias/movies' => ['winner' => []],
+            'GET /loser/_count' => ['count' => 1],
+            'POST /_aliases' => throw new RuntimeException('Stale promotion attempted'),
+            default => ['acknowledged' => true],
         });
 
         $rebuild = new IndexRebuild($connection, 'movies', 'loser', 1, startedOn: ['source']);
@@ -1529,7 +1540,7 @@ class IndexUpdateTest extends TestCase
     {
         $targets = ['source'];
         $deleted = [];
-        $connection = $this->offlineConnection(function ($method, $path, $body) use (&$targets, &$deleted): array {
+        $connection = $this->offlineConnection(function ($method, $path, array $body) use (&$targets, &$deleted): array {
             if ($method === 'POST' && $path === '/_aliases') {
                 $targets = ['winner'];
                 if ($body['actions'][0]['remove']['must_exist'] ?? false) {
@@ -1543,7 +1554,7 @@ class IndexUpdateTest extends TestCase
                 $deleted[] = $path;
             }
 
-            return match ("$method $path") {
+            return match (sprintf('%s %s', $method, $path)) {
                 'GET /_alias/movies' => array_fill_keys($targets, []),
                 'GET /loser/_count' => ['count' => 1],
                 default => ['acknowledged' => true],
@@ -1553,8 +1564,8 @@ class IndexUpdateTest extends TestCase
         $rebuild = new IndexRebuild($connection, 'movies', 'loser', 1, startedOn: ['source']);
         try {
             $rebuild->finish();
-        } catch (RuntimeException $exception) {
-            $this->assertSame('Source no longer owns the alias', $exception->getMessage());
+        } catch (RuntimeException $runtimeException) {
+            $this->assertSame('Source no longer owns the alias', $runtimeException->getMessage());
         }
 
         $this->assertSame(['winner'], $targets);
@@ -1577,8 +1588,8 @@ class IndexUpdateTest extends TestCase
         try {
             $builder->startRebuild();
             $this->fail('Expected index creation failure');
-        } catch (RuntimeException $exception) {
-            $this->assertSame('Create failed', $exception->getMessage());
+        } catch (RuntimeException $runtimeException) {
+            $this->assertSame('Create failed', $runtimeException->getMessage());
         }
 
         $index = $builder->make();

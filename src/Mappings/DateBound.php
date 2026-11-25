@@ -14,17 +14,20 @@ final class DateBound
         if (! is_string($bound) && ! is_int($bound) && ! is_float($bound)) {
             return false;
         }
+
         $text = is_float($bound) ? json_encode($bound) : (string) $bound;
         if (! is_string($text) || $text === '') {
             return false;
         }
+
         $relative = $query && str_starts_with($text, 'now');
         [$base, $math] = $relative
             ? ['now', substr($text, 3)]
             : array_pad(explode('||', $text, 2), 2, '');
-        if (! preg_match('~^(?:(?:[+-][0-9]*|/(?:0*1)?)[yMwdhHms])*\z~', $math)) {
+        if (! preg_match('~^(?:(?:[+-]\d*|/(?:0*1)?)[yMwdhHms])*\z~', $math)) {
             return false;
         }
+
         if ($relative) {
             return true;
         }
@@ -51,17 +54,21 @@ final class DateBound
         if (preg_match('/^(?!-0000)-?\d{4}\z/', $base)) {
             return true;
         }
+
         if (! preg_match('/^-?(\d{4})-(\d{2})(?:-(\d{2})(?:T(.*))?)?\z/', $base, $date)) {
             return false;
         }
+
         if (($date[4] ?? '') !== '') {
             if (! preg_match('/^(\d{2})(?::(\d{2})(?::(\d{2})([.,]\d{1,9})?)?)?(Z|[+-]\d{2}(?::?\d{2}(?::?\d{2})?)?)?\z/', $date[4], $time)) {
                 return false;
             }
+
             $zone = $time[5] ?? '';
             if (strlen($zone) === 3) {
                 $zone .= ':00';
             }
+
             $timestamp = substr($base, 0, strpos($base, 'T') + 1).$time[1].':'.(($time[2] ?? '') ?: '00')
                 .':'.(($time[3] ?? '') ?: '00').str_replace(',', '.', $time[4] ?? '').$zone;
 

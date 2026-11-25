@@ -28,7 +28,11 @@ class Embeddings extends Object_
 
         foreach ($names as $name) {
             $type = $this->sourceProperties->get($name);
-            if (! $type instanceof Text || ! $type->isSemantic()) {
+            if (! $type instanceof Text) {
+                continue;
+            }
+
+            if (! $type->isSemantic()) {
                 continue;
             }
 

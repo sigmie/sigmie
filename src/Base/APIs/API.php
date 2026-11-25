@@ -10,6 +10,8 @@ use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\ElasticsearchException;
 
+use function Sigmie\Functions\encoded_index_path;
+
 trait API
 {
     protected ElasticsearchConnection $elasticsearchConnection;
@@ -57,7 +59,7 @@ trait API
      */
     protected function encodedPath(string $value): array
     {
-        return \Sigmie\Functions\encoded_index_path($value);
+        return encoded_index_path($value);
     }
 
     protected function indexUri(string $index, string $endpoint): Uri

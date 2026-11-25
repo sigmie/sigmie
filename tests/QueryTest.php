@@ -24,6 +24,7 @@ class QueryTest extends TestCase
         $name = uniqid('.converted-groups-');
         $properties = new NewProperties;
         $properties->double('price');
+
         $index = $this->sigmie->newIndex($name)->properties($properties)->replicas(0)->create();
 
         try {
@@ -40,6 +41,7 @@ class QueryTest extends TestCase
                 $this->assertNotContains($hit->_id, $ids);
                 $ids[] = $hit->_id;
             }
+
             $this->assertEqualsCanonicalizing(['a', 'b'], $ids);
         } finally {
             $index->delete();
@@ -51,6 +53,7 @@ class QueryTest extends TestCase
         $name = uniqid('.collapse-boundary-');
         $properties = new NewProperties;
         $properties->long('rank');
+
         $index = $this->sigmie->newIndex($name)->properties($properties)->replicas(0)->create();
 
         try {

@@ -48,7 +48,7 @@ trait Actions
         }
 
         if ($response->code() !== 200) {
-            throw new RuntimeException("Could not resolve alias '$alias'.");
+            throw new RuntimeException(sprintf("Could not resolve alias '%s'.", $alias));
         }
 
         return $this->indexAPICall($path, 'GET')->json();
@@ -86,7 +86,7 @@ trait Actions
 
             $unexpected = array_diff(array_keys((array) $sources), $from);
             if ($unexpected !== []) {
-                throw new RuntimeException("Alias '$sourceAlias' also points to '".reset($unexpected)."'.");
+                throw new RuntimeException(sprintf("Alias '%s' also points to '", $sourceAlias).reset($unexpected)."'.");
             }
 
             foreach ($from as $index) {
@@ -94,7 +94,7 @@ trait Actions
                 $writeIndex = $writeIndex || ($settings['is_write_index'] ?? (count($from) === 1));
                 unset($settings['is_write_index']);
                 if ($aliasSettings !== null && $this->comparableSettings($settings) !== $this->comparableSettings($aliasSettings)) {
-                    throw new RuntimeException("Alias '$sourceAlias' has different settings on its source indices.");
+                    throw new RuntimeException(sprintf("Alias '%s' has different settings on its source indices.", $sourceAlias));
                 }
 
                 $aliasSettings = $settings;
@@ -102,7 +102,7 @@ trait Actions
         }
 
         if ($oldAlias === null && $pendingAlias !== null && ($aliasSettings['index_routing'] ?? null) !== $fillRouting) {
-            throw new RuntimeException("Alias '$alias' index routing changed while the rebuild was being filled.");
+            throw new RuntimeException(sprintf("Alias '%s' index routing changed while the rebuild was being filled.", $alias));
         }
 
         $removes = array_map(fn (string $index): array => ['remove' => [
@@ -137,11 +137,13 @@ trait Actions
         if (($settings['is_hidden'] ?? null) === false) {
             unset($settings['is_hidden']);
         }
+
         if (isset($settings['search_routing'])) {
             $routes = array_unique(explode(',', $settings['search_routing']));
             sort($routes, SORT_STRING);
             $settings['search_routing'] = implode(',', $routes);
         }
+
         return json_encode($this->sortSettingKeys((object) $settings), JSON_THROW_ON_ERROR);
     }
 
@@ -167,7 +169,7 @@ trait Actions
         $response = $this->aliasAPICall('POST', ['actions' => $actions]);
 
         if ($response->json('acknowledged') !== true) {
-            throw new RuntimeException("Alias update for '$alias' was not acknowledged.");
+            throw new RuntimeException(sprintf("Alias update for '%s' was not acknowledged.", $alias));
         }
     }
 

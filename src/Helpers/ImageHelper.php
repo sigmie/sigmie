@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Helpers;
 
 use Exception;
+use GdImage;
 
 class ImageHelper
 {
@@ -80,7 +81,7 @@ class ImageHelper
                 $imageContent = self::jpegBytes($image);
             }
         } finally {
-            if (isset($resized) && $resized instanceof \GdImage) {
+            if (isset($resized) && $resized instanceof GdImage) {
                 imagedestroy($resized);
             }
 
@@ -93,13 +94,13 @@ class ImageHelper
     /**
      * JPEG refuses a side above 65500 and then writes nothing.
      */
-    private static function jpegBytes(\GdImage $image): string
+    private static function jpegBytes(GdImage $image): string
     {
         ob_start();
         $wrote = @imagejpeg($image, null, 60);
         $bytes = ob_get_clean();
 
-        if ($wrote !== true || ! is_string($bytes) || $bytes === '') {
+        if (! $wrote || ! is_string($bytes) || $bytes === '') {
             throw new Exception('Failed to create image from content');
         }
 

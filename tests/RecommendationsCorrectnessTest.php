@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Search\MMR;
 use Http\Promise\Promise;
+use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use RuntimeException;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
@@ -20,10 +20,10 @@ use Sigmie\Document\Hit;
 use Sigmie\Http\NdJSONRequest;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Query\Search;
+use Sigmie\Search\MMR;
 use Sigmie\Search\NewRecommendations;
-use Sigmie\Testing\TestCase;
 
-class RecommendationsCorrectnessTest extends \PHPUnit\Framework\TestCase
+class RecommendationsCorrectnessTest extends TestCase
 {
     public function test_a_zero_rank_window_returns_no_recommendations(): void
     {
@@ -80,6 +80,7 @@ class RecommendationsCorrectnessTest extends \PHPUnit\Framework\TestCase
             $this->assertSame(['seed-1', 'seed-2'], $this->valuesOf($clause['filter'], 'ids')[0]['values']);
             $this->assertTrue($this->seedCoversBothBrands($clause['filter']));
         }
+
         $this->assertSame($vectors, $this->valuesOf($recommendations->make()->toRaw(), 'query_vector'));
     }
 
@@ -510,6 +511,7 @@ class RecommendationsCorrectnessTest extends \PHPUnit\Framework\TestCase
             }
         };
     }
+
     public function test_seed_vectors_query_only_their_own_mapped_vector_fields(): void
     {
         $props = new NewProperties;
@@ -556,5 +558,4 @@ class RecommendationsCorrectnessTest extends \PHPUnit\Framework\TestCase
         );
         $this->assertSame('similar', $ranked[0]['_id']);
     }
-
 }

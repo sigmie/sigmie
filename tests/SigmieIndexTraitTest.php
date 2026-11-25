@@ -50,6 +50,7 @@ class SigmieIndexTraitTest extends TestCase
         foreach (['-a', '-b'] as $suffix) {
             $this->indexAPICall($index->name().$suffix, 'PUT', ['aliases' => [$index->name() => (object) []]]);
         }
+
         $this->assertTrue($index->exists());
         $index->delete();
         $this->assertIndexNotExists($index->name());

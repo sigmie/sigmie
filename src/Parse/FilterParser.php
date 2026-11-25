@@ -201,7 +201,11 @@ class FilterParser extends Parser
 
             // In `or:OR` both words belong to the clause, even with space before the colon.
             $valuePrefix = $before === ' ' && $position >= 2 ? $query[$position - 2] : $before;
-            if (str_contains(':<>=', $valuePrefix) || preg_match('/\G\s*[:.<>]/', $query, offset: $position + $length)) {
+            if (str_contains(':<>=', $valuePrefix)) {
+                continue;
+            }
+
+            if (preg_match('/\G\s*[:.<>]/', $query, offset: $position + $length)) {
                 continue;
             }
 
@@ -490,8 +494,9 @@ class FilterParser extends Parser
             if ($item === '') {
                 continue;
             }
+
             if (! preg_match('/\A'.self::OPERAND.'\z/s', $item)) {
-                $this->handleError("Invalid list item '{$item}'.");
+                $this->handleError(sprintf("Invalid list item '%s'.", $item));
 
                 return null;
             }
@@ -565,7 +570,7 @@ class FilterParser extends Parser
         }
     }
 
-    /** @return array<string, Boolean> Filters keyed by their aggregation scope. */
+    /** @return array<string, bool> Filters keyed by their aggregation scope. */
     public function nestedFacetFilters(Type $field, string $filterString, string $path): array
     {
         $masked = $this->normalizeWhitespace($this->maskQuotedValues($filterString));
@@ -593,7 +598,7 @@ class FilterParser extends Parser
         $queries = [];
         try {
             foreach ($groups as $scope => $expressions) {
-                $this->nestedFacetPath = (string) $scope;
+                $this->nestedFacetPath = $scope;
                 $queries[$scope] = $this->facetFilterMasked($field, implode(' AND ', $expressions));
             }
         } finally {
@@ -756,6 +761,7 @@ class FilterParser extends Parser
         $parser = new static($type->properties, $this->throwOnError);
 
         $parser->parentPath($parentPath);
+
         $parser->nestedFacetPath = $this->nestedFacetPath;
 
         // The child parses the clauses inside the braces, so it has to ignore the same facet field.
@@ -799,13 +805,13 @@ class FilterParser extends Parser
         }
 
         if (! in_array($this->properties->get($field)->type(), ['geo_point', 'geo_shape', 'alias'], true)) {
-            $this->handleError("Field {$field} does not support geo distance filters.");
+            $this->handleError(sprintf('Field %s does not support geo distance filters.', $field));
 
             return new MatchNone;
         }
 
         if (abs((float) $latitude) > 90 || abs((float) $longitude) > 180 || ! is_finite((float) $distance)) {
-            $this->handleError("Invalid distance or coordinates for field {$field}.");
+            $this->handleError(sprintf('Invalid distance or coordinates for field %s.', $field));
 
             return new MatchNone;
         }
@@ -827,7 +833,7 @@ class FilterParser extends Parser
         $property = $this->properties->get($field);
         $type = $property->type();
         if (in_array($type, ['object', 'nested', 'dense_vector', 'knn_vector', 'geo_point', 'geo_shape'], true)) {
-            $this->handleError("Field {$field} of type {$type} does not support scalar filters.");
+            $this->handleError(sprintf('Field %s of type %s does not support scalar filters.', $field, $type));
 
             return null;
         }
@@ -842,8 +848,7 @@ class FilterParser extends Parser
                 'boolean' => in_array($value, ['true', 'false'], true),
                 'float' => Number::fitsMapping($range ? 'double' : 'float', $value),
                 'integer', 'long', 'double', 'scaled_float' => Number::fitsMapping($type, $value),
-                'integer_range', 'long_range', 'float_range', 'double_range' =>
-                    Number::fitsMapping(substr($type, 0, -6), $value)
+                'integer_range', 'long_range', 'float_range', 'double_range' => Number::fitsMapping(substr($type, 0, -6), $value)
                     && (! in_array($type, ['integer_range', 'long_range'], true) || $this->isIntegralOperand($value)),
                 'ip', 'ip_range' => $this->validIpOperand($value, $type === 'ip' && ! $range),
                 'date', 'date_nanos', 'date_range' => is_int($value) || DateBound::accepts(
@@ -853,7 +858,7 @@ class FilterParser extends Parser
             };
 
             if (! $valid) {
-                $this->handleError("Invalid {$type} filter value '{$value}' for field {$field}.");
+                $this->handleError(sprintf("Invalid %s filter value '%s' for field %s.", $type, $value, $field));
 
                 return null;
             }
@@ -1067,7 +1072,7 @@ class FilterParser extends Parser
         if (! $property instanceof Text && ! in_array($property->type(), [
             'text', 'keyword', 'constant_keyword', 'wildcard', 'flattened', 'flat_object', 'version', 'match_only_text', 'alias',
         ], true)) {
-            $this->handleError("Field {$field} does not support wildcard filters.");
+            $this->handleError(sprintf('Field %s does not support wildcard filters.', $field));
 
             return new MatchNone;
         }

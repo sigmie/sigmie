@@ -67,7 +67,11 @@ class Suggest
         // term and phrase that does not already carry its own.
         if (isset($suggesters['text']) && is_array($suggesters['text'])) {
             foreach ($suggesters as $name => $body) {
-                if (! is_array($body) || array_key_exists('text', $body)) {
+                if (! is_array($body)) {
+                    continue;
+                }
+
+                if (array_key_exists('text', $body)) {
                     continue;
                 }
 

@@ -19,7 +19,7 @@ trait HasFacets
 
     protected function termFacetAggregation(Aggs $aggs, string $field, string $params): void
     {
-        if (! preg_match('/\A([0-9]+)(?:,(asc|desc))?\z/', $params, $matches)
+        if (! preg_match('/\A(\d+)(?:,(asc|desc))?\z/', $params, $matches)
             || (int) $matches[1] < 1 || (int) $matches[1] > 2147483647) {
             throw new ParseException('Term facet parameters require a positive integer size and optional asc or desc order.');
         }

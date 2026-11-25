@@ -5,21 +5,17 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use DateTimeImmutable;
-use Sigmie\Mappings\Types\ElasticsearchNestedVector;
-use Sigmie\Query\Queries\Compound\Boolean;
-use Generator;
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise\FulfilledPromise;
-use Psr\Http\Message\RequestInterface;
-use Sigmie\AI\APIs\VoyageEmbeddingsApi;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Http\Promise\Promise;
-use InvalidArgumentException;
+use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\RequestInterface;
 use RuntimeException;
-use Sigmie\Analytics\Analytics;
-use Sigmie\SigmieIndex;
+use Sigmie\AI\APIs\VoyageEmbeddingsApi;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\AI\Contracts\RerankApi;
+use Sigmie\Analytics\Analytics;
 use Sigmie\Base\Contracts\ElasticsearchConnection as ElasticsearchConnectionInterface;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse as ElasticsearchResponseContract;
@@ -28,38 +24,40 @@ use Sigmie\Base\Drivers\Elasticsearch;
 use Sigmie\Base\Drivers\Opensearch;
 use Sigmie\Base\ElasticsearchException;
 use Sigmie\Base\Http\ElasticsearchConnection;
-use Sigmie\Base\Http\Responses\Search as HttpSearch;
 use Sigmie\Base\Http\ElasticsearchResponse as HttpElasticsearchResponse;
+use Sigmie\Base\Http\Responses\Search as HttpSearch;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Document\RerankedHit;
-use Sigmie\Languages\English\English;
-use Sigmie\Languages\German\German;
 use Sigmie\Http\Contracts\JSONClient;
 use Sigmie\Http\Contracts\JSONRequest;
 use Sigmie\Http\JSONResponse;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Query\NewQuery;
-use Sigmie\Query\Queries\MatchAll;
-use Sigmie\Query\Search;
-use Sigmie\Query\Suggest;
-use Sigmie\Mappings\NewSemanticField;
 use Sigmie\Mappings\Properties;
-use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Mappings\Types\ElasticsearchNestedVector;
+use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\Id;
+use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Name;
-use Sigmie\Mappings\Types\BaseVector;
+use Sigmie\Mappings\Types\Nested;
+use Sigmie\Mappings\Types\Object_;
+use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\FacetParser;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\InputParser;
 use Sigmie\Parse\ParseException;
 use Sigmie\Parse\RangeOperatorParser;
 use Sigmie\Parse\SortParser;
-use Sigmie\Query\Aggregations\Metrics\Composite;
+use Sigmie\Query\Aggregations\Metrics\Max;
 use Sigmie\Query\Aggs;
+use Sigmie\Query\NewQuery;
+use Sigmie\Query\Queries\Compound\Boolean;
+use Sigmie\Query\Queries\MatchAll;
 use Sigmie\Query\Queries\Term\Range;
-use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Term\Term;
+use Sigmie\Query\Queries\Text\Match_;
+use Sigmie\Query\Search;
+use Sigmie\Query\Suggest;
 use Sigmie\Search\Autocomplete\NewPipeline;
 use Sigmie\Search\Autocomplete\Pipeline;
 use Sigmie\Search\Autocomplete\Set;
@@ -72,31 +70,32 @@ use Sigmie\Search\Formatters\SigmieMultiSearchResponse;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
 use Sigmie\Search\InnerHits;
 use Sigmie\Search\MMR;
+use Sigmie\Search\NewContextComposer;
 use Sigmie\Search\NewMultiSearch;
 use Sigmie\Search\NewRerank;
-use Sigmie\Search\NewContextComposer;
 use Sigmie\Search\NewSearch;
 use Sigmie\Search\NewTemplate;
 use Sigmie\Search\RawQuery;
-use Sigmie\Search\SearchTemplate;
 use Sigmie\Search\RRF;
 use Sigmie\Search\SearchContext;
+use Sigmie\Search\SearchTemplate;
 use Sigmie\Search\VectorPool;
-use Sigmie\Shared\Collection;
 use Sigmie\Sigmie;
-use Sigmie\Testing\Assert;
+use Sigmie\SigmieIndex;
 use Sigmie\Testing\FakeEmbeddingsApi;
 use Sigmie\Testing\FakeRerankApi;
-use Sigmie\Testing\TestCase;
 use stdClass;
 use Symfony\Component\Yaml\Yaml;
 
-class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
+use function Sigmie\Functions\object_map;
+
+class SearchCorrectnessTest extends TestCase
 {
     public function test_built_search_parses_filters_with_its_mappings(): void
     {
         $props = new NewProperties;
         $props->category('brand');
+
         $raw = $this->search($props)->makeSearch()->postFilterString('brand:acme')->toRaw();
 
         $this->assertSame('acme', $raw['post_filter']['bool']['must'][0]['term']['brand.keyword']['value']);
@@ -106,6 +105,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->number('rank');
+
         $raw = $this->search($props)->sort('rank:desc')->makeSearch()->sortString('_doc')->toRaw();
 
         $this->assertSame(['_doc'], $raw['sort']);
@@ -116,8 +116,9 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $props->keyword('brand');
         $props->number('price');
+
         $raw = $this->search($props)->facets('brand')->makeSearch()
-            ->aggregate(fn (Aggs $aggs) => $aggs->max('highest', 'price'))->toRaw();
+            ->aggregate(fn (Aggs $aggs): Max => $aggs->max('highest', 'price'))->toRaw();
 
         $this->assertArrayHasKey('brand', $raw['aggs']);
         $this->assertArrayHasKey('highest', $raw['aggs']);
@@ -128,6 +129,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $props->keyword('brand');
         $props->keyword('color');
+
         $parser = new FilterParser($props);
         $brand = $props->get()->get('brand');
 
@@ -141,7 +143,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function test_nested_facet_selections_use_the_child_fields_logic(): void
     {
         $props = new NewProperties;
-        $props->nested('items', fn (NewProperties $items) => $items->keyword('color')->facetDisjunctive());
+        $props->nested('items', fn (NewProperties $items): Keyword => $items->keyword('color')->facetDisjunctive());
 
         $this->assertSame('(items:{color:red} OR items:{color:blue})',
             (new FacetParser($props))->parseFilterString('items:{color:red} items:{color:blue}'));
@@ -159,7 +161,8 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function test_id_exact_filters_use_the_types_filter_field(): void
     {
         $props = new NewProperties;
-        $props->type(new class('sku') extends Id {
+        $props->type(new class('sku') extends Id
+        {
             public function filterableName(): string
             {
                 return $this->sortableName();
@@ -174,6 +177,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->keyword('path');
+
         $raw = (new FilterParser($props))->parse('path:"C:\\Users\\Ada*"')->toRaw();
         $this->assertSame('C:\\\\Users\\\\Ada*', $raw['bool']['must'][0]['wildcard']['path']['value']);
     }
@@ -182,7 +186,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $term = (new Term('sku', 'book'))->boost(3);
-        $props->keyword('sku')->withQueries(fn () => [$term]);
+        $props->keyword('sku')->withQueries(fn (): array => [$term]);
         $search = $this->search($props)->queryString('book');
         $this->assertStringContainsString('"value":"book","boost":3', json_encode($search->makeSearch()->toRaw()));
         $weighted = $search->weight(['sku' => 4])->makeSearch()->toRaw();
@@ -195,6 +199,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $props->text('title');
         $props->text('notes');
+
         $search = (new NewSearch($this->connection()))->index('products')->fields(['title'])->properties($props)->queryString('book');
         $query = json_encode($search->makeSearch()->toRaw()['query']);
 
@@ -206,6 +211,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->text('title');
+
         $search = (new NewSearch($this->connection()))->index('products')->properties($props->get(name: 'product'));
         $query = $search->queryString('book')->makeSearch()->toRaw()['query'];
 
@@ -216,6 +222,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->searchAsYouType('title');
+
         $search = (new NewSearch($this->connection()))->index('products')->properties($props->get(name: 'product'));
         $raw = $search->highlighting(['title'], '<b>', '</b>')->makeSearch()->toRaw();
 
@@ -232,7 +239,8 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
 
     public function test_custom_fuzzy_clause_keeps_the_result_of_its_setter(): void
     {
-        $clause = new class('title', 'book') extends Match_ {
+        $clause = new class('title', 'book') extends Match_
+        {
             public function fuzziness(?string $fuzziness): static
             {
                 $query = clone $this;
@@ -242,7 +250,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
             }
         };
         $props = new NewProperties;
-        $props->text('title')->withQueries(fn () => [$clause]);
+        $props->text('title')->withQueries(fn (): array => [$clause]);
         $search = $this->search($props)->typoTolerantAttributes(['title'])->queryString('book');
 
         $this->assertStringContainsString('"fuzziness":"AUTO:3,6"', json_encode($search->makeSearch()->toRaw()['query']));
@@ -271,6 +279,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->text('title');
+
         $source = (new NewTemplate($this->connection()))->properties($props)->id('books')
             ->highlighting([2 => 'title'], '<mark>', '</mark>')->get()->source();
 
@@ -282,6 +291,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $props->text('title');
         $props->text('description');
+
         $search = (new NewSearch($this->connection()))->index('books')->fields(['title'])
             ->properties($props)->queryString('atlas');
 
@@ -292,6 +302,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->text('title');
+
         $body = $this->search($props)->semantic()->queryImage('cover.jpg')->makeSearch()->toRaw();
 
         $this->assertStringContainsString('match_none', json_encode($body['query']));
@@ -316,10 +327,12 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->keyword('group');
-        $props->nested('reviews', fn (NewProperties $reviews) => $reviews->text('comment'));
+        $props->nested('reviews', fn (NewProperties $reviews): Text => $reviews->text('comment'));
+
         $search = $this->search($props)->fields(['reviews.comment'])->queryString('battery')
             ->innerHits('reviews')->uniqueBy('group', top: 1);
         $search->makeSearch();
+
         $nested = ['inner_hits' => ['reviews#1' => ['hits' => ['total' => 1, 'hits' => [
             ['_nested' => ['field' => 'reviews', 'offset' => 2], '_source' => ['comment' => 'battery']],
         ]]]]];
@@ -387,6 +400,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $title = $props->text('title');
         $title->semantic(api: 'embedding', dimensions: 128);
         $title->withQueries(fn (string $query): array => [new Term('title.raw', $query)]);
+
         $source = (new NewTemplate($this->connection()))->id('books')->properties($props)->semantic()->get()->source();
 
         $this->assertStringContainsString('"term":{"title.raw":{"value":"{{_embeddings_title}}"', $source);
@@ -396,6 +410,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->keyword('category');
+
         $partial = ['timed_out' => true, 'aggregations' => ['category' => [
             'category' => ['buckets' => [['key' => 'atlas', 'doc_count' => 1]]],
         ]]];
@@ -408,6 +423,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->text('title');
+
         $source = (new NewTemplate($this->connection()))->id('books')->properties($props)
             ->highlighting(['title'], '{{', '}}')->get()->source();
 
@@ -427,6 +443,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->datetime('@timestamp');
+
         $query = (new FilterParser($props))->parse('@timestamp>=1704067200000')->toRaw();
 
         $this->assertSame(1704067200000, $query['bool']['must'][0]['range']['@timestamp']['gte']);
@@ -438,6 +455,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $props->geoPoint('order');
         $props->geoPoint('unit');
+
         $parser = new SortParser($props, false);
         $sort = $parser->parse('order[51,13]:km:asc unit[51,13]:m:desc');
         $point = ['lat' => 51.0, 'lon' => 13.0];
@@ -456,7 +474,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $props->nested('orders', function (NewProperties $orders): void {
             $orders->keyword('state');
             $orders->keyword('color');
-            $orders->nested('items', fn (NewProperties $items) => $items->keyword('sku'));
+            $orders->nested('items', fn (NewProperties $items): Keyword => $items->keyword('sku'));
         });
 
         $raw = (new FacetParser($props))->parse('orders.color', 'orders.state:open OR orders.items.sku:book')->toRaw();
@@ -470,11 +488,10 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function test_nested_facet_filters_the_selected_items_inside_explicit_braces(): void
     {
         $props = new NewProperties;
-        $props->nested('orders', fn (NewProperties $orders) =>
-            $orders->nested('items', function (NewProperties $items): void {
-                $items->keyword('sku');
-                $items->keyword('color');
-            }));
+        $props->nested('orders', fn (NewProperties $orders): Nested => $orders->nested('items', function (NewProperties $items): void {
+            $items->keyword('sku');
+            $items->keyword('color');
+        }));
         $parser = new FacetParser($props);
         $direct = $parser->parse('orders.items.color', 'orders.items.sku:book')->toRaw();
         $explicit = $parser->parse('orders.items.color', 'orders:{items:{sku:book}}')->toRaw();
@@ -531,6 +548,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->keyword('category');
+
         $source = (new NewTemplate($this->connection()))->id('titles')->properties($properties)
             ->filters("category:'@sort(1)@endsort'")->get()->source();
 
@@ -541,8 +559,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $connection = $this->createMock(ElasticsearchConnectionInterface::class);
         $connection->method('driver')->willReturn(new Elasticsearch);
-        $connection->method('__invoke')->willReturnCallback(fn (ElasticsearchRequest $request): ElasticsearchResponseContract =>
-            $request->response(new PsrResponse(404, [], '{"error":{"type":"search_context_missing_exception","reason":"PIT expired"}}'))
+        $connection->method('__invoke')->willReturnCallback(fn (ElasticsearchRequest $request): ElasticsearchResponseContract => $request->response(new PsrResponse(404, [], '{"error":{"type":"search_context_missing_exception","reason":"PIT expired"}}'))
         );
 
         $this->expectException(ElasticsearchException::class);
@@ -683,6 +700,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->keyword('color');
+
         $parser = new FacetParser($properties);
 
         $this->assertSame('(NOT NOT color:red)', $parser->parseFilterString('NOT NOT color:red'));
@@ -694,6 +712,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $title = $props->text('title');
         $title->semantic('first', dimensions: 128);
         $title->semantic('unused', dimensions: 256);
+
         $unused = $this->createMock(EmbeddingsApi::class);
         $unused->method('maxBatchSize')->willReturn(1);
         $unused->expects($this->never())->method('batchEmbed');
@@ -710,6 +729,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         foreach (['order', 'unit'] as $field) {
             $props->geoPoint($field);
         }
+
         $parser = new SortParser($props);
         foreach (['order', 'unit'] as $field) {
             [$sort] = $parser->parse($field.'[51,13]:km:desc');
@@ -782,7 +802,8 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
 
             return new FulfilledPromise(new PsrResponse(200, [], '{"data":[{"index":0,"embedding":[1]}]}'));
         }]);
-        $voyage = new class($client) extends VoyageEmbeddingsApi {
+        $voyage = new class($client) extends VoyageEmbeddingsApi
+        {
             public function __construct(Client $client)
             {
                 parent::__construct('test');
@@ -792,6 +813,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $pool = new VectorPool($voyage);
         $pool->getMany([['text' => 'book', 'dims' => 1]]);
         $pool->get('another', 1);
+
         $voyage->embed('document', 1);
         $this->assertSame(['query', 'query', 'document'], $inputTypes);
     }
@@ -887,6 +909,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $title = $properties->text('title');
         $title->semantic(api: 'embeddings', dimensions: 128);
         $title->semantic(api: 'embeddings', dimensions: 256);
+
         $source = (new NewTemplate($connection))->id('products')->properties($properties)
             ->fields(['title'])->semantic()->get()->source();
 
@@ -917,9 +940,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function test_inner_hit_parent_retains_repeated_relative_path_segments(): void
     {
         $props = new NewProperties;
-        $props->nested('a', fn (NewProperties $outer) => $outer->object('a', fn (NewProperties $object) =>
-            $object->nested('b', fn (NewProperties $middle) =>
-                $middle->nested('c', fn (NewProperties $leaf) => $leaf->keyword('code')))));
+        $props->nested('a', fn (NewProperties $outer): Object_ => $outer->object('a', fn (NewProperties $object): Nested => $object->nested('b', fn (NewProperties $middle): Nested => $middle->nested('c', fn (NewProperties $leaf): Keyword => $leaf->keyword('code')))));
 
         $item = $this->innerHit($props, 'a.a.b.c', [
             'field' => 'a', 'offset' => 1,
@@ -963,6 +984,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $props->html('body');
         $props->keyword('group');
+
         $search = $this->search($props)->uniqueBy('group', top: 2)->highlighting(['body'], '<em>', '</em>');
         $hit = ['highlight' => ['body' => ['<b><em>Hello</b></em>']]];
         $hit['inner_hits']['top']['hits']['hits'][] = $hit;
@@ -975,7 +997,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $search = $this->createStub(MultiSearchable::class);
         $search->method('multisearchResCount')->willReturn(2);
-        $search->method('formatResponses')->willReturnCallback(fn (...$responses) => array_column($responses, 'took'));
+        $search->method('formatResponses')->willReturnCallback(fn (...$responses): array => array_column($responses, 'took'));
         $query = new NewQuery($this->connection());
         $response = (new SigmieMultiSearchResponse)->searches([$search, $query])
             ->multiSearchResponseRaw(['responses' => [['took' => 1], ['took' => 2], ['took' => 3]]]);
@@ -1011,6 +1033,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $props->text('title');
         $props->keyword('group');
+
         $raw = $this->search($props)->queryString('book')->uniqueBy('group', top: 2)
             ->highlighting(['title'], '<mark>', '</mark>')->makeSearch()->toRaw();
 
@@ -1027,7 +1050,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
             (new NewQuery($connection))->index('orders'), new NewProperties, 'created_at'
         ));
         $multi = new NewMultiSearch($connection);
-        $multi->newAnalytics($index, 'created_at', 'orders')->search(fn (Search $search) => $search->size(1));
+        $multi->newAnalytics($index, 'created_at', 'orders')->search(fn (Search $search): Search => $search->size(1));
 
         $this->assertSame([$raw], $multi->hits());
         $this->assertSame(['orders' => [$raw]], $multi->groupedHits());
@@ -1187,6 +1210,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         foreach (['context', 'apis', 'errors', 'facetsResponseRaw', 'queryResponseRaw'] as $method) {
             $formatter->method($method)->willReturnSelf();
         }
+
         $formatter->method('format')->willReturn(['custom' => true]);
         $search = $this->search(new NewProperties)->formatter($formatter);
 
@@ -1210,6 +1234,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->keyword('👩‍💻');
+
         $raw = (new FilterParser($properties))->parse("👩‍💻:'İstanbul'")->toRaw();
 
         $this->assertStringContainsString('"👩‍💻"', json_encode($raw, JSON_UNESCAPED_UNICODE));
@@ -1219,6 +1244,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->keyword('tag');
+
         $parser = new FilterParser($properties);
 
         foreach ([['', 'z'], ['a', '']] as [$min, $max]) {
@@ -1233,6 +1259,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->datetime('created');
+
         $raw = (new FilterParser($properties))->parse('created:"2022-01-01"..2023-01-02T10:00:00Z')->toRaw();
         $this->assertSame('2023-01-02T10:00:00Z', $raw['bool']['must'][0]['range']['created']['lte']);
     }
@@ -1240,7 +1267,8 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function test_custom_facet_receives_the_complete_parameter(): void
     {
         $properties = new NewProperties;
-        $properties->type(new class('label') extends Keyword {
+        $properties->type(new class('label') extends Keyword
+        {
             public function aggregation(Aggs $aggs, string $params): void
             {
                 $aggs->terms($params, $this->name());
@@ -1256,7 +1284,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $props->nested('orders', function (NewProperties $orders): void {
             $orders->keyword('state');
-            $orders->nested('किताब', fn (NewProperties $items) => $items->keyword('sku'));
+            $orders->nested('किताब', fn (NewProperties $items): Keyword => $items->keyword('sku'));
         });
 
         $facet = $this->search($props)->facets('orders.state', 'orders.किताब.sku:book')
@@ -1268,6 +1296,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->keyword('題');
+
         $build = fn (string $text) => $this->search($properties)->fields(['題'])->queryString($text)->makeSearch()->toRaw()['query'];
 
         $this->assertEquals($build(''), $build("\u{3000}\u{00A0}"));
@@ -1277,6 +1306,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->keyword('τιμή');
+
         $parser = new SortParser($properties);
 
         $this->assertSame(['_score', ['τιμή' => 'desc']], $parser->parse("\u{3000}_score\u{00A0}τιμή:desc\u{2009}"));
@@ -1287,11 +1317,12 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->keyword('城市');
+
         $parser = new FilterParser($properties);
         $clause = "城市:'東\u{3000}京😀'";
-        $expected = $parser->parse("$clause OR 城市:上海")->toRaw();
+        $expected = $parser->parse($clause.' OR 城市:上海')->toRaw();
 
-        $this->assertEquals($expected, $parser->parse("$clause\u{00A0}OR\u{3000}城市:上海")->toRaw());
+        $this->assertEquals($expected, $parser->parse($clause.' OR　城市:上海')->toRaw());
         $this->assertEquals($parser->parse('')->toRaw(), $parser->parse("\u{3000}")->toRaw());
     }
 
@@ -1300,6 +1331,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $properties = new NewProperties;
         $properties->keyword('עיר');
         $properties->keyword('色');
+
         $parser = new FacetParser($properties);
 
         $this->assertSame(['עיר', '色'], $parser->fields("עיר\u{2009}色"));
@@ -1360,6 +1392,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->completion('title');
+
         $body = $this->search($props)->autocomplete(false)->autocompletePrefix('star')->makeSearch()->toRaw();
 
         $this->assertArrayNotHasKey('suggest', $body);
@@ -1379,6 +1412,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $props->text('01');
         $props->text('1');
+
         $search = $this->search($props)->fields(['01'])->typoTolerantAttributes(['1'])
             ->queryString('sleping')->makeSearch();
         $template = (new NewTemplate($this->connection()))->id('products')->properties($props)
@@ -1392,6 +1426,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->searchAsYouType('title');
+
         $query = $this->search($props)->typoTolerantAttributes(['title'])->typoTolerance(4, 8)
             ->queryString('sleping be')->makeSearch()->toRaw()['query'];
 
@@ -1412,6 +1447,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->text('title');
+
         $search = $this->search($properties)->except(['private']);
 
         $this->assertSame(['includes' => ['title'], 'excludes' => ['private']], $search->makeSearch()->toRaw()['_source']);
@@ -1426,6 +1462,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $properties = new NewProperties;
         $properties->text('0');
         $properties->text('00');
+
         $search = $this->search($properties)->typoTolerantAttributes(['0'])->queryString('lamp');
 
         $body = json_encode($search->makeSearch()->toRaw(), JSON_THROW_ON_ERROR);
@@ -1493,6 +1530,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->price();
+
         $response = new SigmieSearchResponse($properties->get());
 
         foreach ([null, 0.0] as $value) {
@@ -1612,8 +1650,8 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         try {
             iterator_to_array((new RawQuery($connection, 'products', []))->lazy());
             $this->fail('Expected the PIT search to fail.');
-        } catch (ElasticsearchException $exception) {
-            $this->assertTrue($exception->json('timed_out'));
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertTrue($elasticsearchException->json('timed_out'));
             $this->assertSame(['latest'], $closed);
         }
     }
@@ -1716,7 +1754,8 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function test_nested_lazy_search_keeps_the_outer_inner_hit_limit(): void
     {
         $props = new NewProperties;
-        $props->nested('reviews', fn (NewProperties $props) => $props->text('comment'));
+        $props->nested('reviews', fn (NewProperties $props): Text => $props->text('comment'));
+
         $connection = $this->createMock(ElasticsearchConnection::class);
         $connection->method('driver')->willReturn(new Elasticsearch);
         $nested = ['hits' => ['hits' => [
@@ -1909,7 +1948,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $props->nested('orders', function (NewProperties $orders): void {
             $orders->keyword('state');
-            $orders->nested('items', fn (NewProperties $items) => $items->keyword('sku'));
+            $orders->nested('items', fn (NewProperties $items): Keyword => $items->keyword('sku'));
         });
 
         $search = $this->search($props)->facets('orders.state', 'orders.items.sku:book');
@@ -1927,7 +1966,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $props->number('rating');
 
         $search = $this->search($props)->facets('brand')->aggregate(
-            fn (Aggs $aggs) => $aggs->max('brand', 'rating')
+            fn (Aggs $aggs): Max => $aggs->max('brand', 'rating')
         );
         $wire = $search->makeSearch()->toRaw()['aggs'];
         $this->assertCount(2, $wire);
@@ -1937,6 +1976,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
                 ? ['value' => 9]
                 : ['doc_count' => 2, 'brand' => ['buckets' => [['key' => 'dell', 'doc_count' => 2]]]];
         }
+
         $response = $search->formatResponses(['aggregations' => $raw]);
         $this->assertSame(['value' => 9], $response->aggregation('brand'));
         $this->assertSame(['dell' => 2], $response->facet('brand'));
@@ -1946,6 +1986,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->name('title');
+
         $body = $this->search($props)->highlighting(['title.title_text'], '<b>', '</b>')->makeSearch()->toRaw();
         $field = $body['highlight']['fields']['title.title_text'];
         $this->assertSame(['<b>'], $field['pre_tags']);
@@ -1967,6 +2008,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $props->keyword('brand');
         $props->keyword('sku');
+
         $body = $this->search($props)->retrieve(['sku'])->uniqueBy('brand', top: 2)->makeSearch()->toRaw();
 
         $this->assertSame(['sku'], $body['collapse']['inner_hits']['_source']['includes'] ?? null);
@@ -1975,9 +2017,11 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function test_generated_inner_hits_do_not_consume_a_custom_name_on_the_same_path(): void
     {
         $properties = new NewProperties;
-        $properties->nested('reviews', fn (NewProperties $reviews) => $reviews->text('comment'));
+        $properties->nested('reviews', fn (NewProperties $reviews): Text => $reviews->text('comment'));
+
         $search = $this->search($properties)->queryString('battery')->innerHits('reviews');
         $search->makeSearch();
+
         $custom = ['hits' => ['total' => 9, 'hits' => []]];
         $generated = ['hits' => ['total' => 1, 'hits' => []]];
         $hit = ['inner_hits' => ['reviews#999' => $custom, 'reviews#1' => $generated]];
@@ -2031,9 +2075,11 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function test_custom_inner_hits_with_hashes_are_preserved(): void
     {
         $props = new NewProperties;
-        $props->nested('reviews', fn (NewProperties $reviews) => $reviews->text('comment'));
+        $props->nested('reviews', fn (NewProperties $reviews): Text => $reviews->text('comment'));
+
         $search = $this->search($props)->queryString('battery')->innerHits('reviews');
         $search->makeSearch();
+
         $custom = ['hits' => ['total' => ['value' => 0], 'hits' => []]];
         $response = $search->formatResponses(['hits' => ['hits' => [[
             '_id' => '1',
@@ -2217,6 +2263,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->keyword('brand');
+
         $search = $this->search($props)->facets('brand', "brand:'dell' AND brand:'hp'");
 
         $this->assertStringContainsString('cannot contain', strtolower(
@@ -2357,7 +2404,8 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function test_facet_json_lookup_keeps_a_dotted_field_name(): void
     {
         $props = new NewProperties;
-        $props->object('specs', fn (NewProperties $specs) => $specs->keyword('color'));
+        $props->object('specs', fn (NewProperties $specs): Keyword => $specs->keyword('color'));
+
         $search = $this->search($props)->facets('specs.color');
         $response = $search->formatResponses([
             'aggregations' => [
@@ -2372,6 +2420,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->keyword('0');
+
         $response = $this->search($props)->facets('0')->formatResponses([
             'aggregations' => ['0' => ['0' => ['buckets' => [['key' => 'red', 'doc_count' => 3]]]]],
         ]);
@@ -2415,12 +2464,13 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->keyword('brand');
+
         $empty = ['hits' => ['total' => ['value' => 0], 'hits' => []], 'took' => 1];
 
         $search = (new NewSearch($this->connection()))
             ->index('products')
             ->properties($props)
-            ->facets('brand unknown_facet', "unknown_filter:bad brand:Apple");
+            ->facets('brand unknown_facet', 'unknown_filter:bad brand:Apple');
 
         $errors = $search->formatRespones($empty, $empty)->format()['errors'];
         $this->assertSame([
@@ -2442,6 +2492,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @test
+     *
      * @dataProvider formatterChoices
      */
     public function search_results_keep_their_own_formatter_and_context(bool $customFormatter): void
@@ -2488,6 +2539,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         ]]]);
         $props = new NewProperties;
         $props->keyword('product_id');
+
         $response = (new NewSearch($connection))
             ->index('products')
             ->properties($props)
@@ -2502,6 +2554,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @test
+     *
      * @dataProvider incompletePitPages
      */
     public function a_partial_pit_page_throws_and_closes_the_latest_pit(array $partial): void
@@ -2595,6 +2648,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
 
         return $connection;
     }
+
     /** @test */
     public function rrf_uses_list_position_for_keyed_hits(): void
     {
@@ -2626,7 +2680,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->nested('orders', function (NewProperties $order): void {
-            $order->nested('items', fn (NewProperties $item) => $item->keyword('sku'));
+            $order->nested('items', fn (NewProperties $item): Keyword => $item->keyword('sku'));
         });
         $inner = new InnerHits;
         $inner->request(['orders.items'], 2);
@@ -2655,7 +2709,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->nested('orders', function (NewProperties $order): void {
-            $order->nested('items', fn (NewProperties $item) => $item->keyword('sku'));
+            $order->nested('items', fn (NewProperties $item): Keyword => $item->keyword('sku'));
         });
         $inner = new InnerHits;
         $inner->request(['orders'], 1);
@@ -2686,10 +2740,12 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function inner_hits_read_integer_totals_for_capped_blocks(): void
     {
         $properties = new NewProperties;
-        $properties->nested('orders', fn (NewProperties $order) => $order->keyword('sku'));
+        $properties->nested('orders', fn (NewProperties $order): Keyword => $order->keyword('sku'));
+
         $inner = new InnerHits;
         $inner->request(['orders'], 1);
         $inner->resolve($properties->get());
+
         $matches = $inner->matches([$inner->clause('orders')['name'] => ['hits' => [
             'total' => 8,
             'hits' => [['_nested' => ['field' => 'orders', 'offset' => 3]]],
@@ -2702,7 +2758,8 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function inner_hits_preserve_hashes_in_nested_paths(): void
     {
         $properties = new NewProperties;
-        $properties->nested('orders#1', fn (NewProperties $order) => $order->keyword('sku'));
+        $properties->nested('orders#1', fn (NewProperties $order): Keyword => $order->keyword('sku'));
+
         $item = $this->innerHit($properties, 'orders#1', ['field' => 'orders#1', 'offset' => 2], ['sku' => 'x']);
 
         $this->assertSame(['_offset' => 2, 'sku' => 'x'], $item);
@@ -2713,7 +2770,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->nested('0', function (NewProperties $order): void {
-            $order->nested('items', fn (NewProperties $item) => $item->keyword('sku'));
+            $order->nested('items', fn (NewProperties $item): Keyword => $item->keyword('sku'));
         });
         $item = $this->innerHit($properties, '0.items', [
             'field' => '0', 'offset' => 2, '_nested' => ['field' => 'items', 'offset' => 1],
@@ -2816,6 +2873,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->completion('title');
+
         $body = $this->search($properties)->queryString('star')->makeSearch()->toRaw();
 
         $this->assertSame([], $properties->get()->get('title')->queries('star'));
@@ -2998,6 +3056,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->keyword('brand');
+
         $empty = ['hits' => ['total' => ['value' => 0], 'hits' => []], 'took' => 1];
 
         $search = (new NewSearch($this->connection()))
@@ -3020,6 +3079,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $first = new NewProperties;
         $first->keyword('name');
+
         $second = new NewProperties;
         $second->keyword('title');
 
@@ -3052,20 +3112,18 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $inner->resolve($props->get());
 
         $name = $inner->clause('reviews')['name'];
-        $hit = function (float $score, array $source) use ($name): array {
-            return [
-                $name => [
-                    'hits' => [
-                        'total' => ['value' => 1],
-                        'hits' => [[
-                            '_score' => $score,
-                            '_source' => $source,
-                            '_nested' => ['field' => 'reviews', 'offset' => 0],
-                        ]],
-                    ],
+        $hit = fn (float $score, array $source): array => [
+            $name => [
+                'hits' => [
+                    'total' => ['value' => 1],
+                    'hits' => [[
+                        '_score' => $score,
+                        '_source' => $source,
+                        '_nested' => ['field' => 'reviews', 'offset' => 0],
+                    ]],
                 ],
-            ];
-        };
+            ],
+        ];
 
         $negative = $inner->matches($hit(-2, ['comment' => 'bad']))['reviews'];
         $offset = $inner->matches($hit(1, ['comment' => 'ok', '_offset' => 99]))['reviews']['items'][0];
@@ -3128,22 +3186,21 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         });
         $built = $props->get();
 
-        $block = static function (string $path, string $sku): array {
-            return [
-                'hits' => [
-                    'total' => ['value' => 1],
-                    'hits' => [[
-                        '_score' => 1,
-                        '_source' => ['sku' => $sku],
-                        '_nested' => ['field' => $path, 'offset' => 0],
-                    ]],
-                ],
-            ];
-        };
+        $block = static fn (string $path, string $sku): array => [
+            'hits' => [
+                'total' => ['value' => 1],
+                'hits' => [[
+                    '_score' => 1,
+                    '_source' => ['sku' => $sku],
+                    '_nested' => ['field' => $path, 'offset' => 0],
+                ]],
+            ],
+        ];
 
         $inner = new InnerHits;
         $inner->request(['0', '1'], 2);
         $inner->resolve($built);
+
         $zero = $inner->clause('0')['name'];
         $one = $inner->clause('1')['name'];
         $json = json_encode($inner->formatRawHit([
@@ -3173,6 +3230,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $reviews = new InnerHits;
         $reviews->request(['reviews'], 2);
         $reviews->resolve($built);
+
         $formatted = $reviews->formatRawHit([
             'inner_hits' => [$reviews->clause('reviews')['name'] => $block('reviews', 'A')],
         ]);
@@ -3197,7 +3255,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
             '_score' => 1.0,
             '_index' => 'products',
             '_source' => [],
-            '_matches' => \Sigmie\Functions\object_map([
+            '_matches' => object_map([
                 '0' => ['total' => 1, 'items' => [['sku' => 'A']]],
                 '1' => ['total' => 0, 'items' => []],
             ]),
@@ -3222,7 +3280,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
             'author.name' => 'Literal',
         ], '1', 1.0, 'docs');
 
-        $parsed = \Symfony\Component\Yaml\Yaml::parse(NewRerank::documentPayloads(
+        $parsed = Yaml::parse(NewRerank::documentPayloads(
             [$hit],
             ['title', 'author.name', 'comments.body'],
         )[0]);
@@ -3231,7 +3289,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $this->assertSame('Literal', $parsed['author.name']);
         $this->assertSame(['First nested body', 'Second nested body'], $parsed['comments.body']);
 
-        $dotted = \Symfony\Component\Yaml\Yaml::parse(NewRerank::documentPayloads(
+        $dotted = Yaml::parse(NewRerank::documentPayloads(
             [new Hit([
                 'author' => ['name' => 'Ada'],
                 'comments' => [
@@ -3367,7 +3425,8 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function test_geo_sort_resolves_a_relative_field_to_its_full_path(): void
     {
         $properties = new NewProperties;
-        $properties->nested('stores', fn (NewProperties $store) => $store->geoPoint('location'));
+        $properties->nested('stores', fn (NewProperties $store): GeoPoint => $store->geoPoint('location'));
+
         $storeFields = $properties->get()->get('stores')->getProperties();
         [$sort] = (new SortParser($storeFields))->parse('location[51,13]:km:asc');
 
@@ -3387,6 +3446,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @test
+     *
      * @dataProvider malformedSortClauses
      */
     public function malformed_sort_clause_is_rejected(string $clause): void
@@ -3394,9 +3454,10 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $properties = new NewProperties;
         $properties->keyword('brand');
         $properties->geoPoint('location');
+
         $parser = new SortParser($properties, false);
 
-        $this->assertSame(['_doc', ['brand' => 'desc']], $parser->parse("_doc $clause brand:desc"));
+        $this->assertSame(['_doc', ['brand' => 'desc']], $parser->parse(sprintf('_doc %s brand:desc', $clause)));
         $this->assertCount(1, $parser->errors());
 
         $this->expectException(ParseException::class);
@@ -3637,12 +3698,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
      */
     public function lazy_keeps_the_post_filter(): void
     {
-        $connection = new class([
-            HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"id":"pit-1"}')),
-            HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"hits":{"hits":[{"_id":"1","_index":"orders","_score":1,"_source":{"status":"open"},"sort":[1,"1"]}]}}')),
-            HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"hits":{"hits":[]}}')),
-            HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"succeeded":true}')),
-        ]) implements ElasticsearchConnectionInterface
+        $connection = new class([HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"id":"pit-1"}')), HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"hits":{"hits":[{"_id":"1","_index":"orders","_score":1,"_source":{"status":"open"},"sort":[1,"1"]}]}}')), HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"hits":{"hits":[]}}')), HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"succeeded":true}'))]) implements ElasticsearchConnectionInterface
         {
             public array $bodies = [];
 
@@ -3670,15 +3726,11 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
                 return false;
             }
         };
-
-        $raw = new RawQuery($connection, 'orders', [
+        new RawQuery($connection, 'orders', [
             'query' => ['match_all' => (object) []],
             'post_filter' => ['term' => ['status' => 'paid']],
             'sort' => [['processed_at' => 'asc']],
         ]);
-
-        foreach ($raw->lazy() as $hit) {
-        }
 
         $search = json_decode($connection->bodies[1], true);
 
@@ -3811,11 +3863,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
                 ]],
             ],
         ];
-        $connection = new class([
-            HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"id":"pit-1"}')),
-            HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, ['Content-Type' => 'application/json'], json_encode($hit))),
-            HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"succeeded":true}')),
-        ]) extends ElasticsearchConnection
+        $connection = new class([HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"id":"pit-1"}')), HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, ['Content-Type' => 'application/json'], json_encode($hit))), HttpElasticsearchResponse::fromPsrResponse(new PsrResponse(200, ['Content-Type' => 'application/json'], '{"succeeded":true}'))]) extends ElasticsearchConnection
         {
             public function __construct(private array $responses) {}
 
@@ -3890,8 +3938,8 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function a_nested_filter_inside_path_zero_uses_the_full_child_path(): void
     {
         $properties = new NewProperties;
-        $properties->nested('0', fn (NewProperties $parent) => $parent->nested(
-            'items', fn (NewProperties $items) => $items->keyword('sku')
+        $properties->nested('0', fn (NewProperties $parent): Nested => $parent->nested(
+            'items', fn (NewProperties $items): Keyword => $items->keyword('sku')
         ));
         $raw = (new FilterParser($properties))->parse('0:{items:{sku:A}}')->toRaw();
         $outer = $raw['bool']['must'][0]['nested'];
@@ -3916,6 +3964,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $properties = new NewProperties;
         $properties->keyword('or');
         $properties->keyword('color');
+
         $parser = new FacetParser($properties);
         $this->assertSame('(or:red) AND (color:[blue,OR])', $parser->parseFilterString('or:red color:[blue,OR]'));
     }
@@ -3925,6 +3974,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->keyword('color');
+
         $parser = new FacetParser($properties);
         $this->assertSame('(color:[red, blue])', $parser->parseFilterString('color:[red, blue]'));
         $this->assertSame("(color:'a\nb')", $parser->parseFilterString("color:'a\nb'"));
@@ -3961,12 +4011,13 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->geoPoint('pin');
+
         $latitude = 1e-6;
         $longitude = -2e-5;
-        $sort = (new SortParser($props))->parse("pin[$latitude,$longitude]:m:asc");
+        $sort = (new SortParser($props))->parse(sprintf('pin[%s,%s]:m:asc', $latitude, $longitude));
         $this->assertSame(['lat' => $latitude, 'lon' => $longitude], $sort[0]['_geo_distance']['pin']);
 
-        $filter = (new FilterParser($props))->parse("pin:1e2m[$latitude,$longitude]")->toRaw();
+        $filter = (new FilterParser($props))->parse(sprintf('pin:1e2m[%s,%s]', $latitude, $longitude))->toRaw();
         $distance = $filter['bool']['must'][0]['geo_distance'];
         $this->assertSame('1e2m', $distance['distance']);
         $this->assertEquals(['lat' => $latitude, 'lon' => $longitude], $distance['pin']);
@@ -3976,6 +4027,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->text('title');
+
         $search = $this->search($properties)->textScoreMultiplier(3000000000)->queryString('book');
         $body = json_encode($search->makeSearch()->toRaw(), JSON_THROW_ON_ERROR);
         $this->assertStringContainsString('"multiplier":3000000000', $body);
@@ -4049,6 +4101,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $connection = $this->createMock(ElasticsearchConnectionInterface::class);
         $connection->expects($this->once())->method('__invoke')->willReturnCallback(function (ElasticsearchRequest $request): ElasticsearchResponseContract {
             $this->assertSame('/_search', (string) $request->getUri());
+
             return $request->response(new PsrResponse(200, [], '{}'));
         });
 
@@ -4062,6 +4115,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $connection->expects($this->once())->method('__invoke')->willReturnCallback(function (ElasticsearchRequest $request): ElasticsearchResponseContract {
             $this->assertSame('/_search', (string) $request->getUri());
             $this->assertSame(['id' => 'snapshot', 'keep_alive' => '3m'], $request->body()['pit']);
+
             return $request->response(new PsrResponse(200, [], '{"hits":{"hits":[]}}'));
         });
         $query = new NewQuery($connection, 'orders');
@@ -4160,6 +4214,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @test
+     *
      * @dataProvider rawSorts
      */
     public function a_raw_scan_preserves_its_sort(string|array|stdClass $sort, array $expected): void
@@ -4353,17 +4408,15 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function an_integer_hit_total_stays_the_count(): void
     {
         $query = new NewQuery($this->offlineMultiSearchConnection(), 'products');
-        $body = static function (int|array $total): array {
-            return [
-                'responses' => [[
-                    'took' => 1,
-                    'hits' => [
-                        'total' => $total,
-                        'hits' => [['_id' => 'a', '_source' => ['title' => 'A']]],
-                    ],
-                ]],
-            ];
-        };
+        $body = static fn (int|array $total): array => [
+            'responses' => [[
+                'took' => 1,
+                'hits' => [
+                    'total' => $total,
+                    'hits' => [['_id' => 'a', '_source' => ['title' => 'A']]],
+                ],
+            ]],
+        ];
 
         $integer = (new SigmieMultiSearchResponse)
             ->multiSearchResponseRaw($body(5))
@@ -4384,17 +4437,15 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function a_replaced_multisearch_body_is_formatted(): void
     {
         $query = new NewQuery($this->offlineMultiSearchConnection(), 'products');
-        $body = static function (string $id): array {
-            return [
-                'responses' => [[
-                    'took' => 1,
-                    'hits' => [
-                        'total' => ['value' => 1, 'relation' => 'eq'],
-                        'hits' => [['_id' => $id]],
-                    ],
-                ]],
-            ];
-        };
+        $body = static fn (string $id): array => [
+            'responses' => [[
+                'took' => 1,
+                'hits' => [
+                    'total' => ['value' => 1, 'relation' => 'eq'],
+                    'hits' => [['_id' => $id]],
+                ],
+            ]],
+        ];
 
         $formatted = (new SigmieMultiSearchResponse)
             ->multiSearchResponseRaw($body('first'))
@@ -4478,6 +4529,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->keyword('brand');
+
         $raw = [
             'took' => 1,
             'hits' => ['total' => ['value' => 4, 'relation' => 'eq'], 'hits' => []],
@@ -4633,6 +4685,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->price();
+
         $facet = (new SigmieSearchResponse($props->get()))
             ->facetsResponseRaw(['aggregations' => ['price' => [
                 'price_min' => ['value' => null],
@@ -4682,7 +4735,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
 
     public function test_mmr_compares_vectors_with_matching_dimensions(): void
     {
-        $hit = fn (string $id, array $vectors) => [
+        $hit = fn (string $id, array $vectors): array => [
             '_id' => $id,
             '_source' => ['_embeddings' => ['title' => $vectors]],
         ];
@@ -4731,7 +4784,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function test_filtered_exclusions_stay_a_list_in_inner_hits(): void
     {
         $props = new NewProperties;
-        $props->nested('reviews', fn (NewProperties $item) => $item->text('comment'));
+        $props->nested('reviews', fn (NewProperties $item): Text => $item->text('comment'));
 
         $body = $this->search($props)->queryString('book', fields: ['reviews.comment'])
             ->innerHits('reviews', 2)->except([1 => 'reviews.author'])->makeSearch()->toRaw();
@@ -4744,6 +4797,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->text('title');
+
         $builder = $this->search($properties)->highlighting(['title'], '<b>', '</b>');
 
         $this->assertSame(['<b>'], $builder->makeSearch()->toRaw()['highlight']['fields']['title']['pre_tags']);
@@ -4755,6 +4809,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->completion('title');
+
         $builder = $this->search($properties)->autocompletePrefix('st');
 
         $this->assertSame('st', $builder->makeSearch()->toRaw()['suggest']['autocompletion']['prefix']);
@@ -4766,7 +4821,8 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     public function a_built_nested_search_keeps_its_inner_hits_configuration(): void
     {
         $properties = new NewProperties;
-        $properties->nested('reviews', fn (NewProperties $fields) => $fields->text('comment'));
+        $properties->nested('reviews', fn (NewProperties $fields): Text => $fields->text('comment'));
+
         $builder = $this->search($properties)
             ->queryString('battery')
             ->innerHits('reviews', size: 2);
@@ -4830,7 +4886,8 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
             ['succeeded' => true],
         );
         $properties = new NewProperties;
-        $properties->nested('reviews', fn (NewProperties $fields) => $fields->text('comment'));
+        $properties->nested('reviews', fn (NewProperties $fields): Text => $fields->text('comment'));
+
         $builder = (new NewSearch($connection))->index('products')->properties($properties)
             ->queryString('battery')->innerHits('reviews', size: 1);
         $hits = $builder->lazy();
@@ -4864,8 +4921,8 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         try {
             $multi->get();
             $this->fail('Expected the failed request to throw.');
-        } catch (ElasticsearchException $exception) {
-            $this->assertSame(503, $exception->getCode());
+        } catch (ElasticsearchException $elasticsearchException) {
+            $this->assertSame(503, $elasticsearchException->getCode());
         }
 
         $this->assertSame(503, $multi->responseCode());
@@ -4886,10 +4943,12 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
     {
         $properties = new NewProperties;
         $properties->completion('title');
+
         $body = $this->search($properties)->autocomplete(false)->autocompletePrefix('sta')->makeSearch()->toRaw();
 
         $this->assertArrayNotHasKey('suggest', $body);
     }
+
     public function test_mmr_compares_vectors_within_their_embedding_space(): void
     {
         $hit = fn (string $id, array $a, array $b): array => [
@@ -4910,7 +4969,7 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
         $payload = NewRerank::documentPayloads([['_source' => ['items' => [
             ['part.name' => 'Ada'], ['part.name' => 'Grace'],
         ]]]], ['items.part.name']);
-        $this->assertSame(['items.part.name' => ['Ada', 'Grace']], \Symfony\Component\Yaml\Yaml::parse($payload[0]));
+        $this->assertSame(['items.part.name' => ['Ada', 'Grace']], Yaml::parse($payload[0]));
     }
 
     public function test_rerank_selects_dotted_object_keys_inside_lists(): void
@@ -4922,5 +4981,4 @@ class SearchCorrectnessTest extends \PHPUnit\Framework\TestCase
 
         $this->assertSame(['items.part.author.name' => ['Ada', 'Grace']], Yaml::parse($payload[0]));
     }
-
 }

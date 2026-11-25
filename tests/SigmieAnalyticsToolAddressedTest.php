@@ -11,18 +11,16 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Sigmie\AI\AsTool;
 use Sigmie\AI\SigmieAnalyticsTool;
-use Sigmie\Analytics\Analytics;
-use Sigmie\Analytics\QueryRecipe;
 use Sigmie\AI\SigmieIndexTool;
-use Sigmie\Search\Formatters\SigmieSearchResponse;
-use Sigmie\Search\NewSearch;
+use Sigmie\Analytics\Analytics;
 use Sigmie\Analytics\Enums\Metric;
+use Sigmie\Analytics\Enums\Period;
+use Sigmie\Analytics\QueryRecipe;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
-use Sigmie\Sigmie;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\Contracts\Type as TypeContract;
 use Sigmie\Mappings\NewProperties;
@@ -30,6 +28,10 @@ use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\NewQuery;
+use Sigmie\Query\Queries\Query;
+use Sigmie\Search\Formatters\SigmieSearchResponse;
+use Sigmie\Search\NewSearch;
+use Sigmie\Sigmie;
 use Sigmie\SigmieIndex;
 
 require_once __DIR__.'/Stubs/LaravelAiStubs.php';
@@ -135,6 +137,7 @@ class SigmieAnalyticsToolAddressedTest extends TestCase
                 $names[] = method_exists($tool, 'name') ? $tool->name() : $tool::class;
             }
         }
+
         $this->assertCount(12, array_unique($names));
     }
 
@@ -144,6 +147,7 @@ class SigmieAnalyticsToolAddressedTest extends TestCase
         $props->date('created_at');
         $props->keyword('עיר');
         $props->number('τιμή');
+
         $index = $this->createMock(SigmieIndex::class);
         $index->method('properties')->willReturn($props);
         $recipe = QueryRecipe::fromArray([
@@ -165,6 +169,7 @@ class SigmieAnalyticsToolAddressedTest extends TestCase
         foreach (['queryString', 'retrieve', 'except', 'page'] as $method) {
             $search->method($method)->willReturnSelf();
         }
+
         $search->expects($this->exactly(2))->method('innerHits')
             ->withConsecutive(['東京', 2], ['Αθήνα', 3])->willReturnSelf();
 
@@ -175,6 +180,7 @@ class SigmieAnalyticsToolAddressedTest extends TestCase
     {
         $properties = new NewProperties;
         $properties->keyword('עיר');
+
         $analytics = new Analytics(new NewQuery($this->createMock(ElasticsearchConnection::class)), $properties, 'created_at');
         $analytics->groupedMetrics('groups', 'עיר', [
             ['key' => 'σύνολο', 'label' => "\u{00A0}\u{3000}", 'metric' => Metric::Count],
@@ -276,7 +282,7 @@ class SigmieAnalyticsToolAddressedTest extends TestCase
                         parent::__construct($query, $properties, $dateField, $from, $to);
                     }
 
-                    public function percentiles(string $as, string $field, array $percents = [50, 75, 95, 99], $filter = null, $window = null): static
+                    public function percentiles(string $as, string $field, array $percents = [50, 75, 95, 99], Query|string|null $filter = null, Period|array|null $window = null): static
                     {
                         $this->index->percents = $percents;
 
@@ -743,6 +749,7 @@ class SigmieAnalyticsToolAddressedTest extends TestCase
 
         return (new SigmieAnalyticsTool($index))->result(new Request($request));
     }
+
     public function test_literal_field_names_in_analytics_example_json(): void
     {
         $index = $this->createMock(SigmieIndex::class);
@@ -759,5 +766,4 @@ class SigmieAnalyticsToolAddressedTest extends TestCase
         $this->assertSame('price"usd', $metrics[1]['field']);
         $this->assertSame("order\\state:'a'", $steps[0]['filter']);
     }
-
 }

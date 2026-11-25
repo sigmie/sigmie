@@ -7,6 +7,7 @@ namespace Sigmie\Base\Http;
 use Elastic\Transport\Exception\NoNodeAvailableException;
 use Http\Promise\Promise;
 use Http\Promise\RejectedPromise;
+use RuntimeException;
 use Sigmie\Base\Contracts\ElasticsearchConnection as ElasticsearchConnectionInterface;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
@@ -14,6 +15,7 @@ use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Base\Drivers\Elasticsearch;
 use Sigmie\Http\Contracts\JSONClient as JSONClientInterface;
 use Sigmie\Http\Contracts\JSONResponse;
+use Throwable;
 
 class ElasticsearchConnection implements ElasticsearchConnectionInterface
 {
@@ -38,14 +40,14 @@ class ElasticsearchConnection implements ElasticsearchConnectionInterface
     {
         try {
             $promise = $this->http->promise($request);
-        } catch (\Throwable $exception) {
-            return new RejectedPromise($this->withCurlError($exception));
+        } catch (Throwable $throwable) {
+            return new RejectedPromise($this->withCurlError($throwable));
         }
 
         return $promise->then(
             fn (JSONResponse $res): ElasticsearchResponse => $this->response($request, $res),
             function (mixed $reason): never {
-                throw $this->withCurlError($reason instanceof \Throwable ? $reason : new \RuntimeException('Request failed'));
+                throw $this->withCurlError($reason instanceof Throwable ? $reason : new RuntimeException('Request failed'));
             }
         );
     }
@@ -58,8 +60,8 @@ class ElasticsearchConnection implements ElasticsearchConnectionInterface
 
         try {
             $jsonResponse = $this->http->request($request);
-        } catch (\Throwable $exception) {
-            throw $this->withCurlError($exception);
+        } catch (Throwable $throwable) {
+            throw $this->withCurlError($throwable);
         }
 
         return $this->response($request, $jsonResponse);
@@ -80,7 +82,7 @@ class ElasticsearchConnection implements ElasticsearchConnectionInterface
         return $response;
     }
 
-    private function withCurlError(\Throwable $exception): \Throwable
+    private function withCurlError(Throwable $exception): Throwable
     {
         $network = $this->networkError->error ?? null;
 
@@ -88,11 +90,11 @@ class ElasticsearchConnection implements ElasticsearchConnectionInterface
             $this->networkError->error = null;
         }
 
-        if (! $exception instanceof NoNodeAvailableException || $exception->getPrevious() !== null) {
+        if (! $exception instanceof NoNodeAvailableException || $exception->getPrevious() instanceof Throwable) {
             return $exception;
         }
 
-        if (! $network instanceof \Throwable) {
+        if (! $network instanceof Throwable) {
             return $exception;
         }
 

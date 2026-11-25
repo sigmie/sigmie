@@ -34,6 +34,7 @@ class InfinityClipApi implements EmbeddingsApi
         $response = $this->client->post('embeddings', [
             RequestOptions::JSON => $this->singleInput($text, $dimensions),
         ]);
+
         return ApiResponse::embeddings($response, 1)[0];
     }
 

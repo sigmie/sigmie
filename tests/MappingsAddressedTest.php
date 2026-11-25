@@ -4,77 +4,66 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
-use Sigmie\Index\Analysis\TokenFilter\Trim;
 use DateTime;
 use InvalidArgumentException;
+use PHPUnit\Framework\ExpectationFailedException;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use RuntimeException;
-use UnexpectedValueException;
 use Sigmie\AI\Contracts\EmbeddingsApi;
-use Exception;
 use Sigmie\Base\Drivers\Elasticsearch;
 use Sigmie\Base\Drivers\Opensearch;
 use Sigmie\Document\Document;
-use Sigmie\Semantic\DocumentProcessor;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Enums\VectorSimilarity;
-use Sigmie\Enums\VectorStrategy;
-use Sigmie\Index\Analysis\Analyzer;
-use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Analysis\Analysis;
+use Sigmie\Index\Analysis\Analyzer;
 use Sigmie\Index\Analysis\DefaultAnalyzer;
-use Sigmie\Index\Analysis\Normalizer\Normalizer;
-use Sigmie\Index\Analysis\NormalizerFilter\Lowercase;
-use Sigmie\Index\Analysis\NormalizerFilter\Uppercase;
-use Sigmie\Index\Analysis\Tokenizers\WordBoundaries;
+use Sigmie\Index\Analysis\TokenFilter\Trim;
 use Sigmie\Index\Index as RawIndex;
 use Sigmie\Index\Mappings;
 use Sigmie\Index\NewAnalyzer;
-use Sigmie\Mappings\Contracts\Type as TypeContract;
 use Sigmie\Mappings\Field;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\NewSemanticField;
 use Sigmie\Mappings\Properties;
-use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Boolean as BooleanField;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Category;
-use Sigmie\Mappings\Types\HTML;
-use Sigmie\Mappings\Types\GeoPoint;
-use Sigmie\Mappings\Types\LongText;
-use Sigmie\Mappings\Types\ShortText;
 use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\Date as DateField;
 use Sigmie\Mappings\Types\DateTime as DateTimeField;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Email;
 use Sigmie\Mappings\Types\FlatObject;
-use Sigmie\Mappings\Types\Keyword;
-use Sigmie\Mappings\Types\KnnVector;
-use Sigmie\Mappings\Types\Nested;
-use Sigmie\Mappings\Types\NestedVector;
+use Sigmie\Mappings\Types\GeoPoint;
+use Sigmie\Mappings\Types\HTML;
 use Sigmie\Mappings\Types\Id;
 use Sigmie\Mappings\Types\Image;
+use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Mappings\Types\KnnVector;
+use Sigmie\Mappings\Types\LongText;
 use Sigmie\Mappings\Types\Name;
-use Sigmie\Mappings\Types\SearchableNumber;
-use Sigmie\Testing\Assert;
+use Sigmie\Mappings\Types\Nested;
+use Sigmie\Mappings\Types\NestedVector;
 use Sigmie\Mappings\Types\Number;
-use Sigmie\Mappings\Types\Price;
 use Sigmie\Mappings\Types\Object_;
-use Sigmie\Mappings\Types\OpenSearchNestedVector;
+use Sigmie\Mappings\Types\Price;
 use Sigmie\Mappings\Types\Range;
+use Sigmie\Mappings\Types\SearchableNumber;
+use Sigmie\Mappings\Types\ShortText;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Parse\SortParser;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Compound\Boolean as BooleanQuery;
-use Sigmie\Query\Queries\Term\Prefix;
 use Sigmie\Query\Queries\Term\Term;
-use Sigmie\Query\Queries\Text\Match_;
-use Sigmie\Semantic\Contracts\AIProvider;
+use Sigmie\Semantic\DocumentProcessor;
 use Sigmie\Semantic\Providers\Noop;
-use Sigmie\Testing\TestCase;
+use Sigmie\Testing\Assert;
+use UnexpectedValueException;
 
-class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
+class MappingsAddressedTest extends TestCase
 {
     public function test_flattened_keys_cannot_contain_the_key_value_separator(): void
     {
@@ -141,6 +130,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         foreach ([1, 'bad', 'POINT (bad)', ['type' => 'Point', 'coordinates' => ['1', '2']], ['type' => 'Triangle', 'coordinates' => []], ['lat' => 1, 'lon' => 2]] as $invalid) {
             $this->assertFalse($field->validate('g', $invalid)[0]);
         }
+
         $this->assertTrue($field->validate('g', ['type' => 'Point', 'coordinates' => [1, 2]])[0]);
         $this->assertTrue($field->validate('g', 'POINT (1 2)')[0]);
     }
@@ -156,6 +146,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         foreach (['POINT Z (1 2)', 'POINTZ (1 2 3)'] as $value) {
             $this->assertFalse($point->validate('p', $value)[0]);
         }
+
         $this->assertTrue($point->validate('p', 'POINT Z (1 2 3)')[0]);
     }
 
@@ -166,6 +157,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
             $this->assertFalse($field->validate('k', $word)[0]);
             $this->assertTrue($field->validate('k', substr($word, 2))[0]);
         }
+
         $field = Properties::create(['k' => ['type' => 'keyword', 'ignore_above' => 9000]], new DefaultAnalyzer, [], Properties::ROOT_NAME)['k'];
         $this->assertTrue($field->validate('k', str_repeat('😀', 8500))[0]);
     }
@@ -185,6 +177,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         foreach (['+1', '1.1234567', '00000000000000000001', '9223372036854775808'] as $value) {
             $this->assertFalse($ms->validate('d', $value)[0]);
         }
+
         $this->assertTrue($ms->validate('d', '1.123456')[0]);
         $this->assertFalse($sec->validate('d', '9223372036854775.808')[0]);
         $this->assertTrue($sec->validate('d', '9223372036854775.8079')[0]);
@@ -211,6 +204,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         foreach ([['gt' => '::2', 'lt' => '::3'], ['gte' => '::3', 'lte' => '::2'], ['lt' => '::']] as $bounds) {
             $this->assertFalse($field->validate('r', $bounds)[0]);
         }
+
         $this->assertTrue($field->validate('r', ['gte' => '192.0.2.1', 'lte' => '::ffff:c000:201'])[0]);
     }
 
@@ -371,6 +365,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->geoPoint('location');
+
         $document = new Document(['location' => [null, ['lat' => 48.8, 'lon' => 2.4], null]]);
 
         $this->assertSame($document, (new DocumentProcessor($props->get()))->validateFields($document));
@@ -381,6 +376,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $props->date('published');
         $props->datetime('created');
+
         $processor = new DocumentProcessor($props->get());
         $document = $processor->formatDateTimeFields(new Document([
             'published' => new DateTime('-0004-02-29'),
@@ -445,6 +441,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->geoPoint('location');
+
         $document = new Document(['location' => (object) ['lat' => 48.8, 'lon' => 2.4]]);
 
         $this->assertSame($document, (new DocumentProcessor($props->get()))->validateFields($document));
@@ -482,6 +479,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->vector('v', 2);
+
         $processor = new DocumentProcessor($props->get());
         $doc = new Document(['v' => [0, 1]]);
         $this->assertSame($doc, $processor->validateFields($doc));
@@ -521,7 +519,8 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     public function test_object_lists_skip_null_records(): void
     {
         $props = new NewProperties;
-        $props->nested('items', fn (NewProperties $items) => $items->integer('qty'));
+        $props->nested('items', fn (NewProperties $items): Number => $items->integer('qty'));
+
         $processor = new DocumentProcessor($props->get());
         $doc = new Document(['items' => [null, ['qty' => 2]]]);
         $this->assertSame($doc, $processor->validateFields($doc));
@@ -535,6 +534,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         foreach (['12,24', 'POINT (24 12)', 'u4pruydqqvj'] as $point) {
             $this->assertTrue($field->validate('location', $point)[0]);
         }
+
         $this->assertFalse($field->validate('location', '120,24')[0]);
         $this->assertFalse($field->validate('location', 'POINT (24 120)')[0]);
     }
@@ -577,6 +577,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->integer('count');
+
         $processor = new DocumentProcessor($props->get());
         $processor->validateFields(new Document(['count' => [[1], null, 2]]));
 
@@ -601,6 +602,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         foreach ([-1, 1.5, null, true, '2147483648', ' 1'] as $weight) {
             $this->assertFalse($field->validate('suggest', ['input' => 'a', 'weight' => $weight])[0]);
         }
+
         foreach ([0, 2147483647, '+01'] as $weight) {
             $this->assertTrue($field->validate('suggest', ['input' => 'a', 'weight' => $weight])[0]);
         }
@@ -620,6 +622,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         foreach ([[1, 2, 3], ['lat' => 2, 'lon' => 1, 'z' => 3]] as $point) {
             $this->assertTrue($field->validate('location', $point)[0]);
         }
+
         $this->assertFalse($field->validate('location', [1, 2, 'up'])[0]);
     }
 
@@ -690,6 +693,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $blueprint = new NewProperties;
         $blueprint->boost('first');
+
         $properties = $blueprint->get();
         $properties['second'] = (new NewProperties)->boost('second');
         unset($properties['first']);
@@ -701,7 +705,8 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     public function test_field_inserted_under_nested_object_inherits_its_scope(): void
     {
         $props = new NewProperties;
-        $props->nested('items', fn (NewProperties $items) => $items->object('details'));
+        $props->nested('items', fn (NewProperties $items): Object_ => $items->object('details'));
+
         $details = $props->get()->get('items.details')->getProperties();
         $details['sku'] = new Keyword('sku');
         $this->assertSame('items.details.sku', $details['sku']->fullPath());
@@ -711,8 +716,8 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     public function test_copy_preserves_deep_descendant_paths(): void
     {
         $props = new NewProperties;
-        $props->nested('items', fn (NewProperties $items) => $items->object('details',
-            fn (NewProperties $details) => $details->keyword('sku')));
+        $props->nested('items', fn (NewProperties $items): Object_ => $items->object('details',
+            fn (NewProperties $details): Keyword => $details->keyword('sku')));
         $copy = $props->get()->get('items')->getProperties()->copy();
         $sku = $copy->get('details.sku');
         $this->assertSame('items.details.sku', $sku->fullPath());
@@ -733,6 +738,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         foreach (['192.0.2.0/24', '2001:db8::/48'] as $block) {
             $this->assertTrue($field->validate('subnet', $block)[0]);
         }
+
         $this->assertFalse($field->validate('subnet', '192.0.2.0/64')[0]);
     }
 
@@ -791,6 +797,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $name = new Name('person', 2, 3);
         $name->withAnalyzer(new DefaultAnalyzer);
+
         $props->add($name);
         [$mapping, $restored] = $this->restoredProperties($props);
         $prefix = $restored->get('person')->queries('ada')[1]->toRaw()['match_phrase_prefix']['person.person_text'];
@@ -833,10 +840,10 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $text = new Text('body');
         $text->field((new Text('special'))->withNewAnalyzer(
-            fn (NewAnalyzer $analyzer) => $analyzer->name('old')->tokenizeOnWhitespaces()->lowercase('letter_case'),
+            fn (NewAnalyzer $analyzer): NewAnalyzer => $analyzer->name('old')->tokenizeOnWhitespaces()->lowercase('letter_case'),
         ));
         $text->field((new Text('special'))->withNewAnalyzer(
-            fn (NewAnalyzer $analyzer) => $analyzer->name('new')->tokenizeOnWhitespaces()->uppercase('letter_case'),
+            fn (NewAnalyzer $analyzer): NewAnalyzer => $analyzer->name('new')->tokenizeOnWhitespaces()->uppercase('letter_case'),
         ));
 
         $analysis = new Analysis;
@@ -959,7 +966,8 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $name = new Name('author', 2, 3);
-        $name->withNewAnalyzer(fn (NewAnalyzer $analyzer) => $analyzer->tokenizeOnWhitespaces());
+        $name->withNewAnalyzer(fn (NewAnalyzer $analyzer): NewAnalyzer => $analyzer->tokenizeOnWhitespaces());
+
         $props->type($name);
 
         [$mapping, $restored] = $this->restoredProperties($props);
@@ -981,8 +989,9 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
             $field = Text::fromRaw(['title' => ['type' => 'search_as_you_type', 'max_shingle_size' => $size]]);
             $fields = ['title'];
             foreach (range(2, $size) as $gram) {
-                $fields[] = "title._{$gram}gram";
+                $fields[] = sprintf('title._%sgram', $gram);
             }
+
             $this->assertSame($fields, $field->queries('green tea')[0]->toRaw()['multi_match']['fields']);
             $this->assertSame($size, $field->toRaw()['title']['max_shingle_size']);
         }
@@ -1000,6 +1009,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $children = new NewProperties;
         $children->keyword('sku');
+
         $object = (new Object_('product', $children))->setFieldPath('orders.product', 'orders');
         $nested = (new Nested('product', $children))->setFieldPath('orders.product', 'orders');
 
@@ -1013,10 +1023,12 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     public function test_replacing_nested_object_properties_keeps_their_scope(): void
     {
         $properties = new NewProperties;
-        $properties->nested('items', fn (NewProperties $items) => $items->object('details'));
+        $properties->nested('items', fn (NewProperties $items): Object_ => $items->object('details'));
+
         $details = $properties->get()->get('items.details');
         $replacement = new NewProperties;
         $replacement->keyword('sku');
+
         $details->properties($replacement);
 
         $field = $details->getProperties()->get('sku');
@@ -1159,6 +1171,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         $props->title('_title');
         $props->keyword('item.code');
         $props->keyword('item%2Ecode');
+
         $analysis = new Analysis;
         $raw = $props->get($analysis)->toRaw();
         $this->assertFalse(str_starts_with($raw['_title']['analyzer'], '_'));
@@ -1170,7 +1183,8 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->keyword('a>b');
-        $props->nested('x>y', fn (NewProperties $child) => $child->title('t>u'));
+        $props->nested('x>y', fn (NewProperties $child): Text => $child->title('t>u'));
+
         $properties = $props->get();
         $this->assertSame(['a>b', 'x>y.t>u'], $properties->fieldNames());
         $this->assertNull($properties->get('a>b')->nestedPath());
@@ -1181,6 +1195,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $original = new NewProperties;
         $original->keyword('sku');
+
         $copy = clone $original;
         $copy->add(new Keyword('vendor'));
 
@@ -1203,14 +1218,14 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     public function test_failed_child_configuration_keeps_the_existing_schema(): void
     {
         $properties = new NewProperties;
-        $properties->object('record', fn (NewProperties $child) => $child->keyword('sku'));
+        $properties->object('record', fn (NewProperties $child): Keyword => $child->keyword('sku'));
 
         $failure = new RuntimeException('Schema source unavailable');
         try {
             $properties->object('record', fn () => throw $failure);
             $this->fail('The configuration should throw.');
-        } catch (RuntimeException $error) {
-            $this->assertSame($failure, $error);
+        } catch (RuntimeException $runtimeException) {
+            $this->assertSame($failure, $runtimeException);
         }
 
         $this->assertSame(['record.sku'], $properties->get()->fieldNames());
@@ -1354,6 +1369,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         $text = $props->text('description');
         $text->semantic('english');
         $text->semantic('multilingual');
+
         $raw = (new Mappings(properties: $props->get()))->toRaw(new Elasticsearch);
         $mapping = json_decode(json_encode($raw['properties']), true);
 
@@ -1456,6 +1472,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->type(new KnnVector('embedding', dims: 2, similarity: VectorSimilarity::Euclidean));
+
         $elastic = $props->get()->toRaw(new Elasticsearch)['embedding'];
 
         $this->assertSame('dense_vector', $elastic['type']);
@@ -1642,7 +1659,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
      */
     public function id_sortable_name_uses_the_field_path(): void
     {
-        $this->assertSame('user_id.sortable', (new \Sigmie\Mappings\Types\Id('user_id'))->sortableName());
+        $this->assertSame('user_id.sortable', (new Id('user_id'))->sortableName());
 
         $props = new NewProperties;
         $props->object('author', function (NewProperties $props): void {
@@ -1683,7 +1700,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
             ->euclideanSimilarity()
             ->make();
 
-        $elasticsearch = json_decode(json_encode((new \Sigmie\Base\Drivers\Elasticsearch)->nestedVectorField($field)->toRaw()), true);
+        $elasticsearch = json_decode(json_encode((new Elasticsearch)->nestedVectorField($field)->toRaw()), true);
         $opensearch = json_decode(json_encode((new Opensearch)->nestedVectorField($field)->toRaw()), true);
 
         $elasticsearchVector = $elasticsearch[$field->name]['properties']['vector'];
@@ -1734,9 +1751,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
 
         $this->assertSame('a@b.co', $email[0]->toRaw()['match']['email']['query']);
 
-        $callback = $props->text('contact')->withQueries(function (string $queryString): array {
-            return [new Term('contact', $queryString)];
-        });
+        $callback = $props->text('contact')->withQueries(fn (string $queryString): array => [new Term('contact', $queryString)]);
         $terms = array_map(
             static fn (object $query): string => $query->toRaw()['term']['contact']['value'],
             $callback->queryStringQueries(['left', 'right']),
@@ -1840,6 +1855,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $addressProps = new NewProperties;
         $addressProps->keyword('city');
+
         $address = new Object_('address', $addressProps);
 
         $person = new NewProperties;
@@ -1856,6 +1872,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
 
         $skuProps = new NewProperties;
         $skuProps->keyword('sku');
+
         $items = new Nested('items', $skuProps);
 
         $orders = new NewProperties;
@@ -2072,8 +2089,8 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
      */
     public function search_synonyms_false_keeps_the_default_analyzer(): void
     {
-        $off = (new \Sigmie\Mappings\Types\Text('title'))->unstructuredText()->searchSynonyms(false);
-        $on = (new \Sigmie\Mappings\Types\Text('title'))->unstructuredText()->searchSynonyms(true);
+        $off = (new Text('title'))->unstructuredText()->searchSynonyms(false);
+        $on = (new Text('title'))->unstructuredText()->searchSynonyms(true);
 
         $this->assertSame('default', $off->searchAnalyzer());
         $this->assertSame('default_with_synonyms', $on->searchAnalyzer());
@@ -2113,7 +2130,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         ], new DefaultAnalyzer, [], Properties::ROOT_NAME);
         $field = $restored->get('created_at');
 
-        $this->assertInstanceOf(\Sigmie\Mappings\Types\DateTime::class, $field);
+        $this->assertInstanceOf(DateTimeField::class, $field);
         $this->assertSame([true, ''], $field->validate('created_at', '2023-04-07T12:38:29.000000Z'));
     }
 
@@ -2124,6 +2141,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->datetime('created_at');
+
         $field = $props->get()->get('created_at');
         $input = '2023-04-07T12:38:29.000Z';
 
@@ -2173,7 +2191,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         // The restored mapping has no `director_text` subfield, so no prefix clauses target it.
         $this->assertSame(
             ['Match_'],
-            array_map(static fn (object $query): string => (new \ReflectionClass($query))->getShortName(), $field->queries('Nolan')),
+            array_map(static fn (object $query): string => (new ReflectionClass($query))->getShortName(), $field->queries('Nolan')),
         );
     }
 
@@ -2220,8 +2238,8 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         try {
             $assert->assertPropertyIsDate('created_at');
             $this->fail('a keyword field is not a date');
-        } catch (\PHPUnit\Framework\ExpectationFailedException $exception) {
-            $comparison = $exception->getComparisonFailure();
+        } catch (ExpectationFailedException $expectationFailedException) {
+            $comparison = $expectationFailedException->getComparisonFailure();
             $this->assertNotNull($comparison);
             $this->assertSame('date', $comparison->getExpected());
             $this->assertSame('keyword', $comparison->getActual());
@@ -2293,16 +2311,12 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         NewProperties::flushMacros();
 
-        NewProperties::macro('ping', static function (): string {
-            return 'pong';
-        });
+        NewProperties::macro('ping', static fn (): string => 'pong');
 
         try {
             $this->assertSame('pong', (new NewProperties)->ping());
 
-            NewProperties::macro('sku', function (string $name) {
-                return $this->keyword($name);
-            });
+            NewProperties::macro('sku', fn (string $name) => $this->keyword($name));
 
             $this->assertSame('code', (new NewProperties)->sku('code')->name());
         } finally {
@@ -2347,7 +2361,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         $this->assertInstanceOf(SearchableNumber::class, $phone);
         $this->assertSame(
             ['Match_', 'MatchPhrasePrefix'],
-            array_map(static fn (object $query): string => (new \ReflectionClass($query))->getShortName(), $phone->queries('4412')),
+            array_map(static fn (object $query): string => (new ReflectionClass($query))->getShortName(), $phone->queries('4412')),
         );
         $this->assertSame($raw['phone'], json_decode(json_encode($phone->toRaw()), true)['phone']);
     }
@@ -2440,6 +2454,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         $props = new NewProperties;
         $host = new Field('host_ip', 'ip', ['ignore_malformed' => true]);
         $host->meta(['source' => 'gateway']);
+
         $props->add($host);
 
         [$raw, $restored] = $this->restoredProperties($props);
@@ -2508,6 +2523,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @test
+     *
      * @dataProvider specializedTextTypes
      */
     public function mapping_roundtrip_preserves_specialized_text_classes(string $method, string $class): void
@@ -2604,6 +2620,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         $this->assertSame('sku', $fields->get('sku')->fullPath());
         $this->assertSame('items.10', $fields->get('items.10')->fullPath());
     }
+
     public function test_engine_date_defaults_survive_restoration(): void
     {
         $props = Properties::create(['day' => ['type' => 'date']], new DefaultAnalyzer, [], Properties::ROOT_NAME);
@@ -2709,7 +2726,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     public function test_custom_name_analysis_is_used_for_the_primary_match(): void
     {
         $props = new NewProperties;
-        $props->name('author')->withNewAnalyzer(fn (NewAnalyzer $analyzer) => $analyzer->tokenizeOnWhitespaces());
+        $props->name('author')->withNewAnalyzer(fn (NewAnalyzer $analyzer): NewAnalyzer => $analyzer->tokenizeOnWhitespaces());
         $field = $props->get()['author'];
 
         $this->assertSame('author_field_analyzer', $field->queries('Ann')[0]->toRaw()['match']['author']['analyzer']);
@@ -2718,7 +2735,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     public function test_named_properties_propagate_paths_to_all_descendants(): void
     {
         $props = new NewProperties;
-        $props->object('address', fn (NewProperties $child) => $child->text('street'));
+        $props->object('address', fn (NewProperties $child): Text => $child->text('street'));
 
         $this->assertSame('profile.address.street', $props->get(name: 'profile')->get('address.street')->name());
     }
@@ -2726,7 +2743,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     public function test_generic_field_name_uses_its_container_path(): void
     {
         $props = new NewProperties;
-        $props->object('request', fn (NewProperties $child) => $child->add(new Field('host', 'ip')));
+        $props->object('request', fn (NewProperties $child): NewProperties => $child->add(new Field('host', 'ip')));
 
         $this->assertSame('request.host', $props->get()->get('request.host')->name());
     }
@@ -2787,7 +2804,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         $analyzer = new Analyzer('title_words');
         $title->withAnalyzer($analyzer);
         $vector = $title->semantic('encoder', accuracy: 1, dimensions: 128);
-        $container = $builder->nested('reviews', fn (NewProperties $fields) => $fields->text('comment'));
+        $container = $builder->nested('reviews', fn (NewProperties $fields): Text => $fields->text('comment'));
         $first = $builder->get();
 
         $title->makeSortable();
@@ -2813,6 +2830,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $builder = new NewProperties;
         $builder->text('name');
+
         $properties = $builder->get();
         $author = new Object_('author', $properties);
         $editor = new Nested('editor', $properties);
@@ -2822,10 +2840,12 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
         $this->assertSame('editor.name', $editor->getProperties()->get('name')->fullPath());
         $this->assertSame('editor', $editor->getProperties()->get('name')->nestedPath());
     }
+
     public function test_literal_dotted_key_reuses_stored_embedding(): void
     {
         $props = new NewProperties;
-        $props->object('details', fn (NewProperties $fields) => $fields->text('title')->semantic(api: 'e', dimensions: 128));
+        $props->object('details', fn (NewProperties $fields): NewSemanticField => $fields->text('title')->semantic(api: 'e', dimensions: 128));
+
         $schema = $props->get();
         $vectorName = $schema->get('details.title')->vectorFields()->first()->name;
         $vectors = [$vectorName => array_fill(0, 128, 0.5)];
@@ -2837,14 +2857,15 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     public function test_literal_dotted_container_lookup(): void
     {
         $props = new NewProperties;
-        $props->object('host.info', fn (NewProperties $fields) => $fields->keyword('os.name'));
+        $props->object('host.info', fn (NewProperties $fields): Keyword => $fields->keyword('os.name'));
         $this->assertSame('host.info.os.name', $props->get()->get('host.info.os.name')?->fullPath());
     }
 
     public function test_literal_dotted_date_source(): void
     {
         $props = new NewProperties;
-        $props->object('event', fn (NewProperties $fields) => $fields->date('day'));
+        $props->object('event', fn (NewProperties $fields): DateField => $fields->date('day'));
+
         $processor = new DocumentProcessor($props->get());
         $doc = $processor->formatDateTimeFields(new Document(['event.day' => new DateTime('2024-04-01')]));
         $this->assertSame('2024-04-01', $doc->_source['event.day']);
@@ -2853,9 +2874,10 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     public function test_literal_dotted_source_validation(): void
     {
         $props = new NewProperties;
-        $props->object('item', fn (NewProperties $fields) => $fields->integer('count'));
+        $props->object('item', fn (NewProperties $fields): Number => $fields->integer('count'));
+
         $processor = new DocumentProcessor($props->get());
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('item.count');
         $processor->validateFields(new Document(['item.count' => 'many']));
     }
@@ -2864,6 +2886,7 @@ class MappingsAddressedTest extends \PHPUnit\Framework\TestCase
     {
         $props = new NewProperties;
         $props->combo('summary.text', ['title']);
+
         $doc = (new DocumentProcessor($props->get()))->populateComboFields(new Document(['title' => 'Atlas']));
         $this->assertSame('Atlas', $doc->_source['summary.text'] ?? null);
     }

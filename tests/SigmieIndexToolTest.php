@@ -8,6 +8,7 @@ use Sigmie\AI\SigmieAnalyticsTool;
 use Sigmie\Analytics\AnalyticsRequest;
 use Sigmie\Mappings\Types\FlatObject;
 use Sigmie\Mappings\Types\Keyword;
+use Sigmie\Mappings\Types\LongText;
 use Sigmie\Mappings\Types\Object_;
 use Sigmie\Parse\ParseException;
 use Sigmie\Tests\Stubs\FakeJsonSchema;
@@ -17,6 +18,7 @@ require_once __DIR__.'/Stubs/LaravelAiStubs.php';
 use Http\Promise\Promise;
 use InvalidArgumentException;
 use Laravel\Ai\Tools\Request;
+use ReflectionMethod;
 use RuntimeException;
 use Sigmie\AI\AsTool;
 use Sigmie\AI\SigmieFilterValuesTool;
@@ -57,7 +59,8 @@ class SigmieIndexToolTest extends TestCase
     public function test_nested_presence_is_filterable_without_keyword_children(): void
     {
         $props = new NewProperties;
-        $props->nested('lines', fn (NewProperties $line) => $line->longText('note'));
+        $props->nested('lines', fn (NewProperties $line): LongText => $line->longText('note'));
+
         $schema = new SigmieIndexSchemaTool($this->schemaIndex($props));
         $field = $schema->result(new Request)['fields'][0];
 
@@ -70,6 +73,7 @@ class SigmieIndexToolTest extends TestCase
     {
         $props = new NewProperties;
         $props->id('customer_id');
+
         $schema = new SigmieIndexSchemaTool($this->schemaIndex($props));
 
         $this->assertSame('customer_id:42 customer_id:[1,2] customer_id>10', $schema->result(new Request)['fields'][0]['filter']);
@@ -88,6 +92,7 @@ class SigmieIndexToolTest extends TestCase
     {
         $props = new NewProperties;
         $props->type(new Field('recorded', 'date_nanos'));
+
         $index = $this->schemaIndex($props);
 
         $this->assertStringContainsString('Timeline fields for `date_field`: recorded', (new SigmieAnalyticsTool($index))->description());
@@ -99,6 +104,7 @@ class SigmieIndexToolTest extends TestCase
     {
         $props = new NewProperties;
         $props->keyword('part label');
+
         $index = $this->schemaIndex($props);
         $field = (new SigmieIndexSchemaTool($index))->result(new Request)['fields'][0];
 
@@ -146,8 +152,10 @@ class SigmieIndexToolTest extends TestCase
     {
         $children = new NewProperties;
         $children->date('day');
+
         $props = new NewProperties;
         $props->type(new Object_('archive', $children, ['enabled' => false]));
+
         $index = $this->schemaIndex($props);
 
         $this->assertSame([], (new SigmieIndexSchemaTool($index))->result(new Request)['fields']);
@@ -160,6 +168,7 @@ class SigmieIndexToolTest extends TestCase
     {
         $props = new NewProperties;
         $props->type(new FlatObject('attributes'));
+
         $schema = new SigmieIndexSchemaTool($this->schemaIndex($props));
 
         $this->assertSame([[
@@ -235,7 +244,7 @@ class SigmieIndexToolTest extends TestCase
     {
         $props = new NewProperties;
         $props->nested('orders', function (NewProperties $orders): void {
-            $orders->nested('items', fn (NewProperties $items) => $items->keyword('sku'));
+            $orders->nested('items', fn (NewProperties $items): Keyword => $items->keyword('sku'));
         });
         $field = 'orders.items.sku';
         $index = $this->capturingIndex($props, rawAggregations: [
@@ -263,7 +272,7 @@ class SigmieIndexToolTest extends TestCase
         $props = new NewProperties;
         $props->nested('orders', function (NewProperties $orders): void {
             $orders->keyword('status');
-            $orders->nested('items', fn (NewProperties $items) => $items->keyword('sku'));
+            $orders->nested('items', fn (NewProperties $items): Keyword => $items->keyword('sku'));
         });
 
         $description = (new SigmieIndexTool($this->schemaIndex($props)))->description();
@@ -316,7 +325,7 @@ class SigmieIndexToolTest extends TestCase
 
     private function runsWithoutCluster(): bool
     {
-        $comment = (new \ReflectionMethod($this, $this->getName(false)))->getDocComment();
+        $comment = (new ReflectionMethod($this, $this->getName(false)))->getDocComment();
 
         return is_string($comment) && str_contains($comment, '@withoutCluster');
     }
@@ -342,6 +351,7 @@ class SigmieIndexToolTest extends TestCase
 
     /**
      * @test
+     *
      * @withoutCluster
      */
     public function a_public_geo_sort_uses_the_entire_field_name(): void
@@ -349,6 +359,7 @@ class SigmieIndexToolTest extends TestCase
         $props = new NewProperties;
         $props->geoPoint('store-location');
         $props->geoPoint('location');
+
         $tool = new SigmieIndexTool($this->capturingIndex($props, except: ['location']));
         $sort = 'store-location[40,-74]:km:asc';
 
@@ -359,6 +370,7 @@ class SigmieIndexToolTest extends TestCase
 
     /**
      * @test
+     *
      * @withoutCluster
      */
     public function nested_filter_examples_preserve_child_groups(): void
@@ -377,12 +389,14 @@ class SigmieIndexToolTest extends TestCase
 
     /**
      * @test
+     *
      * @withoutCluster
      */
     public function value_discovery_validates_filters_at_zero_limit(): void
     {
         $props = new NewProperties;
         $props->keyword('brand');
+
         $tool = new SigmieFilterValuesTool($this->capturingIndex($props));
         $output = json_decode($tool->handle(new Request(['field' => 'brand', 'filters' => 'absent:red', 'limit' => 0])), true);
 
@@ -391,12 +405,14 @@ class SigmieIndexToolTest extends TestCase
 
     /**
      * @test
+     *
      * @withoutCluster
      */
     public function a_retrieved_document_preserves_a_source_field_named_zero(): void
     {
         $props = new NewProperties;
         $props->keyword('0');
+
         $index = $this->capturingIndex($props, [
             'total' => ['value' => 1],
             'hits' => [['_id' => 'item', '_source' => ['0' => 'zero']]],
@@ -427,6 +443,7 @@ class SigmieIndexToolTest extends TestCase
 
     /**
      * @test
+     *
      * @withoutCluster
      */
     public function a_field_named_sum_other_doc_count_returns_the_actual_omitted_count(): void
@@ -434,6 +451,7 @@ class SigmieIndexToolTest extends TestCase
         $name = 'sum_other_doc_count';
         $props = new NewProperties;
         $props->keyword($name);
+
         $index = $this->capturingIndex($props, rawAggregations: [
             $name => ['doc_count' => 5, $name => [
                 'sum_other_doc_count' => 2,
@@ -461,12 +479,14 @@ class SigmieIndexToolTest extends TestCase
 
     /**
      * @test
+     *
      * @withoutCluster
      */
     public function value_discovery_rejects_facet_parameters_in_the_field_name(): void
     {
         $props = new NewProperties;
         $props->keyword('brand');
+
         $tool = new SigmieFilterValuesTool($this->capturingIndex($props));
         $result = json_decode($tool->handle(new Request(['field' => 'brand:5'])), true);
 
@@ -512,6 +532,7 @@ class SigmieIndexToolTest extends TestCase
 
     /**
      * @test
+     *
      * @withoutCluster
      */
     public function matching_items_accept_a_hyphenated_nested_field(): void
@@ -2264,6 +2285,7 @@ class SigmieIndexToolTest extends TestCase
         $props = new NewProperties;
         $props->price('price');
         $props->keyword('brand');
+
         $index = $this->capturingIndex($props);
 
         (new SigmieFilterValuesTool($index))->result(new Request(['field' => 'price', 'limit' => 5]));
@@ -2333,6 +2355,7 @@ class SigmieIndexToolTest extends TestCase
     {
         $props = new NewProperties;
         $props->keyword('title');
+
         $index = $this->capturingIndex($props, [
             'total' => ['value' => 1],
             'hits' => [[
@@ -2369,6 +2392,7 @@ class SigmieIndexToolTest extends TestCase
     {
         $props = new NewProperties;
         $props->keyword('1');
+
         $index = $this->capturingIndex($props, [
             'total' => ['value' => 1],
             'hits' => [[
@@ -2402,6 +2426,7 @@ class SigmieIndexToolTest extends TestCase
     {
         $props = new NewProperties;
         $props->keyword('name');
+
         $index = $this->capturingIndex($props, [
             'total' => ['value' => 2],
             'hits' => [
@@ -2410,9 +2435,7 @@ class SigmieIndexToolTest extends TestCase
             ],
         ]);
 
-        $ids = static function (array $documents): array {
-            return array_column(json_decode(json_encode($documents), true), '_id');
-        };
+        $ids = static fn (array $documents): array => array_column(json_decode(json_encode($documents), true), '_id');
         $tool = new SigmieGetDocumentsTool($index);
 
         $this->assertSame(['b', 'a'], $ids($tool->result(new Request(['ids' => ['b', 'a']]))));
@@ -2506,6 +2529,7 @@ class SigmieIndexToolTest extends TestCase
     {
         $props = new NewProperties;
         $props->keyword('brand');
+
         $index = $this->capturingIndex($props);
         self::$facetRaw = ['sentinel' => true];
 
@@ -2535,6 +2559,7 @@ class SigmieIndexToolTest extends TestCase
     {
         $props = new NewProperties;
         $props->keyword('0');
+
         $index = $this->capturingIndex($props);
         $tool = new SigmieIndexTool($index);
 
@@ -2555,6 +2580,7 @@ class SigmieIndexToolTest extends TestCase
         $props = new NewProperties;
         $props->keyword('0');
         $props->keyword('1');
+
         $index = $this->capturingIndex($props);
         $tool = new SigmieIndexTool($index);
 
@@ -2635,6 +2661,7 @@ class SigmieIndexToolTest extends TestCase
 
         $props = new NewProperties;
         $props->keyword('brand');
+
         $index = new class($connection, $props) extends SigmieIndex
         {
             public function __construct(
@@ -2724,7 +2751,7 @@ class SigmieIndexToolTest extends TestCase
             $this->assertSame('Apple', $clause['value']);
         }
 
-        $note = "Equality on keyword() is case-insensitive because its normalizer lowercases. Equality on a text field's keyword subfield and on caseSensitiveKeyword() is case-sensitive. If a filter returns 0 unexpectedly, call discover_filter_values_{$index->name()} on that field to confirm the exact stored values (including casing).";
+        $note = sprintf("Equality on keyword() is case-insensitive because its normalizer lowercases. Equality on a text field's keyword subfield and on caseSensitiveKeyword() is case-sensitive. If a filter returns 0 unexpectedly, call discover_filter_values_%s on that field to confirm the exact stored values (including casing).", $index->name());
 
         $this->assertSame($note, $notes);
         $matching = "Matching: equality on keyword() is case-insensitive because its normalizer lowercases. Equality on a text field's keyword subfield and on caseSensitiveKeyword() is case-sensitive. If a filter returns 0 unexpectedly, call discover_filter_values to confirm the exact stored value.";

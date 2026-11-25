@@ -124,7 +124,8 @@ trait Actions
                 $changes[] = ['path' => $path, 'value' => $value];
             }
         }
-        foreach (array_diff_key($before, $after) as $key => $value) {
+
+        foreach (array_keys(array_diff_key($before, $after)) as $key) {
             $changes[] = ['path' => [...$parent, (string) $key]];
         }
 
@@ -135,9 +136,9 @@ trait Actions
     {
         try {
             $items = $this->bulkAPICall($indexName, $body, $refresh)->items();
-        } catch (ElasticsearchException $exception) {
-            if ($exception->getCode() !== 413 || count($documents) < 2) {
-                throw $exception;
+        } catch (ElasticsearchException $elasticsearchException) {
+            if ($elasticsearchException->getCode() !== 413 || count($documents) < 2) {
+                throw $elasticsearchException;
             }
 
             // Each write has two NDJSON lines. Keep the operation and source together.
@@ -152,8 +153,11 @@ trait Actions
 
         foreach ($documents as $position => $doc) {
             $item = reset($items[$position]);
+            if ($item['status'] >= 400) {
+                continue;
+            }
 
-            if ($item['status'] >= 400 || isset($item['error'])) {
+            if (isset($item['error'])) {
                 continue;
             }
 

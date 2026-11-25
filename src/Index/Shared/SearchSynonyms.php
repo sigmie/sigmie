@@ -29,12 +29,14 @@ trait SearchSynonyms
 
         $configured = dot([]);
         $configured->set($this->config ?? []);
+
         $configuredFilters = (array) $configured->get('analysis.filter', []) + (array) $configured->get('index.analysis.filter', []);
 
         $name = 'search_synonyms';
         for ($suffix = 2; $analysis->hasFilter($name) || isset($configuredFilters[$name]); $suffix++) {
             $name = 'search_synonyms_'.$suffix;
         }
+
         $graph = new SynonymGraph($name, $this->searchSynonyms);
 
         // Lowercase and folding run before the synonym list, so a rule
