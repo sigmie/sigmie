@@ -7,6 +7,7 @@ namespace Sigmie\Tests;
 use Generator;
 use Sigmie\Base\APIs\MSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Base\ElasticsearchException;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Mappings\NewProperties;
@@ -440,6 +441,30 @@ class MultiSearchTest extends TestCase
             fn (array $bucket): string => $bucket['key']['category'],
             $buckets['matching'],
         ));
+    }
+
+    /**
+     * @test
+     */
+    public function composite_multi_search_throws_when_one_search_fails(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('category');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $existing = $this->sigmie->newSearch($indexName)->properties($blueprint)->size(0);
+        $missing = $this->sigmie->newSearch(uniqid())->properties($blueprint)->size(0);
+
+        $this->expectException(ElasticsearchException::class);
+
+        $this->sigmie->newMultiSearch()
+            ->composite('categories', [['category' => ['terms' => ['field' => 'category']]]])
+            ->search('existing', $existing)
+            ->search('missing', $missing)
+            ->buckets();
     }
 
     /**

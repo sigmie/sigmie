@@ -106,7 +106,7 @@ class CompositeMultiSearch
 
         // @codeCoverageIgnoreEnd
 
-        return $response->json('responses') ?? [];
+        return $this->msearchResponses($response);
     }
 
     /**
