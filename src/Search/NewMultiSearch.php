@@ -10,7 +10,6 @@ use Sigmie\Analytics\Analytics;
 use Sigmie\Base\APIs\MSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\ElasticsearchException;
-use Sigmie\Base\Http\Responses\Search;
 use Sigmie\Document\Hit;
 use Sigmie\Query\NewQuery;
 use Sigmie\Search\Contracts\LazyIterableQuery;
@@ -102,6 +101,12 @@ class NewMultiSearch
         return $raw;
     }
 
+    public function composite(string $aggregation, array $sources, int $size = 10000): CompositeMultiSearch
+    {
+        return (new CompositeMultiSearch($this->elasticsearchConnection, $aggregation, $sources, $size))
+            ->apis($this->apis);
+    }
+
     public function get(): array
     {
         return $this->execute(false);
@@ -139,12 +144,7 @@ class NewMultiSearch
 
         // @codeCoverageIgnoreEnd
 
-        $responses = $response->json('responses') ?? [];
-        foreach ($responses as $item) {
-            if (isset($item['error']) || ($item['status'] ?? 200) >= 400 || Search::isPartial($item)) {
-                throw new ElasticsearchException($item, $item['status'] ?? $response->code());
-            }
-        }
+        $responses = $this->msearchResponses($response);
 
         $results = [];
         $responseIndex = 0;

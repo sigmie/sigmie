@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Generator;
+use InvalidArgumentException;
 use Sigmie\Base\APIs\MSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Base\ElasticsearchException;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Search\Contracts\MultiSearchable;
 use Sigmie\Search\Formatters\FormatterParameters;
 use Sigmie\Search\Formatters\SigmieMultiSearchResponse;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
@@ -387,6 +390,125 @@ class MultiSearchTest extends TestCase
         $this->assertEquals('Gamma', $grouped['raw_letters'][0]['_source']['name'] ?? null);
         $this->assertEquals('Alpha', $flattened[0]->_source['name'] ?? null);
         $this->assertEquals('Gamma', $flattened[1]['_source']['name'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function composite_multi_search_collects_named_buckets_across_after_pages(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('category');
+        $blueprint->text('name');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['category' => 'first', 'name' => 'Alpha']),
+            new Document(['category' => 'second', 'name' => 'Beta']),
+            new Document(['category' => 'third', 'name' => 'Alpha']),
+        ]);
+
+        $all = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('')
+            ->size(0);
+
+        $matching = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint)
+            ->queryString('Alpha')
+            ->size(0);
+
+        $buckets = $this->sigmie->newMultiSearch()
+            ->composite('categories', [
+                [
+                    'category' => [
+                        'terms' => [
+                            'field' => 'category',
+                        ],
+                    ],
+                ],
+            ], 1)
+            ->search('all', $all)
+            ->search('matching', $matching)
+            ->buckets();
+
+        $this->assertSame(['first', 'second', 'third'], array_map(
+            fn (array $bucket): string => $bucket['key']['category'],
+            $buckets['all'],
+        ));
+        $this->assertSame(['first', 'third'], array_map(
+            fn (array $bucket): string => $bucket['key']['category'],
+            $buckets['matching'],
+        ));
+
+        $visited = [];
+
+        $this->sigmie->newMultiSearch()
+            ->composite('categories', [['category' => ['terms' => ['field' => 'category']]]], 1)
+            ->search('matching', $matching)
+            ->each(function (array $bucket, string $name) use (&$visited): void {
+                $visited[] = $name.':'.$bucket['key']['category'];
+            });
+
+        $this->assertSame(['matching:first', 'matching:third'], $visited);
+    }
+
+    /**
+     * @test
+     */
+    public function composite_multi_search_rejects_searches_with_several_responses(): void
+    {
+        $search = new class implements MultiSearchable
+        {
+            public function toMultiSearch(): array
+            {
+                return [[], [], [], []];
+            }
+
+            public function multisearchResCount(): int
+            {
+                return 2;
+            }
+
+            public function formatResponses(...$responses): mixed
+            {
+                return $responses;
+            }
+        };
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->sigmie->newMultiSearch()
+            ->composite('categories', [['category' => ['terms' => ['field' => 'category']]]])
+            ->search('facets', $search)
+            ->buckets();
+    }
+
+    /**
+     * @test
+     */
+    public function composite_multi_search_throws_when_one_search_fails(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = new NewProperties;
+        $blueprint->keyword('category');
+
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+
+        $existing = $this->sigmie->newSearch($indexName)->properties($blueprint)->size(0);
+        $missing = $this->sigmie->newSearch(uniqid())->properties($blueprint)->size(0);
+
+        $this->expectException(ElasticsearchException::class);
+
+        $this->sigmie->newMultiSearch()
+            ->composite('categories', [['category' => ['terms' => ['field' => 'category']]]])
+            ->search('existing', $existing)
+            ->search('missing', $missing)
+            ->buckets();
     }
 
     /**
