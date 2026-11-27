@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace Sigmie\AI\APIs;
 
-use GuzzleHttp\Promise\Promise;
+use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\RequestOptions;
 use Sigmie\AI\Contracts\EmbeddingsApi;
+use Sigmie\AI\OpenAIEmbeddingRequest;
 
 class OpenAIEmbeddingsApi extends AbstractOpenAIApi implements EmbeddingsApi
 {
+    use OpenAIEmbeddingRequest {
+        defaultDimensions as public;
+        requestDimensions as public;
+    }
+
     public function __construct(
         string $apiKey,
         string $model = 'text-embedding-3-small'
@@ -20,16 +26,10 @@ class OpenAIEmbeddingsApi extends AbstractOpenAIApi implements EmbeddingsApi
     public function embed(string $text, int $dimensions): array
     {
         $response = $this->client->post('/v1/embeddings', [
-            RequestOptions::JSON => [
-                'model' => $this->model,
-                'input' => $text,
-                'dimensions' => $dimensions,
-            ],
+            RequestOptions::JSON => $this->requestBody($text, $dimensions),
         ]);
 
-        $data = json_decode($response->getBody()->getContents(), true);
-
-        return $data['data'][0]['embedding'];
+        return ApiResponse::embeddings($response, 1)[0];
     }
 
     public function batchEmbed(array $payload): array
@@ -38,40 +38,28 @@ class OpenAIEmbeddingsApi extends AbstractOpenAIApi implements EmbeddingsApi
             return [];
         }
 
-        $texts = array_map(fn ($item) => $item['text'] ?? '', $payload);
+        foreach ($this->batchRequests($payload, $this->maxBatchSize()) as $group) {
+            $response = $this->client->post('/v1/embeddings', [
+                RequestOptions::JSON => $this->requestBody($group['texts'], $group['dims']),
+            ]);
 
-        $dimensions = $payload[0]['dims'] ?? 1536;
-
-        $response = $this->client->post('/v1/embeddings', [
-            RequestOptions::JSON => [
-                'model' => $this->model,
-                'input' => $texts,
-                'dimensions' => (int) $dimensions,
-            ],
-        ]);
-
-        $data = json_decode($response->getBody()->getContents(), true);
-
-        foreach ($data['data'] as $index => $result) {
-            $payload[$index]['vector'] = $result['embedding'];
+            foreach (ApiResponse::embeddings($response, count($group['keys'])) as $index => $vector) {
+                $payload[$group['keys'][$index]]['vector'] = $vector;
+            }
         }
 
         return $payload;
     }
 
-    public function promiseEmbed(string $text, int $dimensions): Promise
+    public function promiseEmbed(string $text, int $dimensions): PromiseInterface
     {
         return $this->client->postAsync('/v1/embeddings', [
-            RequestOptions::JSON => [
-                'model' => $this->model,
-                'input' => $text,
-                'dimensions' => $dimensions,
-            ],
+            RequestOptions::JSON => $this->requestBody($text, $dimensions),
         ]);
     }
 
     public function maxBatchSize(): int
     {
-        return 2048;
+        return $this->batchInputLimit();
     }
 }

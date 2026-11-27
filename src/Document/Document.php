@@ -8,9 +8,11 @@ use ArrayAccess;
 use JsonSerializable;
 use Sigmie\Shared\Contracts\FromRaw;
 
+use function Sigmie\Functions\response_value;
+
 class Document implements ArrayAccess, FromRaw, JsonSerializable
 {
-    public readonly string $_index; // @phpstan-ignore-line
+    public string $_index; // @phpstan-ignore-line
 
     public readonly string $_id; // @phpstan-ignore-line
 
@@ -23,23 +25,29 @@ class Document implements ArrayAccess, FromRaw, JsonSerializable
         }
     }
 
-    public function get(string $key)
+    public function get(string $key): mixed
     {
-        return dot($this->_source)->get($key);
+        return response_value($this->_source, $key);
     }
 
     public function offsetExists(mixed $offset): bool
     {
-        return isset($this->_source[$offset]);
+        return $this->offsetGet($offset) !== null;
     }
 
     public function offsetGet(mixed $offset): mixed
     {
-        return $this->_source[$offset] ?? dot($this->_source)[$offset];
+        return $this->get((string) $offset);
     }
 
     public function offsetSet(mixed $offset, mixed $value): void
     {
+        if ($offset === null) {
+            $this->_source[] = $value;
+
+            return;
+        }
+
         $this->_source[$offset] = $value;
     }
 
@@ -58,6 +66,16 @@ class Document implements ArrayAccess, FromRaw, JsonSerializable
         return $this->getSource($attribute);
     }
 
+    public function __isset(string $name): bool
+    {
+        return $this->getSource($name) !== null;
+    }
+
+    public function __unset(string $name): void
+    {
+        $this->offsetUnset($name);
+    }
+
     public function id(string $_id): void
     {
         $this->_id = $_id; // @phpstan-ignore-line
@@ -71,6 +89,7 @@ class Document implements ArrayAccess, FromRaw, JsonSerializable
     public function toArray(): array
     {
         return [
+            ...(isset($this->_index) ? ['_index' => $this->_index] : []),
             '_id' => $this->_id ?? null,
             '_source' => $this->_source,
         ];
@@ -78,13 +97,20 @@ class Document implements ArrayAccess, FromRaw, JsonSerializable
 
     public function jsonSerialize(): array
     {
-        return $this->toArray();
+        $document = $this->toArray();
+        if (array_is_list($document['_source'])) {
+            $document['_source'] = (object) $document['_source'];
+        }
+
+        return $document;
     }
 
     public static function fromRaw(array $raw): static
     {
-        $instance = new static($raw['_source'], $raw['_id']);
-        $instance->index($raw['_index']);
+        $instance = new static((array) ($raw['_source'] ?? []), $raw['_id'] ?? null);
+        if (isset($raw['_index'])) {
+            $instance->index($raw['_index']);
+        }
 
         return $instance;
     }

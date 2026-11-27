@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Sigmie;
@@ -12,6 +13,31 @@ use Sigmie\Testing\TestCase;
 
 class SigmieIndexTest extends TestCase
 {
+    public function test_merge_uses_the_index_write_collection(): void
+    {
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
+            public function name(): string
+            {
+                return 'catalog';
+            }
+
+            public function properties(): NewProperties
+            {
+                return new NewProperties;
+            }
+
+            public function collect(bool $refresh = false): AliveCollection
+            {
+                return $this->sigmie->collect('catalog-write', refresh: $refresh);
+            }
+        };
+
+        $index->merge([new Document(['title' => 'Solaris'], 'solaris')], refresh: true);
+
+        $this->assertTrue($index->collect()->has('solaris'));
+    }
+
     /**
      * @test
      */

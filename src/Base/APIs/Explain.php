@@ -14,7 +14,7 @@ trait Explain
 
     protected function explainAPICall(string $index, array $query, string $_id): ElasticsearchResponse
     {
-        $uri = new Uri(sprintf('/%s/_explain/%s', $index, $_id));
+        $uri = new Uri(sprintf('/%s/_explain/%s', rawurlencode($index), rawurlencode($_id)));
 
         $esRequest = new ElasticsearchRequest('POST', $uri, ['query' => $query]);
 

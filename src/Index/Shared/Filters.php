@@ -20,14 +20,11 @@ use Sigmie\Index\Analysis\TokenFilter\Unique;
 use Sigmie\Index\Analysis\TokenFilter\Uppercase;
 use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\TokenFilter;
-use Sigmie\Shared\Collection;
 
 use function Sigmie\Functions\random_name;
 
 trait Filters
 {
-    private Collection $filters;
-
     abstract public function analysis(): Analysis;
 
     public function tokenFilter(TokenFilter $tokenfilter): static
@@ -174,32 +171,20 @@ trait Filters
 
     public function filters(): array
     {
-        $this->initFilters();
-
-        return $this->filters->toArray();
+        return $this->pipeline()->filters();
     }
 
     protected function addFilter(TokenFilter $tokenFilter): void
     {
-        $this->initFilters();
-
-        $this->ensureFilterNameIsAvailable($tokenFilter->name());
-
-        $this->analysis()->addFilters([$tokenFilter->name() => $tokenFilter]);
-
-        $this->filters->set($tokenFilter->name(), $tokenFilter);
-    }
-
-    private function initFilters(): void
-    {
-        $this->filters ??= new Collection;
-    }
-
-    private function ensureFilterNameIsAvailable(string $name): void
-    {
-        if ($this->analysis()->hasFilter($name)) {
+        $pipeline = $this->pipeline();
+        $name = $tokenFilter->name();
+        $existing = $this->analysis()->filters()[$name] ?? null;
+        if ($existing !== null && $existing->toRaw() !== $tokenFilter->toRaw()) {
             throw new Exception(sprintf('Token filter `%s` already exists.', $name));
         }
+
+        $this->analysis()->addFilters([$name => $tokenFilter]);
+        $pipeline->addFilters([$tokenFilter]);
     }
 
     private function createFilterName(string $name): string

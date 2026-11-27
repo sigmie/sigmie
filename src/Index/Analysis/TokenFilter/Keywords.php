@@ -6,8 +6,10 @@ namespace Sigmie\Index\Analysis\TokenFilter;
 
 use function Sigmie\Functions\name_configs;
 
-class Keywords extends TokenFilter
+class Keywords extends WordListFilter
 {
+    protected const WORD_LIST = 'keywords';
+
     public function type(): string
     {
         return 'keyword_marker';
@@ -17,13 +19,9 @@ class Keywords extends TokenFilter
     {
         [$name, $configs] = name_configs($raw);
 
-        return new static($name, $configs['keywords']);
-    }
+        $filter = new static($name);
+        $filter->settings = array_diff_key($configs, ['type' => true]);
 
-    protected function getValues(): array
-    {
-        return [
-            'keywords' => $this->settings,
-        ];
+        return $filter;
     }
 }

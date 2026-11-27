@@ -1,6 +1,6 @@
 ---
 title: MCP Server
-short_description: Connect AI agents like Claude Code and Cursor to the Sigmie documentation via the Model Context Protocol — semantic search, page read, page list.
+short_description: Connect Claude Code, Cursor, or any MCP client to the Sigmie docs server. Your coding assistant then searches, lists, and reads Sigmie documentation pages.
 keywords: [mcp, ai, agent, claude, cursor, documentation, semantic search]
 category: Integrations
 order: 3
@@ -9,103 +9,13 @@ related_pages: [laravel-ai, semantic-search, search, rag]
 
 # MCP Server
 
-Sigmie runs a remote [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server that gives AI agents semantic search across the full Sigmie documentation. Any MCP-compatible client — Claude Code, Cursor, Windsurf, or a custom agent — can search, browse, and read these docs without leaving the editor.
+Sigmie runs a remote [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server at `https://sigmie.com/mcp`. Connect your coding assistant to it, and the assistant searches and reads the Sigmie documentation while it writes code. The server uses the Streamable HTTP transport.
 
-## Add the server
+To expose your own indices to an agent, use the [Laravel AI SDK](laravel-ai.md) tools instead.
 
-In your project's `.mcp.json`:
+## Add the server to Claude Code
 
-```json
-{
-  "mcpServers": {
-    "sigmie-docs": {
-      "type": "http",
-      "url": "https://sigmie.com/mcp"
-    }
-  }
-}
-```
-
-Or add it globally in `~/.claude.json` so it's available in every project.
-
-Restart your agent. Three tools become available:
-
-- **`search_docs`** — semantic search across all documentation.
-- **`read_doc`** — read a specific page in full.
-- **`list_docs`** — list every available page.
-
-## How it works
-
-```
-AI agent (Claude Code, Cursor, etc.)
-   │
-   │  HTTPS (Streamable HTTP)
-   ▼
-sigmie.com/mcp ──► Node.js MCP server
-                       │
-          ┌────────────┼────────────┐
-          │            │            │
-    search_docs   read_doc     list_docs
-          │            │            │
-          ▼            ▼            ▼
-    Elasticsearch    docs/*.md    docs/*.md
-    hybrid search    (full page)  (file list)
-    (649 sections)
-```
-
-`search_docs` runs a hybrid query — keyword + 384-dim vectors — against an Elasticsearch index built from the docs.
-
-## Available tools
-
-### `search_docs`
-
-```
-search_docs({ query: "how to configure semantic search" })
-```
-
-Returns the top 10 matching sections with title, page slug, version, URL, and content. Ranked by a combination of keyword and vector scores.
-
-### `read_doc`
-
-```
-read_doc({ page: "search", version: "v2" })
-```
-
-Returns the full Markdown of a page. Use after `search_docs` to pull complete context — including code examples — into the agent's working memory.
-
-### `list_docs`
-
-```
-list_docs({ version: "v2" })
-```
-
-Returns every page slug for a version. Useful for the agent to discover what's available.
-
-## Use cases
-
-### AI-assisted development
-
-Your coding assistant can look up the exact API while writing code:
-
-```
-"How do I add typo tolerance?"
-→ search_docs returns the relevant section with code
-→ The agent adapts the example to your codebase
-```
-
-### Onboarding
-
-New developers ask natural-language questions and get the right doc section back instead of browsing the table of contents.
-
-### Self-configuring agents
-
-If you build an AI agent on top of Sigmie (using the [Laravel AI SDK](laravel-ai.md)), the MCP server helps the agent understand its own search tool.
-
-## Client configuration
-
-### Claude Code (project)
-
-`.mcp.json` in the project root:
+To add the server to one project, create `.mcp.json` in the project root:
 
 ```json
 {
@@ -118,24 +28,17 @@ If you build an AI agent on top of Sigmie (using the [Laravel AI SDK](laravel-ai
 }
 ```
 
-### Claude Code (global)
+To add the server to every project, run:
 
-`~/.claude.json`:
-
-```json
-{
-  "mcpServers": {
-    "sigmie-docs": {
-      "type": "http",
-      "url": "https://sigmie.com/mcp"
-    }
-  }
-}
+```bash
+claude mcp add --transport http --scope user sigmie-docs https://sigmie.com/mcp
 ```
 
-### Cursor
+The command writes the same entry to `~/.claude.json`.
 
-In Cursor's MCP settings:
+## Add the server to Cursor
+
+Add this entry to Cursor's MCP settings:
 
 ```json
 {
@@ -146,9 +49,23 @@ In Cursor's MCP settings:
   }
 }
 ```
+
+For another MCP client, point an HTTP server entry at `https://sigmie.com/mcp`.
+
+## Check the connection
+
+Restart the assistant. It now lists three tools from `sigmie-docs`:
+
+| Tool | Call | Returns |
+|------|------|---------|
+| `search_docs` | `search_docs({ query: "how to configure semantic search" })` | The 10 best matching sections, each with title, page slug, version, URL, and content. |
+| `read_doc` | `read_doc({ page: "search", version: "v2" })` | The full Markdown of one page, including its code examples. |
+| `list_docs` | `list_docs({ version: "v2" })` | Every page slug for a version. |
+
+`search_docs` runs a hybrid query, keyword and vector, against an Elasticsearch index of the documentation sections. The assistant usually calls `search_docs` first, then `read_doc` on the page it needs.
 
 ## See also
 
-- [Laravel AI SDK](laravel-ai.md) — expose your own Sigmie indices as agent tools.
-- [Semantic Search](semantic-search.md) — the same technology powers the MCP server.
-- [Retrieval and Agents](rag.md) — build retrieval-augmented generation with Sigmie.
+- [Laravel AI SDK](laravel-ai.md) to expose your own Sigmie indices as agent tools.
+- [Semantic search](semantic-search.md) for the vector search the docs server uses.
+- [Retrieval and Agents](rag.md) to build retrieval-augmented generation with Sigmie.

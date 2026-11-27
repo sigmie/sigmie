@@ -7,6 +7,8 @@ namespace Sigmie\Query\Aggregations\Metrics;
 use Sigmie\Query\Contracts\Aggregation;
 use Sigmie\Query\Shared\Meta;
 
+use function Sigmie\Functions\object_map;
+
 class ScriptedMetric implements Aggregation
 {
     use Meta;
@@ -33,7 +35,14 @@ class ScriptedMetric implements Aggregation
         ];
 
         if ($this->params !== []) {
-            $scriptedMetric['params'] = $this->params;
+            $params = $this->params;
+
+            // A param named "0" is the only key, so the map is a PHP list.
+            if (array_is_list($params)) {
+                $params = (object) $params;
+            }
+
+            $scriptedMetric['params'] = $params;
         }
 
         $raw = [
@@ -43,9 +52,7 @@ class ScriptedMetric implements Aggregation
         ];
 
         if ($this->meta !== []) {
-            $raw[$this->name]['meta'] = [
-                ...$this->meta,
-            ];
+            $raw[$this->name]['meta'] = object_map($this->meta);
         }
 
         return $raw;

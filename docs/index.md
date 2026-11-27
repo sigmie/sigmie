@@ -1,7 +1,7 @@
 ---
 title: Indices
-short_description: Create, configure, and update Elasticsearch indices with Sigmie — schema, analysis, sharding, replication, zero-downtime updates, and deletion.
-keywords: [index, indices, create index, shards, replicas, aliases]
+short_description: Create, configure, update, rebuild, inspect, and delete Elasticsearch indices with Sigmie, with zero-downtime alias swaps for schema and analysis changes.
+keywords: [index, indices, create index, update index, rebuild index, shards, replicas, aliases]
 category: Core Concepts
 order: 2
 related_pages: [document, mappings, core-concepts]
@@ -9,17 +9,11 @@ related_pages: [document, mappings, core-concepts]
 
 # Indices
 
-An index is a container for related documents — closer to a database table than a folder. Unlike a relational database, you don't have to define columns before inserting rows: Elasticsearch will create the index and infer field types on first write. But for serious applications you almost always define a schema first.
+These guides cover the life of an index, from creation to deletion. Each index name you pass is an alias over a physical index. [Core Concepts](core-concepts.md#an-index-name-is-an-alias) explains why.
 
 ## Create an index
 
-The simplest possible index:
-
-```php
-$sigmie->newIndex('movies')->create();
-```
-
-That works, but Elasticsearch will guess at field types as you index documents. For control over how fields are stored and searched, pass [properties](mappings.md):
+Pass your [properties](mappings.md) to `newIndex()`, then call `create()`:
 
 ```php
 use Sigmie\Mappings\NewProperties;
@@ -32,58 +26,52 @@ $props->number('year')->integer();
 $props->date('release_date');
 
 $sigmie->newIndex('movies')
-    ->properties($props)
+    ->properties($props) // [tl! highlight]
     ->create();
 ```
 
-## Configure analysis
+`create()` returns the new index. It throws `Sigmie\Index\Alias\AliasAlreadyExists` when the name is taken. To get the existing index instead, call `createIfNotExists()`.
 
-Index-level analysis controls how text is tokenized and normalized at index time:
+Without `properties()`, Elasticsearch guesses each field type from the first document it receives.
+
+To write documents into the new index, see [Documents](document.md).
+
+## Set the default analyzer
+
+The default analyzer processes every text field that has no analyzer of its own. Chain tokenizer and filter calls before `create()`:
 
 ```php
 $sigmie->newIndex('movies')
     ->properties($props)
-    ->tokenizeOnWhitespaces()       // split on whitespace
-    ->lowercase()                   // normalize to lowercase
-    ->trim()                        // strip surrounding whitespace
+    ->tokenizeOnWhitespaces()
+    ->lowercase()
+    ->trim()
     ->create();
 ```
 
-The same analyzer runs on query strings at search time, so a query for `Matrix` matches a document storing `matrix`.
+For the available calls, see [Tokenizers](tokenizers.md), [Token Filters](token-filters.md), and [Char Filters](char-filters.md).
 
-See [Analysis](analysis.md) and [Token Filters](token-filters.md) for the full pipeline.
+### Use a language analyzer
 
-### Language analyzers
+Call `language()` first. It returns a language builder with extra filters, such as the English stemmer:
 
 ```php
 use Sigmie\Languages\English\English;
 
 $sigmie->newIndex('articles')
+    ->language(new English) // [tl! highlight]
     ->properties($props)
-    ->language(new English)
-    ->englishStemmer()
-    ->englishStopwords()
     ->englishLowercase()
+    ->englishStopwords()
+    ->englishStemmer()
     ->create();
 ```
 
-See [Languages](language.md) for English, German, and Greek builders.
+> **Warning:** `language()` starts a new builder. It keeps the shards and replicas, but drops properties, filters, and `config()` values set before it. Call those after `language()`.
 
-### Autocomplete
+[Languages](language.md) lists the English, German, and Greek builders.
 
-```php
-$props = new NewProperties;
-$props->title('title');
-$props->text('description');
-$props->autocomplete();
-
-$sigmie->newIndex('movies')
-    ->properties($props)
-    ->autocomplete(['title', 'description'])
-    ->create();
-```
-
-## Sharding and replication
+## Set shards and replicas
 
 ```php
 $sigmie->newIndex('movies')
@@ -92,133 +80,127 @@ $sigmie->newIndex('movies')
     ->create();
 ```
 
-A shard is a smaller index that holds a subset of documents. An index with 3 shards and 8 documents distributes like:
+Without these calls, Sigmie creates 1 shard and 2 replicas. On Elasticsearch Serverless, Sigmie sends neither setting, because the service manages them. [Core Concepts](core-concepts.md#shards-split-an-index-replicas-copy-it) explains shards and replicas.
 
-```
-movies
-├─ shard 1
-│  ├─ document 1
-│  ├─ document 2
-│  └─ document 3
-├─ shard 2
-│  ├─ document 4
-│  ├─ document 5
-│  └─ document 6
-└─ shard 3
-   ├─ document 7
-   └─ document 8
-```
+## Set any other index setting
 
-A replica is a copy of a shard on another node, for fault tolerance. With 3 primaries and 2 replicas across 3 nodes:
-
-```
-cluster
-├─ node 1
-│  ├─ primary 1
-│  ├─ replica of primary 2
-│  └─ replica of primary 3
-├─ node 2
-│  ├─ primary 2
-│  ├─ replica of primary 1
-│  └─ replica of primary 3
-└─ node 3
-   ├─ primary 3
-   ├─ replica of primary 1
-   └─ replica of primary 2
-```
-
-If a node fails, the surviving nodes still hold every document. Replicas are promoted to primaries automatically.
-
-For most workloads, keep each shard under 30 GB.
-
-## Add documents
-
-To write documents into an index, get a **collection** for it:
+Pass any [Elasticsearch index module setting](https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules.html) to `config()`:
 
 ```php
-use Sigmie\Document\Document;
-
-$sigmie->collect('movies')
-    ->merge([
-        new Document(['title' => 'Cinderella']),
-        new Document(['title' => 'Snow White']),
-        new Document(['title' => 'Sleeping Beauty']),
-    ]);
+$sigmie->newIndex('movies')
+    ->config('index.max_ngram_diff', 3)
+    ->create();
 ```
-
-To make documents immediately searchable (for tests), pass `refresh: true`:
-
-```php
-$sigmie->collect('movies', refresh: true)->merge($documents);
-```
-
-See [Documents](document.md) for the full collection API.
 
 ## Update an index
 
-Elasticsearch indices are immutable: once analysis is applied to a document, you can't re-analyze it without re-indexing. Sigmie provides an `update()` method that handles this transparently using **aliases**:
+To change the properties or the analysis of an index that holds documents, call `update()`. The callback receives an `UpdateIndex` builder with the same methods as `newIndex()`:
 
 ```php
 use Sigmie\Index\UpdateIndex;
 
-$sigmie->index('movies')->update(function (UpdateIndex $update) {
+$sigmie->index('movies')->update(function (UpdateIndex $update) use ($newProperties) {
     $update->properties($newProperties);
     $update->lowercase();
+
+    return $update;
 });
 ```
 
-Behind the scenes, `update()`:
+`update()` copies the documents that are already in Elasticsearch:
 
-1. Creates a new physical index with a timestamp suffix.
-2. Reindexes every document into the new index.
-3. Switches the `movies` alias to point at the new index.
+1. Creates a new physical index from the callback's settings, such as `movies_20260201120000000000`.
+2. Blocks writes to the current index and reindexes every document into the new one.
+3. Points the `movies` alias at the new index.
 4. Deletes the old index.
 
-```
-Step 1: Create new index
-movies (alias) ──► movies_20221122210823379774
-                   ├─ Cinderella
-                   ├─ Snow White
-                   └─ Sleeping Beauty
+Searches keep working through every step. Writes to `movies` fail from the write block in step 2 until the alias moves in step 3.
 
-movies_20221222210823379774   (empty)
+> **Warning:** `update()` does not merge settings. It builds the new index only from what the callback declares. Declare again every property, filter, shard count, and replica count that you want to keep.
 
-Step 2: Reindex
-movies (alias) ──► movies_20221122210823379774
-                   ├─ Cinderella
-                   ├─ Snow White
-                   └─ Sleeping Beauty
+Elasticsearch copies each stored document and applies the new mapping. If a document still contains an omitted field such as `genre`, dynamic mapping can add it back. If a value such as `"unknown"` cannot fit a new integer field, the update fails and the original alias stays live.
 
-movies_20221222210823379774
-├─ Cinderella
-├─ Snow White
-└─ Sleeping Beauty
+Use a rebuild to remove fields from documents, regenerate embeddings, or replace an index whose stored `_source` excludes fields. The Elasticsearch copy skips the destination's default ingest pipeline. Elasticsearch still runs any final ingest pipeline.
 
-Step 3: Swap alias
-movies_20221122210823379774   (orphaned)
+## Rebuild an index
 
-movies (alias) ──► movies_20221222210823379774
-                   ├─ Cinderella
-                   ├─ Snow White
-                   └─ Sleeping Beauty
+When the source of truth lives outside Elasticsearch, such as a database or a CSV feed, call `rebuild()`. It fills a new index from your data, then swaps it in:
 
-Step 4: Delete old index
-movies (alias) ──► movies_20221222210823379774
+```php
+use Sigmie\Document\AliveCollection;
+
+$sigmie->newIndex('movies')
+    ->properties($props)
+    ->rebuild(function (AliveCollection $docs) use ($movies) {
+        $docs->merge($movies);
+    });
 ```
 
-To clients, the index name is unchanged. There's no downtime.
+`rebuild()` does four things:
 
-> **Warning:** Index settings are **not** merged. Anything you don't re-declare in the `update()` callback is dropped. Re-set everything you want to keep.
+1. Creates a new physical index with the builder's settings and mappings.
+2. Runs your callback to fill it. Searches keep using the current index.
+3. Points the `movies` alias at the new index in one `_aliases` request.
+4. Deletes the previous index.
+
+```
+movies (alias) ──► movies_20260101   (live, searchable)
+                   movies_20260201   ◄── callback fills it
+
+movies (alias) ──► movies_20260201   (one _aliases request)
+                   movies_20260101   deleted
+```
+
+Both update and rebuild refuse to retire an index that also serves another alias. If no alias exists yet, `rebuild()` creates it. The same call works for the first build and for every refresh after it.
+
+If the callback throws, Sigmie deletes the new index, leaves the alias where it was, and throws the exception again.
+
+`rebuild()` also refuses a result with fewer documents than `minDocuments`, which defaults to 1. An empty result usually means a failed import. Sigmie deletes the new index, keeps the live one, and throws `Sigmie\Index\RebuildTooSmall`. Change the limit with `minDocuments`:
+
+```php
+$sigmie->newIndex('movies')->rebuild($fill, minDocuments: 1000);
+$sigmie->newIndex('movies')->rebuild($fill, minDocuments: 0);   // allow empty
+```
+
+> **Note:** The callback's collection has no properties, the same as `$sigmie->collect()`. To check documents or generate embeddings for semantic fields while you fill it, call `$docs->properties($props)` first.
+
+> **Note:** `rebuild()` does not lock. If two processes can rebuild the same alias at once, run them one after the other yourself. Otherwise the slower rebuild fails at the swap and leaves its new index behind.
+
+### Rebuild across processes
+
+When one process cannot write every document in time, split the rebuild into start, fill, and finish. Any process can resume the pending rebuild by its alias, so a queued job needs only the name:
+
+```php
+// Once: create the new index. The alias stays on the live index.
+$sigmie->newIndex('movies')->properties($props)->startRebuild();
+
+// In each job: write one chunk.
+$sigmie->rebuilding('movies')->collect()->merge($chunk);
+
+// Once all jobs succeed: swap the alias and delete the old index.
+$sigmie->rebuilding('movies')->finish(minDocuments: 1);
+
+// If a job fails: drop the new index. Searches never saw it.
+$sigmie->rebuilding('movies')->abort();
+```
+
+`startRebuild()` turns refresh off and sets replicas to zero for fast bulk writes. `finish()` restores both before the swap. `count()` returns the number of documents written so far.
+
+`rebuilding()` returns the newest index that `startRebuild()` created for the alias and that still has its pending rebuild marker. It returns `null` when no rebuild is pending. Sigmie stores the rebuild state in the index's `_meta`, so it survives restarts and queue retries. `rebuild()` is `startRebuild()`, your callback, then `finish()`.
 
 ## Inspect an index
+
+`$sigmie->index()` returns the index, or `null` when it does not exist:
 
 ```php
 $index = $sigmie->index('movies');
 
+$index->name;                            // physical name, e.g. movies_20260101120000000000
 $index->mappings;                        // index mappings
 $index->mappings->properties();          // property definitions
+$index->settings;                        // index settings
 $index->raw;                             // raw Elasticsearch response
-$index->analyze('The Matrix');           // run text through the analyzer
+$index->analyze('The Matrix');           // tokens from the default analyzer
 ```
 
 ## Delete an index
@@ -227,12 +209,8 @@ $index->analyze('The Matrix');           // run text through the analyzer
 $sigmie->index('movies')->delete();
 ```
 
-## Advanced settings
-
-Apply any [Elasticsearch index module setting](https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules.html) with `config()`:
+To delete without loading the index first, call `$sigmie->delete()` or `$sigmie->deleteIfExists()`. Both take an alias or a physical name, or several names separated by commas:
 
 ```php
-$sigmie->newIndex('movies')
-    ->config('index.max_ngram_diff', 3)
-    ->create();
+$sigmie->deleteIfExists('movies,series');
 ```

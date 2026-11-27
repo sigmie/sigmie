@@ -9,6 +9,8 @@ use Sigmie\Query\Contracts\Aggregation;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
 use Sigmie\Query\Shared\Meta;
 
+use function Sigmie\Functions\object_map;
+
 abstract class Bucket implements Aggregation
 {
     use Meta;
@@ -26,13 +28,16 @@ abstract class Bucket implements Aggregation
         ]];
 
         if (isset($this->aggs)) {
-            $raw[$this->name]['aggs'] = $this->aggs->toRaw();
+            $nested = (array) $this->aggs->toRaw();
+
+            if ($nested !== []) {
+                // A nested aggregation named "0" is the only key, so the map is a PHP list.
+                $raw[$this->name]['aggs'] = array_is_list($nested) ? (object) $nested : $nested;
+            }
         }
 
         if ($this->meta !== []) {
-            $raw[$this->name]['meta'] = [
-                ...$this->meta,
-            ];
+            $raw[$this->name]['meta'] = object_map($this->meta);
         }
 
         return $raw;
@@ -40,7 +45,7 @@ abstract class Bucket implements Aggregation
 
     public function aggregate(callable $callable)
     {
-        $this->aggs = new Aggs;
+        $this->aggs ??= new Aggs;
 
         $callable($this->aggs);
 

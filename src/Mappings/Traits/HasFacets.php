@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Traits;
 
 use Sigmie\Enums\FacetLogic;
+use Sigmie\Parse\ParseException;
 use Sigmie\Query\Aggs;
 
 trait HasFacets
@@ -14,6 +15,20 @@ trait HasFacets
     public function aggregation(Aggs $aggs, string $params): void
     {
         // Override in implementing classes
+    }
+
+    protected function termFacetAggregation(Aggs $aggs, string $field, string $params): void
+    {
+        if (! preg_match('/\A(\d+)(?:,(asc|desc))?\z/', $params, $matches)
+            || (int) $matches[1] < 1 || (int) $matches[1] > 2147483647) {
+            throw new ParseException('Term facet parameters require a positive integer size and optional asc or desc order.');
+        }
+
+        $aggregation = $aggs->terms($this->name(), $field)->size((int) $matches[1]);
+
+        if (isset($matches[2])) {
+            $aggregation->order('_key', $matches[2]);
+        }
     }
 
     public function isFacetConjunctive(): bool

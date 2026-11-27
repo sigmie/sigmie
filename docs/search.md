@@ -1,7 +1,7 @@
 ---
 title: Search
-short_description: Build user-facing Elasticsearch searches with Sigmie — typo tolerance, faceted navigation, highlighting, semantic search, and filter-parser syntax.
-keywords: [search, query, filters, sorting, highlighting, typo tolerance]
+short_description: Run user-facing Elasticsearch searches with Sigmie newSearch(), including filters, sorting, typo tolerance, highlighting, facets, and nested inner hits.
+keywords: [search, query, filters, sorting, highlighting, typo tolerance, nested, inner hits]
 category: Core Concepts
 order: 5
 related_pages: [query, document, semantic-search, filter-parser]
@@ -9,9 +9,9 @@ related_pages: [query, document, semantic-search, filter-parser]
 
 # Search
 
-`newSearch()` is the high-level entry point for user-facing search: typo tolerance, faceting, highlighting, weighting, semantic matching, all in one fluent chain.
+`newSearch()` builds the search a user runs from a search box. Each section on this page solves one task with it. For the boolean query DSL, use [Advanced Queries](query.md) instead.
 
-For lower-level access to Elasticsearch's boolean query DSL, see [Advanced Queries](query.md).
+Every search needs the index properties and a query string:
 
 ```php
 use Sigmie\Mappings\NewProperties;
@@ -26,70 +26,69 @@ $results = $sigmie->newSearch('fairy-tales')
     ->get();
 ```
 
-Two arguments are required: the **properties** (so Sigmie knows how to query each field) and the **query string**.
+Sigmie reads the properties to decide how to query each field.
 
-## Query string
+## Weight several query strings
 
-The user input you're searching for:
-
-```php
-$sigmie->newSearch('fairy-tales')
-    ->properties($props)
-    ->queryString('snow white')
-    ->get();
-```
-
-Add multiple query strings with different weights to bias the score:
+Call `queryString()` once per string. The `weight` argument biases the score toward one string:
 
 ```php
 $sigmie->newSearch('characters')
     ->properties($props)
-    ->queryString('Mickey', weight: 2)
+    ->queryString('Mickey', weight: 2) // [tl! highlight]
     ->queryString('Goofy', weight: 1)
     ->get();
 ```
 
 ## Limit which fields are searched
 
-By default, every searchable field in your properties is queried. Narrow to specific fields with `fields()`:
+The search queries every field in the properties. To query only some fields, pass them to `fields()`:
 
 ```php
 $sigmie->newSearch('fairy-tales')
     ->properties($props)
     ->queryString('Snow White')
-    ->fields(['name'])                              // only search `name`
+    ->fields(['name']) // [tl! highlight]
     ->get();
 ```
 
 ## Limit which fields are returned
 
-Reduce response size by selecting only the fields you need:
+To return only some fields of each hit, pass them to `retrieve()`:
 
 ```php
 $sigmie->newSearch('fairy-tales')
     ->properties($props)
     ->queryString('Snow White')
-    ->retrieve(['name', 'description'])
+    ->retrieve(['name', 'description']) // [tl! highlight]
+    ->get();
+```
+
+To drop fields from every hit, pass them to `except()`. `except()` wins over `retrieve()`, so a nested path stays hidden even when you retrieve its parent:
+
+```php
+$sigmie->newSearch('customers')
+    ->properties($props)
+    ->queryString('jane')
+    ->except(['contacts.email']) // [tl! highlight]
     ->get();
 ```
 
 ## Filter
 
-The [filter parser](filter-parser.md) reads filters in a human-friendly syntax:
+Pass a [filter string](filter-parser.md) to `filters()`. Filters narrow the result set and do not change the score:
 
 ```php
 $sigmie->newSearch('fairy-tales')
     ->properties($props)
     ->queryString('Sleeping Beauty')
-    ->filters('stock>0 AND is:active AND NOT category:"Drama"')
+    ->filters('stock>0 AND active:true AND NOT category:"Drama"') // [tl! highlight]
     ->get();
 ```
 
-Filters narrow the result set but don't affect relevance scoring.
+### Add a filter the user cannot change
 
-### Hard filter clauses with `filterQuery()`
-
-`filters()` parses a user-facing string. When a filter must **not** come from user input — a tenant scope, an ownership check, an access boundary — pass a pre-built query to `filterQuery()` instead:
+A tenant scope, an ownership check, or an access rule must not come from user input. Pass these as a query object to `filterQuery()`:
 
 ```php
 use Sigmie\Query\Queries\Term\Term;
@@ -98,13 +97,13 @@ $sigmie->newSearch('records')
     ->properties($props)
     ->queryString('checkup')
     ->filters("category:'public' OR category:'private'")   // user input, parsed
-    ->filterQuery(new Term('tenant_id', $tenantId))         // hard clause, never parsed
+    ->filterQuery(new Term('tenant_id', $tenantId))         // never parsed [tl! highlight]
     ->get();
 ```
 
-The hard clause is ANDed with the parsed filter. Because it never passes through the parser, a malformed filter string can't drop it, and it doesn't alter the parsed query's own `OR`/`NOT` logic — that stays nested as a single clause. It applies everywhere the filter does: results, facet counts, and semantic (vector) pre-filtering. Call it more than once to add several clauses.
+Sigmie combines the `filterQuery()` clause and the parsed filter with AND. The parsed filter stays one clause, so its own `OR` and `NOT` logic does not change. A malformed filter string cannot drop the `filterQuery()` clause, because the parser never reads it. The clause applies to the results, the facet counts, and the semantic (vector) pre-filter.
 
-`filterQuery()` accepts any query clause, so you're not limited to the parser's syntax:
+`filterQuery()` accepts any query clause. Call it once per clause:
 
 ```php
 use Sigmie\Query\Queries\Term\Terms;
@@ -112,9 +111,9 @@ use Sigmie\Query\Queries\Term\Terms;
 ->filterQuery(new Terms('owner_id', $allowedOwnerIds))
 ```
 
-### Strict vs lenient parsing
+### Choose strict or lenient parsing
 
-By default `newSearch()` is **lenient**: an invalid filter clause is dropped, the search still runs, and the reason is collected under the response's `errors` key:
+By default, `filters()` is lenient. Sigmie replaces a clause that names an unknown field with a clause that matches nothing, runs the search, and puts the reason under the response's `errors` key:
 
 ```php
 $response = $sigmie->newSearch('products')
@@ -125,59 +124,54 @@ $response = $sigmie->newSearch('products')
 $response->json('errors');   // [['message' => 'Field nonexistent does not exist.', ...]]
 ```
 
-To fail loudly instead — so a bad filter raises a `ParseException` rather than silently returning a broader result set — opt in with `throwOnError`:
+The replaced clause changes the result. After `AND`, it returns no hits. After `NOT`, it removes no hits, so the search returns more than the filter allows. To throw a `ParseException` instead, pass `throwOnError: true`:
 
 ```php
 ->filters('nonexistent:"x"', throwOnError: true)     // throws ParseException
 ```
 
-The same flag is available on [`facets()`](facets.md) for the facet filter string.
+[`facets()`](facets.md) takes the same flag for its filter string. Syntax errors, such as a missing operator or an unclosed parenthesis, throw in both modes. See [Filter Parser](filter-parser.md#errors) for the full list.
 
 ## Sort
+
+Pass a [sort string](sort-parser.md) to `sort()`:
 
 ```php
 $sigmie->newSearch('fairy-tales')
     ->properties($props)
     ->queryString('Snow White')
-    ->sort('_score:desc name:asc')
+    ->sort('_score:desc name:asc') // [tl! highlight]
     ->get();
 ```
 
-`_score:desc` is the default. `_score:asc` is not allowed — Elasticsearch can't sort relevance ascending. See [Sort Parser](sort-parser.md) for full syntax.
+The default sort is `_score`. Unlike `filters()`, `sort()` throws a `ParseException` on an invalid sort string. With `throwOnError: false`, Sigmie skips the invalid clauses.
 
-## Typo tolerance
+## Tolerate typos
 
-```php
-$sigmie->newSearch('fairy-tales')
-    ->properties($props)
-    ->queryString('Sleping Buety')                  // typos OK
-    ->typoTolerance()
-    ->get();
-```
-
-The default policy: one typo allowed for terms 3+ characters long, two typos for 6+. Override the thresholds:
-
-```php
-->typoTolerance(oneTypoChars: 4, twoTypoChars: 8)
-```
-
-Restrict typos to specific fields:
+List the fields that accept typos in `typoTolerantAttributes()`:
 
 ```php
 $sigmie->newSearch('fairy-tales')
     ->properties($props)
     ->queryString('Sleping Buety')
-    ->typoTolerance()
-    ->typoTolerantAttributes(['name'])
+    ->typoTolerantAttributes(['name']) // [tl! highlight]
     ->get();
 ```
 
-## Highlight matches
-
-Wrap matching tokens in HTML for direct display:
+Terms with 3 or more characters accept one typo. Terms with 6 or more characters accept two. To change these limits, call `typoTolerance()`:
 
 ```php
-$sigmie->newSearch('fairy-tales')
+->typoTolerance(oneTypoChars: 4, twoTypoChars: 8)
+```
+
+> **Note:** `typoTolerance()` only sets the limits. Fields that are not in `typoTolerantAttributes()` always match exactly.
+
+## Highlight matches
+
+Pass the fields and the HTML that wraps each match to `highlighting()`:
+
+```php
+$response = $sigmie->newSearch('fairy-tales')
     ->properties($props)
     ->queryString('sleeping beauty')
     ->highlighting(
@@ -186,38 +180,42 @@ $sigmie->newSearch('fairy-tales')
         suffix: '</mark>',
     )
     ->get();
+
+$response->json('hits.0.highlight.name');   // fragments with each match in <mark>
 ```
 
-Default prefix/suffix is `<em>` / `</em>`.
+`prefix` and `suffix` have no default. Each highlighted field returns up to three fragments of 150 characters.
 
 ## Weight fields
 
-Give certain fields more influence on relevance:
+Pass a weight per field to `weight()`:
 
 ```php
 $sigmie->newSearch('fairy-tales')
     ->properties($props)
     ->queryString('sleeping beauty')
-    ->weight(['name' => 4, 'description' => 1])
+    ->weight(['name' => 4, 'description' => 1]) // [tl! highlight]
     ->get();
 ```
 
-A match in `name` now scores 4× higher than the same match in `description`.
+The search multiplies the `name` clause’s score by 4. Each field’s underlying relevance score can differ.
 
-## Minimum score
+## Drop low-scoring hits
 
-Drop low-relevance results:
+Pass the lowest score to keep to `minScore()`:
 
 ```php
 $sigmie->newSearch('fairy-tales')
     ->properties($props)
     ->queryString('Mickey')
     ->weight(['name' => 5])
-    ->minScore(2)
+    ->minScore(2) // [tl! highlight]
     ->get();
 ```
 
 ## Paginate
+
+`size()` sets the hits per page and defaults to 20. `from()` sets how many hits to skip. This search returns the second page of 10:
 
 ```php
 $sigmie->newSearch('fairy-tales')
@@ -228,84 +226,91 @@ $sigmie->newSearch('fairy-tales')
     ->get();
 ```
 
-`from(10)->size(10)` returns the second page (skip first 10, take next 10).
-
-`page()` is a shortcut:
+`page()` takes a page number and a page size instead:
 
 ```php
-->page(2, 20)               // page 2, 20 per page (== from(20)->size(20))
+->page(2, 20)               // same as from(20)->size(20)
 ```
 
-## Deduplicate
+## Return one hit per group
 
-Return one hit per value of a field. Useful for product variants:
+To return one hit per value of a field, such as one hit per product across its variants, pass the field to `uniqueBy()`:
 
 ```php
 $sigmie->newSearch('products')
     ->properties($props)
     ->queryString('sneakers')
-    ->uniqueBy('product_id')
+    ->uniqueBy('product_id') // [tl! highlight]
     ->get();
 ```
 
-Include the next best matches from each group as inner hits:
+To also return the next best hits of each group as inner hits, pass `top`:
 
 ```php
 ->uniqueBy('product_id', top: 3)
 ```
 
-The collapse field must be single-valued (e.g. `keyword`).
+The field must hold one value per document, such as a `keyword`.
 
-## Facets
+`total` counts matching documents before grouping. `total_pages` is `null` because the search response does not include the number of groups.
 
-Build sidebar filters with one method. See [Facets](facets.md):
+## Add facets
+
+Pass the facet fields to `facets()`. See [Facets](facets.md) for the syntax:
 
 ```php
 $response = $sigmie->newSearch('products')
     ->properties($props)
     ->queryString('laptop')
-    ->facets('brand category price:100')
+    ->facets('brand category price:100') // [tl! highlight]
     ->get();
 
 $facets = $response->json('facets');
 ```
 
-## Semantic search
+## Add semantic search
 
-Enable vector matching alongside keyword search:
+Call `semantic()` to match by vector as well as by keyword:
 
 ```php
 $sigmie->newSearch('articles')
     ->properties($props)
-    ->semantic()
+    ->semantic() // [tl! highlight]
     ->queryString('artificial intelligence')
     ->get();
 ```
 
-Use vectors only (no keyword matching):
+To match by vector only, also call `disableKeywordSearch()`:
 
 ```php
 ->semantic()->disableKeywordSearch()
 ```
 
-See [Semantic Search](semantic-search.md) for embeddings setup and accuracy levels.
+See [Semantic Search](semantic-search.md) to set up embeddings.
 
-## Autocomplete
+## Suggest completions
+
+Autocomplete reads the first `completion` field in the properties. Pass the typed prefix to `autocompletePrefix()`:
 
 ```php
-$response = $sigmie->newSearch('fairy-tales')
+$props = new NewProperties;
+$props->completion('title');
+
+$response = $sigmie->newSearch('movies')
     ->properties($props)
-    ->autocompletePrefix('m')
-    ->fields(['name'])
-    ->retrieve(['name'])
+    ->autocompletePrefix('star') // [tl! highlight]
+    ->autocompleteSize(3)
+    ->queryString('')
     ->get();
 
-$suggestions = $response->json('autocomplete');
+$response->json('autocomplete.0.options');   // [['text' => 'Star Trek', ...], ...]
 ```
 
-## Multi-language
+`autocompleteSize()` defaults to 5.
 
-Search across multiple indices:
+## Search several indices
+
+Pass the index names to `newSearch()`, separated by commas:
 
 ```php
 $result = $sigmie->newSearch("$germanIndex,$englishIndex")
@@ -314,9 +319,9 @@ $result = $sigmie->newSearch("$germanIndex,$englishIndex")
     ->get();
 ```
 
-## Nested fields
+## Search nested fields
 
-Search and retrieve nested fields with dot notation:
+Name a field inside a nested or object field with dot notation:
 
 ```php
 $sigmie->newSearch('users')
@@ -327,7 +332,293 @@ $sigmie->newSearch('users')
     ->get();
 ```
 
-## Reading results
+Without `fields()`, the search also queries every field inside nested fields.
+
+## Matching nested items (inner hits)
+
+A nested field holds a list of objects, such as the reviews of a product. When a search for "battery" matches one review, Elasticsearch returns the whole product. Its `_source` holds every review, so you cannot see which review matched. Inner hits return, per hit, the nested items that matched:
+
+```
+product "Aurora Phone"           search "battery"
+  reviews[0] Battery easily...   -> matched
+  reviews[1] Camera is great...  -> not matched
+  reviews[2] Battery drains...   -> matched
+
+_source          -> the product, all 3 reviews
+_matches.reviews -> reviews 0 and 2, total 2
+```
+
+The examples below use a shop index with nested reviews, questions, and answers:
+
+```php
+$props = new NewProperties;
+$props->title('title');
+$props->nested('reviews', function (NewProperties $props) {
+    $props->text('comment');
+    $props->number('stars');
+    $props->keyword('author');
+});
+$props->nested('questions', function (NewProperties $props) {
+    $props->text('text');
+});
+$props->nested('answers', function (NewProperties $props) {
+    $props->text('text');
+});
+
+$sigmie->newIndex('products')->properties($props)->lowercase()->create();
+
+$sigmie->collect('products', refresh: true)->merge([
+    new Document([
+        'title' => 'Aurora Phone',
+        'reviews' => [
+            ['comment' => 'Battery easily lasts two days.', 'stars' => 5, 'author' => 'anna'],
+            ['comment' => 'Camera is great in daylight.', 'stars' => 4, 'author' => 'ben'],
+            ['comment' => 'Battery drains fast when gaming.', 'stars' => 2, 'author' => 'chris'],
+        ],
+        'questions' => [
+            ['text' => 'Is the battery replaceable?'],
+            ['text' => 'Does it support eSIM?'],
+        ],
+        'answers' => [
+            ['text' => 'No, the battery is sealed.'],
+            ['text' => 'Yes, eSIM works.'],
+        ],
+    ], 'aurora'),
+]);
+```
+
+Pass the nested path to `innerHits()`:
+
+```php
+$hits = $sigmie->newSearch('products')
+    ->properties($props)
+    ->queryString('battery')
+    ->innerHits('reviews') // [tl! highlight]
+    ->get()
+    ->json('hits');
+```
+
+Each hit keeps its `_source` and gets a `_matches` key:
+
+```json
+{
+    "_id": "aurora",
+    "_source": {
+        "title": "Aurora Phone",
+        "reviews": [
+            {"comment": "Battery easily lasts two days.", "stars": 5, "author": "anna"},
+            {"comment": "Camera is great in daylight.", "stars": 4, "author": "ben"},
+            {"comment": "Battery drains fast when gaming.", "stars": 2, "author": "chris"}
+        ],
+        "questions": [
+            {"text": "Is the battery replaceable?"},
+            {"text": "Does it support eSIM?"}
+        ],
+        "answers": [
+            {"text": "No, the battery is sealed."},
+            {"text": "Yes, eSIM works."}
+        ]
+    },
+    "_matches": {
+        "reviews": {
+            "total": 2,
+            "items": [
+                {"_offset": 0, "comment": "Battery easily lasts two days.", "stars": 5, "author": "anna"},
+                {"_offset": 2, "comment": "Battery drains fast when gaming.", "stars": 2, "author": "chris"}
+            ]
+        }
+    }
+}
+```
+
+| Key | Holds |
+|-----|-------|
+| `_source` | The document, or the `retrieve()` fields. Inner hits never change it. |
+| `_matches.reviews.total` | How many reviews of this product matched. |
+| `_matches.reviews.items` | The matching reviews, best match first. |
+| `_offset` | The item's position in the `reviews` array, starting at 0. |
+
+Only the paths you name get matches. Without `innerHits()`, a hit has no `_matches` key. A requested path with no matching items still appears, with `total: 0` and no items.
+
+### Read matches from a hit
+
+Each `Hit` from `hits()` reads its matches by nested path:
+
+```php
+$response = $sigmie->newSearch('products')
+    ->properties($props)
+    ->queryString('battery')
+    ->innerHits('reviews.comment')
+    ->innerHits('questions.text')
+    ->innerHits('answers')
+    ->get();
+
+foreach ($response->hits() as $hit) {
+    $hit->matches('reviews');      // [['_offset' => 0, 'comment' => 'Battery easily lasts two days.'],
+                                   //  ['_offset' => 2, 'comment' => 'Battery drains fast when gaming.']]
+    $hit->matchesTotal('reviews'); // 2
+    $hit->matches();               // ['reviews' => [...], 'questions' => [...], 'answers' => [...]]
+}
+```
+
+| Method | Returns |
+|--------|---------|
+| `matches(string $path)` | The matching items of that nested path. |
+| `matchesTotal(string $path)` | How many items of that path matched, including items beyond `size`. |
+| `matches()` | The items of every requested path, keyed by path. |
+
+The argument is the nested path, the same key as in `_matches`. A field inside the path resolves to the path, so `matches('questions.text')` returns the `questions` items. A path you did not request returns `[]`, and its total is `0`. `Hit::toArray()` includes `_matches` only when the search requested inner hits. Reranked hits keep their matches.
+
+The raw form is the `_matches` key of `json('hits')`:
+
+```php
+$response->json('hits.0._matches.reviews')['total']; // 2
+```
+
+### Return only some fields of each item
+
+Name a field inside the nested field to return only that field of each matching item. Call `innerHits()` again for another field of the same path, and the fields merge:
+
+```php
+->innerHits('reviews.comment')
+->innerHits('reviews.stars')
+```
+
+```json
+"_matches": {
+    "reviews": {
+        "total": 2,
+        "items": [
+            {"_offset": 0, "comment": "Battery easily lasts two days.", "stars": 5},
+            {"_offset": 2, "comment": "Battery drains fast when gaming.", "stars": 2}
+        ]
+    }
+}
+```
+
+### Return only the matching items
+
+`retrieve()` controls `_source`, and `innerHits()` controls `_matches`. To get the product title and only the matching reviews, leave the nested field out of `retrieve()`:
+
+```php
+$hits = $sigmie->newSearch('products')
+    ->properties($props)
+    ->queryString('battery')
+    ->retrieve(['title']) // [tl! highlight]
+    ->innerHits('reviews.comment')
+    ->get()
+    ->json('hits');
+```
+
+```json
+{
+    "_id": "aurora",
+    "_source": {"title": "Aurora Phone"},
+    "_matches": {
+        "reviews": {
+            "total": 2,
+            "items": [
+                {"_offset": 0, "comment": "Battery easily lasts two days."},
+                {"_offset": 2, "comment": "Battery drains fast when gaming."}
+            ]
+        }
+    }
+}
+```
+
+### Request several paths
+
+Call `innerHits()` once per nested path. Each path gets its own entry and its own `size`:
+
+```php
+$hits = $sigmie->newSearch('products')
+    ->properties($props)
+    ->queryString('battery')
+    ->retrieve(['title'])
+    ->innerHits('reviews', size: 10)
+    ->innerHits('questions.text', size: 5)
+    ->innerHits('answers')                 // default size: 100
+    ->get()
+    ->json('hits');
+```
+
+```json
+"_matches": {
+    "reviews": {
+        "total": 2,
+        "items": [
+            {"_offset": 0, "comment": "Battery easily lasts two days.", "stars": 5, "author": "anna"},
+            {"_offset": 2, "comment": "Battery drains fast when gaming.", "stars": 2, "author": "chris"}
+        ]
+    },
+    "questions": {
+        "total": 1,
+        "items": [
+            {"_offset": 0, "text": "Is the battery replaceable?"}
+        ]
+    },
+    "answers": {
+        "total": 1,
+        "items": [
+            {"_offset": 0, "text": "No, the battery is sealed."}
+        ]
+    }
+}
+```
+
+To give several fields or paths one size, pass an array:
+
+```php
+->innerHits(['reviews.comment', 'reviews.stars', 'questions.text'], size: 5)
+```
+
+### Cap the number of items
+
+`innerHits()` returns up to 100 matching items per path. 100 is the Elasticsearch default for `index.max_inner_result_window`. To return fewer, pass `size`:
+
+```php
+->retrieve(['title'])
+->innerHits('reviews.comment', size: 1) // [tl! highlight]
+```
+
+`total` still counts every match. Here `total` is 2 and one item returns:
+
+```json
+"_matches": {
+    "reviews": {
+        "total": 2,
+        "items": [
+            {"_offset": 0, "comment": "Battery easily lasts two days."}
+        ]
+    }
+}
+```
+
+When `total` is greater than the number of items, the list is capped. For a single clause, Elasticsearch reports the total even when it returns fewer items. If capped clauses overlap, Sigmie reports a lower bound on their combined total. To return more than 100, raise `index.max_inner_result_window` on the index and pass a larger `size`.
+
+When you call `innerHits()` again for the same path, the later `size` wins and the fields merge. A whole-path request covers every field under it, so `->innerHits('reviews.comment', size: 8)->innerHits('reviews', size: 1)` returns one whole review.
+
+### Combine with nested filters
+
+A [nested filter](filter-parser.md#nested-field-filtering) also produces matches. When the query and a filter both match items of one path, `_matches` holds each item once:
+
+```php
+->queryString('battery')                // matches reviews 0 and 2
+->filters('reviews:{stars>=4}')          // matches reviews 0 and 1
+->innerHits('reviews.comment')           // reviews 0, 1 and 2, total 3
+```
+
+Deeper nested paths use dots too. For orders with nested items, `innerHits('orders.items.sku')` with the filter `orders:{items:{sku:'y'}}` returns the matching items under `_matches['orders.items']`. Each item also holds `_parents`, the offsets of its parent items, such as `{"orders": 1}`.
+
+When a child clause runs inside a parent clause, Sigmie fetches up to 100 matching parents (or the requested parent size if larger). Asking for one displayed order still lets its child clause search the other returned orders. Children of omitted parents do not contribute to that clause’s items or total. The index must allow the parent fetch size in `index.max_inner_result_window`.
+
+`except()` applies to the items too. With `->except(['reviews.author'])`, no item holds `author`, even with `innerHits('reviews')`.
+
+> **Note:** `innerHits()` throws an `InvalidArgumentException` for a field that does not exist or is not inside a nested field, such as `title`.
+
+## Read the response
+
+`get()` returns the response:
 
 ```php
 $response = $sigmie->newSearch('fairy-tales')
@@ -336,22 +627,22 @@ $response = $sigmie->newSearch('fairy-tales')
     ->get();
 
 $response->total();                  // total matching documents
-$response->hits();                   // array of hits
+$response->hits();                   // array of Hit objects
 $response->json('hits');             // raw hits array
-$response->json('hits.0._source');   // a specific value via dot notation
+$response->json('hits.0._source');   // one value, by dot notation
 ```
 
-## Empty query strings
+## Return nothing for an empty query
 
-By default, an empty query string returns every document. To return nothing instead:
+An empty or whitespace-only query string returns every document. To return no documents, call `noResultsOnEmptySearch()`:
 
 ```php
 ->noResultsOnEmptySearch()
 ```
 
-## Async execution
+## Run the search asynchronously
 
-`promise()` returns a Guzzle promise instead of executing immediately:
+`promise()` returns an `Http\Promise\Promise` and does not wait for the response:
 
 ```php
 $promise = $sigmie->newSearch('fairy-tales')
@@ -362,9 +653,9 @@ $promise = $sigmie->newSearch('fairy-tales')
 
 ## Iterating over all matching hits
 
-`size()` is for UIs. For exports, migrations, or bulk re-processing, use `each()` or `lazy()` to stream every matching document. Both reuse your filters, query string, and field scoping, and page internally using Point-in-Time + `search_after` — so concurrent writes don't break the cursor.
+`size()` sets one page. To read every matching document, for an export or a migration, call `each()` or `lazy()`. Both keep your query string, filters, and fields. They page with a point in time (PIT) and `search_after`, so writes during the iteration do not break it.
 
-### With a callback
+`each()` calls a function for each hit:
 
 ```php
 use Sigmie\Document\Hit;
@@ -377,9 +668,7 @@ $sigmie->newSearch('orders')
     });
 ```
 
-Each `Hit` exposes `_id`, `_source`, and `_score`.
-
-### With a generator
+`lazy()` returns a generator:
 
 ```php
 $generator = $sigmie->newSearch('orders')
@@ -392,9 +681,13 @@ foreach ($generator as $hit) {
 }
 ```
 
-### Page size
+Each `Hit` has `_id`, `_source`, and `_score`.
 
-Default 500 per page. Tune for memory vs. round-trips:
+> **Note:** `each()` and `lazy()` ignore `from()`, `size()`, `page()`, and `highlighting()`.
+
+### Set the page size
+
+Each request fetches 500 hits by default. To change it, call `chunk()`. A smaller chunk uses less memory and sends more requests:
 
 ```php
 $sigmie->newSearch('products')
@@ -405,13 +698,19 @@ $sigmie->newSearch('products')
     });
 ```
 
-### Sort during iteration
+For semantic scans, `chunk()` also sets the nearest-neighbor window for each vector query.
 
-Point-in-Time needs a deterministic sort. Sigmie handles this for you:
+### Sort the iteration
 
-- **`NewSearch::sort()`** — your sort string is kept. Sigmie appends a stable tiebreaker (`_shard_doc` on Elasticsearch, `_id` on OpenSearch) if you didn't already provide one. `_score`-only or `_doc`-only sorts are replaced by the tiebreaker.
-- **`NewQuery::sortString()` / `sort(array)`** — call before the query method (`matchAll`, `bool`, etc.). Omit sort entirely to stream in stable but unranked order. Use field names that exist in your mapping (often a `.keyword` sub-field for text).
-- **`raw()`** — include a top-level `sort` key in the body you pass.
+A point in time needs a sort that uniquely orders the documents. Elasticsearch uses `_shard_doc`. OpenSearch uses `_id` and `_index` together to distinguish documents with the same ID in different indices.
+
+| Builder | Where the sort comes from |
+|---------|---------------------------|
+| `newSearch()` | The `sort()` string. A sort on `_score` or `_doc` alone becomes the tiebreaker only. |
+| `newQuery()` | `sortString()` or `sort()`. Without a sort, hits arrive in a stable but unranked order. |
+| `raw()` | The top-level `sort` key of the body. |
+
+For `raw()`, set the sort in the request body:
 
 ```php
 $multi->raw('orders', [
@@ -420,11 +719,11 @@ $multi->raw('orders', [
 ]);
 ```
 
-When the body includes `collapse`, Sigmie does not append the tiebreaker — Elasticsearch only allows one sort key with `collapse` + `search_after`, and that's your responsibility.
+With `collapse` in the body, Sigmie adds no tiebreaker. Elasticsearch allows one sort key with `collapse` and `search_after`, so you choose that key.
 
-### Multi-search
+### Iterate over a multi-search
 
-`newMultiSearch()` registers multiple queries; a single `_msearch` returns one page each. To stream **all** matching hits across registered queries, call `each()` or `lazy()` on the multi-search:
+`newMultiSearch()` sends several searches in one `_msearch` request, and `get()` returns one page of each. To read every hit of every search, call `each()` or `lazy()` on the multi-search:
 
 ```php
 use Sigmie\Document\Hit;
@@ -447,6 +746,4 @@ foreach ($multi->lazy() as $hit) {
 }
 ```
 
-Each registered search runs its own PIT iteration; results yield in registration order. Set `chunk()` per query — the multi-search has no global chunk size.
-
-> **Note:** `each()` and `lazy()` ignore `from()`, `size()`, `page()`, and `highlighting()` — these are pagination/display concerns. Sort is honored as described above.
+Each search runs its own point in time, and hits arrive in the order you added the searches. Call `chunk()` on each search. The multi-search has no shared chunk size.

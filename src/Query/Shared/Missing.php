@@ -6,9 +6,9 @@ namespace Sigmie\Query\Shared;
 
 trait Missing
 {
-    protected int|string $missing;
+    protected int|float|string|bool $missing;
 
-    public function missing(int|string $value): self
+    public function missing(int|float|string|bool $value): self
     {
         $this->missing = $value;
 

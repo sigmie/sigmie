@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Analytics\Widgets;
 
 use DateTimeInterface;
+use Sigmie\Mappings\Properties;
 use Sigmie\Query\Aggs;
 use Sigmie\Shared\Collection;
 
@@ -18,6 +19,7 @@ class Table extends Widget
     /**
      * @param  list<string>  $fields  Source fields to return per row; empty returns the full document.
      * @param  array<int, array<string, mixed>>|null  $sort  Elasticsearch sort clauses.
+     * @param  list<string>  $except  Source fields dropped from every row, even when $fields includes their parent.
      */
     public function __construct(
         string $name,
@@ -28,6 +30,8 @@ class Table extends Widget
         protected array $fields,
         protected int $limit,
         protected ?array $sort,
+        protected Properties $properties,
+        protected array $except = [],
     ) {
         parent::__construct($name, $dateField, $from, $to, $dateFormat);
     }
@@ -35,7 +39,7 @@ class Table extends Widget
     public function toRaw(): array
     {
         return $this->scoped($this->name, $this->from, $this->to, function (Aggs $aggs): void {
-            $aggs->topHits('hits', size: $this->limit, sourceIncludes: $this->fields === [] ? null : $this->fields, sort: $this->sort);
+            $aggs->topHits('hits', size: $this->limit, sourceIncludes: $this->fields === [] ? null : $this->fields, sort: $this->sort, sourceExcludes: $this->except);
         })->toRaw();
     }
 
@@ -47,7 +51,7 @@ class Table extends Widget
             'type' => 'table',
             'rows' => $hits->map(fn (array $hit): array => [
                 'id' => $hit['_id'] ?? null,
-                'document' => $hit['_source'] ?? [],
+                'document' => $this->properties->sourceObject($hit['_source'] ?? []),
             ])->toArray(),
         ];
     }

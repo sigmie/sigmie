@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace Sigmie\AI;
 
-use DateTimeImmutable;
 use DateTimeInterface;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use InvalidArgumentException;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
 use Sigmie\Analytics\Analytics;
+use Sigmie\Analytics\AnalyticsRequest;
 use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Analytics\Enums\Period;
+use Sigmie\Analytics\WindowBound;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Search;
 use Sigmie\SigmieIndex;
+
+use function Sigmie\Functions\csv_fields;
 
 /**
  * Exposes a Sigmie index as a dashboard-analytics tool for an agent.
@@ -40,6 +43,8 @@ class SigmieAnalyticsTool implements Tool
 {
     use DescribesIndexFields;
     use HandlesToolErrors;
+    use NamesIndexTools;
+    use ScopesToBaseFilters;
 
     public function __construct(
         protected SigmieIndex $index,
@@ -48,7 +53,7 @@ class SigmieAnalyticsTool implements Tool
 
     public function name(): string
     {
-        return 'analytics';
+        return $this->toolName('analytics');
     }
 
     public function description(): string
@@ -65,11 +70,12 @@ class SigmieAnalyticsTool implements Tool
             ."- kpi_delta: kpi plus % change vs the previous equal-length period (needs metric, field)\n"
             ."- trend: a metric over time — line/area/bar (needs metric, field, interval)\n"
             ."- cumulative: running total over time — growth curve (needs metric, field, interval)\n"
-            ."- grouped_trend: one trend line per value of group_by — stacked chart (needs metric, field, group_by, interval)\n"
+            ."- grouped_trend: one trend line per value of group_by — stacked chart (needs metric, group_by, interval; field is optional for count)\n"
             ."- breakdown: top-N group_by values ranked by a metric (needs group_by, metric, field)\n"
             ."- multi_breakdown: top-N combinations of group_by_fields ranked by a metric (needs group_by_fields, metric, field)\n"
+            ."- union_breakdown: top-N labels combined across group_by_fields and ranked by a metric (needs group_by_fields, metric, field)\n"
             ."- distribution: histogram of a numeric field (needs field, bucket_size)\n"
-            ."- histogram_metric: metric aggregated inside numeric buckets (needs bucket_field, bucket_size, metric, field)\n"
+            ."- histogram_metric: metric aggregated inside numeric buckets (needs bucket_field, bucket_size, metric; field is optional for count)\n"
             ."- grouped_metrics: one row per group carrying several metrics (needs group_by, metrics, sort_metric, min_count)\n"
             ."- percentiles: p50/p75/p95/p99 of a numeric field (needs field)\n"
             ."- stats: count/min/max/avg/sum of a numeric field in one tile (needs field)\n"
@@ -89,6 +95,7 @@ class SigmieAnalyticsTool implements Tool
             ."- \"running total\", \"cumulative X\", \"growth curve\" → cumulative\n"
             ."- \"top N <thing> by X\", \"best <thing>\", \"which <thing> drove the most X\" → breakdown (group_by=<thing>)\n"
             ."- \"top N <thing> by <dimension> by X\", \"best <dim1> + <dim2> combinations\", \"rank combinations\" -> multi_breakdown (group_by_fields=<dim1>,<dim2>)\n"
+            ."- \"combine the same label across roles\", \"count appearances across fields\" -> union_breakdown (group_by_fields=<role1>,<role2>)\n"
             ."- \"average/sum/etc. X by numeric buckets of Y\", \"average rating by calorie bucket\" → histogram_metric (bucket_field=Y, field=X)\n"
             ."- \"rank groups by count and show average X\", \"groups with at least N rows plus another metric\" → grouped_metrics\n"
             ."- \"X this month\" / \"average X last week\" with no bucket word → kpi (or kpi_delta when the user compares to a prior period)\n"
@@ -120,9 +127,10 @@ class SigmieAnalyticsTool implements Tool
         $description .= "\nGeo fields for `field` (geo widget): ".(
             $geoFields !== [] ? implode(', ', $geoFields) : '(none — this index has no geo_point field)'
         );
+        $description .= $this->privateFieldsNote();
 
         $description .= "\n\nTime window: `from` and `to` are ISO dates (default: last 30 days).\n"
-            ."Narrow with `filters` (same DSL as the search tool, e.g. \"status:'paid' AND amount>10\") — it scopes this widget to that slice of the window. Call describe_index for the full field list and filter syntax.\n"
+            ."Narrow with `filters` (same DSL as the search tool, e.g. \"status:'paid' AND amount>10\") — it scopes this widget to that slice of the window. Call {$this->toolName('describe_index')} for the full field list and filter syntax.\n"
             ."Need a number/chart and the matching rows in one call? Set `include_hits` to 1. Use `hit_filters` when the rows should be narrower than the widget, `hit_fields` to choose source fields, `hit_sort` to order rows, and `hit_limit` for row count.\n"
             .'Comparing slices: for an ordered funnel (total → engaged → completed) use the funnel widget with `steps`; for an ad-hoc A vs B, call this tool once per slice over the SAME window — each call narrows with its own `filters` — and read the numbers side by side.';
 
@@ -139,9 +147,19 @@ class SigmieAnalyticsTool implements Tool
         $date = $this->fieldNamesOfTypes(['date'])[0] ?? '<date_field>';
         $number = $this->fieldNamesOfTypes(['number'])[0] ?? '<numeric_field>';
         // group_by is typically a keyword or a category (a text field with a keyword sub-field).
-        $keyword = $this->fieldNamesOfTypes(['keyword', 'text'])[0] ?? '<keyword_field>';
-        $keyword2 = $this->fieldNamesOfTypes(['keyword', 'text'])[1] ?? $keyword;
+        $keywordFields = $this->fieldNamesOfTypes(['keyword', 'text']);
+        $keyword = $keywordFields[0] ?? '<keyword_field>';
+        $keyword2 = $keywordFields[1] ?? '<second_keyword_field>';
         $geo = $this->fieldNamesOfTypes(['geo'])[0] ?? '<geo_point_field>';
+
+        $metrics = json_encode([
+            ['key' => 'count', 'label' => 'Count', 'metric' => 'count'],
+            ['key' => 'avg_amount', 'label' => 'Average amount', 'metric' => 'avg', 'field' => $number],
+        ], JSON_THROW_ON_ERROR);
+        $steps = json_encode([
+            ['label' => 'all', 'filter' => $keyword.":'a'"],
+            ['label' => 'converted', 'filter' => $keyword.":'b'"],
+        ], JSON_THROW_ON_ERROR);
 
         $examples = [
             'total for the month' => ['widget' => 'kpi', 'date_field' => $date, 'metric' => 'sum', 'field' => $number, 'range' => 'this_month'],
@@ -152,13 +170,14 @@ class SigmieAnalyticsTool implements Tool
             'top 5 groups by total' => ['widget' => 'breakdown', 'date_field' => $date, 'group_by' => $keyword, 'metric' => 'sum', 'field' => $number, 'limit' => 5, 'range' => 'this_month'],
             'top groups with merged labels' => ['widget' => 'breakdown', 'date_field' => $date, 'group_by' => $keyword, 'metric' => 'sum', 'field' => $number, 'limit' => 5, 'range' => 'this_month', 'bucket_aliases' => '[{"label":"Combined","values":["Old name","New name"]}]'],
             'top combinations by total' => ['widget' => 'multi_breakdown', 'date_field' => $date, 'group_by_fields' => sprintf('%s,%s', $keyword, $keyword2), 'metric' => 'sum', 'field' => $number, 'limit' => 5, 'range' => 'this_month'],
+            'top labels across fields' => ['widget' => 'union_breakdown', 'date_field' => $date, 'group_by_fields' => sprintf('%s,%s', $keyword, $keyword2), 'metric' => 'sum', 'field' => $number, 'limit' => 5, 'range' => 'this_month'],
             'histogram of a number' => ['widget' => 'distribution', 'date_field' => $date, 'field' => $number, 'bucket_size' => 100, 'range' => 'this_month'],
             'average by numeric bucket' => ['widget' => 'histogram_metric', 'date_field' => $date, 'bucket_field' => $number, 'field' => $number, 'metric' => 'avg', 'bucket_size' => 100, 'range' => 'this_month'],
-            'top groups with two metrics' => ['widget' => 'grouped_metrics', 'date_field' => $date, 'group_by' => $keyword, 'metrics' => '[{"key":"count","label":"Count","metric":"count"},{"key":"avg_amount","label":"Average amount","metric":"avg","field":"'.$number.'"}]', 'sort_metric' => 'count', 'min_count' => 2, 'limit' => 5, 'range' => 'this_month'],
+            'top groups with two metrics' => ['widget' => 'grouped_metrics', 'date_field' => $date, 'group_by' => $keyword, 'metrics' => $metrics, 'sort_metric' => 'count', 'min_count' => 2, 'limit' => 5, 'range' => 'this_month'],
             'p50/p95/p99 of a number' => ['widget' => 'percentiles', 'date_field' => $date, 'field' => $number, 'percents' => '50,95,99', 'range' => 'this_month'],
             'summary of a number' => ['widget' => 'stats', 'date_field' => $date, 'field' => $number, 'range' => 'this_month'],
             'the 20 biggest rows' => ['widget' => 'table', 'date_field' => $date, 'fields' => sprintf('%s,%s', $keyword, $number), 'sort' => $number.':desc', 'limit' => 20, 'range' => 'this_month'],
-            'conversion funnel' => ['widget' => 'funnel', 'date_field' => $date, 'steps' => sprintf('[{"label":"all","filter":"%s:\'a\'"},{"label":"converted","filter":"%s:\'b\'"}]', $keyword, $keyword), 'range' => 'this_month'],
+            'conversion funnel' => ['widget' => 'funnel', 'date_field' => $date, 'steps' => $steps, 'range' => 'this_month'],
             'matrix of two dimensions' => ['widget' => 'heatmap', 'date_field' => $date, 'row_field' => $keyword, 'col_field' => $keyword2, 'metric' => 'sum', 'field' => $number, 'range' => 'this_month'],
             'weekly cohort retention' => ['widget' => 'retention', 'date_field' => $date, 'cohort_field' => $date, 'id_field' => $keyword, 'interval' => 'week', 'range' => 'last_90_days'],
             'counts on a map' => ['widget' => 'geo', 'date_field' => $date, 'field' => $geo, 'precision' => 5, 'range' => 'this_month'],
@@ -180,39 +199,41 @@ class SigmieAnalyticsTool implements Tool
         // `widget` and `date_field` are plain required; every optional param is `nullable()->required()`
         // so the schema stays valid under OpenAI's strict function-calling (callers pass null to omit).
         return [
-            'widget' => $schema->string()->description('kpi | kpi_delta | trend | cumulative | grouped_trend | breakdown | multi_breakdown | distribution | histogram_metric | grouped_metrics | percentiles | stats | table | funnel | heatmap | retention | geo')->required(),
+            'widget' => $schema->string()->enum(AnalyticsRequest::WIDGETS)->description('kpi | kpi_delta | trend | cumulative | grouped_trend | breakdown | multi_breakdown | union_breakdown | distribution | histogram_metric | grouped_metrics | percentiles | stats | table | funnel | heatmap | retention | geo')->required(),
             'date_field' => $schema->string()->description('Timeline (date) field to bucket/scope by')->required(),
-            'metric' => $schema->string()->description('sum | avg | min | max | count | unique | median (pass null for distribution, percentiles, stats, table, funnel, retention, geo; optional for heatmap — defaults to count)')->nullable()->required(),
-            'field' => $schema->string()->description('Numeric field the metric is computed on; also the numeric field for stats and the geo_point field for the geo widget (pass null for count)')->nullable()->required(),
+            'metric' => $schema->string()->enum([...array_column(Metric::cases(), 'value'), null])->description('sum | avg | min | max | count | unique | median (pass null for distribution, percentiles, stats, table, funnel, retention, geo; optional for heatmap — defaults to count)')->nullable()->required(),
+            'field' => $schema->string()->description('Use a keyword or numeric field for unique, a numeric field for numeric metrics and stats, or a geo_point for geo. For count, pass null to count all documents or specify a field to count its values (documents containing it for text fields).')->nullable()->required(),
             'bucket_field' => $schema->string()->description('Numeric field to bucket for histogram_metric, e.g. calories when computing average rating by calorie bucket (pass null otherwise)')->nullable()->required(),
             'metrics' => $schema->string()->description('JSON array for grouped_metrics, e.g. [{"key":"count","label":"Count","metric":"count"},{"key":"avg_rating","label":"Average rating","metric":"avg","field":"rating"}] (pass null otherwise)')->nullable()->required(),
             'sort_metric' => $schema->string()->description('Metric key to sort grouped_metrics by, e.g. count or avg_rating (pass null otherwise)')->nullable()->required(),
-            'min_count' => $schema->integer()->description('Minimum document count per group for grouped_metrics, e.g. 5 (pass null otherwise)')->nullable()->required(),
-            'interval' => $schema->string()->description('Time bucket for trends and retention: a calendar unit (minute | hour | day | week | month | quarter | year) or a fixed interval like 15d | 12h | 90m (default day)')->default('day')->nullable()->required(),
+            'min_count' => $schema->integer()->min(0)->description('Minimum document count per group for grouped_metrics, e.g. 5 (pass null otherwise)')->nullable()->required(),
+            'interval' => $schema->string()->pattern(AnalyticsRequest::INTERVAL_PATTERN)->description('Time bucket for trends and retention: a calendar unit (minute | hour | day | week | month | quarter | year) or a fixed interval like 15d | 12h | 90m (default day)')->default('day')->nullable()->required(),
+            'min_doc_count' => $schema->integer()->min(0)->description('Minimum documents per trend bucket. Use 1 to omit empty periods; pass null otherwise.')->nullable()->required(),
             'group_by' => $schema->string()->description('Keyword field to group/break down by, for breakdown and grouped_trend (pass null otherwise)')->nullable()->required(),
-            'group_by_fields' => $schema->string()->description('Comma-separated keyword fields for multi_breakdown, e.g. "product,channel" (pass null otherwise)')->nullable()->required(),
-            'limit' => $schema->integer()->description('Max groups for breakdown/grouped_trend, rows for table, or cells per axis for heatmap (default 10)')->default(10)->nullable()->required(),
-            'bucket_size' => $schema->integer()->description('Bucket width for the distribution widget (pass null otherwise)')->nullable()->required(),
+            'group_by_fields' => $schema->string()->description('Comma-separated compatible keyword fields for multi_breakdown or union_breakdown, e.g. "champion_country,runner_up_country" (pass null otherwise)')->nullable()->required(),
+            'limit' => $schema->integer()->min(1)->max(100)->description('Max groups for breakdown/grouped_trend, rows for table, or cells per axis for heatmap (default 10)')->default(10)->nullable()->required(),
+            'bucket_size' => $schema->integer()->min(1)->description('Bucket width for distribution and histogram_metric (pass null otherwise)')->nullable()->required(),
             'percents' => $schema->string()->description('Comma-separated percentiles for the percentiles widget, e.g. "50,75,95,99" (pass null for the default)')->nullable()->required(),
             'fields' => $schema->string()->description('Comma-separated source fields to return for the table widget, e.g. "id,amount" (pass null for the full document)')->nullable()->required(),
-            'sort' => $schema->string()->description('Sort for the table widget as "field:dir", e.g. "amount:desc" (pass null for default descending)')->nullable()->required(),
+            'sort' => $schema->string()->description('Use "metric:asc" or "metric:desc" for ranked breakdown/grouped_metrics widgets; use "field:dir" for table, e.g. "amount:desc" (pass null for descending/default order)')->nullable()->required(),
             'steps' => $schema->string()->description('Funnel steps as an ORDERED JSON array of {label, filter} objects, e.g. [{"label":"visited","filter":"event:\'visit\'"},{"label":"paid","filter":"event:\'paid\'"}] (pass null otherwise)')->nullable()->required(),
             'row_field' => $schema->string()->description('Heatmap row dimension — a keyword field (pass null otherwise)')->nullable()->required(),
             'col_field' => $schema->string()->description('Heatmap column dimension — a keyword field (pass null otherwise)')->nullable()->required(),
             'cohort_field' => $schema->string()->description('Retention cohort date field — entities are grouped by the period of this date (pass null otherwise)')->nullable()->required(),
             'id_field' => $schema->string()->description('Retention entity id — a keyword field counted distinct per period (pass null otherwise)')->nullable()->required(),
-            'precision' => $schema->integer()->description('Geohash precision for the geo widget, 1 (coarse) to 12 (fine), default 5 (pass null otherwise)')->default(5)->nullable()->required(),
-            'range' => $schema->string()->description('Named relative window, e.g. this_month | last_7_days (pass null to use from/to)')->nullable()->required(),
-            'timezone_offset' => $schema->integer()->description('Timezone as minutes east of UTC, e.g. 540 for Tokyo (pass null for UTC)')->nullable()->required(),
+            'precision' => $schema->integer()->min(1)->max(12)->description('Geohash precision for the geo widget, 1 (coarse) to 12 (fine), default 5 (pass null otherwise)')->default(5)->nullable()->required(),
+            'range' => $schema->string()->enum([...array_column(Period::cases(), 'value'), null])->description('Named relative window, e.g. this_month | last_7_days (pass null to use from/to)')->nullable()->required(),
+            'timezone_offset' => $schema->integer()->min(-840)->max(840)->description('Timezone as minutes east of UTC, e.g. 540 for Tokyo (pass null for UTC)')->nullable()->required(),
             'from' => $schema->string()->description('ISO start date, inclusive — ignored when range is set (pass null for 30 days ago)')->nullable()->required(),
             'to' => $schema->string()->description('ISO end date, exclusive — ignored when range is set (pass null for now)')->nullable()->required(),
             'filters' => $schema->string()->description('Filter expression, same DSL as the search tool — scopes this widget to a slice of the window (pass null for none)')->nullable()->required(),
             'bucket_aliases' => $schema->string()->description('JSON array for breakdown bucket merges, e.g. [{"label":"Germany","values":["Germany","West Germany"]}]. Use only when the user explicitly asks to combine exact labels; pass null otherwise')->nullable()->required(),
-            'include_hits' => $schema->integer()->description('Set to 1 to return matching document hits alongside the widget from the same analytics search; pass null or 0 to omit hits')->default(0)->nullable()->required(),
+            'bucket_aliases_only' => $schema->integer()->min(0)->max(1)->description('For grouped_metrics, use 1 to return only populations defined by bucket_aliases. Include identity aliases for requested labels that do not need merging; pass 0 otherwise.')->default(0)->nullable()->required(),
+            'include_hits' => $schema->integer()->min(0)->max(1)->description('Set to 1 to return matching document hits alongside the widget from the same analytics search; pass null or 0 to omit hits')->default(0)->nullable()->required(),
             'hit_filters' => $schema->string()->description('Optional post-filter for returned hits only; keeps widget aggregations unchanged while narrowing rows (pass null for none)')->nullable()->required(),
             'hit_fields' => $schema->string()->description('Comma-separated source fields to include in returned hits when include_hits=1 (pass null for full source)')->nullable()->required(),
             'hit_sort' => $schema->string()->description('Sort returned hits when include_hits=1 using the search sort DSL, e.g. "amount:desc" or "_score" (pass null for Elasticsearch default)')->nullable()->required(),
-            'hit_limit' => $schema->integer()->description('Number of document hits to return when include_hits=1, default 10')->default(10)->nullable()->required(),
+            'hit_limit' => $schema->integer()->min(1)->max(100)->description('Number of document hits to return when include_hits=1, default 10')->default(10)->nullable()->required(),
         ];
     }
 
@@ -226,7 +247,19 @@ class SigmieAnalyticsTool implements Tool
      */
     public function result(Request $request): array
     {
+        $arguments = [];
+
+        foreach (AnalyticsRequest::KEYS as $key) {
+            if (isset($request[$key])) {
+                $arguments[$key] = $request[$key];
+            }
+        }
+
+        $request = new Request(AnalyticsRequest::fromArray($arguments)->toArray());
         $widget = trim((string) ($request['widget'] ?? ''));
+
+        $this->refusePrivateArguments($request);
+
         $dateField = $this->dateField((string) ($request['date_field'] ?? ''));
 
         $analytics = $this->index->analytics(
@@ -248,7 +281,9 @@ class SigmieAnalyticsTool implements Tool
             );
         }
 
-        if (($filters = $this->filters($request)) !== '') {
+        $this->applyBaseFilters($analytics);
+
+        if (($filters = trim((string) ($request['filters'] ?? ''))) !== '') {
             $analytics->filters($filters);
         }
 
@@ -279,23 +314,35 @@ class SigmieAnalyticsTool implements Tool
         match ($widget) {
             'kpi' => $analytics->kpi('result', $metric(), $field),
             'kpi_delta' => $analytics->kpiDelta('result', $metric(), $field),
-            'trend' => $analytics->trend('result', $metric(), $field, $interval()),
+            'trend' => $analytics->trend('result', $metric(), $field, $interval(), minDocCount: max(0, (int) ($request['min_doc_count'] ?? 0))),
             'cumulative' => $analytics->cumulative('result', $metric(), $field, $interval()),
-            'grouped_trend' => $analytics->groupedTrend('result', $metric(), $this->required($request, 'field'), $groupBy(), $interval(), $limit),
-            'breakdown' => $analytics->breakdown('result', $groupBy(), $metric(), $field, $limit, bucketAliases: $this->bucketAliases($request)),
-            'multi_breakdown' => $analytics->multiBreakdown('result', $this->groupByFields($request), $metric(), $field, $limit),
+            'grouped_trend' => $analytics->groupedTrend('result', $metric(), $field, $groupBy(), $interval(), $limit),
+            'breakdown' => $analytics->breakdown('result', $groupBy(), $metric(), $field, $limit, $this->rankingDirection($request), bucketAliases: $this->bucketAliases($request)),
+            'multi_breakdown' => $analytics->multiBreakdown('result', $this->groupByFields($request, $widget), $metric(), $field, $limit, $this->rankingDirection($request)),
+            'union_breakdown' => $analytics->unionBreakdown('result', $this->groupByFields($request, $widget), $metric(), $field, $limit, $this->rankingDirection($request)),
             'distribution' => $analytics->distribution('result', $this->required($request, 'field'), (int) ($request['bucket_size'] ?? throw new InvalidArgumentException('The distribution widget requires bucket_size.'))),
-            'histogram_metric' => $analytics->histogramMetric('result', $this->required($request, 'bucket_field'), (int) ($request['bucket_size'] ?? throw new InvalidArgumentException('The histogram_metric widget requires bucket_size.')), $metric(), $this->required($request, 'field')),
-            'grouped_metrics' => $analytics->groupedMetrics('result', $groupBy(), $this->metricSpecs($request), $this->optional($request, 'sort_metric') ?? 'count', $limit, minCount: max(0, (int) ($request['min_count'] ?? 0))),
+            'histogram_metric' => $analytics->histogramMetric('result', $this->required($request, 'bucket_field'), (int) ($request['bucket_size'] ?? throw new InvalidArgumentException('The histogram_metric widget requires bucket_size.')), $metric(), $metric() === Metric::Count ? $field : $this->required($request, 'field')),
+            'grouped_metrics' => $analytics->groupedMetrics('result', $groupBy(), $this->metricSpecs($request), $this->optional($request, 'sort_metric') ?? 'count', $limit, $this->rankingDirection($request), minCount: $request['min_count'] ?? null, bucketAliases: $this->bucketAliases($request), aliasesOnly: (bool) ($request['bucket_aliases_only'] ?? false)),
             'percentiles' => $analytics->percentiles('result', $this->required($request, 'field'), $this->percents($request)),
             'stats' => $analytics->stats('result', $this->required($request, 'field')),
-            'table' => $analytics->table('result', $this->csvList($request, 'fields'), $limit, $this->optional($request, 'sort')),
+            'table' => $analytics->table('result', $this->csvList($request, 'fields'), $limit, $this->optional($request, 'sort'), except: $this->index->exceptFromTools()),
             'funnel' => $analytics->funnel('result', $this->steps($request)),
             'heatmap' => $analytics->heatmap('result', $this->required($request, 'row_field'), $this->required($request, 'col_field'), $this->metricOrCount($request), $field, $limit, $limit),
             'retention' => $analytics->retention('result', $this->required($request, 'cohort_field'), $this->required($request, 'id_field'), $interval()),
             'geo' => $analytics->geo('result', $this->required($request, 'field'), max(1, (int) ($request['precision'] ?? 5))),
-            default => throw new InvalidArgumentException(sprintf("Unknown widget '%s'. Use one of: kpi, kpi_delta, trend, cumulative, grouped_trend, breakdown, multi_breakdown, distribution, histogram_metric, grouped_metrics, percentiles, stats, table, funnel, heatmap, retention, geo.", $widget)),
+            default => throw new InvalidArgumentException(sprintf("Unknown widget '%s'. Use one of: kpi, kpi_delta, trend, cumulative, grouped_trend, breakdown, multi_breakdown, union_breakdown, distribution, histogram_metric, grouped_metrics, percentiles, stats, table, funnel, heatmap, retention, geo.", $widget)),
         };
+    }
+
+    protected function rankingDirection(Request $request): string
+    {
+        $sort = trim((string) ($request['sort'] ?? ''));
+        [, $direction] = array_pad(explode(':', $sort, 2), 2, 'desc');
+        $direction = strtolower(trim($direction));
+
+        return in_array($direction, ['asc', 'desc'], true)
+            ? $direction
+            : throw new InvalidArgumentException(sprintf('Unsupported analytics ranking direction [%s].', $direction));
     }
 
     protected function dateField(string $field): string
@@ -362,7 +409,7 @@ class SigmieAnalyticsTool implements Tool
         return array_values(array_filter(array_map(
             static fn (string $p): float => (float) trim($p),
             explode(',', $raw)
-        ), static fn (float $p): bool => $p > 0 && $p < 100));
+        ), static fn (float $p): bool => $p >= 0 && $p <= 100));
     }
 
     /**
@@ -382,32 +429,15 @@ class SigmieAnalyticsTool implements Tool
      */
     protected function steps(Request $request): array
     {
-        $raw = trim((string) ($request['steps'] ?? ''));
-
-        if ($raw === '') {
-            throw new InvalidArgumentException('The funnel widget requires steps — a JSON array of {label, filter} objects, in order.');
-        }
-
-        $decoded = json_decode($raw, true);
-
-        if (! is_array($decoded)) {
-            throw new InvalidArgumentException('funnel steps must be a JSON array of {label, filter} objects, e.g. [{"label":"visited","filter":"event:\'visit\'"}].');
-        }
+        $decoded = (array) json_decode((string) $request['steps'], true, flags: JSON_THROW_ON_ERROR);
 
         $steps = [];
 
         foreach ($decoded as $step) {
-            $label = trim((string) ($step['label'] ?? ''));
-            $filter = trim((string) ($step['filter'] ?? ''));
-
-            if (! ($label !== '' && $filter !== '')) {
-                throw new InvalidArgumentException('Each funnel step needs a non-empty label and filter.');
-            }
-
-            $steps[$label] = $filter;
+            $steps[trim((string) $step['label'])] = trim((string) $step['filter']);
         }
 
-        return $steps !== [] ? $steps : throw new InvalidArgumentException('The funnel widget requires at least one step.');
+        return $steps;
     }
 
     /**
@@ -417,16 +447,7 @@ class SigmieAnalyticsTool implements Tool
      */
     protected function csvList(Request $request, string $key): array
     {
-        $raw = trim((string) ($request[$key] ?? ''));
-
-        if ($raw === '') {
-            return [];
-        }
-
-        return array_values(array_filter(
-            array_map(static fn (string $v): string => trim($v), explode(',', $raw)),
-            static fn (string $v): bool => $v !== '',
-        ));
+        return csv_fields((string) ($request[$key] ?? ''));
     }
 
     protected function includeHits(Request $request): bool
@@ -435,7 +456,7 @@ class SigmieAnalyticsTool implements Tool
     }
 
     /**
-     * @return array<string, list<string>>
+     * @return array<string, list<bool|int|float|string>>
      */
     protected function bucketAliases(Request $request): array
     {
@@ -445,30 +466,13 @@ class SigmieAnalyticsTool implements Tool
             return [];
         }
 
-        $decoded = json_decode($raw, true);
-
-        if (! is_array($decoded)) {
-            throw new InvalidArgumentException('bucket_aliases must be a JSON array of {label, values} objects.');
-        }
+        $decoded = (array) json_decode($raw, true, flags: JSON_THROW_ON_ERROR);
 
         $aliases = [];
 
         foreach ($decoded as $item) {
-            if (! is_array($item)) {
-                throw new InvalidArgumentException('Each bucket_aliases item must be an object with label and values.');
-            }
-
-            $label = trim((string) ($item['label'] ?? ''));
-            $values = array_values(array_filter(array_map(
-                static fn (mixed $value): string => trim((string) $value),
-                (array) ($item['values'] ?? []),
-            ), static fn (string $value): bool => $value !== ''));
-
-            if ($label === '' || $values === []) {
-                throw new InvalidArgumentException('Each bucket_aliases item needs a non-empty label and values array.');
-            }
-
-            $aliases[$label] = $values;
+            $label = trim((string) $item['label']);
+            $aliases[$label] = $item['values'];
         }
 
         return $aliases;
@@ -477,11 +481,13 @@ class SigmieAnalyticsTool implements Tool
     /**
      * @return list<string>
      */
-    protected function groupByFields(Request $request): array
+    protected function groupByFields(Request $request, string $widget): array
     {
         $fields = $this->csvList($request, 'group_by_fields');
 
-        return count($fields) >= 2 ? $fields : throw new InvalidArgumentException('The multi_breakdown widget requires at least two group_by_fields.');
+        return count($fields) >= 2
+            ? $fields
+            : throw new InvalidArgumentException(sprintf('The %s widget requires at least two group_by_fields.', $widget));
     }
 
     /**
@@ -489,37 +495,15 @@ class SigmieAnalyticsTool implements Tool
      */
     protected function metricSpecs(Request $request): array
     {
-        $raw = trim((string) ($request['metrics'] ?? ''));
-
-        if ($raw === '') {
-            throw new InvalidArgumentException('The grouped_metrics widget requires metrics — a JSON array of {key, label, metric, field} objects.');
-        }
-
-        $decoded = json_decode($raw, true);
-
-        if (! is_array($decoded)) {
-            throw new InvalidArgumentException('grouped_metrics metrics must be a JSON array of {key, label, metric, field} objects.');
-        }
+        $decoded = (array) json_decode((string) $request['metrics'], true, flags: JSON_THROW_ON_ERROR);
 
         $metrics = [];
 
         foreach ($decoded as $item) {
-            if (! is_array($item)) {
-                throw new InvalidArgumentException('Each grouped_metrics metric must be an object.');
-            }
-
-            $key = trim((string) ($item['key'] ?? ''));
+            $key = trim((string) $item['key']);
             $label = trim((string) ($item['label'] ?? $key));
-            $metric = Metric::tryFrom(trim((string) ($item['metric'] ?? '')));
+            $metric = Metric::from(trim((string) $item['metric']));
             $field = trim((string) ($item['field'] ?? ''));
-
-            if ($key === '' || ! $metric instanceof Metric) {
-                throw new InvalidArgumentException('Each grouped_metrics metric needs a key and valid metric.');
-            }
-
-            if ($metric !== Metric::Count && $field === '') {
-                throw new InvalidArgumentException('Each non-count grouped_metrics metric needs a field.');
-            }
 
             $metrics[] = array_filter([
                 'key' => $key,
@@ -529,17 +513,33 @@ class SigmieAnalyticsTool implements Tool
             ], fn (mixed $value): bool => $value !== '');
         }
 
-        return $metrics !== [] ? $metrics : throw new InvalidArgumentException('The grouped_metrics widget requires at least one metric.');
+        return $metrics;
+    }
+
+    /**
+     * Refuses every argument that buckets, measures or orders by a field. `filters`, `hit_filters`
+     * and funnel `steps` only restrict, and `fields` / `hit_fields` are stripped by except().
+     */
+    protected function refusePrivateArguments(Request $request): void
+    {
+        $this->refusePrivateFields(
+            ...array_map(fn (string $key): ?string => $this->optional($request, $key), ['date_field', 'field', 'bucket_field', 'group_by', 'row_field', 'col_field', 'cohort_field', 'id_field']),
+            ...$this->csvList($request, 'group_by_fields'),
+            ...($request['widget'] === 'table' ? $this->expressionFields($request['sort'] ?? null) : []),
+            ...$this->expressionFields($request['hit_sort'] ?? null),
+            ...($this->optional($request, 'metrics') !== null ? array_column($this->metricSpecs($request), 'field') : []),
+        );
     }
 
     protected function configureHits(Analytics $analytics, Request $request): void
     {
-        $analytics->search(function (Search $search) use ($request): void {
+        $analytics->search(function (Search $search) use ($analytics, $request): void {
             $limit = max(1, (int) ($request['hit_limit'] ?? 10));
 
             $search
                 ->size($limit)
-                ->trackTotalHits(true);
+                ->trackTotalHits(true)
+                ->except($this->index->exceptFromTools());
 
             $fields = $this->csvList($request, 'hit_fields');
             if ($fields !== []) {
@@ -551,10 +551,8 @@ class SigmieAnalyticsTool implements Tool
                 $search->sortString($sort);
             }
 
-            $hitFilters = trim((string) ($request['hit_filters'] ?? ''));
-            if ($hitFilters !== '') {
-                $search->postFilterString($hitFilters);
-            }
+            // A query filter would drop the previous period kpiDelta still counts.
+            $search->postFilter($analytics->hitsQuery(trim((string) ($request['hit_filters'] ?? ''))));
         });
     }
 
@@ -572,17 +570,7 @@ class SigmieAnalyticsTool implements Tool
     {
         $value = trim((string) ($value ?? ''));
 
-        return $value === '' ? null : new DateTimeImmutable($value);
-    }
-
-    protected function filters(Request $request): string
-    {
-        $parts = array_values(array_filter([
-            $this->baseFilters,
-            trim((string) ($request['filters'] ?? '')),
-        ], static fn (string $f): bool => $f !== ''));
-
-        return implode(' AND ', array_map(static fn (string $f): string => sprintf('(%s)', $f), $parts));
+        return $value === '' ? null : WindowBound::fromIso($value);
     }
 
     protected function required(Request $request, string $key): string

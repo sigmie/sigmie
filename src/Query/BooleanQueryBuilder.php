@@ -120,7 +120,7 @@ class BooleanQueryBuilder implements Queries
         return $this;
     }
 
-    public function term(string $field, int|string|bool $value, float $boost = 1): self
+    public function term(string $field, int|string|bool|float $value, float $boost = 1): self
     {
         $clause = new Term($field, $value);
 
@@ -170,11 +170,11 @@ class BooleanQueryBuilder implements Queries
 
     public function bool(callable $callable, float $boost = 1): self
     {
-        $query = new Boolean;
+        $query = new Boolean($this->properties);
 
-        $this->clauses[] = $query->boost($boost);
+        $callable($query->boost($boost));
 
-        $callable($query);
+        $this->clauses[] = $query;
 
         return $this;
     }

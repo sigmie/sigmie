@@ -1,7 +1,7 @@
 ---
 title: Analytics
-short_description: Build dashboard analytics on a Sigmie index — KPIs, period-over-period deltas, time-series trends, breakdowns, distributions, percentiles, cumulative growth, funnels, cohort retention, heatmaps, geo maps and document tables — and expose them to AI agents.
-keywords: [analytics, dashboard, trends, KPI, time series, breakdown, histogram, percentiles, funnel, retention, cohort, heatmap, geo, table, multi-search, AI agent]
+short_description: Sigmie analytics builds Elasticsearch dashboards from KPIs, trends, ranked breakdowns, funnels, cohorts, and tables, and runs every widget in one request.
+keywords: [analytics, dashboard, trends, KPI, time series, breakdown, union breakdown, histogram, percentiles, funnel, retention, cohort, heatmap, geo, table, multi-search, AI agent]
 category: Features
 order: 3
 related_pages: [aggregations, facets, laravel-ai]
@@ -9,7 +9,7 @@ related_pages: [aggregations, facets, laravel-ai]
 
 # Analytics
 
-`analytics()` is a dashboard vocabulary on top of [raw aggregations](aggregations.md). Instead of hand-building date histograms and pipeline aggregations, you compose **widgets** — the same shapes Stripe, Sentry and most app dashboards render — over a time window, and run them all in a single request.
+`analytics()` builds a dashboard from named **widgets**, such as KPIs, trends, ranked lists, and funnels. `get()` runs every widget in one Elasticsearch request. For anything no widget covers, use [raw aggregations](aggregations.md).
 
 ```php
 use Sigmie\Analytics\Enums\Metric;
@@ -25,29 +25,35 @@ $dashboard = $orders->analytics('created_at')
     ->get();
 ```
 
-`analytics()` is available on any [`SigmieIndex`](mappings.md). The first argument is the **timeline** — the date field every widget buckets and scopes by. The window defaults to the last 30 days.
+`analytics()` is a method of every [`SigmieIndex`](mappings.md). Its argument is the **timeline**, the date field that every widget filters and buckets by. The window defaults to the last 30 days.
+
+`$sigmie->analytics($indexName, $dateField)` starts the same builder without an index class. Call `properties()` on it so that filters are typed and text fields group on their `.keyword` sub-field.
 
 ## Metrics
 
-Every measuring widget takes a `Metric`:
+Widgets that measure something take a `Metric`:
 
-| Metric            | Meaning                          |
-| ----------------- | -------------------------------- |
-| `Metric::Sum`     | total of a numeric field         |
-| `Metric::Avg`     | average of a numeric field       |
-| `Metric::Min`     | minimum value                    |
-| `Metric::Max`     | maximum value                    |
-| `Metric::Count`   | number of events                 |
-| `Metric::Unique`  | distinct values (cardinality)    |
-| `Metric::Median`  | 50th percentile                  |
+| Metric           | Value                                                    |
+| ---------------- | -------------------------------------------------------- |
+| `Metric::Sum`    | Total of a numeric field                                 |
+| `Metric::Avg`    | Average of a numeric field                               |
+| `Metric::Min`    | Minimum value                                            |
+| `Metric::Max`    | Maximum value                                            |
+| `Metric::Count`  | Number of field values, including multiple values per document |
+| `Metric::Unique` | Estimated distinct values, with a precision threshold of 40,000 |
+| `Metric::Median` | 50th percentile                                          |
 
-`Count` has no meaningful field, so it falls back to the timeline field when none is given.
+Omit the field to count matching documents. For example, a document with two timestamps in the same trend bucket counts once in that bucket. A text field has no stored values to count, so `Metric::Count` on it counts the documents that contain it.
 
 ## Widgets
 
-`get()` returns a map of `widget name => normalised result`, ready to hand to a chart.
+`get()` returns an array keyed by widget name. Each value has a `type` key and the chart data. The outputs below are shortened.
 
-### KPI — a single number
+Every widget method accepts [`filter:`](#per-widget-filter) and [`window:`](#per-widget-window).
+
+### KPI
+
+`kpi()` returns one number for the window.
 
 ```php
 $orders->analytics('created_at')
@@ -58,9 +64,9 @@ $orders->analytics('created_at')
 // ['revenue' => ['type' => 'kpi', 'value' => 48210.0, 'count' => 1240, ...], ...]
 ```
 
-### KPI delta — value vs the previous period
+### KPI delta
 
-Compares the window against the immediately preceding window of equal length.
+`kpiDelta()` compares the window with the previous window of equal length. [Calendar periods](#named-ranges) compare with the previous calendar period. `change_pct` is `null` when the previous value is `0` or missing.
 
 ```php
 $orders->analytics('created_at')
@@ -68,93 +74,219 @@ $orders->analytics('created_at')
     ->kpiDelta('revenue', Metric::Sum, 'amount')
     ->get();
 
-// ['revenue' => ['value' => 300.0, 'previous' => 150.0, 'change_pct' => 100.0, ...]]
+// ['revenue' => ['type' => 'kpi_delta', 'value' => 300.0, 'previous' => 150.0, 'change_pct' => 100.0, ...]]
 ```
 
-### Trend — a metric over time
+### Trend
 
-The line/area/bar chart. Re-bucketing **per day → per month** is the same call with a different `CalendarInterval`:
+`trend()` returns a metric per time bucket. To change from daily to monthly buckets, change only the `CalendarInterval`. The series spans the whole window, including empty buckets.
 
 ```php
 $orders->analytics('created_at')
     ->trend('revenue', Metric::Sum, 'amount', CalendarInterval::Day)
     ->get();
 
-// ['revenue' => ['interval' => 'Day', 'series' => [
+// ['revenue' => ['type' => 'trend', 'interval' => 'Day', 'series' => [
 //     ['label' => '2024-01-01T00:00:00.000Z', 'value' => 150.0], ...
 // ]]]
 ```
 
-Intervals: `Minute`, `Hour`, `Day`, `Week`, `Month`, `Quarter`, `Year`.
+Intervals: `Minute`, `Hour`, `Day`, `Week`, `Month`, `Quarter`, and `Year`.
 
-### Grouped trend — one series per dimension
+### Grouped trend
 
-The stacked/grouped chart ("errors by level over time", "revenue by product over time").
+`groupedTrend()` returns one series for each of the top `limit` values of `groupBy`, such as revenue by product over time.
 
 ```php
 $orders->analytics('created_at')
     ->groupedTrend('by_product', Metric::Sum, 'amount', groupBy: 'product', interval: CalendarInterval::Day, limit: 5)
     ->get();
 
-// ['by_product' => ['groups' => [
+// ['by_product' => ['type' => 'grouped_trend', 'groups' => [
 //     ['group' => 'A', 'series' => [['label' => ..., 'value' => 370.0], ...]], ...
 // ]]]
 ```
 
-### Breakdown — top-N ranked list
+The `field` argument is required. To count events, pass an empty string:
 
-A dimension ranked by a metric ("top products by revenue", "top issues by event count").
+```php
+$events->analytics('occurred_at')
+    ->groupedTrend(
+        'events_by_type',
+        Metric::Count,
+        field: '',
+        groupBy: 'event_type',
+        interval: CalendarInterval::Day,
+    )
+    ->get();
+```
+
+### Breakdown
+
+`breakdown()` returns the top `limit` values of a field, ranked by a metric. `direction` defaults to `'desc'`. Pass `'asc'` to return the lowest values first.
 
 ```php
 $orders->analytics('created_at')
     ->breakdown('top_products', 'product', Metric::Sum, 'amount', limit: 10)
+    ->breakdown('smallest_queues', 'queue', Metric::Count, limit: 5, direction: 'asc')
     ->get();
 
-// ['top_products' => ['rows' => [
-//     ['key' => 'A', 'value' => 370.0, 'count' => 3], ...
+// ['top_products' => ['type' => 'breakdown', 'rows' => [
+//     ['key' => 'A', 'value' => 370.0, 'count' => 3, ...], ...
+// ]], ...]
+```
+
+### Multi breakdown
+
+`multiBreakdown()` ranks combinations of fields, such as product and channel pairs.
+
+```php
+$orders->analytics('created_at')
+    ->multiBreakdown(
+        'top_product_channels',
+        ['product', 'channel'],
+        Metric::Sum,
+        field: 'amount',
+        limit: 10,
+    )
+    ->get();
+
+// ['top_product_channels' => ['type' => 'multi_breakdown', 'rows' => [
+//     ['key' => ['product' => 'A', 'channel' => 'online'],
+//      'key_values' => ['A', 'online'], 'label' => 'A / online',
+//      'value' => 240.0, 'count' => 2], ...
 // ]]]
 ```
 
-### Distribution — histogram of a numeric field
+### Union breakdown
+
+`unionBreakdown()` ranks labels across several fields. A country in `champion_country` or in `runner_up_country` counts toward one country row.
+
+```php
+$tournaments->analytics('played_at')
+    ->unionBreakdown(
+        'country_appearances',
+        ['champion_country', 'runner_up_country'],
+        Metric::Count,
+        limit: 10,
+    )
+    ->unionBreakdown(
+        'country_prize',
+        ['champion_country', 'runner_up_country'],
+        Metric::Sum,
+        field: 'prize',
+        limit: 10,
+    )
+    ->get();
+
+// ['country_appearances' => ['type' => 'union_breakdown', 'rows' => [
+//     ['key' => 'Germany', 'value' => 4, 'count' => 4, ...], ...
+// ]], ...]
+```
+
+The fields need compatible, aggregatable mapping types. A document with the same label in two fields counts once. `limit` and `direction` work as in `breakdown()`. See [union terms](aggregations.md#union-terms) for the aggregation.
+
+### Grouped metrics
+
+`groupedMetrics()` returns several metrics per group and ranks groups by the metric whose `key` is `sortMetric`. For example, use `Metric::Unique` on a customer ID or `Metric::Avg` on a numeric amount. `minCount` drops smaller groups.
+
+```php
+$orders->analytics('created_at')
+    ->groupedMetrics(
+        'product_metrics',
+        groupBy: 'product',
+        metrics: [
+            ['key' => 'orders', 'label' => 'Orders', 'metric' => Metric::Count],
+            ['key' => 'average_amount', 'label' => 'Average amount', 'metric' => Metric::Avg, 'field' => 'amount'],
+        ],
+        sortMetric: 'orders',
+        limit: 10,
+        minCount: 2,
+    )
+    ->get();
+
+// ['product_metrics' => ['type' => 'grouped_metrics', 'rows' => [
+//     ['key' => 'A', 'value' => 3, 'count' => 3,
+//      'metrics' => ['orders' => 3, 'average_amount' => 123.33],
+//      'metric_populations' => [
+//          'orders' => ['document_count' => 3, 'value_count' => 3, 'field' => ''],
+//          'average_amount' => ['document_count' => 3, 'value_count' => 3, 'field' => 'amount'],
+//      ]], ...
+// ]]]
+```
+
+In `metric_populations`, `value_count` below `document_count` means some documents in the group have no value for that metric.
+
+### Distribution
+
+`distribution()` counts documents in fixed-width ranges of a numeric field.
 
 ```php
 $orders->analytics('created_at')
     ->distribution('order_sizes', 'amount', interval: 100)
     ->get();
 
-// ['order_sizes' => ['buckets' => [['label' => 0, 'count' => 3], ['label' => 100, 'count' => 1], ...]]]
+// ['order_sizes' => ['type' => 'distribution', 'buckets' => [['label' => 0, 'count' => 3], ['label' => 100, 'count' => 1], ...]]]
 ```
 
-### Percentiles — p50 / p75 / p95 / p99
+### Histogram metric
 
-The latency-style summary.
+`histogramMetric()` computes a metric in each fixed-width range of `bucketField`, such as the average rating per price band.
+
+```php
+$products->analytics('created_at')
+    ->histogramMetric(
+        'average_rating_by_price',
+        bucketField: 'price',
+        interval: 50,
+        metric: Metric::Avg,
+        field: 'rating',
+    )
+    ->get();
+
+// ['average_rating_by_price' => [
+//     'type' => 'histogram_metric',
+//     'bucket_field' => 'price',
+//     'interval' => 50,
+//     'series' => [
+//         ['label' => 0, 'value' => 4.2, 'count' => 18],
+//         ['label' => 50, 'value' => 4.6, 'count' => 7], ...
+//     ],
+// ]]
+```
+
+Each `label` is the lower bound of its range. `50` covers 50 up to, but not including, 100.
+
+### Percentiles
+
+`percentiles()` returns the given percentiles of a numeric field. The default is `[50, 75, 95, 99]`.
 
 ```php
 $requests->analytics('created_at')
     ->percentiles('latency', 'duration_ms', [50, 95, 99])
     ->get();
 
-// ['latency' => ['percentiles' => ['50' => 120.0, '95' => 880.0, '99' => 1450.0]]]
+// ['latency' => ['type' => 'percentiles', 'percentiles' => ['50' => 120.0, '95' => 880.0, '99' => 1450.0]]]
 ```
 
-### Cumulative — running total
+### Cumulative
 
-The growth curve ("total customers", "MRR to date"), built on a `cumulative_sum` pipeline.
+`cumulative()` returns a running total per time bucket, from a `cumulative_sum` pipeline aggregation.
 
 ```php
 $orders->analytics('created_at')
     ->cumulative('growth', Metric::Sum, 'amount', CalendarInterval::Day)
     ->get();
 
-// ['growth' => ['series' => [
+// ['growth' => ['type' => 'cumulative', 'series' => [
 //     ['label' => '2024-01-01...', 'value' => 150.0],
 //     ['label' => '2024-01-02...', 'value' => 350.0], ...
 // ]]]
 ```
 
-### Stats — the five-number summary
+### Stats
 
-`count`, `min`, `max`, `avg` and `sum` of a numeric field in one tile, built on the `stats` aggregation.
+`stats()` returns `count`, `min`, `max`, `avg`, and `sum` of a numeric field.
 
 ```php
 $orders->analytics('created_at')
@@ -164,9 +296,16 @@ $orders->analytics('created_at')
 // ['order_size' => ['type' => 'stats', 'count' => 5, 'min' => 30.0, 'max' => 200.0, 'avg' => 90.0, 'sum' => 450.0]]
 ```
 
-### Table — the documents behind a number
+### Table
 
-Every widget so far returns an aggregated number. `table` returns the **actual matching documents** — the rows behind a slice ("the 20 most recent orders", "the latest errors") — via a `top_hits` aggregation, so it scopes to the same window and per-widget `filter:` as the rest. `fields` limits the returned source (omit for the full document); `sort` is a `"field:dir"` string (defaults to descending).
+`table()` returns matching documents instead of a number. It uses a `top_hits` aggregation, so filters and windows apply as for other widgets.
+
+| Argument | Default  | Effect                                                              |
+| -------- | -------- | ------------------------------------------------------------------- |
+| `fields` | `[]`     | Source fields to return. An empty array returns the whole document. |
+| `limit`  | `10`     | Number of rows.                                                     |
+| `sort`   | `null`   | A `"field:direction"` string. The direction defaults to `desc`.     |
+| `except` | `[]`     | Source fields to remove, even when `fields` lists their parent.     |
 
 ```php
 $orders->analytics('created_at')
@@ -176,13 +315,17 @@ $orders->analytics('created_at')
 // ['recent' => ['type' => 'table', 'rows' => [
 //     ['id' => 'ord_8f2c…', 'document' => ['amount' => 200, 'product' => 'A']], ...
 // ]]]
+
+$customers->analytics('created_at')
+    ->table('recent', fields: ['name', 'contacts'], except: ['contacts.email'])
+    ->get();
 ```
 
-`top_hits` returns the top N of one bucket — it is **not** a paginated, field-collapsed search. For an interactive table with deep pagination use a regular [`search()`](search.md); to batch that search into the same request as the dashboard, see [multi-search](#one-request-with-multi-search) below.
+`table()` does not paginate. For a paginated table, use [`search()`](search.md) in the same request through [multi-search](#batch-with-multi-search).
 
-### Funnel — ordered step conversion
+### Funnel
 
-How many documents reach each stage and the conversion between them ("visited → signed up → paid"). `steps` is an **ordered** map of `label => slice`, where each slice is a [filter-parser](filter-parser.md) string or a query object. Each step reports its `count`, its `conversion` against the first step, and its `step_conversion` against the previous step.
+`funnel()` counts the documents that match each step. `steps` is an ordered array of `label => slice`, where a slice is a [filter-parser](filter-parser.md) string or a query object. `conversion` compares each step with the first step, and `step_conversion` with the previous step.
 
 ```php
 $events->analytics('created_at')
@@ -200,9 +343,9 @@ $events->analytics('created_at')
 // ]]]
 ```
 
-### Heatmap — one dimension by another
+### Heatmap
 
-A two-dimensional matrix — `rowField` × `colField`, each cell carrying a metric (defaults to a count). Built on nested `terms` buckets.
+`heatmap()` returns a `rowField` by `colField` matrix. Each cell holds a metric, by default a document count. `rowLimit` and `colLimit` default to `10`.
 
 ```php
 $orders->analytics('created_at')
@@ -217,9 +360,9 @@ $orders->analytics('created_at')
 // ]]]
 ```
 
-### Retention — a cohort grid
+### Retention
 
-Entities (identified by `idField`) grouped by the period of their `cohortField` date, then counted **distinct** across each later period of the timeline — the classic triangular cohort table. Built on a `date_histogram` of the cohort field, a nested `date_histogram` of the timeline, and a `cardinality` of the id.
+`retention()` returns a cohort table. It groups entities by the period of their `cohortField` date, then counts distinct `idField` values in each later timeline period. `size` is the cohort's distinct entity count.
 
 ```php
 $signups->analytics('active_at')
@@ -229,14 +372,14 @@ $signups->analytics('active_at')
 // ['cohorts' => ['type' => 'retention', 'cohorts' => [
 //     ['cohort' => '2024-01-01...', 'size' => 2, 'periods' => [
 //         ['label' => '2024-01-01...', 'value' => 2],
-//         ['label' => '2024-01-02...', 'value' => 1],
+//         ['label' => '2024-01-08...', 'value' => 1],
 //     ]], ...
 // ]]]
 ```
 
-### Geo — a map heatmap
+### Geo
 
-A metric bucketed into geohash cells of a `geo_point` field, for a map overlay. Higher `precision` means smaller, more granular cells. Built on the `geohash_grid` aggregation.
+`geo()` groups documents into geohash cells of a `geo_point` field. A higher `precision` gives smaller cells. Each cell holds a document count unless you pass `metric:` and `metricField:`.
 
 ```php
 $orders->analytics('created_at')
@@ -248,25 +391,23 @@ $orders->analytics('created_at')
 // ]]]
 ```
 
-## Filtering and the time window
+## Filters
 
-`filters()` accepts the same [filter-parser](filter-parser.md) DSL as search, applied across every widget. `filterQuery()` ANDs a hard query clause (a query object) into the same filter context — exactly like [`NewSearch::filterQuery()`](search.md):
+`filters()` applies a [filter-parser](filter-parser.md) string to every widget. `filterQuery()` adds a query object with AND, like [`NewSearch::filterQuery()`](search.md).
 
 ```php
 use Sigmie\Query\Queries\Term\Range;
 
 $orders->analytics('created_at')
     ->filters("status:'paid'")
-    ->filterQuery(new Range('amount', ['>=' => 100]))   // composed with the DSL above
+    ->filterQuery(new Range('amount', ['>=' => 100]))
     ->kpi('big_orders', Metric::Sum, 'amount')
     ->get();
 ```
 
-`from()` / `to()` set the window; each widget scopes itself to it (a KPI delta also reaches back one window for its comparison).
+### Per-widget filter
 
-### Per-widget filter (funnels)
-
-`filters()` / `filterQuery()` apply to *every* widget. To count a *different* slice per widget — a funnel of `total → engaged → completed` over the same window — pass a `filter:` to the widget itself. It is ANDed into that widget's own scope only, so the whole funnel is a single request. Like `filters()`, it accepts either the filter DSL string or a query object:
+The `filter:` argument limits one widget to a slice of documents, in addition to the dashboard filters. It takes a filter-parser string or a query object. On `kpiDelta()`, it applies to both windows.
 
 ```php
 use Sigmie\Query\Queries\Term\Term;
@@ -276,58 +417,35 @@ $orders->analytics('created_at')
     ->kpi('total', Metric::Unique, 'customer_id')
     ->kpi('engaged', Metric::Unique, 'customer_id', filter: "status:'opened' OR status:'completed'")
     ->kpi('completed', Metric::Unique, 'customer_id', filter: new Term('status', 'completed'))
-    ->get();
-```
-
-A string is parsed with the same [filter-parser](filter-parser.md) DSL (typed against the index mapping); a query object is taken as-is. Omit it and the widget is unchanged.
-
-Every widget takes the same `filter:` argument (as its last parameter) — so you can scope a trend, a breakdown, a `kpiDelta`, and the rest to a slice too:
-
-```php
-$orders->analytics('created_at')
-    ->from($start)->to($end)
     ->trend('paid_revenue', Metric::Sum, 'amount', CalendarInterval::Day, filter: "status:'paid'")
-    ->breakdown('top_vip_products', 'product', Metric::Sum, 'amount', filter: "tier:'vip'")
-    ->kpiDelta('refunds', Metric::Count, filter: "status:'refunded'")   // applies to both the current and comparison window
+    ->kpiDelta('refunds', Metric::Count, filter: "status:'refunded'")
     ->get();
 ```
+
+## Time window
+
+`from()` and `to()` set the dashboard window. It includes `from` and excludes `to`. Create both dates in the user's timezone to align the window with the user's day.
 
 ### Per-widget window
 
-`from()` / `to()` set one window for the whole dashboard. To give a single widget its **own** window — an all-time headline next to a last-30-days trend — pass a `window:` to the widget. Like the per-widget `filter:`, it scopes that one widget only, so the mixed-window dashboard stays a single request. It accepts a named [`Period`](#named-ranges) or a `[$from, $to]` pair:
+The `window:` argument gives one widget its own time range. It takes a [`Period`](#named-ranges) or a `[$from, $to]` pair.
 
 ```php
 use Sigmie\Analytics\Enums\Period;
 
 $orders->analytics('created_at')
     ->from($last30Start)->to($now)
-    ->kpi('lifetime_revenue', Metric::Sum, 'amount', window: [$accountStart, $now])  // all-time
-    ->kpi('this_year', Metric::Sum, 'amount', window: Period::ThisYear)               // named period
-    ->trend('recent_revenue', Metric::Sum, 'amount', CalendarInterval::Day)           // dashboard window
+    ->kpi('lifetime_revenue', Metric::Sum, 'amount', window: [$accountStart, $now])
+    ->kpi('this_year', Metric::Sum, 'amount', window: Period::ThisYear)
+    ->trend('recent_revenue', Metric::Sum, 'amount', CalendarInterval::Day)
     ->get();
 ```
 
-`window:` is the last argument of every widget method, alongside `filter:`. A `kpiDelta` with a custom `window:` compares against the immediately preceding equal-length window (the named-period comparison only applies to the dashboard-wide `range()`).
-
-## Timezone
-
-Analytics is UTC by default — which silently mis-buckets daily/weekly/monthly charts for users elsewhere (a Tokyo sale just after local midnight lands in the previous UTC day). Set the timezone and Elasticsearch aligns bucket boundaries to local time and handles DST:
-
-```php
-$orders->analytics('created_at')
-    ->timezoneOffset(540)             // minutes east of UTC: Tokyo = 540, New York = -300, India = 330
-    ->range(Period::ThisMonth)
-    ->trend('sales', Metric::Sum, 'amount', CalendarInterval::Day)
-    ->get();
-```
-
-From a browser, pass `-new Date().getTimezoneOffset()` (its sign is inverted). Minutes — not hours — so half-hour zones like India (`330`) and Nepal (`345`) work. For DST-correctness across a transition, pass an IANA name instead: `->timezone('Asia/Tokyo')`.
-
-The window edges follow too: build `from()`/`to()` as `DateTimeImmutable` in the user's zone (their offset rides along in the ISO string), or use a named range, which is resolved in the configured timezone.
+A `kpiDelta()` with its own `window:` always compares against the previous window of equal length.
 
 ## Named ranges
 
-`range()` sets the window to a relative period, resolved in the configured timezone to absolute instants (so the query stays cacheable). Weeks start Monday (ISO).
+`range()` sets the window to a `Period`, converted to fixed dates in the configured timezone. Weeks start on Monday.
 
 ```php
 use Sigmie\Analytics\Enums\Period;
@@ -335,13 +453,34 @@ use Sigmie\Analytics\Enums\Period;
 $orders->analytics('created_at')->timezoneOffset(540)->range(Period::Last7Days);
 ```
 
-`Today, Yesterday, ThisWeek, LastWeek, ThisMonth, LastMonth, ThisQuarter, LastQuarter, ThisYear, LastYear, Last7Days, Last30Days, Last90Days`.
+Periods: `Today`, `Yesterday`, `ThisWeek`, `LastWeek`, `ThisMonth`, `LastMonth`, `ThisQuarter`, `LastQuarter`, `ThisYear`, `LastYear`, `Last7Days`, `Last30Days`, and `Last90Days`.
 
-A **calendar** range also makes `kpiDelta` compare against the *previous instance* of that period rather than an equal-length window — `ThisMonth` → vs last calendar month, `ThisWeek` → vs last week. Raw `from()`/`to()` keep the equal-duration comparison.
+With a week, month, quarter, or year period, `kpiDelta()` compares with the previous calendar period: `ThisMonth` compares with last month. Other periods compare with the previous window of equal length.
 
-## Widgets and hits in one request
+> **Note:** `range()` resolves the period when you call it. Set the timezone first.
 
-`get()` returns only the widget map. When a dashboard needs the numbers **and** the matching documents behind those numbers, use `search()` to customize the underlying Elasticsearch search and `getWithHits()` to return both.
+## Timezone
+
+Analytics uses UTC by default, so a daily chart puts a Tokyo sale made just after midnight into the previous day. Set a timezone to align time buckets and named ranges with local time:
+
+```php
+$orders->analytics('created_at')
+    ->timezoneOffset(540)
+    ->range(Period::ThisMonth)
+    ->trend('sales', Metric::Sum, 'amount', CalendarInterval::Day)
+    ->get();
+```
+
+| Method                       | Argument                                                                               |
+| ---------------------------- | -------------------------------------------------------------------------------------- |
+| `timezoneOffset(int)`        | Minutes east of UTC: Tokyo is `540`, New York is `-300`, India is `330`, Nepal is `345`. |
+| `timezone(string)`           | An IANA name such as `'Asia/Tokyo'`, or a fixed offset such as `'+09:00'`.              |
+
+A fixed offset ignores daylight saving time. An IANA name follows it. In a browser, `-new Date().getTimezoneOffset()` gives the value for `timezoneOffset()`.
+
+## Hits alongside widgets
+
+`getWithHits()` returns the widgets and the matching documents from one request. The request has `size(0)` by default, so configure the hits with `search()`.
 
 ```php
 $result = $orders->analytics('created_at')
@@ -360,42 +499,38 @@ $result['widgets']['revenue']; // normalized KPI result
 $result['hits'];               // raw Elasticsearch hits block
 ```
 
-The important detail is `post_filter`: it narrows the returned hits without changing the aggregations. That is useful when the headline card should count the full scoped population, but the table should show one row slice.
+The result also has `took` and `timed_out`. A `post_filter` limits the hits but not the widgets, so the KPI above counts all orders and the hits show paid orders.
 
-## One request with multi-search
+## Batch with multi-search
 
-`get()` already runs every widget in a single request. `getWithHits()` covers the common case where the same search can return dashboard widgets and rows. When the rows need a completely different query shape, batch both into one `_msearch`.
-
-`newAnalytics()` starts a dashboard **inside** the multi-search — compose widgets on it as usual, and its response slot comes back already mapped to the widget result map:
+When the rows need a different query, `newAnalytics()` adds the dashboard to a [multi-search](search.md). Its result is the widget array that `get()` returns.
 
 ```php
 $multi = $sigmie->newMultiSearch();
 
-$multi->newAnalytics($orders, 'created_at', 'metrics')        // the whole dashboard
+$multi->newAnalytics($orders, 'created_at', 'metrics')
     ->from($start)->to($end)
     ->kpiDelta('revenue', Metric::Sum, 'amount')
     ->trend('revenue_over_time', Metric::Sum, 'amount', CalendarInterval::Day);
 
-$multi->newSearch($orders->name(), 'rows')                    // a paginated rows table
-    ->queryString('')->filters("status:'paid'")->page(3, 20);
+$multi->newSearch($orders->name(), 'rows')
+    ->properties($orders->properties())->queryString('')->filters("status:'paid'")->page(3, 20);
 
-[$metrics, $rows] = $multi->get();                            // one HTTP round-trip
-// $metrics is already the widget name => result map
+[$metrics, $rows] = $multi->get();
 ```
 
-If you built the `Analytics` elsewhere, add it to the batch with `toSearch()` instead, then map its slot by hand with `formatResponse()`:
+For an existing `Analytics` instance, pass `toSearch()` to `addQuery()` and convert its response with `formatResponse()`:
 
 ```php
+$multi = $sigmie->newMultiSearch();
 $multi->addQuery($analytics->toSearch(), 'metrics');
-[$metrics, $rows] = $multi->get();
+[$metrics] = $multi->get();
 $dashboard = $analytics->formatResponse($metrics);
 ```
 
-`formatResponse()` maps the raw response's aggregations through every widget, exactly as `get()` does internally. Use `get()` for a standalone dashboard, `getWithHits()` when one search can also return rows, and `newAnalytics()` (or `toSearch()` + `formatResponse()`) when analytics shares a round-trip with a separate query.
+## Analytics tool for AI agents
 
-## Analytics for AI agents
-
-Add [`AsTool`](laravel-ai.md) to an index and its `tools()` suite includes an `analytics` tool. The agent picks a `widget` — `kpi`, `kpi_delta`, `trend`, `cumulative`, `grouped_trend`, `breakdown`, `distribution`, `percentiles`, `stats`, `table`, `funnel`, `heatmap`, `retention` or `geo` — and arguments; "give me sales this month as a chart" becomes a `trend` call, and "show it per month instead" is the **same call with `interval: month`** — the agent adapts one argument and re-runs. The tool's description carries a grounded example per widget (using the index's own fields), so the model sees the exact argument shape each one expects.
+An index that uses the [`AsTool`](laravel-ai.md) trait includes an `analytics` tool in `tools()`. The agent selects a `widget`, such as `trend`, and passes its arguments.
 
 ```php
 class OrderIndex extends SigmieIndex
@@ -408,10 +543,20 @@ class OrderIndex extends SigmieIndex
 public function tools(): array
 {
     return [
-        // search, discover_filter_values, sample_documents, describe_index, analytics
         ...app(OrderIndex::class)->tools("user_id:{$this->user->id}"),
     ];
 }
 ```
 
-The agent supplies the `date_field` (validated against the index's date fields), the `metric`/`field` (from its numeric fields), and optionally a `range` (`this_month`, `last_7_days`, …) and `timezone_offset` (minutes east of UTC) so charts land in the user's local time. When the user asks for a metric/chart and examples or rows behind it, the agent can set `include_hits=1`, plus optional `hit_fields`, `hit_sort`, `hit_limit`, and `hit_filters`. As with the other tools, the optional `$baseFilter` is server-controlled scoping — AND-ed into every query and never taken from the agent — so an agent can only ever see its own slice of the data.
+Tool arguments that differ from the PHP API:
+
+| Argument                                            | Meaning                                                                    |
+| --------------------------------------------------- | -------------------------------------------------------------------------- |
+| `date_field`                                        | The timeline. Must be a date field of the index.                           |
+| `range`, `timezone_offset`                          | A period name such as `this_month` or `last_7_days`, and minutes east of UTC. |
+| `field: null`                                       | A count with no field, for example on `grouped_trend`.                     |
+| `sort`                                              | `"metric:asc"` or `"metric:desc"` on ranked widgets. `"field:direction"` on `table`. |
+| `group_by_fields`                                   | Two or more compatible fields for `multi_breakdown` and `union_breakdown`. |
+| `include_hits`, `hit_fields`, `hit_sort`, `hit_limit`, `hit_filters` | Return the matching documents with the widget.                |
+
+Your code sets the `$baseFilter` argument of `tools()`, never the agent. Sigmie adds it with AND to every query, so the agent sees only that slice.

@@ -90,7 +90,8 @@ class ParserCoverageTest extends TestCase
         $this->assertSame('default_with_synonyms', $text->searchAnalyzer());
         $this->assertTrue($text->hasFields());
         $this->assertTrue($text->isSortable());
-        $this->assertFalse($text->isKeyword());
+        $this->assertTrue($text->isKeyword());
+        $this->assertSame('suggest.keyword', $text->keywordName());
 
         $category = (new Text('category'))->unstructuredText()
             ->keyword();
@@ -106,12 +107,10 @@ class ParserCoverageTest extends TestCase
         $this->assertSame('category', $category->originalName());
         $this->assertSame(['published' => 1], $category->facets([
             'category' => [
-                'category' => [
-                    'buckets' => [
-                        [
-                            'key' => 'published',
-                            'doc_count' => 1,
-                        ],
+                'buckets' => [
+                    [
+                        'key' => 'published',
+                        'doc_count' => 1,
                     ],
                 ],
             ],
@@ -275,17 +274,18 @@ class ParserCoverageTest extends TestCase
             ],
         ], $missingParser->errors());
 
-        $parser->parseFilterString("category:'books' AND type:'guide'");
-        $parser->parseFilterString("(category:'books')");
-        $parser->parse('title');
+        $this->assertSame('', $parser->parseFilterString("category:'books' AND type:'guide'"));
+        $this->assertStringContainsString('cannot contain logical operators', $parser->errors()[0]['message']);
 
+        $this->assertSame('', $parser->parseFilterString("(category:'books')"));
         $this->assertSame([
-            [
-                'message' => "Facet filter string cannot contain logical operators (AND, OR, AND NOT): 'category:'books' AND type:'guide''",
-            ],
             [
                 'message' => "Facet filter string cannot contain parenthetic expressions: '(category:'books')'",
             ],
+        ], $parser->errors());
+
+        $parser->parse('title');
+        $this->assertSame([
             [
                 'message' => "The field 'title' does not support facets.",
                 'field' => 'title',

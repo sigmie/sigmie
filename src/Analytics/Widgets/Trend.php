@@ -26,6 +26,7 @@ class Trend extends Widget
         protected string $field,
         protected CalendarInterval|string $interval,
         protected ?string $timeZone = null,
+        protected int $minDocCount = 0,
     ) {
         parent::__construct($name, $dateField, $from, $to, $dateFormat);
     }
@@ -33,8 +34,8 @@ class Trend extends Widget
     public function toRaw(): array
     {
         return $this->scoped($this->name, $this->from, $this->to, function (Aggs $aggs): void {
-            $aggs->dateHistogram('series', $this->dateField, $this->interval, extendedBounds: $this->extendedBounds(), timeZone: $this->timeZone)
-                ->aggregate(fn (Aggs $sub) => $this->metric->apply($sub, 'metric', $this->field));
+            $this->windowHistogram($aggs, 'series', $this->interval, $this->timeZone, $this->minDocCount)
+                ->aggregate(fn (Aggs $sub) => $this->metric->apply($sub, 'metric', $this->field, $this->countedField()));
         })->toRaw();
     }
 
@@ -45,7 +46,7 @@ class Trend extends Widget
         return [
             'type' => 'trend',
             'metric' => $this->metric->value,
-            'field' => $this->field,
+            'field' => $this->metric->resultField($this->field, $this->countedField()),
             'interval' => $this->interval instanceof CalendarInterval ? $this->interval->name : $this->interval,
             'series' => $buckets->map(fn (array $bucket): array => [
                 'label' => $bucket['key_as_string'],

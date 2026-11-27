@@ -33,10 +33,10 @@ class Cumulative extends Widget
     public function toRaw(): array
     {
         return $this->scoped($this->name, $this->from, $this->to, function (Aggs $aggs): void {
-            $aggs->dateHistogram('series', $this->dateField, $this->interval, extendedBounds: $this->extendedBounds(), timeZone: $this->timeZone)
+            $this->windowHistogram($aggs, 'series', $this->interval, $this->timeZone)
                 ->aggregate(function (Aggs $sub): void {
-                    $this->metric->apply($sub, 'metric', $this->field);
-                    $sub->cumulativeSum('cumulative', 'metric');
+                    $this->metric->apply($sub, 'metric', $this->field, $this->countedField());
+                    $sub->cumulativeSum('cumulative', $this->metric->pipelinePath('metric', $this->field));
                 });
         })->toRaw();
     }
@@ -48,11 +48,11 @@ class Cumulative extends Widget
         return [
             'type' => 'cumulative',
             'metric' => $this->metric->value,
-            'field' => $this->field,
+            'field' => $this->metric->resultField($this->field, $this->countedField()),
             'interval' => $this->interval instanceof CalendarInterval ? $this->interval->name : $this->interval,
             'series' => $buckets->map(fn (array $bucket): array => [
                 'label' => $bucket['key_as_string'],
-                'value' => $bucket['cumulative']['value'] ?? null,
+                'value' => Metric::Sum->extract($bucket['cumulative'] ?? []),
             ])->toArray(),
         ];
     }

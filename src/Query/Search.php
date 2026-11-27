@@ -7,12 +7,18 @@ namespace Sigmie\Query;
 use Http\Promise\Promise;
 use Sigmie\Base\APIs\Search as APIsSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
+use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\Responses\Search as SearchResponse;
 use Sigmie\Mappings\Properties;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\SortParser;
+use Sigmie\Query\Contracts\Aggs as AggsContract;
 use Sigmie\Query\Contracts\QueryClause as Query;
 use Sigmie\Query\Queries\MatchAll;
+
+use function Sigmie\Functions\merge_named;
+use function Sigmie\Functions\object_map;
+use function Sigmie\Functions\sort_clauses;
 
 class Search
 {
@@ -28,7 +34,9 @@ class Search
 
     protected int|string $size = 500;
 
-    protected array $fields = [];
+    protected array|false $fields = [];
+
+    protected array $except = [];
 
     protected array $raw = [];
 
@@ -44,13 +52,13 @@ class Search
 
     protected string $scriptScoreBoostMode = 'multiply';
 
-    protected Query $query;
+    protected ?Query $query = null;
 
     protected ?Query $postFilter = null;
 
     protected ?Properties $filterParserProperties = null;
 
-    protected Aggs $aggs;
+    protected AggsContract $aggs;
 
     protected Suggest $suggest;
 
@@ -58,8 +66,12 @@ class Search
     {
         $this->setElasticsearchConnection($connection);
 
-        $this->query = new MatchAll;
         $this->aggs = new Aggs;
+    }
+
+    public function __clone(): void
+    {
+        $this->aggs = clone $this->aggs;
     }
 
     // public function properties(NewProperties|Properties $props): self
@@ -112,7 +124,7 @@ class Search
 
     public function knn(array $knn): self
     {
-        $this->knn = $knn;
+        $this->knn = is_int(array_key_first($knn)) ? array_values($knn) : $knn;
 
         return $this;
     }
@@ -142,9 +154,20 @@ class Search
         return $this;
     }
 
-    public function fields(array $fields): self
+    public function fields(array|false $fields): self
     {
-        $this->fields = $fields;
+        $this->fields = $fields === false ? false : array_values($fields);
+
+        return $this;
+    }
+
+    /**
+     * Source fields to drop from every hit. Elasticsearch applies excludes after fields(), so an
+     * excluded path stays hidden even when a broader included field contains it.
+     */
+    public function except(array $fields): self
+    {
+        $this->except = array_values($fields);
 
         return $this;
     }
@@ -175,6 +198,12 @@ class Search
         $this->sort = $sort;
 
         return $this;
+    }
+
+    /** @return list<mixed> */
+    public static function sortClauses(array $sort): array
+    {
+        return sort_clauses($sort);
     }
 
     public function sortString(string $sort): static
@@ -211,7 +240,9 @@ class Search
 
         $request = $this->searchRequest($this->index, $raw);
 
-        return $this->elasticsearchConnection->promise($request);
+        return $this->elasticsearchConnection->promise($request)->then(
+            fn (ElasticsearchResponse $response): SearchResponse => $this->typedResponse($request, $response, SearchResponse::class),
+        );
     }
 
     public function getDSL(): array
@@ -247,25 +278,62 @@ class Search
         return $this->postFilter($parser->parse($filterString));
     }
 
-    public function aggs(Aggs $aggs): static
+    public function aggs(AggsContract $aggs): static
     {
         $this->aggs = $aggs;
 
         return $this;
     }
 
+    private function hasOrderedHighlightFields(array $fields): bool
+    {
+        // Elasticsearch also accepts a list of single-field objects to specify highlight order.
+        foreach ($fields as $field) {
+            $entry = (array) $field;
+            if (count($entry) !== 1) {
+                return false;
+            }
+
+            // These two field options also take an object. An explicit object
+            // entry disambiguates an ordered field with either reserved name.
+            if (is_array($field) && in_array(array_key_first($entry), ['highlight_query', 'options'], true)) {
+                return false;
+            }
+
+            $options = reset($entry);
+            if ($options === [] && (is_object($field) || ! in_array(array_key_first($entry), ['pre_tags', 'post_tags', 'matched_fields'], true))) {
+                continue;
+            }
+
+            if (! is_object($options) && (! is_array($options) || array_is_list($options))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function toRaw(): array
     {
-        $result = [
-            'query' => $this->query->toRaw(),
+        $query = $this->query;
+        $hasRetriever = isset($this->raw['retriever']);
+        if (! $hasRetriever && $this->knn === [] && ! isset($this->raw['knn'])) {
+            $query ??= new MatchAll;
+        }
+
+        $result = merge_named([
+            ...$query instanceof Query ? ['query' => $query->toRaw()] : [],
             'from' => $this->from,
             'size' => $this->size,
             'min_score' => $this->minScore,
-            'sort' => $this->sort,
-            ...$this->raw,
-        ];
+            ...! $hasRetriever || $this->sort !== [] ? ['sort' => $this->sort] : [],
+        ], $this->raw);
 
-        if ($this->fields !== []) {
+        if ($this->fields === false) {
+            $result['_source'] = false;
+        } elseif ($this->except !== []) {
+            $result['_source'] = ['includes' => $this->fields, 'excludes' => $this->except];
+        } elseif ($this->fields !== []) {
             $result['_source'] = $this->fields;
         }
 
@@ -274,10 +342,27 @@ class Search
         }
 
         if ($this->highlight ?? false) {
-            $result['highlight'] = $this->highlight;
+            $highlight = $this->highlight;
+
+            $fields = $highlight['fields'] ?? null;
+            if (is_array($fields) && $fields !== []) {
+                $fieldOptions = static fn (mixed $options): mixed => $options === [] ? (object) [] : $options;
+                if (array_filter(array_keys($fields), is_string(...)) === [] && $this->hasOrderedHighlightFields($fields)) {
+                    $highlight['fields'] = array_map(
+                        static fn (mixed $field): mixed => is_object($field)
+                            ? (object) array_map($fieldOptions, (array) $field)
+                            : object_map(array_map($fieldOptions, $field)),
+                        array_values($fields),
+                    );
+                } else {
+                    $highlight['fields'] = object_map(array_map($fieldOptions, $fields));
+                }
+            }
+
+            $result['highlight'] = $highlight;
         }
 
-        if ($this->trackTotalHits ?? false) {
+        if (isset($this->trackTotalHits)) {
             $result['track_total_hits'] = $this->trackTotalHits;
         }
 
@@ -288,7 +373,7 @@ class Search
         if (isset($this->aggs)) {
             $aggsRaw = $this->aggs->toRaw();
             if ($aggsRaw !== []) {
-                $result['aggs'] = $aggsRaw;
+                $result['aggs'] = merge_named((array) ($result['aggs'] ?? []), $aggsRaw);
             }
         }
 
@@ -296,6 +381,28 @@ class Search
             $result['post_filter'] = $this->postFilter->toRaw();
         }
 
-        return $result;
+        return self::normalizeBody($result);
+    }
+
+    public static function normalizeBody(array $body): array
+    {
+        if (isset($body['sort']) && is_array($body['sort'])) {
+            $body['sort'] = self::sortClauses($body['sort']);
+        }
+
+        foreach (['aggs', 'aggregations', 'script_fields', 'runtime_mappings', 'suggest'] as $key) {
+            if (isset($body[$key]) && is_array($body[$key]) && array_is_list($body[$key])) {
+                $body[$key] = (object) $body[$key];
+            }
+        }
+
+        if (isset($body['indices_boost']) && is_array($body['indices_boost'])) {
+            $body['indices_boost'] = array_values(array_map(
+                static fn (mixed $boost): mixed => is_array($boost) ? object_map($boost) : $boost,
+                $body['indices_boost'],
+            ));
+        }
+
+        return $body;
     }
 }

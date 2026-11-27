@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use Sigmie\Helpers\ImageHelper;
-use Sigmie\Mappings\NewSemanticField;
 
 class Image extends Text
 {
@@ -29,7 +28,7 @@ class Image extends Text
     public function validate(string $key, mixed $value): array
     {
         // Handle multiple images (array)
-        if (is_array($value)) {
+        if (is_array($value) && array_is_list($value)) {
             foreach ($value as $imageSource) {
                 if (! is_string($imageSource)) {
                     return [false, sprintf('The field %s contains a non-string value in the array', $key)];
@@ -70,22 +69,6 @@ class Image extends Text
         }
 
         return ImageHelper::isFilePath($value);
-    }
-
-    /**
-     * Override semantic to mark as image field type for proper similarity handling
-     */
-    public function semantic(
-        string $api,
-        int $accuracy = 3,
-        int $dimensions = 256,
-    ): NewSemanticField {
-        return $this->newSemantic(
-            fn ($semantic) => $semantic
-                ->accuracy($accuracy, $dimensions)
-                ->api($api)
-                ->fieldType('image')
-        );
     }
 
     /**

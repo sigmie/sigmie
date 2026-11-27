@@ -7,32 +7,39 @@ namespace Sigmie\AI;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
+use Sigmie\Document\Document;
+use Sigmie\Document\Hit;
+use Sigmie\Query\Queries\Term\IDs;
 use Sigmie\SigmieIndex;
 
 /**
  * Fetches specific documents from the index by their `_id`. Use after search_index or
  * sample_documents surface an `_id` the agent wants to read in full.
  *
- * Reuses the index's `collect()->getMany()` multi-get (Elasticsearch `_mget`). IDs that do not
- * exist are simply absent from the returned documents.
+ * Runs an ids-filtered search inside the `$baseFilters` scope and returns hits in the requested
+ * order. IDs that do not exist, or fall outside the scope, are simply absent from the result.
  */
 class SigmieGetDocumentsTool implements Tool
 {
     use HandlesToolErrors;
+    use NamesIndexTools;
+    use ScopesToBaseFilters;
+    use SelectsOutputFields;
 
     public function __construct(
         protected SigmieIndex $index,
+        protected string $baseFilters = '',
     ) {}
 
     public function name(): string
     {
-        return 'get_documents';
+        return $this->toolName('get_documents');
     }
 
     public function description(): string
     {
         return sprintf(
-            "Retrieve specific documents from the '%s' index by their `_id`. Pass the ids you already learned from search_index or sample_documents. Ids that do not exist are omitted from the result.",
+            sprintf("Retrieve specific documents from the '%%s' index by their `_id`. Pass the ids you already learned from %s or %s. Ids that do not exist are omitted from the result.", $this->toolName('search_index'), $this->toolName('sample_documents')),
             $this->index->name()
         );
     }
@@ -40,9 +47,10 @@ class SigmieGetDocumentsTool implements Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'ids' => $schema->array()->items($schema->string())
+            'ids' => $schema->array()->min(1)->max(100)->items($schema->string()->min(1))
                 ->description('Document ids to retrieve (1-100)')
                 ->required(),
+            'fields' => $this->outputFieldsSchema($schema),
         ];
     }
 
@@ -61,6 +69,27 @@ class SigmieGetDocumentsTool implements Tool
             fn ($id): bool => is_string($id) && $id !== '',
         )), 0, 100);
 
-        return $this->index->collect()->getMany($ids);
+        $search = $this->index->newSearch()
+            ->queryString('')
+            ->filterQuery(new IDs($ids))
+            ->retrieve($this->outputFields($request['fields'] ?? null))
+            ->except($this->index->exceptFromTools())
+            ->size(count($ids));
+
+        $this->applyBaseFilters($search);
+
+        $order = [];
+        foreach ($ids as $position => $id) {
+            if (! array_key_exists($id, $order)) {
+                $order[$id] = $position;
+            }
+        }
+
+        $hits = $search->get()->hits();
+
+        usort($hits, fn (Hit $a, Hit $b): int => $order[$a->_id] <=> $order[$b->_id]);
+
+        // Documents serialise to {_id, _source}; a Hit would add its `_score`.
+        return array_map(fn (Hit $hit): Document => new Document($hit->_source, $hit->_id), $hits);
     }
 }

@@ -17,7 +17,10 @@ class Range extends Bucket
         return [
             'range' => [
                 'field' => $this->field,
-                'ranges' => $this->ranges,
+                'ranges' => array_map(
+                    static fn (mixed $range): mixed => $range === [] ? (object) [] : $range,
+                    array_values($this->ranges),
+                ),
             ],
         ];
     }

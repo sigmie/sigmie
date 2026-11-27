@@ -6,6 +6,7 @@ namespace Sigmie\Base\APIs;
 
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
+use Sigmie\Base\ElasticsearchException;
 use Sigmie\Base\Http\ElasticsearchRequest;
 
 trait Count
@@ -14,10 +15,17 @@ trait Count
 
     protected function countAPICall(string $indexName): ElasticsearchResponse
     {
-        $uri = Uri::withQueryValue(new Uri(sprintf('/%s/_count', $indexName)), 'format', 'json');
+        $uri = Uri::withQueryValue($this->indexUri($indexName, '_count'), 'format', 'json');
 
         $esRequest = new ElasticsearchRequest('GET', $uri);
 
-        return $this->elasticsearchCall($esRequest);
+        $response = $this->elasticsearchCall($esRequest);
+
+        $shards = $response->json('_shards') ?? [];
+        if (($shards['failed'] ?? 0) > 0 || (isset($shards['successful'], $shards['total']) && $shards['successful'] < $shards['total'])) {
+            throw new ElasticsearchException($response->json(), $response->code());
+        }
+
+        return $response;
     }
 }

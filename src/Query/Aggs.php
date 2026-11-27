@@ -20,6 +20,7 @@ use Sigmie\Query\Aggregations\Bucket\SignificantText;
 use Sigmie\Query\Aggregations\Bucket\Sort;
 use Sigmie\Query\Aggregations\Bucket\TermFilter;
 use Sigmie\Query\Aggregations\Bucket\Terms;
+use Sigmie\Query\Aggregations\Bucket\UnionTerms;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Aggregations\Enums\MinimumInterval;
 use Sigmie\Query\Aggregations\Metrics\Avg;
@@ -37,6 +38,7 @@ use Sigmie\Query\Aggregations\Metrics\TopHits;
 use Sigmie\Query\Aggregations\Metrics\ValueCount;
 use Sigmie\Query\Aggregations\Pipeline\CumulativeSum;
 use Sigmie\Query\Contracts\Aggs as AggsInterface;
+use Sigmie\Query\Queries\Term\Term as TermQuery;
 
 class Aggs implements AggsInterface
 {
@@ -80,9 +82,13 @@ class Aggs implements AggsInterface
     public function termFilter(
         string $name,
         string $field,
-        string $term,
+        int|string|bool|float $term,
     ): TermFilter {
-        return $this->filter($name, $field);
+        $aggregation = new TermFilter($name, new TermQuery($field, $term));
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
     }
 
     public function rangeFilter(
@@ -127,7 +133,7 @@ class Aggs implements AggsInterface
     public function histogram(
         string $name,
         string $field,
-        int $interval,
+        int|float $interval,
         int $minDocCount = 0,
         ?array $extendedBounds = null
     ): Histogram {
@@ -220,13 +226,26 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
+    /**
+     * @param  list<string>  $fields
+     */
+    public function unionTerms(string $name, array $fields): UnionTerms
+    {
+        $aggregation = new UnionTerms($name, $fields);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
     public function topHits(
         string $name,
         int $size = 1,
         ?array $sourceIncludes = null,
         ?array $sort = null,
+        array $sourceExcludes = [],
     ): TopHits {
-        $aggregation = new TopHits($name, $sort, $sourceIncludes, $size);
+        $aggregation = new TopHits($name, $sort, $sourceIncludes, $size, $sourceExcludes);
 
         $this->aggs[] = $aggregation;
 
@@ -321,9 +340,9 @@ class Aggs implements AggsInterface
         return $aggregation;
     }
 
-    public function rate(string $name, string $field): Rate
+    public function rate(string $name, string $field, ?string $unit = null): Rate
     {
-        $aggregation = new Rate($name, $field);
+        $aggregation = new Rate($name, $field, $unit);
 
         $this->aggs[] = $aggregation;
 
@@ -393,7 +412,10 @@ class Aggs implements AggsInterface
         $res = [];
 
         foreach ($this->aggs as $agg) {
-            $res = [...$res, ...$agg->toRaw()];
+            foreach ($agg->toRaw() as $name => $body) {
+                // Array spread would renumber a name "1" to 0.
+                $res[$name] = $body;
+            }
         }
 
         return $res;

@@ -8,6 +8,14 @@ use PHPUnit\Framework\Assert as PHPUnit;
 
 trait Contracts
 {
+    private function analysisComponent(string $kind, string $name): array
+    {
+        $components = $this->data['settings']['index']['analysis'][$kind] ?? [];
+        PHPUnit::assertArrayHasKey($name, $components, sprintf("Missing %s '%s' in index %s.", $kind, $name, $this->name));
+
+        return $components[$name];
+    }
+
     public static function assertContains($needle, iterable $haystack, string $message): void
     {
         PHPUnit::assertContains($needle, $haystack, $message);

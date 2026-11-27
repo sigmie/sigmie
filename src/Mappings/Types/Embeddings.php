@@ -24,6 +24,8 @@ class Embeddings extends Object_
         $newProperties = new NewProperties;
         $newProperties->propertiesName('_embeddings');
 
+        $tree = [];
+
         foreach ($names as $name) {
             $type = $this->sourceProperties->get($name);
             if (! $type instanceof Text) {
@@ -34,29 +36,61 @@ class Embeddings extends Object_
                 continue;
             }
 
-            $newProperties->object($name, function (NewProperties $props) use ($type): void {
-                $type->vectorFields()
-                    ->map(function (Type $vectorField) use ($props): void {
-                        // Use driver conversion for vector types
-                        if ($vectorField instanceof BaseVector) {
-                            $field = $this->driver->vectorField($vectorField);
-                            $props->type($field);
-                        } elseif ($vectorField instanceof NestedVector) {
-                            $field = $this->driver->nestedVectorField($vectorField);
-                            $props->type($field);
-                            // @codeCoverageIgnoreStart
-                        } else {
-                            // For other types, use directly
-                            $props->type($vectorField);
-                        }
+            $segments = explode('.', $name);
+            $cursor = &$tree;
+            $last = count($segments) - 1;
 
-                        // @codeCoverageIgnoreEnd
-                    });
-            });
+            foreach ($segments as $index => $segment) {
+                if (! isset($cursor[$segment])) {
+                    $cursor[$segment] = ['type' => null, 'children' => []];
+                }
+
+                if ($index === $last) {
+                    $cursor[$segment]['type'] = $type;
+                    break;
+                }
+
+                $cursor = &$cursor[$segment]['children'];
+            }
+
+            unset($cursor);
         }
+
+        $write = function (NewProperties $props, array $nodes) use (&$write): void {
+            foreach ($nodes as $name => $node) {
+                $props->object((string) $name, function (NewProperties $child) use ($node, $write): void {
+                    if ($node['type'] instanceof Text) {
+                        $this->addVectorFields($child, $node['type']);
+                    }
+
+                    if ($node['children'] !== []) {
+                        $write($child, $node['children']);
+                    }
+                });
+            }
+        };
+
+        $write($newProperties, $tree);
 
         $props = $newProperties->get();
 
         parent::__construct('_embeddings', $props);
+    }
+
+    private function addVectorFields(NewProperties $props, Text $type): void
+    {
+        $type->vectorFields()
+            ->map(function (Type $vectorField) use ($props): void {
+                if ($vectorField instanceof BaseVector) {
+                    $props->type($this->driver->vectorField($vectorField));
+                } elseif ($vectorField instanceof NestedVector) {
+                    $props->type($this->driver->nestedVectorField($vectorField));
+                    // @codeCoverageIgnoreStart
+                } else {
+                    $props->type($vectorField);
+                }
+
+                // @codeCoverageIgnoreEnd
+            });
     }
 }

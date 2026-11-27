@@ -18,6 +18,8 @@ interface ResponseFormater
 
     public function aggregations(): array;
 
+    public function facetAggregations(): array;
+
     public function aggregation(string $dot): mixed;
 
     public function errors(array $errors): static;

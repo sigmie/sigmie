@@ -54,10 +54,7 @@ trait SigmieIndexTrait
      */
     public function delete(): void
     {
-        $index = $this->index();
-        if ($index !== null) {
-            $this->sigmie->delete($this->indexName);
-        }
+        $this->sigmie->deleteIfExists($this->indexName);
     }
 
     /**
@@ -69,7 +66,7 @@ trait SigmieIndexTrait
 
         // @codeCoverageIgnoreStart
         if ($existingIndex instanceof AliasedIndex) {
-            return $existingIndex->update($callback);
+            return $existingIndex->update(fn (NewIndex $builder) => $callback($builder->properties($this->blueprint)));
         }
 
         // @codeCoverageIgnoreEnd
@@ -144,14 +141,18 @@ trait SigmieIndexTrait
             {
                 $index = $indexName ?? $this->defaultIndex;
 
-                return $this->multiSearch->newSearch($index)->properties($this->properties);
+                $search = $this->multiSearch->newSearch($index);
+
+                return $index === $this->defaultIndex ? $search->properties($this->properties) : $search;
             }
 
             public function newQuery(?string $indexName = null): NewQuery
             {
                 $index = $indexName ?? $this->defaultIndex;
 
-                return $this->multiSearch->newQuery($index);
+                $query = $this->multiSearch->newQuery($index);
+
+                return $index === $this->defaultIndex ? $query->properties($this->properties) : $query;
             }
 
             public function raw(string $indexName, array $query): RawQuery
@@ -171,7 +172,7 @@ trait SigmieIndexTrait
      */
     public function newQuery(): NewQuery
     {
-        return $this->sigmie->newQuery($this->indexName);
+        return $this->sigmie->newQuery($this->indexName)->properties($this->blueprint);
     }
 
     /**
@@ -198,6 +199,6 @@ trait SigmieIndexTrait
      */
     public function exists(): bool
     {
-        return $this->index() !== null;
+        return $this->sigmie->indexAPICall($this->indexName.'?allow_no_indices=false', 'HEAD')->code() === 200;
     }
 }

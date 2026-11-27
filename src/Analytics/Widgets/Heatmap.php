@@ -40,7 +40,7 @@ class Heatmap extends Widget
                 ->aggregate(function (Aggs $sub): void {
                     $sub->terms('cols', $this->colField)
                         ->size($this->colLimit)
-                        ->aggregate(fn (Aggs $m) => $this->metric->apply($m, 'metric', $this->field));
+                        ->aggregate(fn (Aggs $m) => $this->metric->apply($m, 'metric', $this->field, $this->countedField()));
                 });
         })->toRaw();
     }
@@ -52,14 +52,14 @@ class Heatmap extends Widget
         return [
             'type' => 'heatmap',
             'metric' => $this->metric->value,
-            'field' => $this->field,
+            'field' => $this->metric->resultField($this->field, $this->countedField()),
             'row_field' => $this->rowField,
             'col_field' => $this->colField,
             'rows' => $rows->map(fn (array $row): array => [
-                'key' => $row['key'],
+                'key' => self::termsKey($row),
                 'count' => $row['doc_count'] ?? 0,
                 'cells' => array_map(fn (array $cell): array => [
-                    'key' => $cell['key'],
+                    'key' => self::termsKey($cell),
                     'value' => $this->metric->extract($cell['metric'] ?? []),
                     'count' => $cell['doc_count'] ?? 0,
                 ], $row['cols']['buckets'] ?? []),

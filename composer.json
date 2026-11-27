@@ -1,8 +1,14 @@
 {
     "name": "sigmie/sigmie",
-    "description": "Sigmie Elasticsearch utils",
+    "description": "Sigmie is a PHP library for Elasticsearch and OpenSearch that combines keyword and vector search through a fluent API.",
+    "homepage": "https://sigmie.com",
     "keywords": [
         "elasticsearch",
+        "opensearch",
+        "php",
+        "hybrid-search",
+        "vector-search",
+        "semantic-search",
         "sigmie"
     ],
     "type": "library",

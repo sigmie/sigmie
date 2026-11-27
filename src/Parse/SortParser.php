@@ -6,21 +6,27 @@ namespace Sigmie\Parse;
 
 use Sigmie\Mappings\Types\GeoPoint;
 
+use function Sigmie\Functions\keyed;
+
 class SortParser extends Parser
 {
     public function parse(string $string): array
     {
         $this->errors = [];
 
-        $string = trim($string);
+        $sorts = preg_split('/\s+/u', trim($string), flags: PREG_SPLIT_NO_EMPTY);
 
-        if ($string === '') {
+        if ($sorts === false) {
+            $this->handleError('Sort expression contains invalid UTF-8.');
+
+            return [];
+        }
+
+        if ($sorts === []) {
             return ['_score'];
         }
 
-        $sorts = explode(' ', $string);
         $sort = [];
-        $hasGeoDistance = false;
 
         foreach ($sorts as $match) {
             if (in_array($match, ['_score', '_doc'])) {
@@ -32,7 +38,7 @@ class SortParser extends Parser
             // A bare "asc"/"desc" token means the direction was written with a space
             // (SQL-style "field asc") instead of a colon. Point to the correct form so
             // the caller (or an agent) can fix it rather than seeing "Field asc does not exist".
-            if (in_array($match, ['asc', 'desc'], true)) {
+            if (in_array($match, ['asc', 'desc'], true) && ! $this->fieldExists($match)) {
                 $this->handleError(sprintf(
                     "Invalid sort '%s': attach the direction to its field with a colon, e.g. 'field:%s' (not 'field %s'). Use 'field:asc' or 'field:desc', and separate multiple sorts with spaces, e.g. 'price:asc name:desc'.",
                     $string,
@@ -71,7 +77,7 @@ class SortParser extends Parser
             }
 
             if (preg_match(
-                '/(?P<field>\w+(\.\w+)*(\.\w+)*)\[(?P<latitude>-?\d+(\.\d+)?),(?P<longitude>-?\d+(\.\d+)?)\]:(?P<unit>\w+):(?P<order>\w+)/',
+                '/\A(?P<field>'.self::FIELD_PATH.')\[(?P<latitude>[+-]?'.self::DECIMAL.'),(?P<longitude>[+-]?'.self::DECIMAL.')\]:(?P<unit>\w+):(?P<order>\w+)\z/u',
                 $match,
                 $matches
             )) {
@@ -85,7 +91,7 @@ class SortParser extends Parser
                     continue;
                 }
 
-                $field = $matches['field'];
+                $field = $fieldType->fullPath();
                 $unit = $matches['unit'];
                 $order = $matches['order'];
                 $latitude = $matches['latitude'];
@@ -115,43 +121,43 @@ class SortParser extends Parser
                     continue;
                 }
 
-                $hasGeoDistance = true;
-                if ($nestedPath = $fieldType->nestedPath()) {
-                    $sort[] = [
-                        '_geo_distance' => [
-                            'nested' => [
-                                'path' => $nestedPath,
-                            ],
-                            $field => [
-                                'lat' => (float) $latitude,
-                                'lon' => (float) $longitude,
-                            ],
-                            'order' => $order,
-                            'unit' => $unit,
-                        ],
-                    ];
-                } else {
-                    $sort[] = [
-                        '_geo_distance' => [
-                            $field => [
-                                'lat' => (float) $latitude,
-                                'lon' => (float) $longitude,
-                            ],
-                            'order' => $order,
-                            'unit' => $unit,
-                        ],
-                    ];
+                $latitude = (float) $latitude;
+                $longitude = (float) $longitude;
+                if (($field === 'order' && $order !== 'asc') || ($field === 'unit' && $unit !== 'm')) {
+                    $sort[] = $this->geoScriptSort($field, $latitude, $longitude, $unit, $order);
+
+                    continue;
                 }
+
+                // An object under "nested" is parsed as nested-sort options.
+                $geoSort = [
+                    $field => $field === 'nested' ? [$longitude, $latitude] : ['lat' => $latitude, 'lon' => $longitude],
+                ] + ['order' => $order, 'unit' => $unit];
+
+                if (($nestedPath = $fieldType->nestedPath()) !== null) {
+                    $geoSort['nested'] = ['path' => $nestedPath];
+                }
+
+                $sort[] = ['_geo_distance' => $geoSort];
 
                 continue;
             }
 
-            if (str_contains($match, ':')) {
-                [$field, $direction] = explode(':', $match);
-            } else {
+            [$field, $direction] = array_pad(explode(':', $match, 2), 2, 'asc');
 
-                $field = $match;
-                $direction = 'asc';
+            if (! in_array($direction, ['asc', 'desc'], true)) {
+                $this->handleError(sprintf("Invalid direction '%s' for field '%s'. Use 'asc' or 'desc'.", $direction, $field), [
+                    'field' => $field,
+                    'direction' => $direction,
+                ]);
+
+                continue;
+            }
+
+            if ($field === '_doc') {
+                $sort[] = ['_doc' => $direction];
+
+                continue;
             }
 
             $type = $this->properties->get($field);
@@ -163,7 +169,7 @@ class SortParser extends Parser
                 continue;
             }
 
-            if ($nestedPath = $type->nestedPath()) {
+            if (($nestedPath = $type->nestedPath()) !== null) {
                 $sort[] = [
                     $sortableName => [
                         'nested' => [
@@ -173,10 +179,42 @@ class SortParser extends Parser
                     ],
                 ];
             } else {
-                $sort[] = [$sortableName => $direction];
+                $sort[] = keyed($sortableName, $direction);
             }
         }
 
         return $sort;
+    }
+
+    // A top-level field named "order" or "unit" cannot share its JSON key
+    // with the sort option. Match native arc distance and multi-value mode.
+    private function geoScriptSort(string $field, float $lat, float $lon, string $unit, string $order): array
+    {
+        $meters = match ($unit) {
+            'km' => 1000, 'm' => 1, 'cm' => 0.01, 'mm' => 0.001,
+            'mi' => 1609.344, 'yd' => 0.9144, 'ft' => 0.3048,
+            'in' => 0.0254, 'nmi' => 1852,
+        };
+
+        return ['_script' => [
+            'type' => 'number',
+            'order' => $order,
+            'script' => [
+                'source' => <<<'PAINLESS'
+                    def points = doc[params.field];
+                    if (points.size() == 0) return Double.POSITIVE_INFINITY;
+                    double best = params.ascending ? Double.POSITIVE_INFINITY : 0.0;
+                    for (def point : points) {
+                        double a = Math.sin(Math.toRadians(point.lat - params.lat) / 2);
+                        double b = Math.sin(Math.toRadians(point.lon - params.lon) / 2);
+                        double h = a*a + Math.cos(Math.toRadians(params.lat))*Math.cos(Math.toRadians(point.lat))*b*b;
+                        double distance = 12742017.5428 * Math.asin(Math.min(1.0, Math.sqrt(h)));
+                        best = params.ascending ? Math.min(best, distance) : Math.max(best, distance);
+                    }
+                    return best / params.meters;
+                    PAINLESS,
+                'params' => ['field' => $field, 'lat' => $lat, 'lon' => $lon, 'ascending' => $order === 'asc', 'meters' => $meters],
+            ],
+        ]];
     }
 }

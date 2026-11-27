@@ -6,6 +6,7 @@ namespace Sigmie\Query\Queries\Text;
 
 use Sigmie\Query\Contracts\QueryClause;
 use Sigmie\Query\Queries\Query;
+use Sigmie\Search\InnerHits;
 
 class Nested extends Query
 {
@@ -13,11 +14,12 @@ class Nested extends Query
         protected string $path,
         protected QueryClause $query,
         protected string $scoreMode = 'avg',
+        protected ?InnerHits $innerHits = null,
     ) {}
 
     public function toRaw(): array
     {
-        return [
+        $raw = [
             'nested' => [
                 'path' => $this->path,
                 'score_mode' => $this->scoreMode,
@@ -25,5 +27,11 @@ class Nested extends Query
                 'boost' => $this->boost,
             ],
         ];
+
+        if ($innerHits = $this->innerHits?->clause($this->path)) {
+            $raw['nested']['inner_hits'] = $innerHits;
+        }
+
+        return $raw;
     }
 }

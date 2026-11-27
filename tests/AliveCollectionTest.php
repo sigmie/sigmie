@@ -11,8 +11,11 @@ use DateTime;
 use InvalidArgumentException;
 use IteratorAggregate;
 use Sigmie\Base\ElasticsearchException;
+use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Contracts\CollectionHook;
 use Sigmie\Document\Document;
+use Sigmie\Index\AliasedIndex;
+use Sigmie\Index\Index;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Sigmie;
@@ -20,6 +23,200 @@ use Sigmie\Testing\TestCase;
 
 class AliveCollectionTest extends TestCase
 {
+    /** @var list<AliasedIndex> */
+    private array $roundtripIndices = [];
+
+    protected function tearDown(): void
+    {
+        try {
+            foreach ($this->roundtripIndices as $index) {
+                $index->delete();
+            }
+        } finally {
+            parent::tearDown();
+        }
+    }
+
+    private function roundtripIndex(NewProperties $properties): string
+    {
+        $alias = uniqid('.sigmie-document-test-');
+        $index = $this->sigmie->newIndex($alias)
+            ->properties($properties)
+            ->config('index.hidden', true)
+            ->create();
+        $this->roundtripIndices[] = $index;
+
+        return $alias;
+    }
+
+    public function test_document_update_accepts_dot_only_ids(): void
+    {
+        $index = $this->roundtripIndex(new NewProperties);
+        $collection = $this->sigmie->collect($index, true);
+        foreach (['.', '..'] as $id) {
+            $collection->add(new Document(['title' => 'Before'], $id));
+
+            $response = $this->updateAPICall($index, $id, ['doc' => ['title' => 'After']]);
+
+            $this->assertSame('updated', $response->json('result'));
+            $this->assertSame($id, $response->json('_id'));
+            $this->assertSame('After', $collection->get($id)['title']);
+        }
+    }
+
+    public function test_partial_merge_reads_a_numeric_write_index(): void
+    {
+        $props = new NewProperties;
+        $props->text('first');
+        $props->text('last');
+        $props->combo('name', ['first', 'last']);
+
+        $alias = uniqid('numeric_write_');
+        $readIndex = '.'.$alias.'_read';
+        $writeIndex = (string) random_int(1000000000, PHP_INT_MAX);
+        $this->indexAPICall($writeIndex, 'PUT', ['settings' => ['number_of_replicas' => 0], 'aliases' => [$alias => ['is_write_index' => true]]]);
+
+        try {
+            $this->indexAPICall($readIndex, 'PUT', ['aliases' => [$alias => ['is_write_index' => false]]]);
+            $collection = $this->sigmie->collect($alias)->properties($props);
+            $collection->add(new Document(['first' => 'Ada', 'last' => 'Lovelace'], '1'));
+            $collection->merge([new Document(['first' => 'Augusta'], '1')]);
+
+            $this->assertSame('Augusta Lovelace', $this->sigmie->collect($writeIndex)->get('1')['name']);
+        } finally {
+            $this->indexAPICall($writeIndex.','.$readIndex.'?ignore_unavailable=true', 'DELETE');
+        }
+    }
+
+    public function test_partial_merge_embeds_a_combo_with_its_stored_boost(): void
+    {
+        $props = new NewProperties;
+        $props->text('title');
+        $props->integer('priority');
+        $props->combo('summary', ['title'])->semantic(api: 'test-embeddings', dimensions: 8, accuracy: 1)
+            ->boostedBy('priority')->normalizeVector(false);
+        $collection = $this->sigmie->collect($this->roundtripIndex($props), true)->properties($props);
+        $collection->add(new Document(['title' => 'Ada', 'priority' => 2], '1'));
+        $collection->merge([new Document(['title' => 'Grace'], '1')]);
+
+        $expected = array_map(fn (float $value): float => 2 * $value, $this->embeddingApi->embed('Grace', 8));
+        $this->assertEqualsWithDelta($expected, array_values($collection->get('1')['_embeddings.summary'])[0], 0.00001);
+    }
+
+    public function test_partial_merge_keeps_other_sources_of_a_chained_combo(): void
+    {
+        $props = new NewProperties;
+        $props->text('first');
+        $props->text('last');
+        $props->combo('given', ['first']);
+        $props->combo('full', ['given', 'last']);
+
+        $collection = $this->sigmie->collect($this->roundtripIndex($props), true)->properties($props);
+        $collection->add(new Document(['first' => 'Ada', 'last' => 'Lovelace'], '1'));
+        $collection->merge([new Document(['first' => 'Augusta'], '1')]);
+
+        $this->assertSame('Augusta Lovelace', $collection->get('1')['full']);
+    }
+
+    public function test_partial_merge_rebuilds_combos_from_the_updated_document(): void
+    {
+        $props = new NewProperties;
+        $props->text('first');
+        $props->text('last');
+        $props->combo('name', ['first', 'last'])
+            ->semantic(api: 'test-embeddings', dimensions: 8, accuracy: 1);
+        $props->object('contact', function (NewProperties $fields): void {
+            $fields->text('first');
+            $fields->text('last');
+            $fields->combo('name', ['first', 'last']);
+        });
+        $index = $this->roundtripIndex($props);
+        $collection = $this->sigmie->collect($index, true)->properties($props);
+        $collection->add(new Document([
+            'first' => 'Ada',
+            'last' => 'Lovelace',
+            'contact' => ['first' => 'Grace', 'last' => 'Hopper'],
+        ], '1'));
+
+        $collection->only(['first'])->merge([new Document([
+            'first' => 'Augusta',
+            'contact' => ['first' => 'Amazing'],
+        ], '1')]);
+
+        $this->embeddingApi->assertBatchEmbedWasCalledWith('Augusta Lovelace');
+        $collection->only([]);
+        $document = $collection->get('1');
+        $this->assertSame('Augusta Lovelace', $document['name']);
+        $this->assertSame('Amazing Hopper', $document['contact.name']);
+        $this->assertSame('Lovelace', $document['last']);
+
+        $collection->merge([
+            new Document(['last' => null], '1'),
+            new Document(['first' => null], '1'),
+        ]);
+        $this->assertNull($collection->get('1')['name']);
+        $this->assertNull($collection->get('1')['_embeddings.name']);
+    }
+
+    public function test_partial_merge_rebuilds_embeddings_with_the_current_boost_and_text(): void
+    {
+        $props = new NewProperties;
+        $props->integer('weight');
+        $props->text('title')->semantic(api: 'test-embeddings', dimensions: 8, accuracy: 1)
+            ->boostedBy('weight')->normalizeVector(false);
+        $index = $this->roundtripIndex($props);
+        $collection = $this->sigmie->collect($index, true)->properties($props);
+        $collection->add(new Document(['title' => 'Ada', 'weight' => 2], '1'));
+
+        $collection->merge([new Document(['weight' => 5], '1')]);
+
+        $expected = array_map(fn (float $component): float => $component * 5, $this->embeddingApi->embed('Ada', 8));
+        $this->assertEqualsWithDelta($expected, array_values($collection->get('1')['_embeddings.title'])[0], 0.00001);
+
+        $collection->merge([new Document(['title' => 'Grace'], '1')]);
+
+        $expected = array_map(fn (float $component): float => $component * 5, $this->embeddingApi->embed('Grace', 8));
+        $this->assertEqualsWithDelta($expected, array_values($collection->get('1')['_embeddings.title'])[0], 0.00001);
+    }
+
+    public function test_partial_merge_replaces_structured_scalar_values(): void
+    {
+        $props = new NewProperties;
+        $props->object('details', function (NewProperties $fields): void {
+            $fields->range('window')->integer();
+            $fields->geoPoint('location');
+            $fields->keyword('label');
+        });
+        $index = $this->roundtripIndex($props);
+        $collection = $this->sigmie->collect($index, true)->properties($props);
+        $collection->add(new Document(['details' => [
+            'window' => ['gte' => 1, 'lte' => 10],
+            'location' => ['type' => 'Point', 'coordinates' => [1, 2]],
+            'label' => 'keep',
+        ]], '1'));
+
+        $collection->merge([new Document(['details' => ['window' => ['gt' => 2]]], '1')]);
+
+        $this->assertSame(['gt' => 2], $collection->get('1')['details.window']);
+        $collection->merge([new Document(['details' => ['location' => ['lat' => 2, 'lon' => 3]]], '1')]);
+        $this->assertSame(['lat' => 2, 'lon' => 3], $collection->get('1')['details.location']);
+        $this->assertSame('keep', $collection->get('1')['details.label']);
+    }
+
+    /** @test */
+    public function clear_makes_deletions_visible_with_a_wait_for_refresh_collection(): void
+    {
+        $name = uniqid('clear-wait-');
+        $this->sigmie->newIndex($name)->create();
+        $this->sigmie->collect($name, true)->add(new Document(['title' => 'Old'], 'old'));
+
+        $collection = new AliveCollection($name, $this->elasticsearchConnection, 'wait_for');
+        $collection->clear();
+
+        $this->assertSame(0, $collection->count());
+        $this->assertTrue($this->sigmie->index($name) instanceof Index);
+    }
+
     /**
      * @test
      */
@@ -908,5 +1105,17 @@ class AliveCollectionTest extends TestCase
         ]));
 
         $this->assertCount(1, $index);
+    }
+
+    public function test_clear_removes_writes_before_the_next_refresh(): void
+    {
+        $name = uniqid();
+        $this->sigmie->newIndex($name)->config('index.refresh_interval', '-1')->create();
+        $collection = $this->sigmie->collect($name);
+        $collection->add(new Document(['title' => 'unrefreshed'], 'recent'));
+
+        $collection->clear();
+
+        $this->assertFalse($collection->has('recent'));
     }
 }

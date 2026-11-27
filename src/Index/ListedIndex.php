@@ -34,7 +34,7 @@ class ListedIndex
             documentsDeleted: (int) $raw['docs.deleted'],
             storeSize: (string) $raw['store.size'],
             primaryStoreSize: (string) $raw['pri.store.size'],
-            datasetSize: (string) $raw['pri.store.size'],
+            datasetSize: (string) ($raw['dataset.size'] ?? $raw['pri.store.size']),
             aliases: $aliases,
         );
     }

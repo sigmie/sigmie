@@ -7,8 +7,11 @@ namespace Sigmie\Base\Http;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
+use Sigmie\Base\ElasticsearchException;
 use Sigmie\Base\Http\Requests\Search as SearchRequest;
 use Sigmie\Enums\SearchEngineType;
+
+use function Sigmie\Functions\encoded_index_path;
 
 class PointInTimeRequests
 {
@@ -18,17 +21,23 @@ class PointInTimeRequests
 
     public function open(string $index, string $keepAlive = '1m'): ElasticsearchResponse
     {
+        [$path] = encoded_index_path($index);
+        $prefix = '/'.($path === '' ? '*' : $path);
+
         if ($this->connection->driver()->engine() === SearchEngineType::OpenSearch) {
-            $uri = new Uri(sprintf('/%s/_search/point_in_time', $index));
+            $uri = Uri::withQueryValues(new Uri($prefix.'/_search/point_in_time'), [
+                'keep_alive' => $keepAlive,
+                'allow_partial_pit_creation' => 'false',
+            ]);
 
             return $this->call(new SearchRequest(
                 'POST',
-                $uri->withQuery('keep_alive='.rawurlencode($keepAlive)),
+                $uri,
                 [],
             ));
         }
 
-        $uri = new Uri(sprintf('/%s/_pit', $index));
+        $uri = new Uri($prefix.'/_pit');
 
         return $this->call(new SearchRequest(
             'POST',
@@ -39,19 +48,17 @@ class PointInTimeRequests
 
     public function close(string $pitId): ElasticsearchResponse
     {
-        if ($this->connection->driver()->engine() === SearchEngineType::OpenSearch) {
-            $uri = new Uri('/_search/point_in_time');
+        $openSearch = $this->connection->driver()->engine() === SearchEngineType::OpenSearch;
+        $request = $openSearch
+            ? new SearchRequest('DELETE', new Uri('/_search/point_in_time'), ['pit_id' => [$pitId]])
+            : new SearchRequest('DELETE', new Uri('/_pit'), ['id' => $pitId]);
 
-            return $this->call(new SearchRequest('DELETE', $uri, [
-                'pit_id' => [$pitId],
-            ]));
+        $response = $this->call($request);
+        if ($response->json($openSearch ? 'pits.0.successful' : 'succeeded') === false) {
+            throw new ElasticsearchException($response->json(), $response->code());
         }
 
-        $uri = new Uri('/_pit');
-
-        return $this->call(new SearchRequest('DELETE', $uri, [
-            'id' => $pitId,
-        ]));
+        return $response;
     }
 
     /**
@@ -61,7 +68,8 @@ class PointInTimeRequests
     {
         $uri = new Uri('/_search');
 
-        return $this->call(new SearchRequest('POST', $uri, $body));
+        // The iterator must read the latest PIT ID before rejecting a partial page.
+        return ($this->connection)(new ElasticsearchRequest('POST', $uri, $body));
     }
 
     private function call(SearchRequest $request): ElasticsearchResponse

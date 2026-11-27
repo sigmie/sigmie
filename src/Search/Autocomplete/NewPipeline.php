@@ -31,7 +31,7 @@ class NewPipeline implements ToRaw
             'processors' => array_map(fn (Processor $processor): array => $processor->toRaw(), $this->processors),
         ];
 
-        if ($this->description ?? false) {
+        if (isset($this->description)) {
             $res['description'] = $this->description;
         }
 

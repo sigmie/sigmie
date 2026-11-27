@@ -14,6 +14,8 @@ class Category extends Text
     public function configure(): void
     {
         $this->unstructuredText()->keyword();
+
+        $this->makeSortable();
     }
 
     public function isAutocompletable(): bool
@@ -28,6 +30,12 @@ class Category extends Text
 
     public function queries(array|string $queryString): array
     {
-        return [new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer()), new Term($this->name.'.keyword', $queryString), new MatchPhrasePrefix($this->name, $queryString, analyzer: $this->searchAnalyzer())];
+        $keyword = $this->keywordName();
+
+        return $this->queryStrings($queryString, fn (string $queryString): array => [
+            new Match_($this->name(), $queryString, analyzer: $this->searchAnalyzer()),
+            ...($keyword === null ? [] : [new Term($keyword, $queryString)]),
+            new MatchPhrasePrefix($this->name(), $queryString, analyzer: $this->searchAnalyzer()),
+        ]);
     }
 }

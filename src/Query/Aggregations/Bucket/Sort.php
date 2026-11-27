@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Aggregations\Bucket;
 
+use function Sigmie\Functions\sort_clauses;
+
 class Sort extends Bucket
 {
     public function __construct(
         protected string $name,
         protected array $sort,
         protected ?int $size = null,
-        protected ?int $form = null,
+        protected ?int $from = null,
     ) {
         parent::__construct($name);
     }
@@ -19,16 +21,16 @@ class Sort extends Bucket
     {
         $res = [
             'bucket_sort' => [
-                'sort' => $this->sort,
+                'sort' => sort_clauses($this->sort),
             ],
         ];
 
-        if ($this->size) {
+        if ($this->size !== null) {
             $res['bucket_sort']['size'] = $this->size;
         }
 
-        if ($this->form) {
-            $res['bucket_sort']['from'] = $this->form;
+        if ($this->from !== null) {
+            $res['bucket_sort']['from'] = $this->from;
         }
 
         return $res;

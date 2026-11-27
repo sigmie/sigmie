@@ -12,6 +12,24 @@ use Sigmie\Testing\TestCase;
 
 class NewContextComposerTest extends TestCase
 {
+    public function test_context_reads_selected_dotted_fields(): void
+    {
+        $hit = new Hit([
+            'author' => ['name' => 'Ada', 'bio' => 'Long biography'],
+            'chapters' => [['title' => 'First'], ['title' => 'Second']],
+            'edition.date' => null,
+        ], 'book', 1);
+
+        $context = (new NewContextComposer)
+            ->fields(['author.name', 'chapters.title', 'edition.date', 'author.missing'])
+            ->compose([$hit]);
+
+        $this->assertSame(
+            ['author.name' => 'Ada', 'chapters.title' => ['First', 'Second'], 'edition.date' => null],
+            json_decode($context, true, flags: JSON_THROW_ON_ERROR),
+        );
+    }
+
     /**
      * @test
      */

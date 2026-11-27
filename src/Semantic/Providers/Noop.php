@@ -8,9 +8,10 @@ use Sigmie\Mappings\Contracts\Type;
 use Sigmie\Mappings\Types\DenseVector;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Plugins\Elastiknn\DenseFloatVector;
+use Sigmie\Semantic\Contracts\AIProvider;
 use Sigmie\Sigmie;
 
-class Noop extends AbstractAIProvider
+class Noop extends AbstractAIProvider implements AIProvider
 {
     public function embed(string $text, Text $originalType): array
     {
@@ -32,7 +33,7 @@ class Noop extends AbstractAIProvider
 
     public function queries(
         array|string $text,
-        Text $type
+        Text $originalType
     ): array {
         return [];
     }

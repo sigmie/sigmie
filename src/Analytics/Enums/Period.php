@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Analytics\Enums;
 
 use DateTimeImmutable;
+use DateTimeZone;
 
 /**
  * A named relative time window ("this month", "last 7 days", …). Resolved to concrete
@@ -46,23 +47,38 @@ enum Period: string
      */
     public function resolve(DateTimeImmutable $now): array
     {
-        $startOfDay = $now->setTime(0, 0, 0);
+        // Do calendar arithmetic before resolving the local boundaries. A zone can skip an entire date.
+        $utc = new DateTimeZone('UTC');
+        $day = self::civilDate($now, $utc);
+        $nextDay = $day->modify('+1 day');
 
-        return match ($this) {
-            self::Today => [$startOfDay, $startOfDay->modify('+1 day')],
-            self::Yesterday => [$startOfDay->modify('-1 day'), $startOfDay],
-            self::ThisWeek => [$w = $this->weekStart($now), $w->modify('+1 week')],
-            self::LastWeek => [($w = $this->weekStart($now))->modify('-1 week'), $w],
-            self::ThisMonth => [$m = $this->monthStart($now), $m->modify('+1 month')],
-            self::LastMonth => [($m = $this->monthStart($now))->modify('-1 month'), $m],
-            self::ThisQuarter => [$q = $this->quarterStart($now), $q->modify('+3 months')],
-            self::LastQuarter => [($q = $this->quarterStart($now))->modify('-3 months'), $q],
-            self::ThisYear => [$y = $this->yearStart($now), $y->modify('+1 year')],
-            self::LastYear => [($y = $this->yearStart($now))->modify('-1 year'), $y],
-            self::Last7Days => [($t = $startOfDay->modify('+1 day'))->modify('-7 days'), $t],
-            self::Last30Days => [($t = $startOfDay->modify('+1 day'))->modify('-30 days'), $t],
-            self::Last90Days => [($t = $startOfDay->modify('+1 day'))->modify('-90 days'), $t],
+        [$from, $to] = match ($this) {
+            self::Today => [$day, $nextDay],
+            self::Yesterday => [$day->modify('-1 day'), $day],
+            self::ThisWeek => [$this->weekStart($day), $this->weekStart($day)->modify('+1 week')],
+            self::LastWeek => [$this->weekStart($day)->modify('-1 week'), $this->weekStart($day)],
+            self::ThisMonth => [$this->monthStart($day), $day->modify('first day of next month')],
+            self::LastMonth => [$day->modify('first day of last month'), $this->monthStart($day)],
+            self::ThisQuarter => [$this->quarterStart($day), $this->quarterStart($day)->modify('+3 months')],
+            self::LastQuarter => [$this->quarterStart($day)->modify('-3 months'), $this->quarterStart($day)],
+            self::ThisYear => [$this->yearStart($day), $this->yearStart($day)->modify('+1 year')],
+            self::LastYear => [$this->yearStart($day)->modify('-1 year'), $this->yearStart($day)],
+            self::Last7Days => [$day->modify('-6 days'), $nextDay],
+            self::Last30Days => [$day->modify('-29 days'), $nextDay],
+            self::Last90Days => [$day->modify('-89 days'), $nextDay],
         };
+
+        $zone = $now->getTimezone();
+
+        return [
+            self::startOfDay(self::civilDate($from, $zone)),
+            self::startOfDay(self::civilDate($to, $zone)),
+        ];
+    }
+
+    private static function civilDate(DateTimeImmutable $date, DateTimeZone $zone): DateTimeImmutable
+    {
+        return new DateTimeImmutable(sprintf('%+05d-%s', (int) $date->format('Y'), $date->format('m-d')), $zone);
     }
 
     /**
@@ -81,25 +97,56 @@ enum Period: string
         };
     }
 
+    public static function startOfDay(DateTimeImmutable $date): DateTimeImmutable
+    {
+        $midnight = $date->setTime(0, 0, 0);
+        $timestamp = $midnight->getTimestamp();
+
+        $zone = $midnight->getTimezone();
+        $transitions = $zone->getTransitions($timestamp - 86400, $timestamp + 1) ?: [];
+        $wallMidnight = $timestamp + $midnight->getOffset()
+            - ((int) $midnight->format('H') * 3600 + (int) $midnight->format('i') * 60 + (int) $midnight->format('s'));
+
+        $previousOffset = $transitions[0]['offset'] ?? $midnight->getOffset();
+        foreach (array_slice($transitions, 1) as $transition) {
+            $before = $transition['ts'] + $previousOffset;
+            $after = $transition['ts'] + $transition['offset'];
+
+            // A midnight skipped by a forward change starts at the transition.
+            if ($before <= $wallMidnight && $wallMidnight < $after) {
+                return (new DateTimeImmutable('@'.$transition['ts']))->setTimezone($zone);
+            }
+
+            // A midnight repeated by a backward change starts at its first occurrence.
+            if ($after <= $wallMidnight && $wallMidnight < $before) {
+                return (new DateTimeImmutable('@'.($wallMidnight - $previousOffset)))->setTimezone($zone);
+            }
+
+            $previousOffset = $transition['offset'];
+        }
+
+        return $midnight;
+    }
+
     private function weekStart(DateTimeImmutable $now): DateTimeImmutable
     {
-        return $now->modify('monday this week')->setTime(0, 0, 0);
+        return $now->modify('monday this week');
     }
 
     private function monthStart(DateTimeImmutable $now): DateTimeImmutable
     {
-        return $now->modify('first day of this month')->setTime(0, 0, 0);
+        return $now->modify('first day of this month');
     }
 
     private function quarterStart(DateTimeImmutable $now): DateTimeImmutable
     {
         $startMonth = intdiv((int) $now->format('n') - 1, 3) * 3 + 1;
 
-        return $now->setDate((int) $now->format('Y'), $startMonth, 1)->setTime(0, 0, 0);
+        return $now->setDate((int) $now->format('Y'), $startMonth, 1);
     }
 
     private function yearStart(DateTimeImmutable $now): DateTimeImmutable
     {
-        return $now->setDate((int) $now->format('Y'), 1, 1)->setTime(0, 0, 0);
+        return $now->setDate((int) $now->format('Y'), 1, 1);
     }
 }

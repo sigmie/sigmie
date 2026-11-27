@@ -5,24 +5,19 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use Sigmie\Mappings\Traits\HasFacets;
+use Sigmie\Parse\ParseException;
 use Sigmie\Query\Aggs;
 
 class Price extends Type
 {
     use HasFacets;
 
+    protected string $type = 'scaled_float';
+
     public function toRaw(): array
     {
-        $raw = [$this->name => [
-            'type' => 'scaled_float',
-            'scaling_factor' => 100,
-        ]];
-
-        $raw[$this->name]['meta'] =
-            [
-                ...$this->meta,
-                'type' => $this->typeName(),
-            ];
+        $raw = parent::toRaw();
+        $raw[$this->name]['scaling_factor'] ??= 100;
 
         return $raw;
     }
@@ -40,11 +35,14 @@ class Price extends Type
     public function aggregation(Aggs $aggs, string $param): void
     {
         [$interval] = explode(',', $param);
+        if (! is_numeric($interval) || ! is_finite((float) $interval) || $interval <= 0) {
+            throw new ParseException('Price histogram interval must be a positive number.');
+        }
 
         $aggs->histogram(
             $this->name().'_histogram',
             $this->name(),
-            interval: (int) $interval
+            interval: $interval + 0
         );
 
         $aggs->min($this->name().'_min', $this->name());
@@ -53,12 +51,21 @@ class Price extends Type
 
     public function facets(array $aggregation): ?array
     {
-        $originalBuckets = $aggregation[$this->name()][$this->name()][$this->name().'_histogram']['buckets'] ?? $aggregation[$this->name()][$this->name().'_histogram']['buckets'] ?? [];
+        $originalBuckets = $aggregation[$this->name().'_histogram']['buckets'] ?? [];
 
-        $min = $aggregation[$this->name()][$this->name()][$this->name().'_min']['value'] ?? $aggregation[$this->name()][$this->name().'_min']['value'] ?? 0;
-        $max = $aggregation[$this->name()][$this->name()][$this->name().'_max']['value'] ?? $aggregation[$this->name()][$this->name().'_max']['value'] ?? 0;
+        $min = $aggregation[$this->name().'_min']['value'] ?? null;
+        $max = $aggregation[$this->name().'_max']['value'] ?? null;
 
-        $histogram = array_column($originalBuckets, 'doc_count', 'key');
+        $histogram = [];
+        foreach ($originalBuckets as $bucket) {
+            $bound = $bucket['key'];
+            $histogram[is_float($bound) ? json_encode($bound, JSON_THROW_ON_ERROR) : $bound] = $bucket['doc_count'];
+        }
+
+        // Keys 0, 1, 2… are a PHP list. json_encode would drop those lower bounds.
+        if ($histogram !== [] && array_is_list($histogram)) {
+            $histogram = (object) $histogram;
+        }
 
         return [
             'min' => $min,
@@ -74,7 +81,7 @@ class Price extends Type
 
     public function validate(string $key, mixed $value): array
     {
-        if (! is_numeric($value)) {
+        if (! $this->ignoresMalformedScalar($value) && ! Number::fitsMapping($this->type, $value, (bool) ($this->storedMapping['coerce'] ?? true))) {
             return [false, sprintf('The field %s mapped as price must be a number', $key)];
         }
 

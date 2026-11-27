@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Search\Formatters;
 
-use Sigmie\Mappings\Properties;
+use Sigmie\Query\NewQuery;
 use Sigmie\Search\Contracts\MultiSearchable;
-use Sigmie\Search\NewSearch;
+use Sigmie\Search\Contracts\ResponseFormater;
+use Sigmie\Search\RawQuery;
+
+use function Sigmie\Functions\response_value;
+use function Sigmie\Functions\search_hits;
+use function Sigmie\Functions\search_summary;
 
 class SigmieMultiSearchResponse
 {
@@ -20,6 +25,7 @@ class SigmieMultiSearchResponse
     public function multiSearchResponseRaw(array $raw): static
     {
         $this->multiSearchResponseRaw = $raw;
+        $this->formattedResults = [];
 
         return $this;
     }
@@ -27,6 +33,7 @@ class SigmieMultiSearchResponse
     public function searches(array $searches): static
     {
         $this->searches = $searches;
+        $this->formattedResults = [];
 
         return $this;
     }
@@ -37,37 +44,30 @@ class SigmieMultiSearchResponse
             return $this->formattedResults;
         }
 
+        search_hits($this->multiSearchResponseRaw);
         $responses = $this->multiSearchResponseRaw['responses'] ?? [];
         $results = [];
 
         $responseIndex = 0;
         foreach ($this->searches as $searchIndex => $search) {
-            if ($search instanceof NewSearch) {
-                $searchResponse = $responses[$responseIndex] ?? [];
+            $count = $search->multisearchResCount();
+            $slice = array_slice($responses, $responseIndex, $count);
+            $responseIndex += $count;
 
-                $properties = $search->getProperties() ?? new Properties;
-                $searchContext = $search->searchContext;
-
-                $formatter = new SigmieSearchResponse($properties);
-                $formatter->queryResponseRaw($searchResponse)
-                    ->facetsResponseRaw($searchResponse)
-                    ->context($searchContext)
-                    ->errors([])
-                    ->apis($search->apis);
-
-                $results[$searchIndex] = $formatter->format();
-                $responseIndex += 1;
+            if ($search instanceof NewQuery || $search instanceof RawQuery) {
+                $result = search_summary($slice[0] ?? []);
             } else {
-                // NewQuery has 1 response: just search
-                $searchResponse = $responses[$responseIndex] ?? [];
+                foreach ($slice as $response) {
+                    search_hits($response);
+                }
 
-                $results[$searchIndex] = [
-                    'hits' => $searchResponse['hits']['hits'] ?? [],
-                    'processing_time_ms' => $searchResponse['took'] ?? 0,
-                    'total' => $searchResponse['hits']['total']['value'] ?? 0,
-                ];
-                $responseIndex += 1;
+                $result = $search->formatResponses(...$slice);
+                if ($result instanceof ResponseFormater) {
+                    $result = $result->format();
+                }
             }
+
+            $results[$searchIndex] = $result;
         }
 
         $this->formattedResults = $results;
@@ -75,18 +75,12 @@ class SigmieMultiSearchResponse
         return $results;
     }
 
-    public function json(?string $key = null): array
+    public function json(?string $key = null): mixed
     {
-        $formatted = $this->format();
-
-        if ($key === null) {
-            return $formatted;
-        }
-
-        return (array) dot($formatted)->get($key);
+        return response_value($this->format(), $key);
     }
 
-    public function getSearchResult(int $index): ?array
+    public function getSearchResult(int $index): mixed
     {
         $formatted = $this->format();
 

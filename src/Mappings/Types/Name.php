@@ -26,55 +26,75 @@ class Name extends Text implements Analyze
         protected int $maxGrams = 5
     ) {
         parent::__construct($name);
+
+        $this->prefixAnalyzer = 'name_text_field_analyzer_'.$minGrams;
+        $this->ngramAnalyzer = 'name_ngram_field_analyzer_'.$minGrams.'_'.$maxGrams;
     }
 
     public function configure(): void
     {
         $this->unstructuredText()->indexPrefixes()->keyword();
+
+        // prefixAnalyzer is assigned after the parent constructor, which calls configure().
+        $prefixAnalyzer = 'name_text_field_analyzer_'.$this->minGrams;
+
+        $this->field(
+            (new Text($this->prefixFieldName()))->unstructuredText()
+                ->withNewAnalyzer(function (NewAnalyzer $newAnalyzer) use ($prefixAnalyzer): void {
+                    $newAnalyzer->tokenizeOnWhitespaces()
+                        ->name($prefixAnalyzer)
+                        ->lowercase()
+                        ->trim();
+                })
+        );
+
+        $this->makeSortable();
     }
 
     public function analyze(NewAnalyzer $newAnalyzer): void
     {
-        $prefixField = (new Text($this->name.'_text'))->unstructuredText()
-            ->withNewAnalyzer(function (NewAnalyzer $newAnalyzer): void {
-                $newAnalyzer->tokenizeOnWhitespaces()
-                    ->name($this->prefixAnalyzer)
-                    ->lowercase()
-                    ->truncate($this->minGrams - 1)
-                    ->trim();
-            });
-
-        $this->field($prefixField);
-
         $newAnalyzer
             ->tokenizeOnWhitespaces()
             ->name($this->ngramAnalyzer)
             ->tokenFilter(new Ngram(random_name('ngram'), $this->minGrams, $this->maxGrams))
             // ->truncate($this->maxGramms)
             ->lowercase();
+    }
 
-        $this->makeSortable();
+    private function prefixFieldName(): string
+    {
+        $parts = explode('.', $this->name);
+
+        return end($parts).'_text';
     }
 
     public function names(): array
     {
-        return [
-            $this->name,
-            $this->fullPath().'.'.$this->name.'_text',
-        ];
+        $prefix = $this->prefixFieldName();
+
+        return $this->fields->get($prefix) === null
+            ? [$this->fullPath()]
+            : [$this->fullPath(), $this->fullPath().'.'.$prefix];
     }
 
     public function queries(array|string $queryString): array
     {
-        $queries = [];
+        return $this->queryStrings($queryString, function (string $queryString): array {
+            $names = $this->names();
+            $analyzer = $this->searchAnalyzer === null && $this->restoredType === null && ! $this->searchSynonyms
+                ? $this->ngramAnalyzer
+                : $this->searchAnalyzer();
+            $match = new Match_($names[0], $queryString, analyzer: $analyzer);
+            if (! isset($names[1])) {
+                return [$match];
+            }
 
-        $prefixField = $this->fullPath().'.'.$this->name.'_text';
-
-        $queries[] = new Match_($this->name(), $queryString, analyzer: $this->ngramAnalyzer);
-        $queries[] = new MatchPhrasePrefix($prefixField, $queryString, analyzer: $this->prefixAnalyzer);
-        $queries[] = new MatchBoolPrefix($prefixField, $queryString, analyzer: $this->prefixAnalyzer);
-
-        return $queries;
+            return [
+                $match,
+                new MatchPhrasePrefix($names[1], $queryString, analyzer: $this->prefixAnalyzer),
+                new MatchBoolPrefix($names[1], $queryString, analyzer: $this->prefixAnalyzer),
+            ];
+        });
     }
 
     public function notAllowedFilters(): array
@@ -82,5 +102,20 @@ class Name extends Text implements Analyze
         return [
             Synonyms::class,
         ];
+    }
+
+    protected static function fromMappingConfig(string $name, array $configs): static
+    {
+        if (preg_match('/_(\d+)_(\d+)$/', (string) ($configs['analyzer'] ?? ''), $matches) === 1) {
+            $field = new static($name, (int) $matches[1], (int) $matches[2]);
+        } else {
+            $field = new static($name);
+        }
+
+        $subfields = (array) ($configs['fields'] ?? []);
+        $prefix = $subfields[$field->prefixFieldName()] ?? [];
+        $field->prefixAnalyzer = $prefix['search_analyzer'] ?? $prefix['analyzer'] ?? 'default';
+
+        return $field;
     }
 }

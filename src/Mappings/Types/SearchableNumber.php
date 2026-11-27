@@ -20,6 +20,8 @@ class SearchableNumber extends Text implements Analyze
     public function configure(): void
     {
         $this->unstructuredText()->keyword();
+
+        $this->makeSortable();
     }
 
     public function analyze(NewAnalyzer $newAnalyzer): void
@@ -27,12 +29,19 @@ class SearchableNumber extends Text implements Analyze
         $newAnalyzer->tokenizeOnWordBoundaries();
         $newAnalyzer->lowercase();
         $newAnalyzer->patternReplace('[^0-9]', '');
+    }
 
-        $this->makeSortable();
+    public function validate(string $key, mixed $value): array
+    {
+        if ($this->type() !== 'completion' && (is_int($value) || (is_float($value) && is_finite($value)))) {
+            return [true, ''];
+        }
+
+        return parent::validate($key, $value);
     }
 
     public function queries(array|string $queryString): array
     {
-        return [new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer()), new MatchPhrasePrefix($this->name, $queryString, analyzer: $this->searchAnalyzer())];
+        return $this->queryStrings($queryString, fn (string $queryString): array => [new Match_($this->name(), $queryString, analyzer: $this->searchAnalyzer()), new MatchPhrasePrefix($this->name(), $queryString, analyzer: $this->searchAnalyzer())]);
     }
 }

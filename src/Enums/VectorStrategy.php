@@ -39,34 +39,18 @@ enum VectorStrategy: string
 
     public function format(array $embeddings, bool $normalize = true): array
     {
-        return (match ($this) {
-            self::Concatenate => fn ($embeddings, $normalize) => $embeddings[0] ?? [],
-            self::Average => function ($embeddings, $normalize) {
+        $embeddings = array_map('array_values', $embeddings);
 
-                $count = count($embeddings);
+        if ($this === self::ScriptScore) {
+            return array_map(fn ($embedding): array => [
+                'vector' => $normalize ? VectorMath::normalize($embedding) : $embedding,
+            ], array_values($embeddings));
+        }
 
-                if ($count === 1) {
-                    $result = $embeddings[0];
-                } else {
-                    $dimensions = count($embeddings[0]);
-                    $sum = array_fill(0, $dimensions, 0.0);
+        $vector = $this === self::Average && count($embeddings) > 1
+            ? VectorMath::average($embeddings)
+            : (reset($embeddings) ?: []);
 
-                    foreach ($embeddings as $vector) {
-                        foreach ($vector as $i => $val) {
-                            $sum[$i] += $val;
-                        }
-                    }
-
-                    $result = array_map(fn ($total): float => $total / $count, $sum);
-                }
-
-                // Always normalize if requested, even for single embeddings
-                // (The API may return normalized vectors, but we honor the normalize flag)
-                return $normalize ? VectorMath::normalize($result) : $result;
-            },
-            self::ScriptScore => fn (array $embeddings, $normalize): array =>
-                // For ScriptScore: create array of objects with embedding field
-                array_map(fn ($embedding): array => ['vector' => $embedding], $embeddings),
-        })($embeddings, $normalize);
+        return $normalize ? VectorMath::normalize($vector) : $vector;
     }
 }

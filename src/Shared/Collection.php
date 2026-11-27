@@ -28,10 +28,16 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
 
     public function deepen(int|float $depth = INF): static
     {
+        if ($depth < 1) {
+            return new static($this->elements);
+        }
+
         $result = [];
 
         foreach ($this->elements as $key => $item) {
-            $result[] = [$key => $item];
+            $result[] = [$key => $depth >= 2 && is_array($item)
+                ? (new static($item))->deepen($depth - 1)->toArray()
+                : $item];
         }
 
         return new static($result);
@@ -52,6 +58,21 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
     }
 
     /**
+     * merge() reindexes a numeric name, so "1" is stored as key 0.
+     */
+    public function mergeNamed(Collection|array $values): static
+    {
+        $values = $values instanceof Collection ? $values->toArray() : $values;
+        $combined = $this->toArray();
+
+        foreach ($values as $name => $value) {
+            $combined[$name] = $value;
+        }
+
+        return new static($combined);
+    }
+
+    /**
      * Flatten a multi-dimensional array into a single level.
      */
     public function flatten(int|float $depth = INF): static
@@ -61,10 +82,11 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
         foreach ($this->elements as $item) {
             $item = $item instanceof Collection ? $item->toArray() : $item;
 
-            if (! is_array($item)) {
+            if (! is_array($item) || $depth < 1) {
                 $result[] = $item;
             } else {
-                $values = $depth === 1
+                // 1 and 1.0 are one level. 0 keeps the current arrays.
+                $values = $depth < 2
                     ? array_values($item)
                     : (new static($item))->flatten($depth - 1)->toArray();
 
@@ -139,12 +161,20 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
 
     public function first(): mixed
     {
-        return (reset($this->elements)) ?: null;
+        if ($this->elements === []) {
+            return null;
+        }
+
+        return reset($this->elements);
     }
 
     public function last(): mixed
     {
-        return (end($this->elements)) ?: null;
+        if ($this->elements === []) {
+            return null;
+        }
+
+        return end($this->elements);
     }
 
     public function key(): mixed
@@ -175,6 +205,14 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
 
     public function offsetExists(mixed $offset): bool
     {
+        if (is_float($offset) || is_bool($offset)) {
+            $offset = (int) $offset;
+        }
+
+        if (! is_int($offset) && ! is_string($offset)) {
+            return false;
+        }
+
         return $this->hasKey($offset);
     }
 
@@ -185,6 +223,12 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
 
     public function offsetSet(mixed $offset, mixed $value): void
     {
+        if ($offset === null) {
+            $this->elements[] = $value;
+
+            return;
+        }
+
         $this->elements[$offset] = $value;
     }
 
@@ -290,15 +334,16 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
         $seen = [];
 
         foreach ($this->elements as $element) {
-            // Support both array and object
-            if (is_array($element) && array_key_exists($key, $element)) {
-                $value = $element[$key];
-            } elseif (is_object($element) && isset($element->{$key})) {
-                $value = $element->{$key};
-            } else {
+            $fields = is_object($element) ? get_object_vars($element) : $element;
+            if (! is_array($fields)) {
                 continue;
             }
 
+            if (! array_key_exists($key, $fields)) {
+                continue;
+            }
+
+            $value = $fields[$key];
             if (! in_array($value, $seen, true)) {
                 $seen[] = $value;
                 $unique[] = $element;
@@ -313,16 +358,16 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
         $grouped = [];
 
         foreach ($this->elements as $element) {
-            // Support both array and object
-            if (is_array($element) && array_key_exists($key, $element)) {
-                $groupKey = $element[$key];
-            } elseif (is_object($element) && isset($element->{$key})) {
-                $groupKey = $element->{$key};
-            } else {
+            $fields = is_object($element) ? get_object_vars($element) : $element;
+            if (! is_array($fields)) {
                 continue;
             }
 
-            $grouped[$groupKey][] = $element;
+            if (! array_key_exists($key, $fields)) {
+                continue;
+            }
+
+            $grouped[$this->groupKey($fields[$key])][] = $element;
         }
 
         return new static($grouped);
@@ -340,15 +385,28 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
                 foreach ($result as $groupKey => $value) {
                     $grouped[$groupKey][] = $value;
                 }
-            } elseif (is_array($result) && isset($result['key']) && array_key_exists('value', $result)) {
-                $grouped[$result['key']][] = $result['value'];
+            } elseif (is_array($result) && array_key_exists('key', $result) && array_key_exists('value', $result)) {
+                $grouped[$this->groupKey($result['key'])][] = $result['value'];
             } elseif (is_array($result) && count($result) === 2 && array_keys($result) === [0, 1]) {
                 // fallback: treat $result as [groupKey, value]
-                $grouped[$result[0]][] = $result[1];
+                $grouped[$this->groupKey($result[0])][] = $result[1];
             }
         }
 
         return new static($grouped);
+    }
+
+    private function groupKey(mixed $value): mixed
+    {
+        if (! is_float($value)) {
+            return $value;
+        }
+
+        if ($value === 0.0) {
+            return 0;
+        }
+
+        return is_finite($value) ? json_encode($value, JSON_THROW_ON_ERROR) : (string) $value;
     }
 
     public function each(Closure $p): static

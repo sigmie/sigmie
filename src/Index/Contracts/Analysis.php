@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Contracts;
 
-use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Shared\Contracts\FromRaw;
 use Sigmie\Shared\Contracts\ToRaw;
 
@@ -18,13 +17,15 @@ interface Analysis extends FromRaw, ToRaw
 
     public function hasAnalyzer(string $analyzerName): bool;
 
-    public function defaultAnalyzer(): DefaultAnalyzer;
+    public function defaultAnalyzer(): Analyzer;
 
     public function addAnalyzer(Analyzer $analyzer): void;
 
     public function addNormalizer(Normalizer $normalizer): void;
 
     public function analyzers(): array;
+
+    public function normalizers(): array;
 
     public function filters(): array;
 

@@ -8,6 +8,7 @@ use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
+use InvalidArgumentException;
 use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Analytics\Enums\Period;
 use Sigmie\Analytics\Widgets\Breakdown;
@@ -27,11 +28,14 @@ use Sigmie\Analytics\Widgets\Retention;
 use Sigmie\Analytics\Widgets\StatSummary;
 use Sigmie\Analytics\Widgets\Table;
 use Sigmie\Analytics\Widgets\Trend;
+use Sigmie\Analytics\Widgets\UnionBreakdown;
 use Sigmie\Analytics\Widgets\Widget;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\Text;
+use Sigmie\Mappings\Types\Type;
 use Sigmie\Parse\FilterParser;
+use Sigmie\Parse\SortParser;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Contracts\QueryClause;
@@ -40,6 +44,9 @@ use Sigmie\Query\Queries\Compound\Boolean;
 use Sigmie\Query\Queries\Query;
 use Sigmie\Query\Search;
 use Sigmie\Search\Contracts\MultiSearchable;
+
+use function Sigmie\Functions\keyed;
+use function Sigmie\Functions\trim_text;
 
 /**
  * Dashboard analytics for an index. Compose one or more widgets — KPIs, trends, breakdowns,
@@ -72,9 +79,9 @@ class Analytics implements MultiSearchable
      */
     protected array $filterQueries = [];
 
-    protected DateTimeInterface $from;
+    protected DateTimeImmutable $from;
 
-    protected DateTimeInterface $to;
+    protected DateTimeImmutable $to;
 
     protected string $dateFormat = DateTimeInterface::ATOM;
 
@@ -98,20 +105,24 @@ class Analytics implements MultiSearchable
         ?DateTimeInterface $from = null,
         ?DateTimeInterface $to = null,
     ) {
-        $this->to = $to ?? new DateTimeImmutable;
-        $this->from = $from ?? (new DateTimeImmutable)->setTimestamp($this->to->getTimestamp())->sub(new DateInterval('P30D'));
+        $this->to = $to instanceof DateTimeInterface ? WindowBound::copy($to) : new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        $this->from = $from instanceof DateTimeInterface ? WindowBound::copy($from) : $this->to->sub(new DateInterval('P30D'));
     }
 
     public function from(DateTimeInterface $from): static
     {
-        $this->from = $from;
+        $this->from = WindowBound::copy($from);
+        $this->period = null;
+        $this->compiledSearch = null;
 
         return $this;
     }
 
     public function to(DateTimeInterface $to): static
     {
-        $this->to = $to;
+        $this->to = WindowBound::copy($to);
+        $this->period = null;
+        $this->compiledSearch = null;
 
         return $this;
     }
@@ -119,6 +130,7 @@ class Analytics implements MultiSearchable
     public function format(string $dateFormat): static
     {
         $this->dateFormat = $dateFormat;
+        $this->compiledSearch = null;
 
         return $this;
     }
@@ -132,6 +144,7 @@ class Analytics implements MultiSearchable
     {
         $this->properties = $properties;
         $this->resolvedProperties = null;
+        $this->compiledSearch = null;
 
         return $this;
     }
@@ -139,6 +152,7 @@ class Analytics implements MultiSearchable
     public function filters(string $filters): static
     {
         $this->filters = $filters;
+        $this->compiledSearch = null;
 
         return $this;
     }
@@ -150,6 +164,7 @@ class Analytics implements MultiSearchable
     public function filterQuery(QueryClause $query): static
     {
         $this->filterQueries[] = $query;
+        $this->compiledSearch = null;
 
         return $this;
     }
@@ -165,6 +180,21 @@ class Analytics implements MultiSearchable
         $this->compiledSearch = null;
 
         return $this;
+    }
+
+    public function hitsQuery(string $hitFilters): Query
+    {
+        $window = Widget::windowQuery($this->dateField, $this->from, $this->to, $this->dateFormat, $this->timelineUsesMilliseconds());
+
+        if ($hitFilters === '') {
+            return $window;
+        }
+
+        $hits = new Boolean;
+        $hits->filter()->query($window);
+        $hits->filter()->query((new FilterParser($this->properties))->parse($hitFilters));
+
+        return $hits;
     }
 
     /**
@@ -188,7 +218,7 @@ class Analytics implements MultiSearchable
     {
         $this->timeZone = $timeZone;
 
-        return $this;
+        return $this->period instanceof Period ? $this->range($this->period) : $this;
     }
 
     /**
@@ -200,6 +230,7 @@ class Analytics implements MultiSearchable
     {
         [$this->from, $this->to] = $period->resolve(new DateTimeImmutable('now', new DateTimeZone($this->timeZone ?? 'UTC')));
         $this->period = $period;
+        $this->compiledSearch = null;
 
         return $this;
     }
@@ -215,7 +246,7 @@ class Analytics implements MultiSearchable
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addFiltered(new Kpi($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field)), $filter);
+        return $this->addMeasured(new Kpi($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field)), $metric, $field, $filter);
     }
 
     public function kpiDelta(string $as, Metric $metric, string $field = '', Query|string|null $filter = null, Period|array|null $window = null): static
@@ -223,35 +254,37 @@ class Analytics implements MultiSearchable
         [$from, $to] = $this->resolveWindow($window);
         [$previousFrom, $previousTo] = $this->previousWindow($from, $to, $window === null);
 
-        return $this->addFiltered(new KpiDelta($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $previousFrom, $previousTo), $filter);
+        return $this->addMeasured(new KpiDelta($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $previousFrom, $previousTo), $metric, $field, $filter);
     }
 
-    public function trend(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null, Period|array|null $window = null): static
+    public function trend(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null, Period|array|null $window = null, int $minDocCount = 0): static
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addFiltered(new Trend($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone), $filter);
+        return $this->addMeasured(new Trend($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone, $minDocCount), $metric, $field, $filter);
     }
 
     public function cumulative(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null, Period|array|null $window = null): static
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addFiltered(new Cumulative($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone), $filter);
+        return $this->addMeasured(new Cumulative($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone), $metric, $field, $filter);
     }
 
     public function groupedTrend(string $as, Metric $metric, string $field, string $groupBy, CalendarInterval|string $interval = CalendarInterval::Day, int $limit = 5, Query|string|null $filter = null, Period|array|null $window = null): static
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addFiltered(new GroupedTrend($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $this->aggregatableField($groupBy), $interval, $limit, $this->timeZone), $filter);
+        return $this->addMeasured(new GroupedTrend($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $this->aggregatableField($groupBy), $interval, $limit, $this->timeZone), $metric, $field, $filter);
     }
 
     public function breakdown(string $as, string $groupBy, Metric $metric, string $field = '', int $limit = 10, string $direction = 'desc', Query|string|null $filter = null, Period|array|null $window = null, array $bucketAliases = []): static
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addFiltered(new Breakdown($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($groupBy), $metric, $this->metricField($metric, $field), $limit, $direction, $bucketAliases), $filter);
+        $resolvedGroup = $this->aggregatableField($groupBy);
+
+        return $this->addMeasured(new Breakdown($as, $this->dateField, $from, $to, $this->dateFormat, $resolvedGroup, $metric, $this->metricField($metric, $field), $limit, $direction, $bucketAliases, $this->resolvedProperties?->get($groupBy)), $metric, $field, $filter);
     }
 
     /**
@@ -268,7 +301,24 @@ class Analytics implements MultiSearchable
             $groupBy,
         ));
 
-        return $this->addFiltered(new MultiBreakdown($as, $this->dateField, $from, $to, $this->dateFormat, $resolvedGroupBy, $metric, $this->metricField($metric, $field), $limit, $direction), $filter);
+        return $this->addMeasured(new MultiBreakdown($as, $this->dateField, $from, $to, $this->dateFormat, $resolvedGroupBy, $metric, $this->metricField($metric, $field), $limit, $direction, $groupBy), $metric, $field, $filter);
+    }
+
+    /**
+     * Add a top-N ranked list that unions the same labels across several grouping fields.
+     *
+     * @param  list<string>  $groupBy
+     */
+    public function unionBreakdown(string $as, array $groupBy, Metric $metric, string $field = '', int $limit = 10, string $direction = 'desc', Query|string|null $filter = null, Period|array|null $window = null): static
+    {
+        [$from, $to] = $this->resolveWindow($window);
+
+        $resolvedGroupBy = array_values(array_map(
+            fn (string $field): string => $this->aggregatableField($field),
+            $groupBy,
+        ));
+
+        return $this->addMeasured(new UnionBreakdown($as, $this->dateField, $from, $to, $this->dateFormat, $resolvedGroupBy, $metric, $this->metricField($metric, $field), $limit, $direction), $metric, $field, $filter);
     }
 
     public function distribution(string $as, string $field, int $interval, Query|string|null $filter = null, Period|array|null $window = null): static
@@ -282,13 +332,13 @@ class Analytics implements MultiSearchable
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addFiltered(new HistogramMetric($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($bucketField), $interval, $metric, $this->metricField($metric, $field)), $filter);
+        return $this->addMeasured(new HistogramMetric($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($bucketField), $interval, $metric, $this->metricField($metric, $field)), $metric, $field, $filter);
     }
 
     /**
      * @param  list<array{key: string, label?: string, metric: Metric, field?: string}>  $metrics
      */
-    public function groupedMetrics(string $as, string $groupBy, array $metrics, string $sortMetric = 'count', int $limit = 10, string $direction = 'desc', int $minCount = 0, Query|string|null $filter = null, Period|array|null $window = null): static
+    public function groupedMetrics(string $as, string $groupBy, array $metrics, string $sortMetric = 'count', int $limit = 10, string $direction = 'desc', ?int $minCount = null, Query|string|null $filter = null, Period|array|null $window = null, array $bucketAliases = [], bool $aliasesOnly = false): static
     {
         [$from, $to] = $this->resolveWindow($window);
         $resolvedMetrics = array_values(array_filter(array_map(
@@ -303,7 +353,9 @@ class Analytics implements MultiSearchable
         ]];
         $sortMetric = $this->groupedMetricsSortMetric($resolvedMetrics, $sortMetric);
 
-        return $this->addFiltered(new GroupedMetrics($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($groupBy), $resolvedMetrics, $sortMetric, $limit, $direction, $minCount), $filter);
+        $resolvedGroup = $this->aggregatableField($groupBy);
+
+        return $this->addFiltered(new GroupedMetrics($as, $this->dateField, $from, $to, $this->dateFormat, $resolvedGroup, $resolvedMetrics, $sortMetric, $limit, $direction, $minCount, $bucketAliases, $aliasesOnly, $this->resolvedProperties?->get($groupBy)), $filter);
     }
 
     /**
@@ -344,13 +396,16 @@ class Analytics implements MultiSearchable
     /**
      * Add a table of the actual matching documents — the rows behind a number, not a metric. $fields
      * limits the returned source (empty returns the full document); $sort is a "field:dir" string
-     * ("amount:desc", defaults to descending) sorting the rows before $limit is applied.
+     * ("amount:desc", defaults to descending) sorting the rows before $limit is applied. $except drops
+     * source fields from every row, even when $fields includes their parent.
      */
-    public function table(string $as, array $fields = [], int $limit = 10, ?string $sort = null, Query|string|null $filter = null, Period|array|null $window = null): static
+    public function table(string $as, array $fields = [], int $limit = 10, ?string $sort = null, Query|string|null $filter = null, Period|array|null $window = null, array $except = []): static
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addFiltered(new Table($as, $this->dateField, $from, $to, $this->dateFormat, $fields, $limit, $this->sortClause($sort)), $filter);
+        $this->resolvedProperties ??= $this->properties->get();
+
+        return $this->addFiltered(new Table($as, $this->dateField, $from, $to, $this->dateFormat, $fields, $limit, $this->sortClause($sort), $this->resolvedProperties, $except), $filter);
     }
 
     /**
@@ -391,7 +446,7 @@ class Analytics implements MultiSearchable
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addFiltered(new Heatmap($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($rowField), $this->aggregatableField($colField), $metric, $this->metricField($metric, $field), $rowLimit, $colLimit), $filter);
+        return $this->addMeasured(new Heatmap($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($rowField), $this->aggregatableField($colField), $metric, $this->metricField($metric, $field), $rowLimit, $colLimit), $metric, $field, $filter);
     }
 
     /**
@@ -413,12 +468,12 @@ class Analytics implements MultiSearchable
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addFiltered(new Geo($as, $this->dateField, $from, $to, $this->dateFormat, $field, $precision, $size, $metric, $this->metricField($metric, $metricField)), $filter);
+        return $this->addMeasured(new Geo($as, $this->dateField, $from, $to, $this->dateFormat, $field, $precision, $size, $metric, $this->metricField($metric, $metricField)), $metric, $metricField, $filter);
     }
 
     /**
      * Turn a "field:dir" string into an Elasticsearch sort clause, resolving the field to its
-     * aggregatable path. The direction is optional and defaults to descending.
+     * sortable path. The direction is optional and defaults to descending.
      */
     protected function sortClause(?string $sort): ?array
     {
@@ -426,9 +481,25 @@ class Analytics implements MultiSearchable
             return null;
         }
 
+        $sort = trim_text($sort);
+
+        if (preg_match('/\s/u', $sort) === 1) {
+            throw new InvalidArgumentException('Table sort must contain exactly one field.');
+        }
+
         [$field, $direction] = array_pad(explode(':', $sort, 2), 2, 'desc');
 
-        return [[$this->aggregatableField($field) => ['order' => $direction]]];
+        if (! in_array($field, ['_score', '_doc'], true) && ! str_contains($field, '[')) {
+            $this->resolvedProperties ??= $this->properties->get();
+
+            if (! $this->resolvedProperties->get($field) instanceof Type) {
+                return [keyed($field, ['order' => $direction])];
+            }
+
+            $sort = $field.':'.$direction;
+        }
+
+        return (new SortParser($this->properties))->parse($sort);
     }
 
     /**
@@ -465,7 +536,7 @@ class Analytics implements MultiSearchable
     }
 
     /**
-     * Run the analytics search and return both normalized widgets and the raw Elasticsearch hits block.
+     * Run the analytics search and return both normalized widgets and the Elasticsearch hits block.
      * Use {@see Search()} to configure hit pagination, sorting, collapse, post_filter, and total hits.
      *
      * @return array{widgets: array<string, mixed>, hits: array<string, mixed>, took: int|null, timed_out: bool}
@@ -494,9 +565,18 @@ class Analytics implements MultiSearchable
      */
     public function formatResponseWithHits(array $response): array
     {
+        $hits = $response['hits'] ?? [];
+        $this->resolvedProperties ??= $this->properties->get();
+
+        foreach ($hits['hits'] ?? [] as $key => $hit) {
+            if (isset($hit['_source'])) {
+                $hits['hits'][$key]['_source'] = $this->resolvedProperties->sourceObject($hit['_source']);
+            }
+        }
+
         return [
             'widgets' => $this->formatResponse($response),
-            'hits' => $response['hits'] ?? [],
+            'hits' => $hits,
             'took' => $response['took'] ?? null,
             'timed_out' => $response['timed_out'] ?? false,
         ];
@@ -566,7 +646,8 @@ class Analytics implements MultiSearchable
             return $this->compiledSearch;
         }
 
-        $search = $this->query
+        $query = clone $this->query;
+        $search = $query
             ->properties($this->properties)
             ->bool(function (Boolean $boolean): void {
                 $filter = $boolean->filter();
@@ -579,8 +660,9 @@ class Analytics implements MultiSearchable
             })
             ->size(0)
             ->aggregate(function (Aggs $aggs): void {
+                $millisecondBounds = $this->timelineUsesMilliseconds();
                 foreach ($this->widgets as $widget) {
-                    $aggs->add($widget);
+                    $aggs->add($millisecondBounds ? $widget->withMillisecondBounds() : $widget);
                 }
             });
 
@@ -588,16 +670,18 @@ class Analytics implements MultiSearchable
             $callback($search);
         }
 
+        $this->query = $query;
+
         return $this->compiledSearch = $search;
     }
 
     /**
      * Resolve an optional per-widget window override to a [from, to] pair, falling back to the
      * analytics-wide window. A {@see Period} is resolved in the configured timezone (so the query stays
-     * cacheable); a [from, to] array of DateTimeInterface is taken as-is.
+     * cacheable); a [from, to] array is copied into immutable dates.
      *
      * @param  Period|array{0: DateTimeInterface, 1: DateTimeInterface}|null  $window
-     * @return array{0: DateTimeInterface, 1: DateTimeInterface}
+     * @return array{0: DateTimeImmutable, 1: DateTimeImmutable}
      */
     protected function resolveWindow(Period|array|null $window): array
     {
@@ -609,7 +693,10 @@ class Analytics implements MultiSearchable
             return $window->resolve(new DateTimeImmutable('now', new DateTimeZone($this->timeZone ?? 'UTC')));
         }
 
-        return $window;
+        return [
+            WindowBound::copy($window[0]),
+            WindowBound::copy($window[1]),
+        ];
     }
 
     /**
@@ -617,46 +704,81 @@ class Analytics implements MultiSearchable
      * (this month → last month) when the widget uses the analytics-wide range, or the immediately
      * preceding equal-duration window otherwise (including any per-widget window override).
      *
+     * DateTime::modify() keeps the wall clock across a DST gap. A calendar step therefore
+     * returns to local midnight, and an equal-length step subtracts the elapsed time in UTC.
+     * modify() of the raw duration drops an hour when the zone springs forward.
+     *
      * @return array{0: DateTimeInterface, 1: DateTimeInterface} [previousFrom, previousTo]
      */
     protected function previousWindow(DateTimeInterface $from, DateTimeInterface $to, bool $usePeriod): array
     {
-        $previousTo = DateTimeImmutable::createFromInterface($from);
+        $previousTo = WindowBound::copy($from);
 
         $modifier = $usePeriod ? $this->period?->previousModifier() : null;
 
         if ($modifier !== null) {
-            return [$previousTo->modify($modifier), $previousTo];
+            return [Period::startOfDay($previousTo->modify($modifier)), $previousTo];
         }
 
-        $length = $to->getTimestamp() - $from->getTimestamp();
+        $seconds = $to->getTimestamp() - $from->getTimestamp();
+        $microseconds = (int) $to->format('u') - (int) $from->format('u');
+        $remainder = 2 * WindowBound::remainder($from) - WindowBound::remainder($to);
+        $carry = (int) floor($remainder / 1000);
+        $previousFrom = $previousTo->setTimezone(new DateTimeZone('UTC'))
+            ->modify(sprintf('%+d seconds %+d microseconds', -$seconds, $carry - $microseconds))
+            ->setTimezone($previousTo->getTimezone());
 
-        return [$previousTo->setTimestamp($from->getTimestamp() - $length), $previousTo];
+        return [WindowBound::withRemainder($previousFrom, $remainder - $carry * 1000), $previousTo];
     }
 
     protected function add(Widget $widget): static
     {
         $this->widgets[$widget->name()] = $widget;
+        $this->compiledSearch = null;
 
         return $this;
     }
 
     /**
-     * Count has no meaningful metric field, so it falls back to the timeline field
-     * (every event has a timestamp) when none is given.
+     * A count reads the values of a field. Without a field, or for a text field without doc
+     * values, it counts documents instead ({@see countedText()}).
      */
     protected function metricField(Metric $metric, string $field): string
     {
-        if ($field === '') {
-            return $metric === Metric::Count ? $this->dateField : $field;
+        return $this->countedText($metric, $field) === null ? $this->aggregatableField($field) : '';
+    }
+
+    /**
+     * The text field a count measures by the documents that contain it.
+     */
+    private function countedText(Metric $metric, string $field): ?string
+    {
+        if ($metric !== Metric::Count || $field === '') {
+            return null;
         }
 
-        return $this->aggregatableField($field);
+        $this->resolvedProperties ??= $this->properties->get();
+
+        return $this->resolvedProperties->get($field) instanceof Text ? $field : null;
+    }
+
+    private function addMeasured(Widget $widget, Metric $metric, string $field, Query|string|null $filter): static
+    {
+        $text = $this->countedText($metric, $field);
+
+        return $this->addFiltered($text === null ? $widget : $widget->countingDocumentsWith($text), $filter);
+    }
+
+    private function timelineUsesMilliseconds(): bool
+    {
+        $this->resolvedProperties ??= $this->properties->get();
+
+        return $this->resolvedProperties->get($this->dateField)?->type() === 'date';
     }
 
     /**
      * @param  array{key: string, label?: string, metric: Metric, field?: string}  $metric
-     * @return array{key: string, label: string, metric: Metric, field: string}|null
+     * @return array{key: string, label: string, metric: Metric, field: string, counted?: string}|null
      */
     protected function metricSpec(array $metric): ?array
     {
@@ -673,11 +795,15 @@ class Analytics implements MultiSearchable
             return null;
         }
 
+        $label = trim_text((string) ($metric['label'] ?? $key));
+        $counted = $this->countedText($metricType, $field);
+
         return [
             'key' => $key,
-            'label' => trim((string) ($metric['label'] ?? $key)) ?: $key,
+            'label' => $label === '' ? $key : $label,
             'metric' => $metricType,
-            'field' => $metricType === Metric::Count ? '' : $this->metricField($metricType, $field),
+            'field' => $this->metricField($metricType, $field),
+            ...($counted === null ? [] : ['counted' => $counted]),
         ];
     }
 

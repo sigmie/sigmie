@@ -6,9 +6,12 @@ namespace Sigmie\Analytics\Widgets;
 
 use DateTimeInterface;
 use Sigmie\Analytics\Enums\Metric;
+use Sigmie\Mappings\Types\Type;
 use Sigmie\Query\Aggs;
 use Sigmie\Query\Queries\Term\Terms;
 use Sigmie\Shared\Collection;
+
+use function Sigmie\Functions\object_map;
 
 /**
  * A top-N ranked list — a dimension ranked by a metric ("top products by revenue",
@@ -16,6 +19,9 @@ use Sigmie\Shared\Collection;
  */
 class Breakdown extends Widget
 {
+    /** @var array<string, array{label: string, values: list<string|bool>}> */
+    protected array $aliases;
+
     public function __construct(
         string $name,
         string $dateField,
@@ -28,8 +34,10 @@ class Breakdown extends Widget
         protected int $limit,
         protected string $direction,
         protected array $bucketAliases = [],
+        protected ?Type $groupType = null,
     ) {
         parent::__construct($name, $dateField, $from, $to, $dateFormat);
+        $this->aliases = $this->normalizeBucketAliases($this->bucketAliases, $groupType);
     }
 
     public function toRaw(): array
@@ -37,18 +45,14 @@ class Breakdown extends Widget
         return $this->scoped($this->name, $this->from, $this->to, function (Aggs $aggs): void {
             $terms = $aggs->terms('groups', $this->groupBy)
                 ->size($this->limit)
-                ->order($this->metric->orderKey('metric'), $this->direction)
-                ->aggregate(fn (Aggs $sub) => $this->metric->apply($sub, 'metric', $this->field));
+                ->aggregate(fn (Aggs $sub) => $this->addMetric($sub));
+            $this->metric->rank($terms, 'metric', $this->field, $this->direction);
 
-            $excluded = $this->excludedAliasValues();
+            $terms->exclude($this->excludedAliasValues($this->aliases, $this->groupType));
 
-            if ($excluded !== []) {
-                $terms->exclude($excluded);
-            }
-
-            foreach ($this->normalizedAliases() as $key => $alias) {
+            foreach ($this->aliases as $key => $alias) {
                 $aggs->filter($key, new Terms($this->groupBy, $alias['values']))
-                    ->aggregate(fn (Aggs $sub) => $this->metric->apply($sub, 'metric', $this->field));
+                    ->aggregate(fn (Aggs $sub) => $this->addMetric($sub));
             }
         })->toRaw();
     }
@@ -59,72 +63,41 @@ class Breakdown extends Widget
 
         $rows = [
             ...$groups->map(fn (array $bucket): array => [
-                'key' => $bucket['key'],
+                'key' => self::termsKey($bucket),
                 'value' => $this->metric->extract($bucket['metric'] ?? []),
                 'count' => $bucket['doc_count'] ?? 0,
+                'population' => $this->metric->population($bucket, $this->metric->resultField($this->field, $this->countedField())),
             ])->toArray(),
             ...$this->aliasRows($aggregations),
         ];
 
-        usort($rows, fn (array $a, array $b): int => $this->compareRows($a, $b));
+        usort($rows, fn (array $a, array $b): int => self::compareRankedRows($a, $b, $this->direction));
 
         return [
             'type' => 'breakdown',
             'metric' => $this->metric->value,
-            'field' => $this->field,
+            'field' => $this->metric->resultField($this->field, $this->countedField()),
             'group_by' => $this->groupBy,
             'rows' => array_slice($rows, 0, $this->limit),
-            ...($this->bucketAliases !== [] ? ['bucket_aliases' => $this->bucketAliases] : []),
+            ...($this->bucketAliases !== [] ? ['bucket_aliases' => object_map($this->bucketAliases)] : []),
         ];
     }
 
-    /**
-     * @return array<string, array{label: string, values: list<string>}>
-     */
-    protected function normalizedAliases(): array
+    protected function addMetric(Aggs $aggs): void
     {
-        $aliases = [];
+        $this->metric->apply($aggs, 'metric', $this->field, $this->countedField());
 
-        foreach ($this->bucketAliases as $label => $values) {
-            $label = trim((string) $label);
-            $values = array_values(array_filter(array_map(
-                static fn (mixed $value): string => trim((string) $value),
-                (array) $values,
-            ), static fn (string $value): bool => $value !== ''));
-            if ($label === '') {
-                continue;
-            }
-
-            if ($values === []) {
-                continue;
-            }
-
-            $aliases[$this->aliasAggName($label)] = [
-                'label' => $label,
-                'values' => array_values(array_unique($values)),
-            ];
+        if ($this->metric !== Metric::Count) {
+            $aggs->valueCount('metric_population', $this->field);
         }
-
-        return $aliases;
     }
 
     /**
-     * @return list<string>
-     */
-    protected function excludedAliasValues(): array
-    {
-        return (new Collection($this->normalizedAliases()))
-            ->flatMap(fn (array $alias): array => $alias['values'])
-            ->unique()
-            ->values();
-    }
-
-    /**
-     * @return list<array{key: string, value: int|float|null, count: int, source_keys: list<string>}>
+     * @return list<array{key: string, value: int|float|null, count: int, source_keys: list<string|bool>}>
      */
     protected function aliasRows(array $aggregations): array
     {
-        return (new Collection($this->normalizedAliases()))
+        return (new Collection($this->aliases))
             ->map(function (array $alias, string $key) use ($aggregations): array {
                 $bucket = $aggregations[$this->name][$key] ?? [];
 
@@ -132,32 +105,11 @@ class Breakdown extends Widget
                     'key' => $alias['label'],
                     'value' => $this->metric->extract($bucket['metric'] ?? []),
                     'count' => $bucket['doc_count'] ?? 0,
+                    'population' => $this->metric->population($bucket, $this->metric->resultField($this->field, $this->countedField())),
                     'source_keys' => $alias['values'],
                 ];
             })
             ->filter(fn (array $row): bool => $row['count'] > 0)
             ->values();
-    }
-
-    protected function compareRows(array $a, array $b): int
-    {
-        $left = (float) ($a['value'] ?? 0);
-        $right = (float) ($b['value'] ?? 0);
-
-        // @codeCoverageIgnoreStart
-        if ($left === $right) {
-            return ((string) $a['key']) <=> ((string) $b['key']);
-        }
-
-        // @codeCoverageIgnoreEnd
-
-        return $this->direction === 'asc'
-            ? $left <=> $right
-            : $right <=> $left;
-    }
-
-    protected function aliasAggName(string $label): string
-    {
-        return 'alias_'.substr(md5($label), 0, 12);
     }
 }

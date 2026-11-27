@@ -11,7 +11,8 @@ class Pattern extends ConfigurableCharFilter
     public function __construct(
         string $name,
         protected string $pattern,
-        protected string $replacement
+        protected string $replacement,
+        protected ?string $flags = null,
     ) {
         parent::__construct($name);
     }
@@ -23,14 +24,16 @@ class Pattern extends ConfigurableCharFilter
         return new static(
             $name,
             $configs['pattern'],
-            $configs['replacement']
+            $configs['replacement'] ?? '',
+            $configs['flags'] ?? null,
         );
     }
 
     public function settings(array $settings): void
     {
         $this->pattern = $settings['pattern'];
-        $this->replacement = $settings['replacement'];
+        $this->replacement = $settings['replacement'] ?? '';
+        $this->flags = $settings['flags'] ?? null;
     }
 
     public function toRaw(): array
@@ -40,6 +43,7 @@ class Pattern extends ConfigurableCharFilter
                 'type' => 'pattern_replace',
                 'pattern' => $this->pattern,
                 'replacement' => $this->replacement,
+                ...($this->flags === null ? [] : ['flags' => $this->flags]),
             ],
         ];
     }

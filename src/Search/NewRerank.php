@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
+use Sigmie\AI\APIs\ApiResponse;
 use Sigmie\AI\Contracts\RerankApi;
 use Sigmie\Document\Hit;
 use Sigmie\Document\RerankedHit;
 use Symfony\Component\Yaml\Yaml;
+
+use function Sigmie\Functions\select_source_fields;
+use function Sigmie\Functions\trim_text;
 
 class NewRerank
 {
@@ -44,29 +48,32 @@ class NewRerank
     {
         $query = $this->query;
 
-        if ($hits === [] || ! $query) {
+        if ($hits === [] || $query === null || trim_text($query) === '') {
             return $hits;
         }
 
+        $limit = min($this->topK, count($hits));
+        if ($limit <= 0) {
+            return [];
+        }
+
+        // The provider index is an offset into the rebuilt payload.
+        $hits = array_values($hits);
         $textDocuments = $this->payload($hits);
 
-        $res = $this->reranker->rerank($textDocuments, $query, $this->topK) ?? [];
+        $res = $this->reranker->rerank($textDocuments, $query, $limit);
+        ApiResponse::validateRanking($res, count($hits));
+        usort($res, fn (array $a, array $b): int => $b['score'] <=> $a['score']);
 
         return array_map(function (array $index) use ($hits): RerankedHit {
             $hit = $hits[$index['index']];
 
             if (is_array($hit)) {
-                $hit = new Hit(
-                    $hit['_source'] ?? [],
-                    $hit['_id'] ?? '',
-                    $hit['_score'] ?? null,
-                    $hit['_index'] ?? null,
-                    $hit['sort'] ?? null
-                );
+                $hit = Hit::fromRaw($hit);
             }
 
             return new RerankedHit($hit, $index['score']);
-        }, $res);
+        }, array_slice($res, 0, $limit));
     }
 
     public function payload(array $hits): array
@@ -85,16 +92,11 @@ class NewRerank
         $documents = [];
 
         foreach ($hits as $hit) {
-            $filteredData = [];
             $source = is_array($hit) ? ($hit['_source'] ?? []) : $hit->_source;
+            $filteredData = select_source_fields((array) $source, $fields);
 
-            foreach ($fields as $field) {
-                if (isset($source[$field])) {
-                    $filteredData[$field] = $source[$field];
-                }
-            }
-
-            $documents[] = Yaml::dump($filteredData, inline: 1);
+            $data = $filteredData !== [] && array_is_list($filteredData) ? (object) $filteredData : $filteredData;
+            $documents[] = Yaml::dump($data, inline: 1, flags: Yaml::DUMP_OBJECT_AS_MAP);
         }
 
         return $documents;

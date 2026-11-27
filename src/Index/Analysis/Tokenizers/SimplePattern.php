@@ -24,7 +24,7 @@ class SimplePattern extends Tokenizer
 
         $flags = $config['flags'] ?? null;
 
-        return new static($name, $config['pattern'], $flags);
+        return new static($name, $config['pattern'] ?? '', $flags);
     }
 
     public function toRaw(): array

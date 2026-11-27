@@ -10,6 +10,6 @@ class NoopReranker implements Reranker
 {
     public function rerank(array $documents, string $queryString, ?int $topK = null): array
     {
-        return $documents;
+        return $topK === null ? $documents : array_slice($documents, 0, $topK);
     }
 }

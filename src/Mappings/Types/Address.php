@@ -13,18 +13,18 @@ class Address extends Text implements Analyze
     public function configure(): void
     {
         $this->unstructuredText()->indexPrefixes()->keyword();
+
+        $this->makeSortable();
     }
 
     public function analyze(NewAnalyzer $newAnalyzer): void
     {
         $newAnalyzer->tokenizeOnWordBoundaries();
         $newAnalyzer->lowercase();
-
-        $this->makeSortable();
     }
 
     public function queries(array|string $queryString): array
     {
-        return [new MatchBoolPrefix($this->name, $queryString, analyzer: $this->searchAnalyzer())];
+        return $this->queryStrings($queryString, fn (string $queryString): array => [new MatchBoolPrefix($this->name(), $queryString, analyzer: $this->searchAnalyzer())]);
     }
 }

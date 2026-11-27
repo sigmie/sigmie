@@ -7,28 +7,37 @@ namespace Sigmie\Testing;
 use PHPUnit\Framework\Assert;
 use Sigmie\AI\Contracts\RerankApi;
 
+use function Sigmie\Functions\rerank_texts;
+
 class FakeRerankApi implements RerankApi
 {
+    use TokenizesText;
+
     protected array $rerankCalls = [];
 
     public function __construct(
         protected RerankApi $realApi
     ) {}
 
-    public function rerank(array $documents, string $query, ?int $topK = null): array
+    public function rerank(array $newIndexes, string $query, ?int $topK = null): array
     {
         $this->rerankCalls[] = [
-            'documents' => $documents,
-            'documents_count' => count($documents),
+            'documents' => $newIndexes,
+            'documents_count' => count($newIndexes),
             'query' => $query,
             'topK' => $topK,
         ];
 
+        if ($newIndexes === [] || $topK === 0) {
+            return [];
+        }
+
         $queryTokens = $this->tokens($query);
 
-        $scores = array_map(fn (mixed $document, int $index): array => [
+        $documents = rerank_texts($newIndexes);
+        $scores = array_map(fn (string $document, int $index): array => [
             'index' => $index,
-            'score' => $this->score((string) $document, $queryTokens),
+            'score' => $this->score($document, $queryTokens),
         ], $documents, array_keys($documents));
 
         usort($scores, fn (array $left, array $right): int => $right['score'] <=> $left['score']);
@@ -98,13 +107,8 @@ class FakeRerankApi implements RerankApi
         $documentTokens = $this->tokens($document);
         $overlap = array_intersect($queryTokens, $documentTokens);
 
-        return count($overlap) + (count($documentTokens) / 1000);
-    }
+        $length = count($documentTokens);
 
-    protected function tokens(string $text): array
-    {
-        $normalized = (string) preg_replace('/[^a-z0-9]+/', ' ', strtolower($text));
-
-        return array_values(array_filter(explode(' ', $normalized)));
+        return (count($overlap) + $length / (1000 + $length)) / (count($queryTokens) + 1);
     }
 }

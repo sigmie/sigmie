@@ -10,17 +10,82 @@ require_once __DIR__.'/Stubs/LaravelAiStubs.php';
 
 use DateTimeImmutable;
 use DateTimeZone;
+use InvalidArgumentException;
 use Laravel\Ai\Tools\Request;
 use Sigmie\AI\AsTool;
 use Sigmie\AI\SigmieAnalyticsTool;
+use Sigmie\Analytics\QueryRecipe;
 use Sigmie\Document\Document;
+use Sigmie\Mappings\Field;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Parse\ParseException;
 use Sigmie\Sigmie;
 use Sigmie\SigmieIndex;
 use Sigmie\Testing\TestCase;
 
 class SigmieAnalyticsToolTest extends TestCase
 {
+    public function test_a_recipe_can_use_a_nanos_timeline_and_return_the_exact_matching_events(): void
+    {
+        $index = $this->createSalesIndex();
+        try {
+            $index->merge([
+                new Document(['precise_at' => '2024-01-01T00:00:00.000000499Z', 'amount' => 1]),
+                new Document(['precise_at' => '2024-01-01T00:00:00.000000500Z', 'amount' => 2]),
+            ], refresh: true);
+
+            $arguments = [
+                'widget' => 'trend', 'date_field' => 'precise_at', 'metric' => 'sum',
+                'field' => 'amount', 'interval' => '1ms', 'include_hits' => 1,
+                'from' => '2024-01-01T00:00:00Z', 'to' => '2024-01-01T00:00:00.000000500Z',
+            ];
+            $recipe = QueryRecipe::fromArray(['dataset' => 'sales', 'template' => $arguments])->validateAgainst($index);
+            $result = (new SigmieAnalyticsTool($index))->result(new Request($recipe->bind([])->toArray()));
+
+            $this->assertEquals([1], array_column($result['result']['series'], 'value'));
+            $this->assertSame([1], array_column(array_column($result['hits']['hits'], '_source'), 'amount'));
+        } finally {
+            $index->delete();
+        }
+    }
+
+    public function test_fractional_nanosecond_window_keeps_the_matching_millisecond(): void
+    {
+        $index = $this->createSalesIndex();
+        $tool = new SigmieAnalyticsTool($index);
+
+        try {
+            $arguments = [
+                'widget' => 'trend', 'date_field' => 'created_at', 'metric' => 'sum',
+                'field' => 'amount', 'interval' => '1ms', 'include_hits' => 1,
+                'from' => '2024-01-01T00:00:00Z', 'to' => '2024-01-01T00:00:00.000000500Z',
+            ];
+            $result = $tool->result(new Request($arguments));
+
+            $this->assertEquals([150], array_column($result['result']['series'], 'value'));
+            $this->assertCount(2, $result['hits']['hits']);
+
+            $result = $tool->result(new Request([
+                ...$arguments,
+                'from' => '2024-01-01T00:00:00.000000500Z',
+                'to' => '2024-01-01T00:00:00.001Z',
+            ]));
+
+            $this->assertEquals([0], array_column($result['result']['series'], 'value'));
+            $this->assertSame([], $result['hits']['hits']);
+
+            $delta = $tool->result(new Request([
+                ...$arguments, 'widget' => 'kpi_delta', 'include_hits' => 0,
+                'from' => '2024-01-01T00:00:00.000000200Z',
+                'to' => '2024-01-01T00:00:00.000000800Z',
+            ]));
+            $this->assertEquals(0, $delta['value']);
+            $this->assertEquals(150, $delta['previous']);
+        } finally {
+            $index->delete();
+        }
+    }
+
     private function createSalesIndex(): SigmieIndex
     {
         $index = new class($this->sigmie) extends SigmieIndex
@@ -45,9 +110,13 @@ class SigmieAnalyticsToolTest extends TestCase
             {
                 $props = new NewProperties;
                 $props->date('created_at');
+                $props->add(new Field('precise_at', 'date_nanos'));
                 $props->number('amount');
                 $props->category('product');
+                $props->bool('active');
                 $props->category('channel');
+                $props->category('champion_country');
+                $props->category('runner_up_country');
                 $props->object('meta', function (NewProperties $properties): void {
                     $properties->date('observed_at');
                     $properties->number('score');
@@ -60,11 +129,73 @@ class SigmieAnalyticsToolTest extends TestCase
         $index->create();
 
         $index->merge([
-            new Document(['created_at' => '2024-01-01', 'amount' => 100, 'product' => 'A', 'channel' => 'online']),
-            new Document(['created_at' => '2024-01-01', 'amount' => 50, 'product' => 'B', 'channel' => 'online']),
-            new Document(['created_at' => '2024-01-02', 'amount' => 200, 'product' => 'A', 'channel' => 'retail']),
-            new Document(['created_at' => '2024-01-03', 'amount' => 30, 'product' => 'B', 'channel' => 'retail']),
-            new Document(['created_at' => '2024-01-03', 'amount' => 70, 'product' => 'A', 'channel' => 'online']),
+            new Document(['created_at' => '2024-01-01', 'amount' => 100, 'product' => 'A', 'active' => false, 'channel' => 'online', 'champion_country' => 'Germany', 'runner_up_country' => 'France']),
+            new Document(['created_at' => '2024-01-01', 'amount' => 50, 'product' => 'B', 'active' => true, 'channel' => 'online', 'champion_country' => 'Spain', 'runner_up_country' => 'Germany']),
+            new Document(['created_at' => '2024-01-02', 'amount' => 200, 'product' => 'A', 'active' => false, 'channel' => 'retail', 'champion_country' => 'Germany', 'runner_up_country' => 'Italy']),
+            new Document(['created_at' => '2024-01-03', 'amount' => 30, 'product' => 'B', 'active' => true, 'channel' => 'retail', 'champion_country' => 'France', 'runner_up_country' => 'Spain']),
+            new Document(['created_at' => '2024-01-03', 'amount' => 70, 'product' => 'A', 'active' => false, 'channel' => 'online', 'champion_country' => 'Italy', 'runner_up_country' => 'Germany']),
+        ], refresh: true);
+
+        return $index;
+    }
+
+    private function createPrivateContactsIndex(): SigmieIndex
+    {
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
+            use AsTool;
+
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
+            public function properties(): NewProperties
+            {
+                $props = new NewProperties;
+                $props->date('created_at');
+                $props->number('amount');
+                $props->number('salary');
+                $props->category('region');
+                $props->nested('contacts', function (NewProperties $props): void {
+                    $props->keyword('name');
+                    $props->keyword('email');
+                });
+
+                return $props;
+            }
+
+            public function exceptFromTools(): array
+            {
+                return ['salary', 'contacts.email'];
+            }
+        };
+
+        $index->create();
+        $index->merge([
+            new Document([
+                'created_at' => '2024-01-01',
+                'amount' => 100,
+                'salary' => 987654,
+                'region' => 'North',
+                'contacts' => [['name' => 'Jane', 'email' => 'jane@example.com']],
+            ]),
+            new Document([
+                'created_at' => '2024-01-01',
+                'amount' => 50,
+                'salary' => 123456,
+                'region' => 'South',
+                'contacts' => [['name' => 'John', 'email' => 'john@example.com']],
+            ]),
         ], refresh: true);
 
         return $index;
@@ -80,7 +211,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $tools = $index->tools();
 
         $this->assertInstanceOf(SigmieAnalyticsTool::class, $tools[5]);
-        $this->assertSame('analytics', $tools[5]->name());
+        $this->assertSame('analytics_'.$index->name(), $tools[5]->name());
     }
 
     /**
@@ -104,6 +235,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertStringContainsString('hit_filters', $description);
         $this->assertStringContainsString('bucket_aliases', $description);
         $this->assertStringContainsString('multi_breakdown', $description);
+        $this->assertStringContainsString('union_breakdown', $description);
         $this->assertStringContainsString('group_by_fields', $description);
         $this->assertStringContainsString('histogram_metric', $description);
         $this->assertStringContainsString('grouped_metrics', $description);
@@ -155,7 +287,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertStringContainsString('Examples (', $description);
 
         // One example per widget, as valid JSON grounded in the index's real fields.
-        foreach (['kpi', 'kpi_delta', 'trend', 'cumulative', 'grouped_trend', 'breakdown', 'multi_breakdown', 'distribution', 'histogram_metric', 'grouped_metrics', 'percentiles', 'stats', 'table', 'funnel', 'heatmap', 'retention', 'geo'] as $widget) {
+        foreach (['kpi', 'kpi_delta', 'trend', 'cumulative', 'grouped_trend', 'breakdown', 'multi_breakdown', 'union_breakdown', 'distribution', 'histogram_metric', 'grouped_metrics', 'percentiles', 'stats', 'table', 'funnel', 'heatmap', 'retention', 'geo'] as $widget) {
             $this->assertStringContainsString(sprintf('"widget":"%s"', $widget), $description);
         }
 
@@ -165,6 +297,32 @@ class SigmieAnalyticsToolTest extends TestCase
 
         // The sliced example shows filters narrowing a single widget.
         $this->assertStringContainsString('"filters"', $description);
+    }
+
+    public function test_description_uses_distinct_union_fields_with_one_grouping_field(): void
+    {
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
+            public function name(): string
+            {
+                return 'orders';
+            }
+
+            public function properties(): NewProperties
+            {
+                $props = new NewProperties;
+                $props->date('created_at');
+                $props->number('amount');
+                $props->keyword('status');
+
+                return $props;
+            }
+        };
+
+        $description = (new SigmieAnalyticsTool($index))->description();
+
+        $this->assertStringContainsString('"group_by_fields":"status,<second_keyword_field>"', $description);
+        $this->assertStringContainsString('"group_by":"status"', $description);
     }
 
     /**
@@ -183,7 +341,7 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertFalse($schema['widget']->nullable, "'widget' must NOT be nullable.");
         $this->assertFalse($schema['date_field']->nullable, "'date_field' must NOT be nullable.");
 
-        foreach (['metric', 'field', 'bucket_field', 'metrics', 'sort_metric', 'min_count', 'interval', 'group_by', 'group_by_fields', 'limit', 'bucket_size', 'percents', 'from', 'to', 'filters', 'bucket_aliases', 'include_hits', 'hit_filters', 'hit_fields', 'hit_sort', 'hit_limit'] as $name) {
+        foreach (['metric', 'field', 'bucket_field', 'metrics', 'sort_metric', 'min_count', 'interval', 'min_doc_count', 'group_by', 'group_by_fields', 'limit', 'bucket_size', 'percents', 'from', 'to', 'filters', 'bucket_aliases', 'bucket_aliases_only', 'include_hits', 'hit_filters', 'hit_fields', 'hit_sort', 'hit_limit'] as $name) {
             $this->assertTrue($schema[$name]->nullable, sprintf("Optional property '%s' must be nullable().", $name));
         }
     }
@@ -234,6 +392,50 @@ class SigmieAnalyticsToolTest extends TestCase
     /**
      * @test
      */
+    public function trend_can_omit_empty_buckets(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'trend',
+            'date_field' => 'created_at',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'interval' => 'day',
+            'min_doc_count' => 1,
+            'from' => '2024-01-01',
+            'to' => '2024-01-05',
+        ]));
+
+        $this->assertCount(3, $result['series']);
+    }
+
+    /**
+     * @test
+     */
+    public function grouped_trend_count_does_not_require_a_metric_field(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'grouped_trend',
+            'date_field' => 'created_at',
+            'group_by' => 'product',
+            'metric' => 'count',
+            'field' => null,
+            'interval' => 'day',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('grouped_trend', $result['type']);
+        $this->assertSame(['A', 'B'], array_column($result['groups'], 'group'));
+        $this->assertSame([1, 1, 1], array_column($result['groups'][0]['series'], 'value'));
+    }
+
+    /**
+     * @test
+     */
     public function result_runs_a_breakdown_widget(): void
     {
         $index = $this->createSalesIndex();
@@ -250,6 +452,28 @@ class SigmieAnalyticsToolTest extends TestCase
 
         $this->assertSame('A', $result['rows'][0]['key']);
         $this->assertEquals(370.0, $result['rows'][0]['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function ranked_widgets_respect_metric_sort_direction(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'breakdown',
+            'date_field' => 'created_at',
+            'group_by' => 'product',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'sort' => 'metric:asc',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('B', $result['rows'][0]['key']);
+        $this->assertEquals(80.0, $result['rows'][0]['value']);
     }
 
     /**
@@ -311,6 +535,33 @@ class SigmieAnalyticsToolTest extends TestCase
     /**
      * @test
      */
+    public function result_runs_a_union_breakdown_widget(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'union_breakdown',
+            'date_field' => 'created_at',
+            'group_by_fields' => 'champion_country,runner_up_country',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'limit' => 3,
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('union_breakdown', $result['type']);
+        $this->assertSame('Germany', $result['rows'][0]['key']);
+        $this->assertEquals(420.0, $result['rows'][0]['value']);
+        $this->assertSame('Italy', $result['rows'][1]['key']);
+        $this->assertEquals(270.0, $result['rows'][1]['value']);
+        $this->assertSame('France', $result['rows'][2]['key']);
+        $this->assertEquals(130.0, $result['rows'][2]['value']);
+    }
+
+    /**
+     * @test
+     */
     public function result_runs_a_histogram_metric_widget(): void
     {
         $index = $this->createSalesIndex();
@@ -353,6 +604,103 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertSame('A', $result['rows'][0]['key']);
         $this->assertEquals(3, $result['rows'][0]['metrics']['count']);
         $this->assertEquals(123.33333333333333, $result['rows'][0]['metrics']['avg_amount']);
+        $this->assertSame(3, $result['rows'][0]['metric_populations']['avg_amount']['value_count']);
+    }
+
+    /**
+     * @test
+     */
+    public function result_applies_bucket_aliases_to_grouped_metrics_before_aggregation(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'grouped_metrics',
+            'date_field' => 'created_at',
+            'group_by' => 'product',
+            'metrics' => '[{"key":"count","label":"Count","metric":"count"},{"key":"avg_amount","label":"Average amount","metric":"avg","field":"amount"}]',
+            'sort_metric' => 'count',
+            'bucket_aliases' => '[{"label":"Combined","values":["A","B"]}]',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertCount(1, $result['rows']);
+        $this->assertSame('Combined', $result['rows'][0]['key']);
+        $this->assertSame(5, $result['rows'][0]['count']);
+        $this->assertEquals(90.0, $result['rows'][0]['metrics']['avg_amount']);
+        $this->assertSame(5, $result['rows'][0]['metric_populations']['avg_amount']['value_count']);
+    }
+
+    /**
+     * @test
+     */
+    public function grouped_metrics_can_return_only_defined_alias_populations(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'grouped_metrics',
+            'date_field' => 'created_at',
+            'group_by' => 'product',
+            'metrics' => '[{"key":"count","label":"Count","metric":"count"}]',
+            'sort_metric' => 'count',
+            'bucket_aliases' => '[{"label":"Only B","values":["B"]}]',
+            'bucket_aliases_only' => true,
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertCount(1, $result['rows']);
+        $this->assertSame('Only B', $result['rows'][0]['key']);
+        $this->assertSame(2, $result['rows'][0]['count']);
+        $this->assertTrue($result['bucket_aliases_only']);
+    }
+
+    /** @test */
+    public function result_defaults_retention_to_daily_buckets(): void
+    {
+        $index = $this->createSalesIndex();
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'retention',
+            'date_field' => 'created_at',
+            'cohort_field' => 'created_at',
+            'id_field' => 'product',
+            'interval' => null,
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]));
+
+        $this->assertSame('Day', $result['interval']);
+        $this->assertCount(3, $result['cohorts']);
+    }
+
+    /** @test */
+    public function result_preserves_boolean_values_in_bucket_aliases(): void
+    {
+        $index = $this->createSalesIndex();
+        $tool = new SigmieAnalyticsTool($index);
+        $arguments = [
+            'date_field' => 'created_at',
+            'group_by' => 'active',
+            'bucket_aliases' => '[{"label":"Inactive","values":[false]}]',
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ];
+
+        $grouped = $tool->result(new Request([
+            ...$arguments,
+            'widget' => 'grouped_metrics',
+            'metrics' => '[{"key":"count","metric":"count"}]',
+        ]));
+        $breakdown = $tool->result(new Request([...$arguments, 'widget' => 'breakdown', 'metric' => 'count']));
+
+        foreach ([$grouped, $breakdown] as $result) {
+            $this->assertSame('Inactive', $result['rows'][0]['key']);
+            $this->assertSame([false], $result['rows'][0]['source_keys']);
+            $this->assertSame(3, $result['rows'][0]['count']);
+            $this->assertSame(2, $result['rows'][1]['count']);
+        }
     }
 
     /**
@@ -383,7 +731,7 @@ class SigmieAnalyticsToolTest extends TestCase
             'to' => '2024-01-04',
         ]));
 
-        $this->assertSame([25, 90], array_keys($custom['percentiles']));
+        $this->assertSame([25, 90, 100, 0], array_keys($custom['percentiles']));
     }
 
     /**
@@ -504,6 +852,127 @@ class SigmieAnalyticsToolTest extends TestCase
     /**
      * @test
      */
+    public function table_and_hits_never_return_fields_excepted_from_tools(): void
+    {
+        $tool = new SigmieAnalyticsTool($this->createPrivateContactsIndex());
+
+        $outputs = [
+            $tool->handle(new Request([
+                'widget' => 'table',
+                'date_field' => 'created_at',
+                'fields' => 'amount,contacts',
+                'from' => '2024-01-01',
+                'to' => '2024-01-02',
+            ])),
+            $tool->handle(new Request([
+                'widget' => 'kpi',
+                'date_field' => 'created_at',
+                'metric' => 'sum',
+                'field' => 'amount',
+                'from' => '2024-01-01',
+                'to' => '2024-01-02',
+                'include_hits' => 1,
+                'hit_fields' => 'amount,contacts.email,contacts.name',
+            ])),
+        ];
+
+        foreach ($outputs as $output) {
+            $this->assertStringContainsString('Jane', $output);
+            $this->assertStringNotContainsString('jane@example.com', $output);
+        }
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider widgetsOnFieldsExceptedFromTools
+     */
+    public function widgets_refuse_to_group_measure_or_sort_by_fields_excepted_from_tools(array $arguments, string $privateField): void
+    {
+        $tool = new SigmieAnalyticsTool($this->createPrivateContactsIndex());
+
+        $output = $tool->handle(new Request([
+            'date_field' => 'created_at',
+            'from' => '2024-01-01',
+            'to' => '2024-01-02',
+            ...$arguments,
+        ]));
+
+        $this->assertStringContainsString(sprintf('Field %s is private', $privateField), json_decode($output, true)['error'] ?? '');
+
+        foreach (['jane@example.com', 'john@example.com', '987654', '123456'] as $private) {
+            $this->assertStringNotContainsString($private, $output);
+        }
+    }
+
+    /**
+     * @return array<string, array{0: array<string, mixed>, 1: string}>
+     */
+    public static function widgetsOnFieldsExceptedFromTools(): array
+    {
+        $id = 'contacts.email';
+
+        return [
+            'breakdown' => [['widget' => 'breakdown', 'group_by' => $id, 'metric' => 'count'], $id],
+            'grouped_trend' => [['widget' => 'grouped_trend', 'group_by' => $id, 'metric' => 'count', 'interval' => 'day'], $id],
+            'grouped_metrics' => [['widget' => 'grouped_metrics', 'group_by' => $id, 'metrics' => '[{"key":"count","metric":"count"}]'], $id],
+            'grouped_metrics metric field' => [['widget' => 'grouped_metrics', 'group_by' => 'region', 'metrics' => '[{"key":"max_salary","metric":"max","field":"salary"}]', 'sort_metric' => 'max_salary'], 'salary'],
+            'multi_breakdown' => [['widget' => 'multi_breakdown', 'group_by_fields' => 'region,'.$id, 'metric' => 'count'], $id],
+            'union_breakdown' => [['widget' => 'union_breakdown', 'group_by_fields' => 'region,'.$id, 'metric' => 'count'], $id],
+            'heatmap row' => [['widget' => 'heatmap', 'row_field' => $id, 'col_field' => 'region'], $id],
+            'heatmap col' => [['widget' => 'heatmap', 'row_field' => 'region', 'col_field' => $id], $id],
+            'retention' => [['widget' => 'retention', 'cohort_field' => 'created_at', 'id_field' => $id, 'interval' => 'day'], $id],
+            'kpi' => [['widget' => 'kpi', 'metric' => 'max', 'field' => 'salary'], 'salary'],
+            'distribution' => [['widget' => 'distribution', 'field' => 'salary', 'bucket_size' => 1], 'salary'],
+            'histogram_metric' => [['widget' => 'histogram_metric', 'bucket_field' => 'salary', 'bucket_size' => 1, 'metric' => 'count', 'field' => 'amount'], 'salary'],
+            'percentiles' => [['widget' => 'percentiles', 'field' => 'salary'], 'salary'],
+            'stats' => [['widget' => 'stats', 'field' => 'salary'], 'salary'],
+            'table sort' => [['widget' => 'table', 'fields' => 'amount', 'sort' => 'salary:desc'], 'salary'],
+            'hit_sort' => [['widget' => 'kpi', 'metric' => 'count', 'include_hits' => 1, 'hit_fields' => 'amount', 'hit_sort' => 'salary:desc'], 'salary'],
+        ];
+    }
+
+    /**
+     * @test
+     */
+    public function fields_excepted_from_tools_still_filter_widgets(): void
+    {
+        $tool = new SigmieAnalyticsTool($this->createPrivateContactsIndex());
+
+        $result = $tool->result(new Request([
+            'widget' => 'breakdown',
+            'date_field' => 'created_at',
+            'group_by' => 'region',
+            'metric' => 'count',
+            'from' => '2024-01-01',
+            'to' => '2024-01-02',
+            'filters' => "contacts:{email:'jane@example.com'} AND salary>100000",
+        ]));
+
+        $this->assertSame(['North'], array_column($result['rows'], 'key'));
+        $this->assertStringContainsString('Private fields (filter only', $tool->description());
+        $this->assertStringContainsString("Numeric fields for `field`: amount\n", $tool->description());
+    }
+
+    /**
+     * @test
+     */
+    public function result_throws_for_a_field_excepted_from_tools(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Field contacts.email is private');
+
+        (new SigmieAnalyticsTool($this->createPrivateContactsIndex()))->result(new Request([
+            'widget' => 'breakdown',
+            'date_field' => 'created_at',
+            'group_by' => 'contacts.email',
+            'metric' => 'count',
+        ]));
+    }
+
+    /**
+     * @test
+     */
     public function result_runs_a_funnel_widget(): void
     {
         $index = $this->createSalesIndex();
@@ -539,6 +1008,33 @@ class SigmieAnalyticsToolTest extends TestCase
         ]));
 
         $this->assertEquals(370.0, $result['value']);
+    }
+
+    /**
+     * @test
+     */
+    public function filters_with_unbalanced_parentheses_cannot_escape_base_filters(): void
+    {
+        $index = $this->createSalesIndex();
+
+        $tool = new SigmieAnalyticsTool($index, baseFilters: "product:'A'");
+        $request = new Request([
+            'widget' => 'kpi',
+            'date_field' => 'created_at',
+            'metric' => 'count',
+            'filters' => "product:'Z') OR (product:'B'",
+            'from' => '2024-01-01',
+            'to' => '2024-01-04',
+        ]);
+
+        $result = json_decode($tool->handle($request), true);
+
+        $this->assertEquals(0, $result['value'] ?? 0);
+        $this->assertArrayHasKey('error', $result);
+
+        $this->expectException(ParseException::class);
+
+        $tool->result($request);
     }
 
     /**

@@ -41,8 +41,8 @@ trait AsTool
         return [
             new SigmieIndexTool($this, $baseFilter),
             new SigmieFilterValuesTool($this, $baseFilter),
-            new SigmieSampleDocumentsTool($this),
-            new SigmieGetDocumentsTool($this),
+            new SigmieSampleDocumentsTool($this, $baseFilter),
+            new SigmieGetDocumentsTool($this, $baseFilter),
             new SigmieIndexSchemaTool($this),
             new SigmieAnalyticsTool($this, $baseFilter),
         ];

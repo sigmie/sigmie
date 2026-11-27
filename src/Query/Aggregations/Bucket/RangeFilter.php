@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Aggregations\Bucket;
 
-use Sigmie\Parse\RangeOperatorParser;
+use Sigmie\Query\Queries\Term\Range as RangeQuery;
+
+use function Sigmie\Functions\keyed;
 
 class RangeFilter extends Bucket
 {
@@ -18,18 +20,12 @@ class RangeFilter extends Bucket
 
     protected function value(): array
     {
-        $res = [
+        $range = (new RangeQuery($this->field, $this->ranges))->bounds();
+
+        return [
             'filter' => [
-                'range' => [],
+                'range' => keyed($this->field, $range === [] ? (object) [] : $range),
             ],
         ];
-
-        foreach ($this->ranges as $operator => $value) {
-            $operator = (new RangeOperatorParser)->parse($operator);
-
-            $res['filter']['range'][$this->field][$operator] = $value;
-        }
-
-        return $res;
     }
 }

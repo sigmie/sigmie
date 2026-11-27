@@ -14,7 +14,15 @@ trait Cat
 
     protected function catAPICall(string $path, string $method): ElasticsearchResponse
     {
-        $uri = Uri::withQueryValue(new Uri('/_cat/'.$path), 'format', 'json');
+        [$path, $query] = $this->encodedPath($path);
+
+        $uri = new Uri('/_cat/'.$path);
+
+        if ($query !== null) {
+            $uri = $uri->withQuery($query);
+        }
+
+        $uri = Uri::withQueryValue($uri, 'format', 'json');
 
         $esRequest = new ElasticsearchRequest($method, $uri, null);
 

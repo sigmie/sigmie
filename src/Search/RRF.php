@@ -23,13 +23,17 @@ class RRF
         $scores = [];
 
         // Calculate RRF score for each document across all ranked lists
-        foreach ($rankedLists as $index => $rankedList) {
+        $weights = array_values($weights ?? []);
+        foreach (array_values($rankedLists) as $index => $rankedList) {
             $weight = $weights[$index] ?? 1.0;
 
-            foreach ($rankedList as $rank => $hit) {
+            foreach (array_values($rankedList) as $rank => $hit) {
                 $docId = is_array($hit) ? ($hit['_id'] ?? null) : ($hit->_id ?? null);
+                if ($docId === null) {
+                    continue;
+                }
 
-                if (! $docId) {
+                if ($docId === '') {
                     continue;
                 }
 
@@ -37,14 +41,17 @@ class RRF
                 // rank is 0-based, so we add 1
                 $rrfScore = $weight * (1.0 / ($this->rankConstant + $rank + 1));
 
-                if (! isset($scores[$docId])) {
-                    $scores[$docId] = [
+                $indexName = is_array($hit) ? ($hit['_index'] ?? null) : ($hit->_index ?? null);
+                $key = serialize([$indexName, (string) $docId]);
+
+                if (! isset($scores[$key])) {
+                    $scores[$key] = [
                         'doc' => $hit,
                         'score' => 0.0,
                     ];
                 }
 
-                $scores[$docId]['score'] += $rrfScore;
+                $scores[$key]['score'] += $rrfScore;
             }
         }
 
@@ -59,6 +66,8 @@ class RRF
             $doc = $item['doc'];
 
             if (is_array($doc)) {
+                $doc['_score'] = $item['score'];
+
                 return $doc;
             }
 

@@ -1,7 +1,7 @@
 ---
 title: Packages
-short_description: The modular Sigmie Composer packages — base, http, index, document, mappings, query, search, parse, testing, plus English, German, and Greek.
-keywords: [packages, composer, modules, standalone packages]
+short_description: Reference for the Sigmie Composer packages: what sigmie/sigmie contains, the HTTP, testing, and Laravel Scout packages, and which legacy packages to avoid.
+keywords: [packages, composer, modules, sigmie/sigmie, sigmie/testing, sigmie/http]
 category: Reference
 order: 2
 related_pages: [installation, extending]
@@ -9,54 +9,55 @@ related_pages: [installation, extending]
 
 # Packages
 
-`sigmie/sigmie` is a meta-package that pulls in everything you need for typical use. If you want a leaner install — for example, you only need the filter parser, or you're building a tool that uses just the HTTP client — you can require individual packages directly.
-
-## Standard installation
+`sigmie/sigmie` is one package that contains the whole library. Install it with Composer:
 
 ```bash
 composer require sigmie/sigmie
 ```
 
-This installs everything below as transitive dependencies. Most applications start (and stay) here.
+## Contents of `sigmie/sigmie`
 
-## Individual packages
+The main namespaces in the package:
 
-| Package | Purpose |
-|---------|---------|
-| `sigmie/base` | Driver abstractions for Elasticsearch and OpenSearch. |
-| `sigmie/http` | HTTP client built on Guzzle, with auth and multi-host support. |
-| `sigmie/index` | Index builders, analyzers, and language modules. |
-| `sigmie/document` | The `Document` and `AliveCollection` classes. |
-| `sigmie/mappings` | Property types and the `NewProperties` builder. |
-| `sigmie/query` | The low-level query builder (`NewQuery`). |
-| `sigmie/search` | The high-level search builder (`NewSearch`). |
-| `sigmie/parse` | Filter and sort string parsers. |
-| `sigmie/testing` | Test utilities and assertions. |
-| `sigmie/english` | English language analyzers and filters. |
-| `sigmie/german` | German language analyzers and filters. |
-| `sigmie/greek` | Greek language analyzers and filters. |
+| Namespace | Contents |
+|-----------|----------|
+| `Sigmie\Base` | Connection, HTTP requests, and the Elasticsearch and OpenSearch drivers. |
+| `Sigmie\Index` | `NewIndex`, analysis, aliases, updates, and rebuilds. |
+| `Sigmie\Mappings` | `NewProperties` and the field types. |
+| `Sigmie\Document` | `Document`, `AliveCollection`, and collection hooks. |
+| `Sigmie\Query` | The low-level query builder, `NewQuery`, and aggregations. |
+| `Sigmie\Search` | The search builder, `NewSearch`, and multi-search, templates, and recommendations. |
+| `Sigmie\Parse` | The filter, sort, and facet string parsers. |
+| `Sigmie\Languages` | English, German, and Greek analysis. |
+| `Sigmie\AI` | Embedding, reranking, and CLIP API clients, and agent tools. |
+| `Sigmie\Analytics` | Analytics queries. |
+| `Sigmie\Contracts` | The `Package` interface for [extensions](extending.md). |
 
-```bash
-composer require sigmie/parse           # filter/sort parsing only
-composer require sigmie/mappings        # build property mappings
-composer require sigmie/search          # high-level search
-composer require sigmie/testing         # test helpers
-```
+## Related packages
 
-## Integration packages
-
-Separately maintained:
-
-| Package | Purpose |
-|---------|---------|
-| `sigmie/elasticsearch-scout` | Laravel Scout driver. |
+| Package | Namespace | Purpose |
+|---------|-----------|---------|
+| `sigmie/http` | `Sigmie\Http` | `JSONClient`, the Guzzle-based HTTP client. `sigmie/sigmie` requires it, so Composer installs it for you. |
+| `sigmie/testing` | `Sigmie\Testing` | PHPUnit `TestCase`, `Assert`, and index assertions. The `sigmie/sigmie` archive leaves out its test helpers, so install this package to use them. |
+| `sigmie/elasticsearch-scout` | `Sigmie\ElasticsearchScout` | Laravel Scout driver. See [Laravel Scout](laravel-scout.md). |
 
 ```bash
+composer require --dev sigmie/testing
 composer require sigmie/elasticsearch-scout
 ```
 
-See [Laravel Scout](laravel-scout.md).
+## Legacy packages
 
-## Extension packages
+These packages are older splits of the library. `sigmie/sigmie` contains their code, so do not install them next to it.
 
-For shipping field types and document-processing hooks, see [Extending Sigmie](extending.md). Each external package registers itself on a `Sigmie` instance via `$sigmie->extend()`.
+| Package | Last version | Status |
+|---------|--------------|--------|
+| `sigmie/base` | 0.38.0 | Abandoned on Packagist. |
+| `sigmie/shared` | 0.38.0 | Abandoned on Packagist. |
+| `sigmie/mappings` | 0.38.0 | Abandoned on Packagist. |
+| `sigmie/query` | 0.38.0 | Abandoned on Packagist. |
+| `sigmie/search` | 0.38.0 | Abandoned on Packagist. |
+| `sigmie/parse` | 0.38.0 | Abandoned on Packagist. |
+| `sigmie/english` | 1.0.0 | Uses the old `Sigmie\English` namespace. Use `Sigmie\Languages\English` in `sigmie/sigmie`. |
+| `sigmie/german` | 1.0.0 | Uses the old `Sigmie\German` namespace. Use `Sigmie\Languages\German` in `sigmie/sigmie`. |
+| `sigmie/greek` | 1.0.0 | Uses the old `Sigmie\Greek` namespace. Use `Sigmie\Languages\Greek` in `sigmie/sigmie`. |

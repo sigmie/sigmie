@@ -17,22 +17,12 @@ class CaseSensitiveKeyword extends Type
 
     public function queries(array|string $queryString): array
     {
-        return [new Term($this->name, $queryString), new Prefix($this->name, $queryString)];
+        return $this->queryStrings($queryString, fn (string $queryString): array => [new Term($this->name(), $queryString), new Prefix($this->name(), $queryString)]);
     }
 
     public function aggregation(Aggs $aggs, string $params): void
     {
-        $params = explode(',', $params);
-        $size = $params[0];
-        $order = $params[1] ?? null;
-
-        $aggregation = $aggs->terms($this->name(), $this->name());
-
-        $aggregation->size((int) $size);
-
-        if (in_array($order, ['asc', 'desc'])) {
-            $aggregation->order('_key', $order);
-        }
+        $this->termFacetAggregation($aggs, $this->name(), $params);
     }
 
     public function facets(array $aggregation): ?array
@@ -53,6 +43,6 @@ class CaseSensitiveKeyword extends Type
             return [false, sprintf('The field %s mapped as %s must be a string', $key, $this->typeName())];
         }
 
-        return [true, ''];
+        return $this->validateKeywordTerms($key, $value);
     }
 }

@@ -5,16 +5,20 @@ declare(strict_types=1);
 namespace Sigmie\Query\Queries\Text;
 
 use Sigmie\Query\Contracts\FuzzyQuery;
-use Sigmie\Query\Queries\Query;
 
-class Match_ extends Query implements FuzzyQuery
+use function Sigmie\Functions\keyed;
+
+class Match_ extends MatchQuery implements FuzzyQuery
 {
     public function __construct(
         protected string $field,
-        protected string $query,
+        string $query,
         protected ?string $fuzziness = null,
-        protected string $analyzer = 'default',
-    ) {}
+        ?string $analyzer = null,
+        protected ?string $operator = null,
+    ) {
+        parent::__construct($query, $analyzer);
+    }
 
     public function fuzziness(?string $fuzziness): static
     {
@@ -25,24 +29,20 @@ class Match_ extends Query implements FuzzyQuery
 
     public function toRaw(): array
     {
-        $raw = [
-            'match' => [
-                $this->field => [
-                    'query' => $this->query,
-                    'boost' => $this->boost,
-                    'analyzer' => $this->analyzer,
-                ],
-            ],
-        ];
+        $clause = $this->matchOptions();
 
-        if (is_null($this->fuzziness)) {
-            return $raw;
+        if ($this->operator !== null) {
+            $clause['operator'] = $this->operator;
         }
 
-        $raw['match'][$this->field]['fuzziness'] = $this->fuzziness;
-        $raw['match'][$this->field]['fuzzy_transpositions'] = true;
-        $raw['match'][$this->field]['prefix_length'] = 0;
+        if (! is_null($this->fuzziness)) {
+            $clause['fuzziness'] = $this->fuzziness;
+            $clause['fuzzy_transpositions'] = true;
+            $clause['prefix_length'] = 0;
+        }
 
-        return $raw;
+        return [
+            'match' => keyed($this->field, $clause),
+        ];
     }
 }

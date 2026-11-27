@@ -7,10 +7,7 @@ namespace Sigmie\Query;
 use Closure;
 use Generator;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
-use Sigmie\Base\Contracts\ElasticsearchResponse;
-use Sigmie\Base\Http\PointInTimeRequests;
 use Sigmie\Document\Hit;
-use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Parse\FilterParser;
@@ -32,10 +29,10 @@ use Sigmie\Query\Queries\Text\Match_;
 use Sigmie\Query\Queries\Text\MultiMatch;
 use Sigmie\Search\Contracts\LazyIterableQuery;
 use Sigmie\Search\Contracts\MultiSearchable;
-use Sigmie\Search\PitSortPlanner;
-use Sigmie\Search\PointInTimeIterator;
+use Sigmie\Search\RawQuery;
 
 use function Sigmie\Functions\random_name;
+use function Sigmie\Functions\search_summary;
 
 class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
 {
@@ -43,21 +40,22 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
 
     protected Properties $properties;
 
+    protected array $sort = [];
+
+    protected string $index;
+
     protected string $searchName = '';
 
     protected int $pitIterationChunkSize = 500;
 
     public function __construct(
         protected ElasticsearchConnection $httpConnection,
-        protected ?string $index = null,
+        ?string $index = null,
     ) {
-        $this->search = new Search($httpConnection);
+        $this->index = $index ?? '';
+        $this->search = (new Search($httpConnection))->index($this->index);
 
         $this->properties = new Properties;
-
-        if ($index) {
-            $this->search->index($index);
-        }
     }
 
     public function formatResponses(...$responses): mixed
@@ -68,7 +66,8 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
 
     public function index(string $index): static
     {
-        $this->search->index($index);
+        $this->index = $index;
+        $this->search = (clone $this->search)->index($index);
 
         return $this;
     }
@@ -77,14 +76,15 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
     {
         $this->properties = $props instanceof NewProperties ? $props->get() : $props;
 
-        $this->search->filterParserProperties($this->properties);
+        $this->search = (clone $this->search)->filterParserProperties($this->properties);
 
         return $this;
     }
 
     public function sort(array $sort): static
     {
-        $this->search->sort($sort);
+        $this->sort = $sort;
+        $this->search = (clone $this->search)->sort($sort);
 
         return $this;
     }
@@ -93,14 +93,12 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
     {
         $parser = new SortParser($this->properties, true);
 
-        $this->search->sort($parser->parse($sort));
-
-        return $this;
+        return $this->sort($parser->parse($sort));
     }
 
     public function term(string $field, string|bool|int|float $value): Search
     {
-        return $this->search->query(new Term($field, $value));
+        return $this->query(new Term($field, $value));
     }
 
     public function bool(callable $callable, float $boost = 1): Search
@@ -109,7 +107,7 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
 
         $callable($query->boost($boost));
 
-        return $this->search->query($query);
+        return $this->query($query);
     }
 
     public function parse(string $filterString): Search
@@ -118,7 +116,7 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
 
         $query = $parser->parse($filterString);
 
-        return $this->search->query($query);
+        return $this->query($query);
     }
 
     public function range(
@@ -128,36 +126,42 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
     ): Search {
         $clause = new Range($field, $values);
 
-        return $this->search->query($clause->boost($boost));
+        return $this->query($clause->boost($boost));
     }
 
     public function matchAll(float $boost = 1): Search
     {
         $clause = new MatchAll;
 
-        return $this->search->query($clause->boost($boost));
+        return $this->query($clause->boost($boost));
     }
 
     public function query(Query $query): Search
     {
-        return $this->search->query($query);
+        $search = (new Search($this->httpConnection))
+            ->filterParserProperties($this->properties)
+            ->sort($this->sort)
+            ->index($this->index)
+            ->query($query);
+
+        return $this->search = $search;
     }
 
     public function postFilter(Query $postFilter): Search
     {
-        return $this->search->postFilter($postFilter);
+        return $this->search = (clone $this->search)->postFilter($postFilter);
     }
 
     public function postFilterString(string $filterString): Search
     {
-        return $this->search->postFilterString($filterString);
+        return $this->search = (clone $this->search)->postFilterString($filterString);
     }
 
     public function matchNone(float $boost = 1): Search
     {
         $clause = new MatchNone;
 
-        return $this->search->query($clause->boost($boost));
+        return $this->query($clause->boost($boost));
     }
 
     // TODO allow passing search analyzer
@@ -165,87 +169,74 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
         string $field,
         string $query,
         float $boost = 1,
-        string $analyzer = 'default'
+        ?string $analyzer = null
     ): Search {
-        $cluase = new Match_(
+        $clause = new Match_(
             $field,
             $query,
             analyzer: $analyzer
         );
 
-        return $this->search->query($cluase->boost($boost));
+        return $this->query($clause->boost($boost));
     }
 
     public function multiMatch(array $fields, string $query, float $boost = 1): Search
     {
         $clause = new MultiMatch($fields, $query);
 
-        return $this->search->query($clause->boost($boost));
+        return $this->query($clause->boost($boost));
     }
 
     public function exists(string $field, float $boost = 1): Search
     {
         $clause = new Exists($field);
 
-        return $this->search->query($clause->boost($boost));
+        return $this->query($clause->boost($boost));
     }
 
     public function ids(array $ids, float $boost = 1): Search
     {
         $clause = new IDs($ids);
 
-        return $this->search->query($clause->boost($boost));
+        return $this->query($clause->boost($boost));
     }
 
     public function fuzzy(string $field, string $value, float $boost = 1): Search
     {
         $clause = new Fuzzy($field, $value);
 
-        return $this->search->query($clause->boost($boost));
+        return $this->query($clause->boost($boost));
     }
 
     public function terms(string $field, array $values, float $boost = 1): Search
     {
         $clause = new Terms($field, $values);
 
-        return $this->search->query($clause->boost($boost));
+        return $this->query($clause->boost($boost));
     }
 
     public function regex(string $field, string $regex, float $boost = 1): Search
     {
         $clause = new Regex($field, $regex);
 
-        return $this->search->query($clause->boost($boost));
+        return $this->query($clause->boost($boost));
     }
 
     public function wildcard(string $field, string $value, float $boost = 1): Search
     {
         $clause = new Wildcard($field, $value);
 
-        return $this->search->query($clause->boost($boost));
+        return $this->query($clause->boost($boost));
     }
 
     public function toMultiSearch(): array
     {
-        return [
-            [
-                'index' => $this->search->index,
-            ],
-            $this->search->toRaw(),
-        ];
+        return $this->rawQuery()->toMultiSearch();
     }
 
     public function formatMultiSearchResponse(array $responses, int $startIndex): array
     {
-        $searchResponse = $responses[$startIndex] ?? [];
-
-        return [
-            'hits' => $searchResponse['hits']['hits'] ?? [],
-            'processing_time_ms' => $searchResponse['took'] ?? 0,
-            'total' => $searchResponse['hits']['total']['value'] ?? 0,
-            'max_score' => $searchResponse['hits']['max_score'] ?? null,
-            'timed_out' => $searchResponse['timed_out'] ?? false,
-        ];
+        return search_summary($responses[$startIndex] ?? []);
     }
 
     public function multisearchResCount(): int
@@ -255,15 +246,7 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
 
     public function sliceMultiSearchResponse(array $responses): array
     {
-        $searchResponse = $responses[0] ?? [];
-
-        return [
-            'hits' => $searchResponse['hits']['hits'] ?? [],
-            'processing_time_ms' => $searchResponse['took'] ?? 0,
-            'total' => $searchResponse['hits']['total']['value'] ?? 0,
-            'max_score' => $searchResponse['hits']['max_score'] ?? null,
-            'timed_out' => $searchResponse['timed_out'] ?? false,
-        ];
+        return $this->formatMultiSearchResponse($responses, 0);
     }
 
     public function getName(): string
@@ -302,46 +285,11 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
      */
     protected function iterateHits(): Generator
     {
-        $pit = new PointInTimeRequests($this->httpConnection);
-        $isOpenSearch = $this->httpConnection->driver()->engine() === SearchEngineType::OpenSearch;
+        yield from $this->rawQuery()->chunk($this->pitIterationChunkSize)->lazy();
+    }
 
-        $body = $this->search->toRaw();
-
-        $hasCollapse = array_key_exists('collapse', $body);
-        $userSort = is_array($body['sort'] ?? null) ? $body['sort'] : [];
-
-        unset(
-            $body['from'],
-            $body['size'],
-            $body['aggs'],
-            $body['highlight'],
-            $body['suggest'],
-            $body['track_total_hits'],
-            $body['sort'],
-        );
-
-        $body['size'] = $this->pitIterationChunkSize;
-        $body['sort'] = PitSortPlanner::plan($userSort, $isOpenSearch, $hasCollapse);
-
-        $keepAlive = '1m';
-        $open = $pit->open($this->search->index, $keepAlive);
-        $pitId = PointInTimeIterator::pitIdFromOpenResponse($open, $isOpenSearch);
-
-        yield from PointInTimeIterator::iterate(
-            $pitId,
-            $keepAlive,
-            $body,
-            fn (array $requestBody): ElasticsearchResponse => $pit->search($requestBody),
-            function (string $id) use ($pit): void {
-                $pit->close($id);
-            },
-            fn (array $data): Hit => new Hit(
-                $data['_source'] ?? [],
-                $data['_id'],
-                isset($data['_score']) ? (float) $data['_score'] : null,
-                $data['_index'] ?? null,
-                $data['sort'] ?? null,
-            ),
-        );
+    private function rawQuery(): RawQuery
+    {
+        return new RawQuery($this->httpConnection, $this->search->index, $this->search->toRaw());
     }
 }

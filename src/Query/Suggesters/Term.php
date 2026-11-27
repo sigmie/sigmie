@@ -77,7 +77,7 @@ class Term extends Suggester
         $res[$this->name][$this->type()->value]['sort'] = $this->sort->value;
         $res[$this->name][$this->type()->value]['suggest_mode'] = $this->mode->value;
 
-        if ($this->text ?? false) {
+        if (isset($this->text)) {
             $res[$this->name]['text'] = $this->text;
         }
 

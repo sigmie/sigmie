@@ -23,6 +23,13 @@ class Pipeline
 
     public function simulate(array $docs = []): ElasticsearchResponse
     {
-        return $this->ingestAPICall($this->name.'/_simulate', 'POST', ['docs' => $docs]);
+        foreach ($docs as $position => $doc) {
+            $source = ((array) $doc)['_source'] ?? null;
+            if (is_array($source) && array_is_list($source)) {
+                $docs[$position] = [...(array) $doc, '_source' => (object) $source];
+            }
+        }
+
+        return $this->ingestAPICall($this->name, 'POST', ['docs' => array_values($docs)], '/_simulate');
     }
 }

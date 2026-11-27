@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Sigmie\AI\Embedders;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Promise\PromiseInterface;
 use Http\Promise\Promise;
+use Sigmie\AI\APIs\ApiResponse;
 use Sigmie\AI\Contracts\Embedder;
+use Sigmie\AI\VoyageEmbeddingRequest;
 
 class VoyageProvider implements Embedder
 {
+    use VoyageEmbeddingRequest;
+
     protected Client $client;
 
     public function __construct(protected string $apiKey, protected string $model = 'voyage-3')
@@ -27,16 +30,10 @@ class VoyageProvider implements Embedder
     public function embed(string $text, int $dimensions): array
     {
         $response = $this->client->post('/v1/embeddings', [
-            'json' => [
-                'model' => $this->model,
-                'input' => [$text],
-                'output_dimension' => $dimensions,
-            ],
+            'json' => $this->requestBody([$text], $dimensions),
         ]);
 
-        $data = json_decode($response->getBody()->getContents(), true);
-
-        return $data['data'][0]['embedding'];
+        return ApiResponse::resizeEmbedding(ApiResponse::embeddings($response, 1)[0], $dimensions);
     }
 
     public function batchEmbed(array $payload): array
@@ -45,26 +42,14 @@ class VoyageProvider implements Embedder
             return [];
         }
 
-        $texts = array_column($payload, 'text');
-        $dimensions = isset($payload[0]['dims']) ? (int) $payload[0]['dims'] : null;
+        foreach ($this->batchRequests($payload, 1000) as $group) {
+            $response = $this->client->post('/v1/embeddings', [
+                'json' => $this->requestBody($group['texts'], $group['dims']),
+            ]);
 
-        $requestData = [
-            'model' => $this->model,
-            'input' => $texts,
-        ];
-
-        if ($dimensions !== null) {
-            $requestData['output_dimension'] = $dimensions;
-        }
-
-        $response = $this->client->post('/v1/embeddings', [
-            'json' => $requestData,
-        ]);
-
-        $data = json_decode($response->getBody()->getContents(), true);
-
-        foreach ($data['data'] as $index => $embedding) {
-            $payload[$index]['vector'] = $embedding['embedding'];
+            foreach (ApiResponse::embeddings($response, count($group['keys'])) as $index => $vector) {
+                $payload[$group['keys'][$index]]['vector'] = ApiResponse::resizeEmbedding($vector, $group['dims']);
+            }
         }
 
         return $payload;
@@ -73,46 +58,10 @@ class VoyageProvider implements Embedder
     public function promiseEmbed(string $text, int $dimensions): Promise
     {
         $promise = $this->client->postAsync('/v1/embeddings', [
-            'json' => [
-                'model' => $this->model,
-                'input' => [$text],
-                'output_dimension' => $dimensions,
-            ],
+            'json' => $this->requestBody([$text], $dimensions),
         ]);
 
-        return new class($promise) implements Promise
-        {
-            public function __construct(private PromiseInterface $promise) {}
-
-            public function then(?callable $onFulfilled = null, ?callable $onRejected = null)
-            {
-                return $this->promise->then(
-                    function ($response) use ($onFulfilled) {
-                        $data = json_decode($response->getBody()->getContents(), true);
-                        $embeddings = $data['data'][0]['embedding'];
-                        if ($onFulfilled !== null) {
-                            return $onFulfilled(['_embeddings' => $embeddings]);
-                        }
-
-                        return ['_embeddings' => $embeddings];
-                    },
-                    $onRejected
-                );
-            }
-
-            public function getState()
-            {
-                return $this->promise->getState();
-            }
-
-            public function wait($unwrap = true)
-            {
-                $response = $this->promise->wait($unwrap);
-                $data = json_decode($response->getBody()->getContents(), true);
-
-                return ['_embeddings' => $data['data'][0]['embedding']];
-            }
-        };
+        return new EmbeddingPromise($promise, static fn (array $vector): array => ApiResponse::resizeEmbedding($vector, $dimensions));
     }
 
     public function getModel(): string

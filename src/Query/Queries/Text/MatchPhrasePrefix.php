@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Queries\Text;
 
-use Sigmie\Query\Queries\Query;
+use function Sigmie\Functions\keyed;
 
-class MatchPhrasePrefix extends Query
+class MatchPhrasePrefix extends MatchQuery
 {
     public function __construct(
         protected string $field,
-        protected string $query,
+        string $query,
         protected ?string $fuzziness = null,
-        protected string $analyzer = 'default',
-    ) {}
+        ?string $analyzer = null,
+    ) {
+        parent::__construct($query, $analyzer);
+    }
 
     public function fuzziness(?string $fuzziness): static
     {
@@ -25,13 +27,7 @@ class MatchPhrasePrefix extends Query
     public function toRaw(): array
     {
         return [
-            'match_phrase_prefix' => [
-                $this->field => [
-                    'query' => $this->query,
-                    'boost' => $this->boost,
-                    'analyzer' => $this->analyzer,
-                ],
-            ],
+            'match_phrase_prefix' => keyed($this->field, $this->matchOptions()),
         ];
     }
 }

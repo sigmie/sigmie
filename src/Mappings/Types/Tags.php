@@ -13,7 +13,8 @@ class Tags extends Text implements Analyze
 {
     public function configure(): void
     {
-        $this->unstructuredText();
+        // docs/facets.md counts each tag value on the keyword sub-field, not on analyzed tokens.
+        $this->unstructuredText()->keyword();
     }
 
     public function analyze(NewAnalyzer $newAnalyzer): void
@@ -25,6 +26,6 @@ class Tags extends Text implements Analyze
 
     public function queries(array|string $queryString): array
     {
-        return [new Match_($this->name, $queryString, analyzer: $this->searchAnalyzer()), new MatchPhrasePrefix($this->name, $queryString, analyzer: $this->searchAnalyzer())];
+        return $this->queryStrings($queryString, fn (string $queryString): array => [new Match_($this->name(), $queryString, analyzer: $this->searchAnalyzer()), new MatchPhrasePrefix($this->name(), $queryString, analyzer: $this->searchAnalyzer())]);
     }
 }

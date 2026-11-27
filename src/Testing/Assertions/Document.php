@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Sigmie\Testing\Assertions;
 
+use PHPUnit\Framework\Assert;
 use Sigmie\Base\APIs\Count;
 use Sigmie\Base\APIs\Doc;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Mget;
 use Sigmie\Base\APIs\Search;
+use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Document as ElasticsearchDocument;
 
 trait Document
@@ -30,49 +32,39 @@ trait Document
 
     public function assertIndexHas(string $index, array $values): void
     {
-        $query = [
-            'query' => [
-                'bool' => [
-                    'filter' => $values,
-                ],
-            ],
-        ];
-
-        $res = $this->searchAPICall($index, $query);
-
-        $total = $res->json()['hits']['total']['value'];
-
-        $this->assertTrue($total > 0);
+        Assert::assertTrue($this->indexHasMatch($index, $values));
     }
 
     public function assertIndexMissing(string $index, array $values): void
     {
-        $query = [
-            'query' => [
-                'bool' => [
-                    'filter' => $values,
-                ],
-            ],
-        ];
+        Assert::assertFalse($this->indexHasMatch($index, $values));
+    }
 
-        $res = $this->searchAPICall($index, $query);
+    private function indexHasMatch(string $index, array $values): bool
+    {
+        $response = $this->searchAPICall($index, [
+            'query' => ['bool' => ['filter' => $values]],
+            'size' => 0,
+            'track_total_hits' => 1,
+        ]);
 
-        $total = $res->json()['hits']['total']['value'];
-
-        $this->assertTrue($total === 0);
+        return $response->total() > 0;
     }
 
     public function assertDocumentExists(string $index, ElasticsearchDocument $document): void
     {
-        $res = $this->docAPICall($index, $document->_id, 'HEAD');
-
-        $this->assertTrue($res->code() === 200);
+        Assert::assertTrue($this->hasDocument($index, $document));
     }
 
     public function assertDocumentIsMissing(string $index, ElasticsearchDocument $document): void
     {
-        $res = $this->docAPICall($index, $document->_id, 'HEAD');
+        Assert::assertFalse($this->hasDocument($index, $document));
+    }
 
-        $this->assertTrue($res->code() !== 200);
+    private function hasDocument(string $index, ElasticsearchDocument $document): bool
+    {
+        Assert::assertTrue(isset($document->_id), 'Document assertions require an assigned document ID.');
+
+        return (new AliveCollection($index, $this->getElasticsearchConnection()))->has($document->_id);
     }
 }

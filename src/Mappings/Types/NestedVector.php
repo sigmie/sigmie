@@ -18,7 +18,7 @@ class NestedVector extends TypesNested
     public function __construct(
         string $name,
         public readonly int $dims,
-        public readonly string $apiName,
+        public readonly ?string $apiName = null,
         public readonly VectorStrategy $strategy = VectorStrategy::Concatenate,
         public readonly VectorSimilarity $similarity = VectorSimilarity::Cosine,
         public readonly ?string $queryApiName = null,
@@ -30,6 +30,8 @@ class NestedVector extends TypesNested
             new BaseVector(
                 name: 'vector',
                 dims: $dims,
+                index: false,
+                similarity: $similarity,
                 strategy: $strategy,
                 boostedByField: $boostedByField,
                 autoNormalizeVector: $autoNormalizeVector,

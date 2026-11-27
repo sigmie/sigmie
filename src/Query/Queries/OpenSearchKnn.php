@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Queries;
 
+use function Sigmie\Functions\keyed;
+
 class OpenSearchKnn extends Query
 {
     public function __construct(
@@ -17,14 +19,12 @@ class OpenSearchKnn extends Query
     public function toRaw(): array
     {
         return [
-            'knn' => [
-                $this->field => [
-                    'vector' => $this->queryVector,
-                    'k' => $this->k,
-                    'filter' => $this->filter,
-                    'boost' => $this->boost,
-                ],
-            ],
+            'knn' => keyed($this->field, [
+                'vector' => is_array($this->queryVector) ? array_values($this->queryVector) : $this->queryVector,
+                'k' => $this->k,
+                ...($this->filter === [] ? [] : ['filter' => $this->filter]),
+                'boost' => $this->boost,
+            ]),
         ];
     }
 }

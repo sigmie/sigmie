@@ -12,7 +12,7 @@ class Set extends Processor
 
     protected string $field;
 
-    protected string $value;
+    protected mixed $value;
 
     protected function type(): string
     {
@@ -34,7 +34,7 @@ class Set extends Processor
         return $this;
     }
 
-    public function value(string $value): static
+    public function value(mixed $value): static
     {
         $this->value = $value;
 

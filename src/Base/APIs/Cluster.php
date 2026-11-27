@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Base\APIs;
 
 use GuzzleHttp\Psr7\Uri;
+use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\ElasticsearchRequest;
-use Sigmie\Base\Http\ElasticsearchResponse;
 
 trait Cluster
 {
@@ -14,7 +14,8 @@ trait Cluster
 
     protected function clusterAPICall(string $path): ElasticsearchResponse
     {
-        $uri = new Uri('/_cluster/'.$path);
+        [$path, $query] = $this->encodedPath($path);
+        $uri = (new Uri('/_cluster/'.$path))->withQuery($query ?? '');
 
         $esRequest = new ElasticsearchRequest('GET', $uri, null);
 

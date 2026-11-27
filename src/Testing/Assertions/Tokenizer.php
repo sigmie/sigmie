@@ -16,7 +16,7 @@ trait Tokenizer
     {
         $this->assertEquals(
             $value,
-            $this->data['settings']['index']['analysis']['tokenizer'][$tokenizer],
+            $this->analysisComponent('tokenizer', $tokenizer),
             sprintf("Failed to assert that the tokenizer '%s' equals to the given array in index %s.", $tokenizer, $this->name)
         );
     }
@@ -25,7 +25,7 @@ trait Tokenizer
     {
         $this->assertArrayHasKey(
             $tokenizer,
-            $this->data['settings']['index']['analysis']['tokenizer'],
+            $this->data['settings']['index']['analysis']['tokenizer'] ?? [],
             sprintf("Failed to assert that the tokenizer '%s' exists in index %s.", $tokenizer, $this->name)
         );
     }
@@ -34,7 +34,7 @@ trait Tokenizer
     {
         $this->assertArrayNotHasKey(
             $tokenizer,
-            $this->data['settings']['index']['analysis']['tokenizer'],
+            $this->data['settings']['index']['analysis']['tokenizer'] ?? [],
             sprintf("Failed to assert that the tokenizer '%s' not exists in index %s.", $tokenizer, $this->name)
         );
     }

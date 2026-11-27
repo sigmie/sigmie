@@ -4,26 +4,40 @@ declare(strict_types=1);
 
 namespace Sigmie\Semantic;
 
-use Carbon\Carbon;
-use DateTime as PHPDateTime;
+use DateTimeInterface;
 use Exception;
 use InvalidArgumentException;
 use Sigmie\Document\Document;
+use Sigmie\Enums\SearchEngineType;
+use Sigmie\Enums\VectorStrategy;
+use Sigmie\Mappings\Contracts\FieldContainer;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\BaseVector;
 use Sigmie\Mappings\Types\Combo;
 use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\DateTime;
+use Sigmie\Mappings\Types\DenseVector;
+use Sigmie\Mappings\Types\FlatObject;
 use Sigmie\Mappings\Types\GeoPoint;
 use Sigmie\Mappings\Types\Image;
 use Sigmie\Mappings\Types\Nested;
 use Sigmie\Mappings\Types\Number;
+use Sigmie\Mappings\Types\Object_;
+use Sigmie\Mappings\Types\Price;
 use Sigmie\Mappings\Types\Range;
+use Sigmie\Mappings\Types\SearchableNumber;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Shared\Collection;
 use Sigmie\Shared\UsesApis;
 use Sigmie\Support\VectorMath;
+use stdClass;
+use Stringable;
+use UnexpectedValueException;
+
+use function Sigmie\Functions\source_field_paths;
+use function Sigmie\Functions\trim_text;
+use function Sigmie\Functions\with_minute_offset;
 
 class DocumentProcessor
 {
@@ -32,23 +46,148 @@ class DocumentProcessor
     public const DEFAULT_BATCH_SIZE = 100;
 
     public function __construct(
-        protected Properties $properties
+        protected Properties $properties,
+        protected SearchEngineType $engine = SearchEngineType::Elasticsearch,
     ) {}
 
-    public function populateComboFields(Document $document): Document
+    public function populateComboFields(Document $document, bool $partial = false): Document
     {
-        $comboFields = $this->getComboFields();
-
-        $comboFields->each(function (Combo $field) use ($document): void {
-            $value = $this->buildComboValue($field, $document);
-
-            if ($value !== []) {
-                $combinedValue = implode(' ', $value);
-                $document->_source[$field->name()] = $combinedValue;
-            }
+        $this->properties->fieldsOfType(Combo::class)->each(function (Combo $field) use ($document, $partial): void {
+            $this->writeComboField($field, $document, $partial);
         });
 
         return $document;
+    }
+
+    public function patchNeedsCurrentSource(Document $patch, bool $populateEmbeddings): bool
+    {
+        $source = $patch->_source;
+
+        $combos = $this->properties->fieldsOfType(Combo::class);
+        foreach ($combos as $field) {
+            $paths = $this->comboSourcePaths($field);
+            if ($combos->count() === 1 && count($paths) === 1 && ! str_contains($paths[0], '.')
+                && $this->properties->get($paths[0]) instanceof Text && $this->boostPaths($field) === []) {
+                continue;
+            }
+
+            foreach ($paths as $path) {
+                if ($this->sourceValues($source, $path, $this->properties, documentRoot: true) !== []) {
+                    return true;
+                }
+            }
+        }
+
+        foreach ($this->properties->fieldsOfType(Range::class)->merge($this->properties->fieldsOfType(GeoPoint::class)) as $field) {
+            foreach ($this->sourceValues($source, $field->fullPath(), $this->properties, documentRoot: true) as $value) {
+                if ($value instanceof stdClass || (is_array($value) && ! array_is_list($value))) {
+                    return true;
+                }
+            }
+        }
+
+        if (! $populateEmbeddings || ! $this->hasApi()) {
+            return false;
+        }
+
+        foreach ($this->properties->nestedSemanticFields() as $field) {
+            foreach ($this->boostPaths($field) as $path) {
+                if ($this->sourceValues($source, $path, $this->properties, documentRoot: true) !== []
+                    || $this->sourceValues($source, $field->fullPath(), $this->properties, documentRoot: true) !== []) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Apply the source patch before deriving values that depend on stored fields.
+     *
+     * @return list<string> Semantic fields to generate from the merged source
+     */
+    public function applyPatch(Document $patch, array $current, bool $populateEmbeddings): array
+    {
+        $changes = $patch->_source;
+        $source = $this->mergeSource($current, (array) $this->properties->sourceObject($changes), $this->properties);
+        $patch->_source = $source;
+
+        foreach ($this->properties->fieldsOfType(Combo::class) as $field) {
+            foreach ($this->comboSourcePaths($field) as $path) {
+                if ($this->sourceValues($changes, $path, $this->properties, documentRoot: true) !== []
+                    || $this->sourceValues($current, $path, $this->properties, documentRoot: true)
+                        !== $this->sourceValues($patch->_source, $path, $this->properties, documentRoot: true)) {
+                    $this->writeComboField($field, $patch, partial: false);
+
+                    break;
+                }
+            }
+        }
+
+        if (! $populateEmbeddings || ! $this->hasApi()) {
+            return [];
+        }
+
+        $updatedFields = [];
+        foreach ($this->properties->nestedSemanticFields() as $field) {
+            $path = $field->fullPath();
+            $inputsChanged = $this->sourceValues($changes, $path, $this->properties, documentRoot: true) !== []
+                || $this->sourceValues($current, $path, $this->properties, documentRoot: true)
+                    !== $this->sourceValues($patch->_source, $path, $this->properties, documentRoot: true);
+            foreach ($this->boostPaths($field) as $boost) {
+                $inputsChanged = $inputsChanged || $this->sourceValues($changes, $boost, $this->properties, documentRoot: true) !== [];
+            }
+
+            if ($inputsChanged) {
+                $updatedFields[] = $path;
+            }
+        }
+
+        return $updatedFields;
+    }
+
+    private function comboSourcePaths(Combo $field): array
+    {
+        $full = $field->fullPath();
+        $parent = substr($full, 0, strlen($full) - strlen($field->name));
+
+        return array_map(
+            fn (string $path): string => str_starts_with($path, $parent) ? $path : $parent.$path,
+            $field->sourceFields(),
+        );
+    }
+
+    private function boostPaths(Text $field): array
+    {
+        $paths = [];
+        foreach ($field->vectorFields() as $vectorField) {
+            $vector = $vectorField instanceof Nested ? $vectorField->properties['vector'] : $vectorField;
+            if ($vector->boostedByField() !== null) {
+                $paths[] = $vector->boostedByField();
+            }
+        }
+
+        return $paths;
+    }
+
+    private function mergeSource(array $source, array $patch, ?Properties $properties = null): array
+    {
+        foreach ($patch as $key => $value) {
+            $field = $properties?->get((string) $key);
+            $previous = $source[$key] ?? null;
+            if (! $field instanceof Range && ! $field instanceof GeoPoint
+                && ($value instanceof stdClass || (is_array($value) && ! array_is_list($value)))
+                && ($previous instanceof stdClass || (is_array($previous) && ! array_is_list($previous)))) {
+                $children = $field instanceof FieldContainer ? $field->getProperties() : null;
+                $merged = $this->mergeSource((array) $previous, (array) $value, $children);
+                $value = array_is_list($merged) ? (object) $merged : $merged;
+            }
+
+            $source[$key] = $value;
+        }
+
+        return $source;
     }
 
     public function populateEmbeddings(Document $document): Document
@@ -62,10 +201,11 @@ class DocumentProcessor
      * Populate embeddings for many documents in a single pass, batching
      * provider calls across documents grouped by (api, dims).
      *
-     * @param  array<int, Document>  $documents
-     * @return array<int, Document>
+     * @param  array<int|string, Document>  $documents
+     * @param  array<int|string, array{fields: list<string>, embeddings: Document}>  $patches
+     * @return array<int|string, Document>
      */
-    public function populateEmbeddingsBatch(array $documents): array
+    public function populateEmbeddingsBatch(array $documents, array $patches = []): array
     {
         if (! $this->hasApi() || $documents === []) {
             return $documents;
@@ -81,8 +221,14 @@ class DocumentProcessor
         $existingByDoc = [];
 
         foreach ($documents as $docIdx => $document) {
+            $patch = $patches[$docIdx] ?? null;
             foreach ($semanticFields as $field) {
-                $reused = $this->reuseExistingEmbeddings($field, $document);
+                $path = $field->fullPath();
+                if ($patch !== null && ! in_array($path, $patch['fields'], true)) {
+                    continue;
+                }
+
+                $reused = $this->reuseExistingEmbeddings($field, $patch['embeddings'] ?? $document);
 
                 if ($reused !== null) {
                     $existingByDoc[$docIdx][$field->fullPath()] = $reused;
@@ -90,9 +236,29 @@ class DocumentProcessor
                     continue;
                 }
 
-                $value = $this->extractFieldValue($field, $document);
+                $sourceValues = $this->sourceValues($document->_source, $field->fullPath(), $this->properties, documentRoot: true);
+                $inputs = $sourceValues;
+                if ($field->type() === 'completion') {
+                    $inputs = [];
+                    foreach ($sourceValues as $value) {
+                        $entries = is_array($value) && array_is_list($value) ? $value : [$value];
+                        foreach ($entries as $entry) {
+                            $inputs[] = is_array($entry) || $entry instanceof stdClass
+                                ? ((array) $entry)['input'] ?? null
+                                : $entry;
+                        }
+                    }
+                }
+
+                $value = (new Collection($inputs))->flatten()
+                    ->filter(fn (mixed $value): bool => $value !== null && (! is_string($value) || trim_text($value) !== ''))
+                    ->values();
 
                 if ($value === []) {
+                    if ($patch !== null || $sourceValues !== []) {
+                        $existingByDoc[$docIdx][$field->fullPath()] = null;
+                    }
+
                     continue;
                 }
 
@@ -104,14 +270,18 @@ class DocumentProcessor
 
         $workItems = $this->runBatches($workItems);
 
-        return $this->assembleEmbeddings($documents, $workItems, $existingByDoc);
+        return $this->assembleEmbeddings($documents, $workItems, $existingByDoc, $patches);
     }
 
     protected function reuseExistingEmbeddings(Text|Image $field, Document $document): ?array
     {
-        $existingEmbeddings = dot($document->_source)->get('_embeddings.'.$field->fullPath());
+        $existingEmbeddings = $document->get('_embeddings.'.$field->fullPath());
 
-        if (! $existingEmbeddings || ! is_array($existingEmbeddings)) {
+        if ($existingEmbeddings instanceof stdClass) {
+            $existingEmbeddings = (array) $existingEmbeddings;
+        }
+
+        if (! is_array($existingEmbeddings) || $existingEmbeddings === []) {
             return null;
         }
 
@@ -126,14 +296,22 @@ class DocumentProcessor
         return $existingEmbeddings;
     }
 
-    protected function planFieldWorkItems(Text|Image $field, array $value, int $docIdx): array
+    protected function planFieldWorkItems(Text|Image $field, array $value, int|string $docIdx): array
     {
+        if ($field instanceof SearchableNumber) {
+            $value = array_map('strval', $value);
+        }
+
         $items = [];
         $isImage = $field instanceof Image;
 
         foreach ($field->vectorFields() as $vectorField) {
             $vector = $vectorField instanceof Nested ? $vectorField->properties['vector'] : $vectorField;
             $strategy = $vector->strategy();
+            if ($isImage && $strategy === VectorStrategy::Concatenate) {
+                $strategy = VectorStrategy::Average;
+            }
+
             $dims = (string) $vector->dims();
             $normalize = $vector instanceof BaseVector ? $vector->autoNormalizeVector() : true;
             $apiName = $vectorField->apiName;
@@ -192,7 +370,12 @@ class DocumentProcessor
                 $result = $api->batchEmbed($payload);
 
                 foreach ($chunk as $pos => $i) {
-                    $workItems[$i]['vector'] = $result[$pos]['vector'] ?? [];
+                    $vector = $result[$pos]['vector'] ?? null;
+                    if (! is_array($vector) || $vector === []) {
+                        throw new UnexpectedValueException(sprintf("Embeddings API '%s' returned no vector for batch item %d", $workItems[$i]['api_name'], $pos));
+                    }
+
+                    $workItems[$i]['vector'] = $vector;
                 }
             }
         }
@@ -200,7 +383,7 @@ class DocumentProcessor
         return $workItems;
     }
 
-    protected function assembleEmbeddings(array $documents, array $workItems, array $existingByDoc): array
+    protected function assembleEmbeddings(array $documents, array $workItems, array $existingByDoc, array $patches = []): array
     {
         $perDoc = [];
 
@@ -233,7 +416,12 @@ class DocumentProcessor
                 $flatEmbeddings[$path] = $formatted;
             }
 
-            $document['_embeddings'] = $this->buildNestedStructure($flatEmbeddings);
+            if ($flatEmbeddings !== []) {
+                $embeddings = $this->buildNestedStructure($flatEmbeddings);
+                $document['_embeddings'] = isset($patches[$docIdx])
+                    ? $this->mergeSource((array) $document['_embeddings'], $embeddings)
+                    : $embeddings;
+            }
 
             $documents[$docIdx] = $document;
         }
@@ -243,53 +431,81 @@ class DocumentProcessor
 
     public function formatDateTimeFields(Document $document): Document
     {
-        $fieldNames = $this->properties->fieldNames(withParent: false);
+        $source = $document->_source;
 
-        foreach ($fieldNames as $fieldPath) {
-            $value = dot($document->_source)->get($fieldPath);
-
-            if ($value === null) {
-                continue;
-            }
-
+        foreach ($this->properties->fieldNames(withParent: false) as $fieldPath) {
             $field = $this->properties->get($fieldPath);
 
-            if (! $field) {
+            if (! $field instanceof Type) {
                 continue;
             }
 
-            $formattedValue = $this->formatDateTimeValue($value, $field);
-
-            if ($formattedValue !== $value) {
-                $dotHelper = dot($document->_source);
-                $dotHelper->set($fieldPath, $formattedValue);
-                $document->_source = $dotHelper->all();
-            }
+            $source = $this->formatDateTimeAt($source, $fieldPath, $field, $this->properties);
         }
 
+        $document->_source = $source;
+
         return $document;
+    }
+
+    protected function formatDateTimeAt(array $source, string $path, Type $field, Properties $properties): array
+    {
+        foreach (source_field_paths($source, $path) as $key => $remaining) {
+            if ($remaining === '') {
+                $source[$key] = $this->formatDateTimeValue($source[$key], $field);
+
+                continue;
+            }
+
+            $container = $properties->get($key);
+            if (! $container instanceof FieldContainer) {
+                continue;
+            }
+
+            if ($container instanceof Object_ && ! $container->isEnabled()) {
+                continue;
+            }
+
+            $children = $container->getProperties();
+            $source[$key] = $this->mapRecords(
+                $source[$key],
+                $children,
+                fn (array $record): array => $this->formatDateTimeAt($record, $remaining, $field, $children),
+            );
+        }
+
+        return $source;
+    }
+
+    private function mapRecords(mixed $value, Properties $properties, callable $transform): mixed
+    {
+        $map = static function (mixed $record) use ($transform): mixed {
+            if ($record instanceof stdClass) {
+                return (object) $transform((array) $record);
+            }
+
+            return is_array($record) ? $transform($record) : $record;
+        };
+
+        return is_array($value) && ! $properties->isSourceObject($value)
+            ? array_map($map, $value)
+            : $map($value);
     }
 
     public function validateFields(Document $document): Document
     {
         $errors = [];
 
-        $fieldNames = $this->properties->fieldNames(withParent: false);
-
-        foreach ($fieldNames as $fieldPath) {
-            $value = dot($document->_source)->get($fieldPath);
-
-            if ($value === null) {
-                continue;
-            }
-
+        foreach ($this->properties->fieldNames(withParent: true) as $fieldPath) {
             $field = $this->properties->get($fieldPath);
 
-            if (! $field) {
+            if (! $field instanceof Type) {
                 continue;
             }
 
-            $this->validateFieldValue($fieldPath, $value, $field, $errors);
+            foreach ($this->sourceValues($document->_source, $fieldPath, $this->properties, documentRoot: true) as $value) {
+                $this->validateFieldValue($fieldPath, $value, $field, $errors);
+            }
         }
 
         if (! empty($errors)) {
@@ -301,108 +517,164 @@ class DocumentProcessor
         return $document;
     }
 
-    protected function getComboFields(): Collection
+    /**
+     * dot() misses a path through a nested list. Each item is read on its own.
+     * The value at the end of the path stays whole, including a range or geo object.
+     *
+     * @return list<mixed>
+     */
+    private function sourceValues(mixed $node, string $path, ?Properties $properties, bool $documentRoot = false): array
     {
-        return $this->properties
-            ->textFields()
-            ->filter(fn (Text $field): bool => $field instanceof Combo);
-    }
-
-    protected function buildComboValue(Combo $field, Document $document): array
-    {
-        return (new Collection($field->sourceFields()))
-            ->map(fn ($sourceField) => $document->get($sourceField))
-            ->filter(fn ($value): bool => $value !== null)
-            ->flatMap(fn ($value): array => is_array($value) ? $value : [$value])
-            ->toArray();
-    }
-
-    protected function extractFieldValue(Text|Image $field, Document $document): array
-    {
-        $nestedAncestor = $this->findNestedAncestor($field);
-
-        if ($nestedAncestor) {
-            return $this->extractNestedValue($field, $document, $nestedAncestor);
+        if (! is_array($node) && ! $node instanceof stdClass) {
+            return $node === null ? [null] : [];
         }
 
-        return $this->extractSimpleValue($field, $document);
-    }
+        $values = [];
+        if (! $documentRoot && is_array($node) && array_is_list($node) && ! $properties?->isSourceObject($node)) {
+            foreach ($node as $item) {
+                array_push($values, ...$this->sourceValues($item, $path, $properties, documentRoot: true));
+            }
 
-    protected function findNestedAncestor(Text|Image $field): ?string
-    {
-        if (! str_contains($field->fullPath(), '.')) {
-            return null;
+            // A list replaces its previous records during a partial update.
+            return $values === [] ? [null] : $values;
         }
 
-        $parts = explode('.', $field->fullPath());
-        // Check each ancestor path to see if it's a nested field
-        $counter = count($parts);
+        $node = (array) $node;
+        foreach (source_field_paths($node, $path) as $key => $remaining) {
+            if ($remaining === '') {
+                $values[] = $node[$key];
 
-        // Check each ancestor path to see if it's a nested field
-        for ($i = 1; $i < $counter; $i++) {
-            $ancestorPath = implode('.', array_slice($parts, 0, $i));
-            $ancestorField = $this->properties->get($ancestorPath);
+                continue;
+            }
 
-            if ($ancestorField instanceof Nested) {
-                return $ancestorPath;
+            $container = $properties?->get($key);
+            if ($container instanceof Object_ && ! $container->isEnabled()) {
+                continue;
+            }
+
+            $children = $container instanceof FieldContainer ? $container->getProperties() : null;
+            array_push($values, ...$this->sourceValues($node[$key], $remaining, $children));
+        }
+
+        return $values;
+    }
+
+    private function writeComboField(Combo $field, Document $document, bool $partial): void
+    {
+        $full = $field->fullPath();
+        $leaf = $field->name;
+        if ($full === $leaf) {
+            $document->_source = $this->withComboValue($document->_source, $leaf, $field, '', partial: $partial);
+
+            return;
+        }
+
+        $parent = substr($full, 0, -strlen($leaf) - 1);
+
+        $document->_source = $this->writeComboAt(
+            $document->_source,
+            $parent,
+            $field,
+            $parent,
+            $this->properties,
+            $partial,
+        );
+    }
+
+    private function writeComboAt(array $node, string $path, Combo $field, string $parent, Properties $properties, bool $partial): array
+    {
+        if ($path === '') {
+            return $this->withComboValue($node, $field->name, $field, $parent, partial: $partial);
+        }
+
+        foreach (source_field_paths($node, $path) as $key => $remaining) {
+            $container = $properties->get($key);
+            if (! $container instanceof FieldContainer) {
+                continue;
+            }
+
+            $children = $container->getProperties();
+            $partialRecord = $partial && ($node[$key] instanceof stdClass || (is_array($node[$key]) && $children->isSourceObject($node[$key])));
+            $node[$key] = $this->mapRecords(
+                $node[$key],
+                $children,
+                fn (array $record): array => $this->writeComboAt($record, $remaining, $field, $parent, $children, $partialRecord),
+            );
+        }
+
+        // A dotted sibling can represent the parent without a container in _source.
+        $prefix = $path.'.';
+        $siblings = [];
+        foreach ($node as $key => $value) {
+            if (str_starts_with((string) $key, $prefix)) {
+                $siblings[substr($key, strlen($prefix))] = $value;
             }
         }
 
-        return null;
+        return $siblings === []
+            ? $node
+            : $this->withComboValue($node, $prefix.$field->name, $field, $parent, $siblings, $partial);
     }
 
-    protected function isNestedField(Text|Image $field): bool
+    private function withComboValue(array $node, string $leaf, Combo $field, string $parent, ?array $context = null, bool $partial = false): array
     {
-        return $field->nestedPath() !== null;
-    }
-
-    protected function extractNestedValue(Text|Image $field, Document $document, string $nestedPath): array
-    {
-        $parentArray = dot($document->_source)->get($nestedPath);
-
-        if (! $parentArray || ! is_array($parentArray)) {
-            return [];
+        [$text, $allSourcesPresent] = $this->comboText($field->sourceFields(), $context ?? $node, $parent);
+        if ($text !== '') {
+            $node[$leaf] = $text;
+        } elseif ($partial && $allSourcesPresent) {
+            // A partial update merges into the stored document. Only null clears its combo.
+            $node[$leaf] = null;
+        } else {
+            unset($node[$leaf]);
         }
 
-        // Get the relative path from the nested field to this field
-        $relativePath = substr($field->fullPath(), strlen($nestedPath) + 1);
-
-        // Check if this is a single object (associative array) or array of objects (indexed array)
-        // Single object: ['key' => 'value'], Array of objects: [['key' => 'value'], ['key' => 'value']]
-        $isIndexedArray = array_keys($parentArray) === range(0, count($parentArray) - 1);
-
-        if (! $isIndexedArray) {
-            // Single object - extract value directly
-            $value = dot($parentArray)->get($relativePath);
-
-            return $value !== null ? (is_array($value) ? $value : [$value]) : [];
-        }
-
-        // Array of objects - map over each item
-        return (new Collection($parentArray))
-            ->map(fn ($item) => dot($item)->get($relativePath))
-            ->filter(fn ($value): bool => $value !== null)
-            ->toArray();
+        return $node;
     }
 
-    protected function parseNestedPath(string $fullPath): array
+    /**
+     * @param  list<string>  $sourceFields
+     * @return array{string, bool}
+     */
+    private function comboText(array $sourceFields, array $context, string $parent): array
     {
-        $parts = explode('.', $fullPath);
-        $nestedFieldName = array_pop($parts);
-        $parentPath = implode('.', $parts);
+        $parts = [];
+        $properties = $parent === '' ? $this->properties : $this->properties->get($parent)->getProperties();
+        $allSourcesPresent = $sourceFields !== [];
 
-        return [$parentPath, $nestedFieldName];
-    }
+        foreach ($sourceFields as $sourceField) {
+            $relative = $sourceField;
 
-    protected function extractSimpleValue(Text|Image $field, Document $document): array
-    {
-        $value = dot($document->_source)->get($field->fullPath());
+            if ($parent !== '' && str_starts_with($sourceField, $parent.'.')) {
+                $relative = substr($sourceField, strlen($parent) + 1);
+            }
 
-        if (! $value) {
-            return [];
+            $values = $this->sourceValues($context, $relative, $properties, documentRoot: true);
+            $allSourcesPresent = $allSourcesPresent && $values !== [];
+            $this->appendComboParts($values, $parts);
         }
 
-        return is_array($value) ? $value : [$value];
+        return [implode(' ', $parts), $allSourcesPresent];
+    }
+
+    private function appendComboParts(mixed $value, array &$parts): void
+    {
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        if (is_object($value) && ! $value instanceof Stringable) {
+            $value = get_object_vars($value);
+        }
+
+        if (! is_array($value)) {
+            $parts[] = (string) $value;
+
+            return;
+        }
+
+        foreach ($value as $item) {
+            $this->appendComboParts($item, $parts);
+        }
     }
 
     protected function buildNestedStructure(array $flatEmbeddings): array
@@ -420,14 +692,22 @@ class DocumentProcessor
 
     protected function formatDateTimeValue(mixed $value, Type $field): mixed
     {
-        if ($value instanceof PHPDateTime || $value instanceof Carbon) {
+        if ($value instanceof DateTimeInterface) {
             if ($field instanceof Date) {
-                return $value->format('Y-m-d');
+                return $field->formatForWrite($value, 'Y-m-d');
+            }
+
+            if ($field instanceof Range && $field->typeName() === 'date_range') {
+                return $field->formatDateBound($value);
             }
 
             if ($field instanceof DateTime) {
-                return $value->format('Y-m-d\TH:i:s.uP');
+                return $field->formatForWrite(with_minute_offset($value), 'Y-m-d\TH:i:s.uP');
             }
+        }
+
+        if ($value instanceof stdClass && $field instanceof Range) {
+            return (object) $this->formatDateTimeValue((array) $value, $field);
         }
 
         if (is_array($value)) {
@@ -439,20 +719,15 @@ class DocumentProcessor
 
     protected function validateFieldValue(string $fieldPath, mixed $value, Type $field, array &$errors): void
     {
-        // For Range and GeoPoint fields the array IS the value — a Range is ['gt' => 10, 'lt' => 20]
-        // and a GeoPoint is ['lat' => .., 'lon' => ..] (or a list of those). Validate it whole;
-        // iterating would recurse into the scalar lat/lon and reject them.
-        if ($field instanceof Range || $field instanceof GeoPoint) {
-            [$isValid, $errorMessage] = $field->validate($fieldPath, $value);
-
-            if (! $isValid) {
-                $errors[] = $errorMessage;
-            }
-
+        if ($value === null) {
             return;
         }
 
-        if (is_array($value)) {
+        $structured = $field instanceof GeoPoint || $field instanceof Nested || $field instanceof Object_ || $field instanceof FlatObject
+            || $field instanceof BaseVector || $field instanceof DenseVector
+            || ($field instanceof Text && $field->type() === 'completion');
+        // A sparse integer-keyed array is sent as a list of its values.
+        if (is_array($value) && array_filter(array_keys($value), is_string(...)) === [] && ! $structured) {
             foreach ($value as $item) {
                 $this->validateFieldValue($fieldPath, $item, $field, $errors);
             }
@@ -460,7 +735,9 @@ class DocumentProcessor
             return;
         }
 
-        [$isValid, $errorMessage] = $field->validate($fieldPath, $value);
+        [$isValid, $errorMessage] = $field instanceof FlatObject
+            ? $field->validate($fieldPath, $value, $this->engine)
+            : $field->validate($fieldPath, $value);
 
         if (! $isValid) {
             $errors[] = $errorMessage;
@@ -486,15 +763,24 @@ class DocumentProcessor
             // Validate boost field
             $this->validateBoostField($field->fullPath(), $boostedByField);
 
-            // Extract boost value from document
-            $boostValue = dot($document->_source)->get($boostedByField);
+            $values = $this->sourceValues($document->_source, $boostedByField, $this->properties, documentRoot: true);
+            $boostValue = count($values) === 1 ? $values[0] : null;
 
             if ($boostValue === null) {
                 throw new Exception(sprintf("Boost field '%s' is not present in document for semantic field '%s'", $boostedByField, $field->fullPath()));
             }
 
+            if (is_array($boostValue) && count($boostValue) === 1) {
+                $boostValue = reset($boostValue);
+            }
+
             if (! is_numeric($boostValue) || $boostValue <= 0) {
                 throw new Exception(sprintf("Boost field '%s' must be a positive number. Got: %s", $boostedByField, $boostValue));
+            }
+
+            // Preserve direction when the boost is below the normal float32 range.
+            if ($vector->autoNormalizeVector() && $boostValue < 2 ** -126) {
+                continue;
             }
 
             // Get the vector name
@@ -514,25 +800,11 @@ class DocumentProcessor
             if (isset($currentVector[0]['vector'])) {
                 // ScriptScore format: array of objects with 'vector' field
                 foreach ($currentVector as $index => $item) {
-                    $scaled = VectorMath::scale($item['vector'], (float) $boostValue);
-
-                    // Apply normalization if needed
-                    if ($vector->autoNormalizeVector()) {
-                        $scaled = VectorMath::normalize($scaled);
-                    }
-
-                    $formattedVectors[$name][$index]['vector'] = $scaled;
+                    $formattedVectors[$name][$index]['vector'] = VectorMath::scale($item['vector'], (float) $boostValue);
                 }
             } else {
                 // Regular format: flat array of numbers
-                $scaled = VectorMath::scale($currentVector, (float) $boostValue);
-
-                // Apply normalization if needed
-                if ($vector->autoNormalizeVector()) {
-                    $scaled = VectorMath::normalize($scaled);
-                }
-
-                $formattedVectors[$name] = $scaled;
+                $formattedVectors[$name] = VectorMath::scale($currentVector, (float) $boostValue);
             }
         }
 
@@ -543,11 +815,11 @@ class DocumentProcessor
     {
         $field = $this->properties->get($boostField);
 
-        if ($field === null) {
+        if (! $field instanceof Type) {
             throw new Exception(sprintf("Boost field '%s' referenced by semantic field '%s' does not exist in properties", $boostField, $fieldPath));
         }
 
-        if (! ($field instanceof Number)) {
+        if (! $field instanceof Number && ! $field instanceof Price) {
             throw new Exception(sprintf("Boost field '%s' must be a Number type (float/double/integer). Got: ", $boostField).$field->typeName());
         }
     }

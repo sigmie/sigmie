@@ -10,7 +10,17 @@ class Assert
 {
     use Assertions;
 
-    public function __construct(private string $name, private array $data) {}
+    private array $rawData;
+
+    public function __construct(private string $name, private array $data)
+    {
+        $this->rawData = $data;
+        if (isset($data['settings']) && ! isset($data['settings']['index'])) {
+            $settings = dot([]);
+            $settings->set($data['settings']);
+            $this->data['settings'] = $settings->all();
+        }
+    }
 
     public function name(): string
     {
@@ -19,6 +29,6 @@ class Assert
 
     public function data(): array
     {
-        return $this->data;
+        return $this->rawData;
     }
 }

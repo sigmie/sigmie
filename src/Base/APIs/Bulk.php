@@ -12,15 +12,20 @@ trait Bulk
 {
     use API;
 
+    protected bool $requireAlias = false;
+
     protected function bulkAPICall(string $indexName, array $data, string $refresh = 'false'): BulkResponse
     {
-        $uri = new Uri(sprintf('/%s/_bulk', $indexName));
+        $uri = $this->indexUri($indexName, '_bulk');
 
         $uri = Uri::withQueryValue($uri, 'refresh', $refresh);
 
+        if ($this->requireAlias) {
+            $uri = Uri::withQueryValue($uri, 'require_alias', 'true');
+        }
+
         $request = new BulkRequest('POST', $uri, $data);
 
-        /* @var  BulkResponse */
-        return $this->elasticsearchCall($request);
+        return $this->elasticsearchCall($request, BulkResponse::class);
     }
 }

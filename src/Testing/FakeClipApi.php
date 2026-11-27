@@ -7,6 +7,8 @@ namespace Sigmie\Testing;
 use PHPUnit\Framework\Assert;
 use Sigmie\Helpers\ImageHelper;
 
+use function Sigmie\Functions\batch_dimensions;
+
 class FakeClipApi extends FakeEmbeddingsApi
 {
     protected array $imageEmbedCalls = [];
@@ -15,66 +17,50 @@ class FakeClipApi extends FakeEmbeddingsApi
 
     protected array $mixedBatchCalls = [];
 
-    public function embed(string $text, int $dimensions): array
+    protected function rawEmbed(string $text, int $dimensions): array
     {
-        if ($this->isImageSource($text)) {
-            $this->imageEmbedCalls[] = [
-                'source' => $text,
-                'dimensions' => $dimensions,
-            ];
-        } else {
-            $this->textEmbedCalls[] = [
-                'text' => $text,
-                'dimensions' => $dimensions,
-            ];
-        }
+        $this->recordInput($text, $dimensions);
 
-        return $this->vector($this->embeddingText($text), $dimensions);
+        return parent::rawEmbed($text, $dimensions);
     }
 
     public function batchEmbed(array $payload): array
     {
-        $imageCount = 0;
-        $textCount = 0;
-
+        $imagesBefore = count($this->imageEmbedCalls);
         foreach ($payload as $item) {
-            $text = $item['text'] ?? '';
-            $dims = (int) ($item['dims'] ?? 0);
-
-            if ($this->isImageSource($text)) {
-                $imageCount++;
-                $this->imageEmbedCalls[] = [
-                    'source' => $text,
-                    'dimensions' => $dims,
-                ];
-
-                continue;
-            }
-
-            $textCount++;
-            $this->textEmbedCalls[] = [
-                'text' => $text,
-                'dimensions' => $dims,
-            ];
+            $this->recordInput((string) ($item['text'] ?? ''), batch_dimensions($item, null) ?? $this->defaultDimensions());
         }
 
+        $images = count($this->imageEmbedCalls) - $imagesBefore;
         $this->mixedBatchCalls[] = [
             'total' => count($payload),
-            'images' => $imageCount,
-            'texts' => $textCount,
+            'images' => $images,
+            'texts' => count($payload) - $images,
             'items' => $payload,
         ];
 
-        // Track in parent for general batch embed tracking
-        $this->batchEmbedCalls[] = $payload;
+        return parent::batchEmbed($payload);
+    }
 
-        return array_map(fn (array $item): array => [
-            ...$item,
-            'vector' => $this->vector(
-                $this->embeddingText((string) ($item['text'] ?? '')),
-                (int) ($item['dims'] ?? $item['dimensions'] ?? 512),
-            ),
-        ], $payload);
+    private function recordInput(string $text, int $dimensions): void
+    {
+        if ($this->isImageSource($text)) {
+            $this->imageEmbedCalls[] = ['source' => $text, 'dimensions' => $dimensions];
+
+            return;
+        }
+
+        $this->textEmbedCalls[] = ['text' => $text, 'dimensions' => $dimensions];
+    }
+
+    protected function defaultDimensions(): int
+    {
+        return 512;
+    }
+
+    protected function vector(string $text, int $dimensions): array
+    {
+        return parent::vector($this->embeddingText($text), $dimensions);
     }
 
     /**
@@ -110,36 +96,6 @@ class FakeClipApi extends FakeEmbeddingsApi
     }
 
     /**
-     * Assert that batch embed was called with specific text
-     */
-    public function assertBatchEmbedWasCalledWith(string $expectedText): void
-    {
-        $found = false;
-
-        // Check in batch embed calls
-        foreach ($this->batchEmbedCalls as $batch) {
-            foreach ($batch as $item) {
-                if (($item['text'] ?? '') === $expectedText) {
-                    $found = true;
-                    break 2;
-                }
-            }
-        }
-
-        // Also check in text embed calls (single embeds)
-        if (! $found) {
-            foreach ($this->textEmbedCalls as $call) {
-                if (($call['text'] ?? '') === $expectedText) {
-                    $found = true;
-                    break;
-                }
-            }
-        }
-
-        Assert::assertTrue($found, sprintf("Text '%s' was never embedded", $expectedText));
-    }
-
-    /**
      * Assert that a batch contained a specific mix of images and texts
      */
     public function assertBatchContainedMix(int $images, int $texts): void
@@ -165,17 +121,6 @@ class FakeClipApi extends FakeEmbeddingsApi
                 Assert::assertTrue(true);
 
                 return;
-            }
-        }
-
-        // Also check in batch calls
-        foreach ($this->mixedBatchCalls as $batch) {
-            foreach ($batch['items'] as $item) {
-                if (($item['text'] ?? '') === $source && $this->isImageSource($source)) {
-                    Assert::assertTrue(true);
-
-                    return;
-                }
             }
         }
 
@@ -219,21 +164,26 @@ class FakeClipApi extends FakeEmbeddingsApi
 
     protected function embeddingText(string $source): string
     {
+        if (ImageHelper::isFilePath($source)) {
+            $source = ImageHelper::toBase64(ImageHelper::fetchImageContent($source));
+        }
+
         if (! $this->isImageSource($source)) {
             return $source;
         }
 
-        if (str_starts_with($source, 'data:image')) {
+        if (ImageHelper::isBase64($source)) {
             return $this->dataImageText($source);
         }
 
-        return str_replace(['-', '_', '.'], ' ', basename(parse_url($source, PHP_URL_PATH) ?: $source));
+        $filename = basename(parse_url($source, PHP_URL_PATH) ?: $source);
+
+        return str_replace(['-', '_', '.'], ' ', rawurldecode($filename));
     }
 
     protected function dataImageText(string $source): string
     {
-        $data = (string) preg_replace('/^data:image\/[a-z]+;base64,/', '', $source);
-        $hash = substr(hash('sha256', base64_decode($data, strict: true) ?: ''), 0, 16);
+        $hash = substr(hash('sha256', ImageHelper::fetchImageContent($source)), 0, 16);
 
         return match ($hash) {
             'e8efb9cea15eb819' => 'basketball orange basket',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Base\Drivers;
 
+use Exception;
 use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\Contracts\Type;
@@ -21,6 +22,10 @@ class Opensearch implements SearchEngine
 
     public function vectorField(BaseVector $field): Type
     {
+        if ($field->indexType() !== 'hnsw') {
+            throw new Exception(sprintf('OpenSearch does not support the %s vector index type', $field->indexType()));
+        }
+
         $knnVector = new KnnVector(
             name: $field->name,
             dims: $field->dims(),
@@ -30,10 +35,9 @@ class Opensearch implements SearchEngine
             efConstruction: $field->efConstruction(),
         );
 
-        // Preserve the path from the original field
-        $knnVector->setPath($field->fullPath());
+        $knnVector->meta($field->getMeta());
 
-        return $knnVector;
+        return $knnVector->copyPathFrom($field);
     }
 
     public function nestedVectorField(NestedVector $field): Type
@@ -42,12 +46,10 @@ class Opensearch implements SearchEngine
             name: $field->name,
             dims: $field->dims,
             similarity: $field->similarity,
+            autoNormalizeVector: $field->autoNormalizeVector && $field->boostedByField === null,
         );
 
-        // Preserve the path from the original field
-        $nestedVector->setPath($field->fullPath());
-
-        return $nestedVector;
+        return $nestedVector->copyPathFrom($field);
     }
 
     public function indexSettings(): array

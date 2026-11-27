@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\Query\Aggregations\Bucket;
 
+use function Sigmie\Functions\object_map;
+
 class BucketSelector extends Bucket
 {
     public function __construct(
@@ -18,7 +20,7 @@ class BucketSelector extends Bucket
     {
         return [
             'bucket_selector' => [
-                'buckets_path' => $this->bucketsPath,
+                'buckets_path' => object_map($this->bucketsPath),
                 'script' => $this->script,
             ],
         ];

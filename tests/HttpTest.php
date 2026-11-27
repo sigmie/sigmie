@@ -7,6 +7,7 @@ namespace Sigmie\Tests;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use GuzzleHttp\Psr7\Uri;
 use Psr\Http\Message\ResponseInterface;
+use Sigmie\Base\ElasticsearchException;
 use Sigmie\Base\Http\ElasticsearchRequest;
 use Sigmie\Base\Http\ElasticsearchResponse;
 use Sigmie\Document\Document;
@@ -19,6 +20,40 @@ use Sigmie\Testing\TestCase;
 
 class HttpTest extends TestCase
 {
+    public function test_audit_index_delete_surfaces_a_write_block(): void
+    {
+        $alias = uniqid('audit-index-base-blocked-');
+        $index = $this->sigmie->newIndex($alias)->replicas(0)->create();
+        $collection = $this->sigmie->collect($alias, true);
+        $collection->add(new Document(['title' => 'Still here'], _id: '1'));
+        $this->assertFalse($collection->remove('missing'));
+
+        try {
+            $index->disableWrite();
+            $this->expectException(ElasticsearchException::class);
+            $this->expectExceptionCode(403);
+            $collection->remove('1');
+        } finally {
+            $index->enableWrite();
+            $index->delete();
+        }
+    }
+
+    public function test_audit_index_mget_sends_a_boolean_query_parameter(): void
+    {
+        $alias = uniqid('audit-index-base-mget-');
+        $index = $this->sigmie->newIndex($alias)->replicas(0)->create();
+
+        try {
+            $this->sigmie->collect($alias, true)->add(new Document(['title' => 'Metropolis'], _id: '1'));
+            $document = $this->mgetAPICall($alias, ['ids' => ['1']], ['realtime' => true])->first();
+
+            $this->assertSame('Metropolis', $document['title']);
+        } finally {
+            $index->delete();
+        }
+    }
+
     /**
      * @test
      */

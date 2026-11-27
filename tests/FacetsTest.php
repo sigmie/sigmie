@@ -9,14 +9,96 @@ use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Search;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
-use Sigmie\Mappings\Properties;
 use Sigmie\Testing\TestCase;
 
 class FacetsTest extends TestCase
 {
+    /** @test */
+    public function a_nested_facet_counts_matching_items_from_matching_root_documents(): void
+    {
+        $name = uniqid('nested_facet_');
+        $blueprint = new NewProperties;
+        $blueprint->keyword('status');
+        $blueprint->nested('items', function (NewProperties $items): void {
+            $items->keyword('color');
+            $items->keyword('size');
+        });
+        $this->sigmie->newIndex($name)->properties($blueprint)->create();
+        $this->sigmie->collect($name, refresh: true)->merge([
+            new Document(['status' => 'active', 'items' => [
+                ['color' => 'red', 'size' => 'small'],
+                ['color' => 'blue', 'size' => 'large'],
+            ]]),
+            new Document(['status' => 'inactive', 'items' => [
+                ['color' => 'red', 'size' => 'medium'],
+            ]]),
+        ]);
+
+        $response = $this->sigmie->newSearch($name)
+            ->properties($blueprint)
+            ->facets('items.size', 'status:active items.color:red')
+            ->get();
+
+        $this->assertSame(['small' => 1], $response->facet('items.size'));
+    }
+
+    /** @test */
+    public function a_deep_nested_facet_filters_each_matching_ancestor(): void
+    {
+        $name = uniqid('deep_nested_facet_');
+        $blueprint = new NewProperties;
+        $blueprint->nested('orders', function (NewProperties $orders): void {
+            $orders->keyword('state');
+            $orders->nested('items', function (NewProperties $items): void {
+                $items->keyword('sku');
+            });
+        });
+        $this->sigmie->newIndex($name)->properties($blueprint)->create();
+        $this->sigmie->collect($name, refresh: true)->merge([
+            new Document(['orders' => [
+                ['state' => 'open', 'items' => [['sku' => 'book']]],
+                ['state' => 'closed', 'items' => [['sku' => 'pen']]],
+            ]]),
+        ]);
+
+        $response = $this->sigmie->newSearch($name)
+            ->properties($blueprint)
+            ->facets('orders.items.sku', 'orders.state:open')
+            ->get();
+
+        $this->assertSame(['book' => 1], $response->facet('orders.items.sku'));
+    }
+
     use Explain;
     use Index;
     use Search;
+
+    public function test_field_type_audit_counts_documents_with_date_values(): void
+    {
+        $props = new NewProperties;
+        $props->date('published_at');
+
+        $index = uniqid('.type-facet-');
+        $this->sigmie->newIndex($index)->properties($props)->create();
+
+        try {
+            $this->sigmie->collect($index, refresh: true)->properties($props)->merge([
+                new Document(['published_at' => ['2024-01-01', '2024-02-01']], _id: 'published'),
+                new Document(['title' => 'Draft'], _id: 'unpublished'),
+            ]);
+
+            $facet = $this->sigmie->newSearch($index)->properties($props)->queryString('')
+                ->facets('published_at')->get()->facet('published_at');
+
+            $this->assertSame([
+                'count' => 1,
+                'min' => '2024-01-01T00:00:00.000Z',
+                'max' => '2024-02-01T00:00:00.000Z',
+            ], $facet);
+        } finally {
+            $this->sigmie->deleteIfExists($index);
+        }
+    }
 
     /**
      * @test
@@ -50,12 +132,7 @@ class FacetsTest extends TestCase
             ->facets('shirt.red.price:100')
             ->get();
 
-        /** @var Properties $props */
-        $props = $blueprint();
-
-        $field = $props->get('shirt.red.price');
-
-        $facets = $field->facets($searchResponse->facetAggregations());
+        $facets = $searchResponse->facet('shirt.red.price');
 
         $this->assertArrayHasKey('min', $facets);
         $this->assertEquals(400, $facets['min']);
@@ -101,12 +178,7 @@ class FacetsTest extends TestCase
             ->facets('shirt.price:100')
             ->get();
 
-        /** @var Properties $props */
-        $props = $blueprint();
-
-        $field = $props->get('shirt.price');
-
-        $facets = $field->facets($searchResponse->facetAggregations());
+        $facets = $searchResponse->facet('shirt.price');
 
         $this->assertArrayHasKey('min', $facets);
         $this->assertEquals(400, $facets['min']);
@@ -155,10 +227,7 @@ class FacetsTest extends TestCase
             ->facets('price:100')
             ->get();
 
-        /** @var Properties $props */
-        $props = $blueprint();
-
-        $facets = $props['price']->facets($searchResponse->facetAggregations());
+        $facets = $searchResponse->facet('price');
 
         $this->assertArrayHasKey('min', $facets);
         $this->assertEquals(50, $facets['min']);
@@ -207,10 +276,7 @@ class FacetsTest extends TestCase
             ->facets('foo.keyword')
             ->get();
 
-        /** @var Properties $props */
-        $props = $blueprint();
-
-        $facets = $props->get('foo.keyword')->facets($searchResponse->facetAggregations());
+        $facets = $searchResponse->facet('foo.keyword');
 
         $expectedHistogram = [
             'action' => 1,
@@ -251,10 +317,7 @@ class FacetsTest extends TestCase
             ->facets('foo.bar.keyword')
             ->get();
 
-        /** @var Properties $props */
-        $props = $blueprint();
-
-        $facets = $props->get('foo.bar.keyword')->facets($searchResponse->facetAggregations());
+        $facets = $searchResponse->facet('foo.bar.keyword');
 
         $expectedHistogram = [
             'action' => 1,
@@ -291,10 +354,7 @@ class FacetsTest extends TestCase
             ->facets('keyword')
             ->get();
 
-        /** @var Properties $props */
-        $props = $blueprint();
-
-        $facets = $props['keyword']->facets($searchResponse->facetAggregations());
+        $facets = $searchResponse->facet('keyword');
 
         $expectedHistogram = [
             'action' => 1,
@@ -302,6 +362,160 @@ class FacetsTest extends TestCase
         ];
 
         $this->assertEquals($expectedHistogram, $facets);
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider everyFacetableTypeOnEveryDepth
+     */
+    public function every_facetable_type_on_root_and_nested_fields(string $facet, string $field, array $expected): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = $this->everyFacetableTypeBlueprint();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge($this->everyFacetableTypeDocuments());
+
+        $searchResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets($facet)
+            ->get();
+
+        $this->assertEquals($expected, $searchResponse->facet($field));
+        $this->assertEquals($expected, json_decode(json_encode($searchResponse->json('facets')), true)[$field] ?? null);
+    }
+
+    public static function everyFacetableTypeOnEveryDepth(): array
+    {
+        $expected = [
+            'keyword' => ['action' => 1, 'sport' => 1],
+            'tag' => ['Sport' => 1, 'sport' => 1],
+            'count' => ['count' => 2, 'min' => 1.0, 'max' => 3.0, 'avg' => 2.0, 'sum' => 4.0],
+            'price' => ['min' => 100.0, 'max' => 300.0, 'histogram' => [100 => 1, 200 => 0, 300 => 1]],
+            'text' => ['Other text' => 1, 'Some text' => 1],
+            'published_at' => ['count' => 2, 'min' => '2024-01-15T00:00:00.000Z', 'max' => '2024-03-10T00:00:00.000Z'],
+        ];
+
+        $cases = [];
+
+        foreach (['root' => '', 'nested' => 'shirt.', 'two-level nested' => 'shirt.red.'] as $depth => $prefix) {
+            foreach ($expected as $name => $facets) {
+                $field = $prefix.$name;
+                $param = $name === 'price' ? ':100' : '';
+
+                $cases[sprintf('%s %s', $depth, $name)] = [$field.$param, $field, $facets];
+            }
+        }
+
+        return $cases;
+    }
+
+    /**
+     * @test
+     */
+    public function facet_filter_on_nested_field(): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = $this->everyFacetableTypeBlueprint();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge($this->everyFacetableTypeDocuments());
+
+        $searchResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets('shirt.count shirt.keyword', "shirt.keyword:'sport'")
+            ->get();
+
+        $this->assertEquals(
+            ['count' => 1, 'min' => 1.0, 'max' => 1.0, 'avg' => 1.0, 'sum' => 1.0],
+            $searchResponse->facet('shirt.count'),
+        );
+        $this->assertEquals(['action' => 1, 'sport' => 1], $searchResponse->facet('shirt.keyword'));
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider dateFacetFilters
+     */
+    public function date_facet_range_narrows_with_facet_filter(string $field, string $facetFilter): void
+    {
+        $indexName = uniqid();
+
+        $blueprint = $this->everyFacetableTypeBlueprint();
+
+        $this->sigmie->newIndex($indexName)
+            ->properties($blueprint)
+            ->create();
+
+        $this->sigmie->collect($indexName, refresh: true)->merge($this->everyFacetableTypeDocuments());
+
+        $searchResponse = $this->sigmie->newSearch($indexName)
+            ->properties($blueprint())
+            ->queryString('')
+            ->facets($field, $facetFilter)
+            ->get();
+
+        $this->assertEquals(
+            ['count' => 1, 'min' => '2024-01-15T00:00:00.000Z', 'max' => '2024-01-15T00:00:00.000Z'],
+            $searchResponse->facet($field),
+        );
+    }
+
+    public static function dateFacetFilters(): array
+    {
+        return [
+            'root' => ['published_at', "keyword:'sport'"],
+            'nested' => ['shirt.published_at', "shirt.keyword:'sport'"],
+        ];
+    }
+
+    private function everyFacetableTypeBlueprint(): NewProperties
+    {
+        $fields = function (NewProperties $blueprint): void {
+            $blueprint->keyword('keyword');
+            $blueprint->caseSensitiveKeyword('tag');
+            $blueprint->number('count');
+            $blueprint->price();
+            $blueprint->text('text')->keyword();
+            $blueprint->date('published_at');
+        };
+
+        $blueprint = new NewProperties;
+        $fields($blueprint);
+        $blueprint->nested('shirt', function (NewProperties $blueprint) use ($fields): void {
+            $fields($blueprint);
+            $blueprint->nested('red', $fields);
+        });
+
+        return $blueprint;
+    }
+
+    /**
+     * @return array<int, Document>
+     */
+    private function everyFacetableTypeDocuments(): array
+    {
+        $values = [
+            ['keyword' => 'sport', 'tag' => 'Sport', 'count' => 1, 'price' => 100, 'text' => 'Some text', 'published_at' => '2024-01-15'],
+            ['keyword' => 'action', 'tag' => 'sport', 'count' => 3, 'price' => 300, 'text' => 'Other text', 'published_at' => '2024-03-10'],
+        ];
+
+        return array_map(
+            fn (array $value): Document => new Document([...$value, 'shirt' => [...$value, 'red' => $value]]),
+            $values,
+        );
     }
 
     /**
@@ -334,10 +548,7 @@ class FacetsTest extends TestCase
             ->facets('keyword count text')
             ->get();
 
-        /** @var Properties $props */
-        $props = $blueprint();
-
-        $facets = $props['keyword']->facets($searchResponse->facetAggregations());
+        $facets = $searchResponse->facet('keyword');
 
         $expectedHistogram = [
             'action' => 1,
@@ -354,7 +565,7 @@ class FacetsTest extends TestCase
             'sum' => 3.0,
         ];
 
-        $countFacets = $props['count']->facets($searchResponse->facetAggregations());
+        $countFacets = $searchResponse->facet('count');
 
         $this->assertEquals($expectedCountFacets, $countFacets);
 
@@ -363,7 +574,7 @@ class FacetsTest extends TestCase
             'Some text about action' => 1,
         ];
 
-        $textFacets = $props['text']->facets($searchResponse->facetAggregations());
+        $textFacets = $searchResponse->facet('text');
 
         $this->assertEquals($expectedTextFacets, $textFacets);
     }
@@ -395,10 +606,7 @@ class FacetsTest extends TestCase
             ->facets('category')
             ->get();
 
-        /** @var Properties $props */
-        $props = $blueprint();
-
-        $facets = $props['category']->facets($searchResponse->facetAggregations());
+        $facets = $searchResponse->facet('category');
 
         $expectedHistogram = [
             'action' => 1,
@@ -439,10 +647,7 @@ class FacetsTest extends TestCase
             ->facets('category.sport.type')
             ->get();
 
-        /** @var Properties $props */
-        $props = $blueprint();
-
-        $facets = $props->get('category.sport.type')->facets($searchResponse->facetAggregations());
+        $facets = $searchResponse->facet('category.sport.type');
 
         $expectedHistogram = [
             'action' => 1,

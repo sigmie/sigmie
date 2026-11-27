@@ -10,14 +10,11 @@ use Sigmie\Index\Analysis\CharFilter\Mapping;
 use Sigmie\Index\Analysis\CharFilter\Pattern;
 use Sigmie\Index\Contracts\Analysis;
 use Sigmie\Index\Contracts\CharFilter;
-use Sigmie\Shared\Collection;
 
 use function Sigmie\Functions\random_name;
 
 trait CharFilters
 {
-    private Collection $charFilters;
-
     public function charFilter(CharFilter $charFilter): self
     {
         $this->addCharFilter($charFilter);
@@ -29,9 +26,7 @@ trait CharFilters
 
     public function charFilters(): array
     {
-        $this->initCharFilters();
-
-        return $this->charFilters->toArray();
+        return $this->pipeline()->charFilters();
     }
 
     public function stripHTML(?string $name = null): static
@@ -64,27 +59,17 @@ trait CharFilters
         return $this;
     }
 
-    private function ensureCharFilterNameIsAvailable(string $name): void
-    {
-        if ($this->analysis()->hasCharFilter($name)) {
-            throw new Exception('Char filter name `'.$name.'` already exists.');
-        }
-    }
-
     private function addCharFilter(CharFilter $charFilter): void
     {
-        $this->initCharFilters();
+        $pipeline = $this->pipeline();
+        $name = $charFilter->name();
+        $existing = $this->analysis()->charFilters()[$name] ?? null;
+        if ($existing !== null && $existing->toRaw() !== $charFilter->toRaw()) {
+            throw new Exception('Char filter name `'.$name.'` already exists.');
+        }
 
-        $this->ensureCharFilterNameIsAvailable($charFilter->name());
-
-        $this->analysis()->addCharFilters([$charFilter->name() => $charFilter]);
-
-        $this->charFilters->set($charFilter->name(), $charFilter);
-    }
-
-    private function initCharFilters(): void
-    {
-        $this->charFilters ??= new Collection;
+        $this->analysis()->addCharFilters([$name => $charFilter]);
+        $pipeline->addCharFilters([$charFilter]);
     }
 
     private function createCharFilterName(string $name): string

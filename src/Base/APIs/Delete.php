@@ -14,12 +14,15 @@ trait Delete
 
     protected function deleteAPICall(string $index, string $identifier, string $refresh = 'false'): ElasticsearchResponse
     {
-        $uri = new Uri(sprintf('/%s/_doc/%s', $index, $identifier));
+        $uri = new Uri(sprintf('/%s/_doc/%s', rawurlencode($index), rawurlencode($identifier)));
 
         $uri = Uri::withQueryValue($uri, 'refresh', $refresh);
 
         $esRequest = new RequestsDelete($uri);
 
-        return $this->elasticsearchCall($esRequest);
+        $response = $this->elasticsearchCall($esRequest);
+        $this->assertNoFailedShards($response);
+
+        return $response;
     }
 }

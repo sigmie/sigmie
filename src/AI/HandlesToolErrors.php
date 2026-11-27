@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\AI;
 
+use Sigmie\Base\ElasticsearchException;
 use Throwable;
 
 /**
@@ -26,7 +27,7 @@ trait HandlesToolErrors
         } catch (Throwable $throwable) {
             return json_encode(
                 ['error' => $this->toolErrorMessage($throwable)],
-                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR
             );
         }
     }
@@ -39,9 +40,19 @@ trait HandlesToolErrors
         $decoded = json_decode($reason, true);
 
         if (is_array($decoded)) {
-            $reason = $decoded['error']['root_cause'][0]['reason']
-                ?? $decoded['error']['reason']
-                ?? $reason;
+            if (($decoded['json']['timed_out'] ?? $decoded['timed_out'] ?? false) === true) {
+                return 'Elasticsearch timed out before completing the search.';
+            }
+
+            $cluster = $decoded['json']['error'] ?? $decoded['error'] ?? null;
+
+            $surfaced = is_array($cluster) ? ($cluster['root_cause'][0]['reason'] ?? $cluster['reason'] ?? null) : $cluster;
+
+            if (is_string($surfaced) && $surfaced !== '') {
+                $reason = $surfaced;
+            } elseif ($e instanceof ElasticsearchException) {
+                $reason = 'Elasticsearch could not complete the search.';
+            }
         }
 
         return $reason." Check the field names and the filter/sort syntax in this tool's description, then try again.";

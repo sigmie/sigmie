@@ -12,7 +12,7 @@ class Number extends Type
 {
     use HasFacets;
 
-    protected ?int $scalingFactor = null;
+    protected int|float|null $scalingFactor = null;
 
     public function __construct(string $name)
     {
@@ -35,7 +35,7 @@ class Number extends Type
         return $this;
     }
 
-    public function scaledFloat(int $scalingFactor = 100): self
+    public function scaledFloat(int|float $scalingFactor = 100): self
     {
         $this->type = ElasticsearchMappingType::SCALED_FLOAT->value;
         $this->scalingFactor = $scalingFactor;
@@ -80,16 +80,57 @@ class Number extends Type
 
     public function facets(array $aggregation): ?array
     {
-        return $aggregation[$this->name()][$this->name()] ?? $aggregation[$this->name()] ?? [];
+        return $aggregation[$this->name()] ?? [];
     }
 
     public function validate(string $key, mixed $value): array
     {
-        if (! is_numeric($value)) {
+        if (! $this->ignoresMalformedScalar($value) && ! self::fitsMapping($this->type, $value, (bool) ($this->storedMapping['coerce'] ?? true))) {
             return [false, sprintf('The field %s mapped as %s must be a number', $key, $this->typeName())];
         }
 
         return [true, ''];
+    }
+
+    public static function fitsMapping(string $type, mixed $value, bool $coerce = true): bool
+    {
+        if (! is_numeric($value) || ! is_finite((float) $value)) {
+            return false;
+        }
+
+        if (! $coerce && (is_string($value) || (is_float($value) && in_array($type, ['integer', 'long'], true) && floor($value) !== $value))) {
+            return false;
+        }
+
+        return match ($type) {
+            'integer' => $value >= -2147483648 && $value <= 2147483647,
+            'float' => is_finite(unpack('f', pack('f', (float) $value))[1]),
+            'long' => self::fitsLong($value),
+            default => true,
+        };
+    }
+
+    private static function fitsLong(int|float|string $value): bool
+    {
+        if (is_int($value)) {
+            return true;
+        }
+
+        if (is_string($value) && trim($value) !== $value) {
+            return false;
+        }
+
+        $magnitude = abs((float) $value);
+        if (! is_string($value) || $magnitude !== 2.0 ** 63) {
+            return $magnitude <= 2.0 ** 63;
+        }
+
+        // Doubles round both limits to 2^63. Compare the 19 integral decimal digits.
+        $mantissa = preg_split('/e/i', $value, 2)[0];
+        $digits = ltrim(str_replace('.', '', $mantissa), '+-0');
+        $integer = substr(str_pad($digits, 19, '0'), 0, 19);
+
+        return strcmp($integer, $value[0] === '-' ? '9223372036854775808' : '9223372036854775807') <= 0;
     }
 
     public function typeName(): string

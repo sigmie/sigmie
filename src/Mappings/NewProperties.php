@@ -6,6 +6,7 @@ namespace Sigmie\Mappings;
 
 use BadMethodCallException;
 use Closure;
+use ReflectionFunction;
 use Sigmie\Index\Analysis\Analysis;
 use Sigmie\Index\Contracts\Analysis as AnalysisInterface;
 use Sigmie\Mappings\Types\Address;
@@ -55,6 +56,11 @@ class NewProperties
         $this->fields = new Collection;
     }
 
+    public function __clone(): void
+    {
+        $this->fields = $this->fields->map(static fn (Type $field): Type => clone $field);
+    }
+
     public static function macro(string $name, Closure $fn): void
     {
         self::$macros[$name] = $fn;
@@ -68,7 +74,15 @@ class NewProperties
     public function __call(string $name, array $args): mixed
     {
         if (isset(self::$macros[$name])) {
-            return Closure::bind(self::$macros[$name], $this, static::class)(...$args);
+            $macro = self::$macros[$name];
+
+            // First-class callables keep their original receiver. Only anonymous closures can be rebound.
+            $reflection = new ReflectionFunction($macro);
+            if ($reflection->isStatic() || ! str_contains($reflection->getName(), '{closure')) {
+                return $macro(...$args);
+            }
+
+            return Closure::bind($macro, $this, static::class)(...$args);
         }
 
         throw new BadMethodCallException(sprintf('No macro "%s" registered on NewProperties.', $name));
@@ -91,16 +105,20 @@ class NewProperties
         ?string $name = null
     ): Properties {
 
-        $fields = $this->fields
-            ->mapToDictionary(fn (Type $type) => [$type->name => $type])
-            ->toArray();
-
-        $props = new Properties($name ?? $this->name, $fields);
-
+        $props = $this->fieldDefinitions($name);
         $props->handleCustomAnalyzers($analysis);
         $props->handleNormalizers($analysis);
 
         return $props;
+    }
+
+    private function fieldDefinitions(?string $name = null): Properties
+    {
+        $fields = $this->fields
+            ->mapToDictionary(fn (Type $type): array => [$type->name => clone $type])
+            ->toArray();
+
+        return new Properties($name ?? $this->name, $fields);
     }
 
     public function boost(string $name = 'boost'): Boost
@@ -291,9 +309,9 @@ class NewProperties
         return $this->number($name)->double();
     }
 
-    public function scaledFloat(string $name): Number
+    public function scaledFloat(string $name, int|float $scalingFactor = 100): Number
     {
-        return $this->number($name)->scaledFloat();
+        return $this->number($name)->scaledFloat($scalingFactor);
     }
 
     public function range(string $name): Range
@@ -412,18 +430,15 @@ class NewProperties
         // Set path for the field based on parent's path
         if ($this->parentField instanceof Type) {
             $parentPath = $this->parentField->fullPath();
-            $field->setPath($parentPath !== '' && $parentPath !== '0' ? sprintf('%s.%s', $parentPath, $name) : $name);
+            $field->setFieldPath($parentPath !== '' ? sprintf('%s.%s', $parentPath, $name) : $name);
+        }
+
+        if ($callable !== null) {
+            $callable($props);
+            $field->properties($props->fieldDefinitions());
         }
 
         $this->fields->add($field);
-
-        if (is_null($callable)) {
-            return $field;
-        }
-
-        $callable($props);
-
-        $field->properties($props);
 
         return $field;
     }

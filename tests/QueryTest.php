@@ -14,10 +14,93 @@ use Sigmie\Query\Queries\Compound\Boolean as QueriesCompoundBoolean;
 use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\MatchPhrase;
 use Sigmie\Query\Search;
+use Sigmie\Search\RawQuery;
 use Sigmie\Testing\TestCase;
 
 class QueryTest extends TestCase
 {
+    public function test_collapsed_iteration_with_integer_sort_conversion_returns_each_group_once(): void
+    {
+        $name = uniqid('.converted-groups-');
+        $properties = new NewProperties;
+        $properties->double('price');
+
+        $index = $this->sigmie->newIndex($name)->properties($properties)->replicas(0)->create();
+
+        try {
+            $this->sigmie->collect($name, refresh: true)->merge([
+                new Document(['price' => 1.2], _id: 'a'),
+                new Document(['price' => 1.8], _id: 'b'),
+            ]);
+            $query = new RawQuery($this->elasticsearchConnection, $name, [
+                'collapse' => ['field' => 'price'],
+                'sort' => [['price' => ['numeric_type' => 'long']]],
+            ]);
+            $ids = [];
+            foreach ($query->chunk(1)->lazy() as $hit) {
+                $this->assertNotContains($hit->_id, $ids);
+                $ids[] = $hit->_id;
+            }
+
+            $this->assertEqualsCanonicalizing(['a', 'b'], $ids);
+        } finally {
+            $index->delete();
+        }
+    }
+
+    public function test_missing_collapse_group_tied_with_a_long_boundary_keeps_both_groups(): void
+    {
+        $name = uniqid('.collapse-boundary-');
+        $properties = new NewProperties;
+        $properties->long('rank');
+
+        $index = $this->sigmie->newIndex($name)->properties($properties)->replicas(0)->create();
+
+        try {
+            $this->sigmie->collect($name, refresh: true)->merge([
+                new Document(['rank' => null], _id: 'missing'),
+                new Document(['rank' => PHP_INT_MAX], _id: 'maximum'),
+            ]);
+            $query = new RawQuery($this->elasticsearchConnection, $name, [
+                'collapse' => ['field' => 'rank'],
+                'sort' => ['rank'],
+            ]);
+            $hits = iterator_to_array($query->chunk(1)->lazy());
+            $this->assertEqualsCanonicalizing(['missing', 'maximum'], array_column($hits, '_id'));
+        } finally {
+            $index->delete();
+        }
+    }
+
+    /** @test */
+    public function an_empty_aggregation_map_reaches_the_search_endpoint(): void
+    {
+        $indexName = uniqid('empty-aggs-');
+        $this->sigmie->newIndex($indexName)->properties(new NewProperties)->create();
+
+        $response = $this->sigmie->newQuery($indexName)->matchAll()->addRaw('aggs', [])->get();
+
+        $this->assertSame(0, $response->json('hits.total.value'));
+    }
+
+    /** @test */
+    public function an_associative_sort_keeps_its_order_when_iterating_a_query(): void
+    {
+        $indexName = uniqid('query-sort-');
+        $properties = new NewProperties;
+        $properties->number('price');
+        $this->sigmie->newIndex($indexName)->properties($properties)->create();
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['price' => 1], _id: 'low'),
+            new Document(['price' => 3], _id: 'high'),
+        ]);
+
+        $query = $this->sigmie->newQuery($indexName)->sort(['price' => 'desc'])->chunk(1);
+        $hits = iterator_to_array($query->lazy(), preserve_keys: false);
+
+        $this->assertSame(['high', 'low'], array_map(fn ($hit): string => $hit->_id, $hits));
+    }
+
     /**
      * @test
      */

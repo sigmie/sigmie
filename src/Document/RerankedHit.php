@@ -12,11 +12,18 @@ class RerankedHit extends Hit
     ) {
         parent::__construct(
             $hit->_source,
-            $hit->_id,
+            $hit->_id ?? null,
             $hit->_score,
-            $hit->_index,
+            $hit->_index ?? null,
             $hit->sort,
+            $hit->_matches,
+            $hit->metadata,
         );
+    }
+
+    public static function fromRaw(array $raw): static
+    {
+        return new static(Hit::hydrate($raw), $raw['_rerank_score']);
     }
 
     public function toArray(): array

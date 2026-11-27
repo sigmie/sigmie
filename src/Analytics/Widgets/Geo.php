@@ -35,7 +35,7 @@ class Geo extends Widget
     {
         return $this->scoped($this->name, $this->from, $this->to, function (Aggs $aggs): void {
             $aggs->geoHashGrid('grid', $this->field, $this->precision, $this->size)
-                ->aggregate(fn (Aggs $m) => $this->metric->apply($m, 'metric', $this->metricField));
+                ->aggregate(fn (Aggs $m) => $this->metric->apply($m, 'metric', $this->metricField, $this->countedField()));
         })->toRaw();
     }
 

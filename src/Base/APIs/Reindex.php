@@ -7,6 +7,7 @@ namespace Sigmie\Base\APIs;
 use GuzzleHttp\Psr7\Uri;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
 use Sigmie\Base\Http\Requests\Reindex as RequestsReindex;
+use Sigmie\Base\Http\Responses\Reindex as ReindexResponse;
 
 trait Reindex
 {
@@ -15,12 +16,17 @@ trait Reindex
     public function reindexAPICall(
         string $source,
         string $dest,
-        bool $waitForCompletion = true
+        bool $waitForCompletion = true,
+        ?string $pipeline = null,
     ): ElasticsearchResponse {
         $body = [
             'source' => ['index' => $source],
             'dest' => ['index' => $dest],
         ];
+
+        if ($pipeline !== null) {
+            $body['dest']['pipeline'] = $pipeline;
+        }
 
         $uri = new Uri('/_reindex');
         $uri = Uri::withQueryValue($uri, 'refresh', 'true');
@@ -28,6 +34,11 @@ trait Reindex
 
         $esRequest = new RequestsReindex('POST', $uri, $body);
 
-        return $this->elasticsearchCall($esRequest);
+        $response = $this->elasticsearchCall($esRequest);
+        if ($waitForCompletion) {
+            ReindexResponse::assertComplete($response->json(), $response->code());
+        }
+
+        return $response;
     }
 }

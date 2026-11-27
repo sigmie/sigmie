@@ -37,7 +37,43 @@ namespace Sigmie\Tests\Stubs {
 
         public mixed $itemsType = null;
 
+        public ?int $minimum = null;
+
+        public ?int $maximum = null;
+
+        public ?string $pattern = null;
+
+        public ?array $choices = null;
+
         public function __construct(public string $type) {}
+
+        public function pattern(string $value): self
+        {
+            $this->pattern = $value;
+
+            return $this;
+        }
+
+        public function min(int $value): self
+        {
+            $this->minimum = $value;
+
+            return $this;
+        }
+
+        public function max(int $value): self
+        {
+            $this->maximum = $value;
+
+            return $this;
+        }
+
+        public function enum(array $values): self
+        {
+            $this->choices = $values;
+
+            return $this;
+        }
 
         public function items(mixed $type): self
         {

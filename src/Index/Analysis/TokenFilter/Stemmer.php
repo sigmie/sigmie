@@ -16,30 +16,24 @@ class Stemmer extends TokenFilter
     public static function fromRaw(array $raw): static
     {
         [$name, $configs] = name_configs($raw);
-        $settings = [];
+        $filter = new static($name);
+        $filter->settings($configs + ['type' => $filter->type()]);
 
-        foreach ($configs['rules'] as $value) {
-            [$to, $from] = explode('=>', $value);
-            $to = explode(', ', $to);
-            $from = trim($from);
-            $to = array_map(fn ($value): string => trim($value), $to);
-
-            $settings[$from] = $to;
-        }
-
-        return new static($name, $settings);
+        return $filter;
     }
 
     protected function getValues(): array
     {
+        if (($this->settings['type'] ?? null) === $this->type()) {
+            return $this->settings;
+        }
+
         $rules = [];
 
-        foreach ($this->settings as [$to, $from]) {
+        foreach ($this->settings as $rule) {
+            [$to, $from] = array_values($rule);
             $from = implode(', ', $from);
             $rules[] = sprintf('%s => %s', $from, $to);
-            // foreach ($from as $word) {
-            //     $rules[] = "{$word} => {$to}";
-            // }
         }
 
         return [
