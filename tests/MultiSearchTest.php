@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Generator;
+use InvalidArgumentException;
 use Sigmie\Base\APIs\MSearch;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\ElasticsearchException;
 use Sigmie\Document\Document;
 use Sigmie\Document\Hit;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Search\Contracts\MultiSearchable;
 use Sigmie\Search\Formatters\FormatterParameters;
 use Sigmie\Search\Formatters\SigmieMultiSearchResponse;
 use Sigmie\Search\Formatters\SigmieSearchResponse;
@@ -441,6 +443,48 @@ class MultiSearchTest extends TestCase
             fn (array $bucket): string => $bucket['key']['category'],
             $buckets['matching'],
         ));
+
+        $visited = [];
+
+        $this->sigmie->newMultiSearch()
+            ->composite('categories', [['category' => ['terms' => ['field' => 'category']]]], 1)
+            ->search('matching', $matching)
+            ->each(function (array $bucket, string $name) use (&$visited): void {
+                $visited[] = $name.':'.$bucket['key']['category'];
+            });
+
+        $this->assertSame(['matching:first', 'matching:third'], $visited);
+    }
+
+    /**
+     * @test
+     */
+    public function composite_multi_search_rejects_searches_with_several_responses(): void
+    {
+        $search = new class implements MultiSearchable
+        {
+            public function toMultiSearch(): array
+            {
+                return [[], [], [], []];
+            }
+
+            public function multisearchResCount(): int
+            {
+                return 2;
+            }
+
+            public function formatResponses(...$responses): mixed
+            {
+                return $responses;
+            }
+        };
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->sigmie->newMultiSearch()
+            ->composite('categories', [['category' => ['terms' => ['field' => 'category']]]])
+            ->search('facets', $search)
+            ->buckets();
     }
 
     /**
