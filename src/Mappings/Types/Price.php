@@ -6,6 +6,7 @@ namespace Sigmie\Mappings\Types;
 
 use Sigmie\Mappings\Traits\HasFacets;
 use Sigmie\Parse\ParseException;
+use Sigmie\Query\Aggregations\Bucket\Histogram;
 use Sigmie\Query\Aggs;
 
 class Price extends Type
@@ -62,17 +63,8 @@ class Price extends Type
         $max = $aggregation[$this->name().'_max']['value'] ?? null;
 
         $histogram = [];
-        $next = null;
-        foreach ($originalBuckets as $bucket) {
-            $bound = $bucket['key'];
-            $step = $interval === null ? null : (int) round($bound / $interval);
-            // Elasticsearch keys an empty bucket as its step times the interval, in doubles.
-            for (; $next !== null && $next < $step; $next++) {
-                $histogram[json_encode((float) ($next * $interval), JSON_THROW_ON_ERROR)] = 0;
-            }
-
-            $histogram[is_float($bound) ? json_encode($bound, JSON_THROW_ON_ERROR) : $bound] = $this->documentCount($bucket);
-            $next = $step === null ? null : $step + 1;
+        foreach (Histogram::dense($originalBuckets, $interval) as [$bound, $bucket]) {
+            $histogram[is_float($bound) ? json_encode($bound, JSON_THROW_ON_ERROR) : $bound] = $bucket === null ? 0 : $this->documentCount($bucket);
         }
 
         // Keys 0, 1, 2… are a PHP list. json_encode would drop those lower bounds.

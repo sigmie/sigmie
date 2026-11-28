@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Analytics\Widgets;
 
 use DateTimeInterface;
+use Sigmie\Query\Aggregations\Bucket\Histogram;
 use Sigmie\Query\Aggs;
 
 /**
@@ -37,15 +38,8 @@ class Distribution extends Widget
     public function extract(array $aggregations): array
     {
         $buckets = [];
-        $next = null;
-        foreach ($aggregations[$this->name]['buckets']['buckets'] ?? [] as $bucket) {
-            $step = (int) round($bucket['key'] / $this->interval);
-            for (; $next !== null && $next < $step; $next++) {
-                $buckets[] = ['label' => (float) ($next * $this->interval), 'count' => 0];
-            }
-
-            $buckets[] = ['label' => $bucket['key'], 'count' => $bucket['doc_count'] ?? 0];
-            $next = $step + 1;
+        foreach (Histogram::dense($aggregations[$this->name]['buckets']['buckets'] ?? [], $this->interval) as [$label, $bucket]) {
+            $buckets[] = ['label' => $label, 'count' => $bucket['doc_count'] ?? 0];
         }
 
         return [

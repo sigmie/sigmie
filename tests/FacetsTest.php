@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use InvalidArgumentException;
 use Sigmie\Base\APIs\Explain;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Search;
@@ -247,6 +248,22 @@ class FacetsTest extends TestCase
         ];
 
         $this->assertEquals($expectedHistogram, $facets['histogram']);
+    }
+
+    public function test_a_price_histogram_above_the_fill_limit_asks_for_a_larger_interval(): void
+    {
+        $blueprint = new NewProperties;
+        $blueprint->price();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('spans 1,000,000,000 buckets, above the limit of 100,000. Use a larger interval.');
+
+        $blueprint->get()->get('price')->facets([
+            'price_histogram' => [
+                'buckets' => [['key' => 10.0, 'doc_count' => 1], ['key' => 1.0E10, 'doc_count' => 1]],
+                'meta' => ['interval' => 10],
+            ],
+        ]);
     }
 
     public function test_a_price_histogram_wider_than_the_bucket_limit_keeps_every_bucket(): void
