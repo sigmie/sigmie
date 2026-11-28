@@ -23,6 +23,14 @@ class Date extends Type
         parent::__construct($name);
     }
 
+    /**
+     * The engine stores each day as UTC midnight. A date mapped outside Sigmie can hold a time.
+     */
+    public function holdsCalendarDays(): bool
+    {
+        return $this->storedMapping === null || isset($this->storedMapping['meta']['type']);
+    }
+
     public function validate(string $key, mixed $value): array
     {
         $accepted = $this->acceptsEngineDateFormat($value);

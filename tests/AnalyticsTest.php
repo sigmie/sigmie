@@ -80,6 +80,29 @@ class AnalyticsTest extends TestCase
         $this->assertSame(['2024-01-02T00:00:00.000Z', '2024-01-01T00:00:00.000Z'], array_column($result['grouped_trend']['groups'], 'group'));
     }
 
+    public function test_a_date_only_timeline_counts_local_days_west_of_utc(): void
+    {
+        $index = $this->indexWith(function (NewProperties $props): void {
+            $props->date('day');
+            $props->number('amount');
+        }, [
+            new Document(['day' => '2023-12-31', 'amount' => 1]),
+            new Document(['day' => '2024-01-01', 'amount' => 10]),
+            new Document(['day' => '2024-01-31', 'amount' => 100]),
+            new Document(['day' => '2024-02-01', 'amount' => 1000]),
+        ]);
+        $zone = new DateTimeZone('America/New_York');
+
+        $result = $index->analytics('day', new DateTimeImmutable('2024-01-01', $zone), new DateTimeImmutable('2024-02-01', $zone))
+            ->timezone('America/New_York')
+            ->kpiDelta('revenue', Metric::Sum, 'amount')
+            ->trend('daily', Metric::Sum, 'amount', CalendarInterval::Day, minDocCount: 1)
+            ->get();
+
+        $this->assertEquals(['value' => 110, 'previous' => 1], array_intersect_key($result['revenue'], ['value' => 0, 'previous' => 0]));
+        $this->assertEquals(['2024-01-01T00:00:00.000Z' => 10, '2024-01-31T00:00:00.000Z' => 100], array_column($result['daily']['series'], 'value', 'label'));
+    }
+
     public function test_offset_conversion_preserves_nanosecond_window(): void
     {
         $index = $this->indexWith(fn (NewProperties $props): NewProperties => $props->add(new Field('time', 'date_nanos')), [
@@ -3077,7 +3100,7 @@ class AnalyticsTest extends TestCase
     private function pinnedAnalytics(string $zone, Period $period, DateTimeImmutable $now): Analytics
     {
         $properties = new NewProperties;
-        $properties->date('created_at');
+        $properties->datetime('created_at');
         $properties->number('amount');
 
         $analytics = new class(new NewQuery($this->disconnectedConnection(), 'sales'), $properties, 'created_at') extends Analytics

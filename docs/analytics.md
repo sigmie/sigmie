@@ -480,6 +480,8 @@ $orders->analytics('created_at')
 
 A fixed offset ignores daylight saving time. An IANA name follows it. In a browser, `-new Date().getTimezoneOffset()` gives the value for `timezoneOffset()`.
 
+A `date()` field holds calendar days, not instants, so the timezone does not move them. On a `date()` timeline, the window selects the local days it covers, and a bucket keeps its stored day: in New York, January 1 is labelled `2024-01-01T00:00:00.000Z`.
+
 ## Hits alongside widgets
 
 `getWithHits()` returns the widgets and the matching documents from one request. The request has `size(0)` by default, so configure the hits with `search()`.

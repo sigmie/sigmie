@@ -29,6 +29,7 @@ class Retention extends Widget
         protected string $cohortField,
         protected string $idField,
         protected CalendarInterval|string $interval,
+        protected ?string $cohortTimeZone = null,
         protected ?string $timeZone = null,
     ) {
         parent::__construct($name, $dateField, $from, $to, $dateFormat);
@@ -37,7 +38,7 @@ class Retention extends Widget
     public function toRaw(): array
     {
         return $this->scoped($this->name, $this->from, $this->to, function (Aggs $aggs): void {
-            $aggs->dateHistogram('cohorts', $this->cohortField, $this->interval, minDocCount: 1, timeZone: $this->timeZone)
+            $aggs->dateHistogram('cohorts', $this->cohortField, $this->interval, minDocCount: 1, timeZone: $this->cohortTimeZone)
                 ->aggregate(function (Aggs $sub): void {
                     Metric::Unique->apply($sub, 'size', $this->idField);
                     $this->windowHistogram($sub, 'periods', $this->interval, $this->timeZone)
