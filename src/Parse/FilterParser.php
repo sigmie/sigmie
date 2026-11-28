@@ -157,7 +157,7 @@ class FilterParser extends Parser
             if ($closing === [] && $i > 0 && str_contains(')]}\'"', $query[$i - 1])
                 && ! (str_contains('"\'', $query[$i - 1]) && preg_match('/\G\.\.(?:[+-]?(?:\d|\.\d)|[a-fA-F0-9]{0,4}:)/', $query, offset: $i))
                 && preg_match('/\G\s*'.self::FIELD_PATH.'\s*[:<>]/u', $query, offset: $i)) {
-                throw new ParseException(sprintf("Missing operator before '%s'.", substr($query, $i)));
+                throw new ParseException(sprintf("Missing operator before '%s'.", $this->shown(substr($query, $i))));
             }
 
             if (str_contains('([{', $char)) {
@@ -167,7 +167,7 @@ class FilterParser extends Parser
                     '{' => '}',
                 };
             } elseif (str_contains(')]}', $char) && array_pop($closing) !== $char) {
-                throw new ParseException(sprintf("Invalid filter: unbalanced delimiters in '%s'.", $query));
+                throw new ParseException(sprintf("Invalid filter: unbalanced delimiters in '%s'.", $this->shown($query)));
             }
 
             $buffer .= $char;
@@ -175,7 +175,7 @@ class FilterParser extends Parser
         }
 
         if ($closing !== [] || $inQuote) {
-            throw new ParseException(sprintf("Invalid filter: unbalanced delimiters in '%s'.", $query));
+            throw new ParseException(sprintf("Invalid filter: unbalanced delimiters in '%s'.", $this->shown($query)));
         }
 
         $tokens[] = ['op' => $currentOp, 'expr' => trim($buffer)];
@@ -479,7 +479,7 @@ class FilterParser extends Parser
                 )
             )
         ) {
-            throw new ParseException(sprintf("Invalid filter string: '%s'", $expr));
+            throw new ParseException(sprintf("Invalid filter string: '%s'", $this->shown($expr)));
         }
 
         return $expr;
@@ -537,6 +537,18 @@ class FilterParser extends Parser
         ]);
     }
 
+    // Filter text for an error message, with the quotes the caller wrote in place of their
+    // placeholders. An escaped quote shows without its backslash, because the mask drops it.
+    private function shown(string $masked): string
+    {
+        return strtr($masked, [
+            "\x01\x01" => "\x01",
+            self::ESC_SINGLE => "'",
+            self::ESC_DOUBLE => '"',
+            self::ESC_BACKSLASH => '\\',
+        ]);
+    }
+
     protected function hasUnescapedWildcard(string $filter): bool
     {
         [, $value] = array_pad(explode(':', $filter, 2), 2, '');
@@ -579,7 +591,7 @@ class FilterParser extends Parser
             }
 
             if (! preg_match('/\A'.self::OPERAND.'\z/s', $item)) {
-                $this->handleError(sprintf("Invalid list item '%s'.", $item));
+                $this->handleError(sprintf("Invalid list item '%s'.", $this->shown($item)));
 
                 return null;
             }
@@ -828,7 +840,7 @@ class FilterParser extends Parser
             return $query;
         }
 
-        $this->handleError(sprintf("Filter string '%s' couldn't be parsed.", $string));
+        $this->handleError(sprintf("Filter string '%s' couldn't be parsed.", $this->shown($string)));
 
         return new MatchNone;
     }
@@ -989,7 +1001,7 @@ class FilterParser extends Parser
     public function handleBetween(string $range): ?Query
     {
         [$field, $min, $max] = $this->betweenParts($range)
-            ?? throw new ParseException(sprintf("Invalid inclusive range '%s'.", $range));
+            ?? throw new ParseException(sprintf("Invalid inclusive range '%s'.", $this->shown($range)));
 
         $min = $this->rangeValue($field, $min);
         $max = $this->rangeValue($field, $max);

@@ -226,6 +226,21 @@ class FilterParserTest extends TestCase
     }
 
     /** @withoutCluster */
+    public function test_an_error_message_shows_the_quotes_the_caller_wrote(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('label');
+
+        $parser = new FilterParser($properties, throwOnError: false);
+        $parser->parse('label:"O\'Brien" AND nope:"it\'s"');
+
+        $this->assertContains("Filter string 'nope:\"it's\"' couldn't be parsed.", array_column($parser->errors(), 'message'));
+
+        $this->expectExceptionMessage("unbalanced delimiters in 'label:\"it's\" AND (label:a'");
+        (new FilterParser($properties))->parse('label:"it\'s" AND (label:a');
+    }
+
+    /** @withoutCluster */
     public function test_a_comma_or_second_colon_outside_a_list_does_not_join_two_words(): void
     {
         $properties = new NewProperties;
