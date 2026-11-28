@@ -380,6 +380,17 @@ class QueryAddressedTest extends TestCase
     /**
      * @test
      */
+    public function a_match_query_sends_its_operator(): void
+    {
+        $this->assertSame(
+            '{"match":{"title":{"query":"red shoes","boost":1,"operator":"and"}}}',
+            json_encode((new Match_('title', 'red shoes', operator: 'and'))->toRaw())
+        );
+    }
+
+    /**
+     * @test
+     */
     public function an_added_raw_aggregation_named_zero_stays_an_object(): void
     {
         $aggs = json_encode($this->search()->addRaw('aggs', [

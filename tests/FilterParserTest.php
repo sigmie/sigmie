@@ -240,6 +240,7 @@ class FilterParserTest extends TestCase
     {
         $properties = new NewProperties;
         $properties->number('stock')->integer();
+        $properties->keyword('label');
         $properties->nested('items', fn (NewProperties $item): Number => $item->number('qty')->integer());
 
         $parser = new FilterParser($properties);
@@ -247,6 +248,11 @@ class FilterParserTest extends TestCase
         foreach (['stock > 5' => 'stock>5', 'stock >= 5 AND items:{ qty < 2 }' => 'stock>=5 AND items:{qty<2}'] as $spaced => $compact) {
             $this->assertSame($parser->parse($compact)->toRaw(), $parser->parse($spaced)->toRaw(), $spaced);
         }
+
+        // After a range operator, as after a colon, the word `or` is the value of the clause.
+        $value = $parser->parse('label >= or OR stock > 5')->toRaw();
+        $this->assertSame('or', $value['bool']['should'][0]['bool']['must'][0]['range']['label']['gte']);
+        $this->assertCount(2, $value['bool']['should']);
     }
 
     /** @withoutCluster */
