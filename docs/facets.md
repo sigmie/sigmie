@@ -267,6 +267,8 @@ $response->facet('attributes.price');
 // ['min' => 20, 'max' => 180, 'histogram' => [0 => 4, 50 => 9, 100 => 6, 150 => 2]]
 ```
 
+A count is a number of documents, not nested items: a product with three red variants adds 1 to `red`, to its price bucket, and to a date `count`. The statistics of a `number` facet (`count`, `avg`, `sum`) still cover every nested value.
+
 Nesting can go deeper, for example `product.variants.size`.
 
 ## Read facet results

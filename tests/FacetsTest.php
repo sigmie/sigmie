@@ -93,6 +93,37 @@ class FacetsTest extends TestCase
         $this->assertEquals(['count' => 1, 'min' => 1, 'max' => 1, 'avg' => 1, 'sum' => 1], $response->facet('items.qty'));
     }
 
+    /** @test */
+    public function a_nested_facet_counts_documents_not_items(): void
+    {
+        $name = uniqid('nested_facet_documents_');
+        $blueprint = new NewProperties;
+        $blueprint->nested('variants', function (NewProperties $variants): void {
+            $variants->keyword('color');
+            $variants->price();
+            $variants->date('released');
+        });
+        $this->sigmie->newIndex($name)->properties($blueprint)->create();
+        $this->sigmie->collect($name, refresh: true)->merge([
+            new Document(['variants' => [
+                ['color' => 'red', 'price' => 10, 'released' => '2024-01-01'],
+                ['color' => 'red', 'price' => 11, 'released' => '2024-01-02'],
+                ['color' => 'red', 'price' => 12, 'released' => '2024-01-03'],
+            ]]),
+            new Document(['variants' => [['color' => 'blue', 'price' => 20, 'released' => '2024-02-01']]]),
+            new Document(['variants' => [['color' => 'blue', 'price' => 21]]]),
+        ]);
+
+        $response = $this->sigmie->newSearch($name)
+            ->properties($blueprint)
+            ->facets('variants.color variants.price:10 variants.released')
+            ->get();
+
+        $this->assertSame(['blue' => 2, 'red' => 1], $response->facet('variants.color'));
+        $this->assertEquals([10 => 1, 20 => 2], $response->facet('variants.price')['histogram']);
+        $this->assertSame(2, $response->facet('variants.released')['count']);
+    }
+
     use Explain;
     use Index;
     use Search;

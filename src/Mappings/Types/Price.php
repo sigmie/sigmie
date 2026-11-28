@@ -41,12 +41,13 @@ class Price extends Type
 
         // Empty buckets count towards search.max_buckets, so one outlier price can fail the
         // search. Elasticsearch returns the filled buckets and facets() adds the empty ones.
-        $aggs->histogram(
+        $histogram = $aggs->histogram(
             $this->name().'_histogram',
             $this->name(),
             interval: $interval + 0,
             minDocCount: 1,
         )->meta(['interval' => $interval + 0]);
+        $this->countDocuments($histogram);
 
         $aggs->min($this->name().'_min', $this->name());
         $aggs->max($this->name().'_max', $this->name());
@@ -70,7 +71,7 @@ class Price extends Type
                 $histogram[json_encode((float) ($next * $interval), JSON_THROW_ON_ERROR)] = 0;
             }
 
-            $histogram[is_float($bound) ? json_encode($bound, JSON_THROW_ON_ERROR) : $bound] = $bucket['doc_count'];
+            $histogram[is_float($bound) ? json_encode($bound, JSON_THROW_ON_ERROR) : $bound] = $this->documentCount($bucket);
             $next = $step === null ? null : $step + 1;
         }
 

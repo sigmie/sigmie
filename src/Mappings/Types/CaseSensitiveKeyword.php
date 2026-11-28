@@ -25,9 +25,7 @@ class CaseSensitiveKeyword extends Type
 
     public function facets(array $aggregation): ?array
     {
-        $originalBuckets = $aggregation[$this->name()]['buckets'] ?? [];
-
-        return array_column($originalBuckets, 'doc_count', 'key');
+        return $this->termFacets($aggregation);
     }
 
     public function isFacetable(): bool

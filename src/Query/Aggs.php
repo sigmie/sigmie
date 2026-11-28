@@ -16,6 +16,7 @@ use Sigmie\Query\Aggregations\Bucket\MultiTerms;
 use Sigmie\Query\Aggregations\Bucket\Nested;
 use Sigmie\Query\Aggregations\Bucket\Range;
 use Sigmie\Query\Aggregations\Bucket\RangeFilter;
+use Sigmie\Query\Aggregations\Bucket\ReverseNested;
 use Sigmie\Query\Aggregations\Bucket\SignificantText;
 use Sigmie\Query\Aggregations\Bucket\Sort;
 use Sigmie\Query\Aggregations\Bucket\TermFilter;
@@ -280,6 +281,15 @@ class Aggs implements AggsInterface
     public function global(string $name): Global_
     {
         $aggregation = new Global_($name);
+
+        $this->aggs[] = $aggregation;
+
+        return $aggregation;
+    }
+
+    public function reverseNested(string $name): ReverseNested
+    {
+        $aggregation = new ReverseNested($name);
 
         $this->aggs[] = $aggregation;
 

@@ -4696,7 +4696,10 @@ class SearchCorrectnessTest extends TestCase
                     'attributes.label' => [
                         'attributes.label' => [
                             'doc_count' => 6,
-                            'attributes.label' => ['buckets' => $buckets],
+                            'attributes.label' => ['buckets' => [
+                                ['key' => 'summer', 'doc_count' => 9, '_documents' => ['doc_count' => 4]],
+                                ['key' => 'sale', 'doc_count' => 5, '_documents' => ['doc_count' => 2]],
+                            ]],
                         ],
                     ],
                 ],

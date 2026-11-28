@@ -252,7 +252,7 @@ class SigmieIndexToolTest extends TestCase
             $field => ['_nested' => ['_nested' => [
                 $field => [$field => [
                     'sum_other_doc_count' => 2,
-                    'buckets' => [['key' => 'book', 'doc_count' => 3]],
+                    'buckets' => [['key' => 'book', 'doc_count' => 5, '_documents' => ['doc_count' => 3]]],
                 ]],
             ]]],
         ]);
@@ -439,7 +439,7 @@ class SigmieIndexToolTest extends TestCase
         ]));
 
         $this->assertSame(1, $result['total']);
-        $this->assertEquals(['analysis' => 4, 'conclusion' => 1, 'summary' => 1], $result['facets']['sections.type']);
+        $this->assertEquals(['analysis' => 1, 'conclusion' => 1, 'summary' => 1], $result['facets']['sections.type']);
     }
 
     /**
