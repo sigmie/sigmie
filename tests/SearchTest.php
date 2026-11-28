@@ -130,6 +130,23 @@ class SearchTest extends TestCase
         }
     }
 
+    public function test_a_highlight_fragment_escapes_the_stored_text(): void
+    {
+        $name = uniqid();
+        $properties = new NewProperties;
+        $properties->title('title');
+
+        $this->sigmie->newIndex($name)->properties($properties)->create();
+        $this->sigmie->collect($name, refresh: true)->properties($properties)->merge([
+            new Document(['title' => '<img src=x onerror=alert(1)> red shoes']),
+        ]);
+
+        $hits = $this->sigmie->newSearch($name)->properties($properties)->queryString('shoes')
+            ->highlighting(['title'], '<mark>', '</mark>')->get()->json('hits');
+
+        $this->assertSame('&lt;img src=x onerror=alert(1)&gt; red <mark>shoes</mark>', $hits[0]['highlight']['title'][0]);
+    }
+
     public function test_lazy_search_omits_highlights_inside_collapsed_groups(): void
     {
         $name = uniqid('.lazy_collapsed_highlight_');
