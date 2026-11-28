@@ -3148,6 +3148,44 @@ class SearchTest extends TestCase
         $this->assertSame(['title' => 'Hello'], $source);
     }
 
+    public function test_a_search_without_properties_leaves_the_stored_vectors_out_of_the_hits(): void
+    {
+        $indexName = uniqid();
+        $blueprint = new NewProperties;
+        $blueprint->text('title')->semantic(api: 'test-embeddings', accuracy: 1, dimensions: 3);
+        $blueprint->keyword('group');
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+        $this->sigmie->collect($indexName, refresh: true)->properties($blueprint)->merge([
+            new Document(['title' => 'Hello', 'group' => 'a'], '1'),
+            new Document(['title' => 'Hello', 'group' => 'a'], '2'),
+        ]);
+
+        $search = fn (): NewSearch => $this->sigmie->newSearch($indexName)->queryString('');
+        $multi = $this->sigmie->newMultiSearch();
+        $multi->add($search());
+
+        $expected = ['title' => 'Hello', 'group' => 'a'];
+
+        $this->assertSame($expected, $search()->get()->json('hits.0._source'));
+        $this->assertSame($expected, $search()->get()->hits()[0]->_source);
+        $this->assertSame($expected, $search()->lazy()->current()->_source);
+        $this->assertSame($expected, $multi->hits()[0]->_source);
+        $this->assertSame($expected, $search()->uniqueBy('group', 1)->get()->json('hits.0.inner_hits.top.hits.hits.0._source'));
+        $this->assertArrayHasKey('_embeddings', $search()->retrieveEmbeddingsField()->get()->hits()[0]->_source);
+    }
+
+    public function test_a_search_without_properties_returns_the_hits_of_an_index_without_source(): void
+    {
+        $indexName = uniqid();
+        $this->indexAPICall($indexName, 'PUT', ['mappings' => ['_source' => ['enabled' => false]]]);
+        $this->indexAPICall($indexName.'/_doc/1?refresh=true', 'PUT', ['title' => 'Hello']);
+
+        $hits = $this->sigmie->newSearch($indexName)->queryString('')->get()->hits();
+
+        $this->assertSame(['1'], array_column($hits, '_id'));
+        $this->assertSame([], $hits[0]->_source);
+    }
+
     public function test_a_restored_object_without_mapped_children_stays_in_the_hits(): void
     {
         $indexName = uniqid();

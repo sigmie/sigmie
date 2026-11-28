@@ -397,6 +397,29 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         return array_values($fields);
     }
 
+    /**
+     * A search without properties sends no `_source` filter, because Elasticsearch rejects any
+     * `_source` filter on an index whose mapping disables `_source`. Its hits drop the stored
+     * vectors after the response instead.
+     */
+    private function hidesStoredVectors(): bool
+    {
+        return $this->retrievableFields() === [] && ! $this->retrieveEmbeddingsField;
+    }
+
+    private function withoutStoredVectors(array $hit): array
+    {
+        unset($hit['_source']['_embeddings']);
+
+        foreach ($hit['inner_hits'] ?? [] as $name => $group) {
+            foreach ($group['hits']['hits'] ?? [] as $index => $member) {
+                $hit['inner_hits'][$name]['hits']['hits'][$index] = $this->withoutStoredVectors($member);
+            }
+        }
+
+        return $hit;
+    }
+
     protected function handleSize(Search $search)
     {
         $search->size($this->searchContext->size);
@@ -942,6 +965,10 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         search_hits($searchResponse);
         search_hits($facetsResponse);
 
+        if ($this->hidesStoredVectors() && isset($searchResponse['hits']['hits'])) {
+            $searchResponse['hits']['hits'] = array_map($this->withoutStoredVectors(...), $searchResponse['hits']['hits']);
+        }
+
         if (($collapsedSort = $this->openSearchCollapsedSort()) instanceof CollapsedSort && isset($searchResponse['hits']['hits'])) {
             foreach ($searchResponse['hits']['hits'] as &$hit) {
                 // Numeric missing values use a sort sentinel that can also be a real value.
@@ -1097,6 +1124,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
         $body = $this->buildSearch($this->pitIterationChunkSize)->toRaw();
         $innerHits = clone $this->searchContext->innerHits;
+        $hidesStoredVectors = $this->hidesStoredVectors();
 
         $hasCollapse = array_key_exists('collapse', $body);
         $sort = $body['sort'] ?? [];
@@ -1125,7 +1153,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
             function (string $id) use ($pit): void {
                 $pit->close($id);
             },
-            fn (array $data): Hit => Hit::fromRaw($innerHits->formatRawHit($data)),
+            fn (array $data): Hit => Hit::fromRaw($innerHits->formatRawHit($hidesStoredVectors ? $this->withoutStoredVectors($data) : $data)),
         );
     }
 
