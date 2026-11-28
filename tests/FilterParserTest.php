@@ -260,6 +260,28 @@ class FilterParserTest extends TestCase
     }
 
     /** @withoutCluster */
+    public function test_an_unquoted_four_digit_integer_on_a_date_field_is_ambiguous(): void
+    {
+        $properties = new NewProperties;
+        $properties->datetime('created_at');
+        $properties->number('stock')->integer();
+
+        foreach (['created_at>=2024', 'created_at:2024', 'created_at:2020..2024', 'created_at:[2023,2024]'] as $filter) {
+            $parser = new FilterParser($properties, throwOnError: false);
+            $parser->parse($filter);
+
+            $this->assertStringStartsWith("Ambiguous date filter value '", $parser->errors()[0]['message'] ?? '', $filter);
+        }
+
+        foreach (['created_at>="2024"', 'created_at>=1700000000000', 'created_at>=-0001', 'stock>=2024'] as $filter) {
+            $parser = new FilterParser($properties, throwOnError: false);
+            $parser->parse($filter);
+
+            $this->assertSame([], $parser->errors(), $filter);
+        }
+    }
+
+    /** @withoutCluster */
     public function test_a_comma_or_second_colon_outside_a_list_does_not_join_two_words(): void
     {
         $properties = new NewProperties;

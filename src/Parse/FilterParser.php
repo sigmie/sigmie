@@ -964,7 +964,22 @@ class FilterParser extends Parser
             $name = $property->sortableName();
         }
 
+        $dateFormat = $this->isDateField($field)
+            ? $property->toRaw()[$property->name]['format'] ?? 'strict_date_optional_time||epoch_millis'
+            : null;
+
         foreach ($values as $value) {
+            // The engine reads an unquoted integer as epoch milliseconds, whatever the format. Four
+            // digits read as a year, and as milliseconds they fall in the first ten seconds of 1970.
+            if ($dateFormat !== null && is_int($value) && $value >= 1000 && $value <= 9999) {
+                $this->handleError(sprintf(
+                    "Ambiguous date filter value '%d' for field %s. Quote it for the year (\"%d\"), or use epoch milliseconds.",
+                    $value, $field, $value,
+                ));
+
+                return null;
+            }
+
             $valid = match ($type) {
                 'boolean' => in_array($value, ['true', 'false'], true),
                 'float' => Number::fitsMapping($range ? 'double' : 'float', $value),
@@ -973,9 +988,7 @@ class FilterParser extends Parser
                 'integer_range', 'long_range', 'float_range', 'double_range' => Number::fitsMapping(substr($type, 0, -6), $value)
                     && (! in_array($type, ['integer_range', 'long_range'], true) || $this->isIntegralOperand($value)),
                 'ip', 'ip_range' => $this->validIpOperand($value, $type === 'ip' && ! $range),
-                'date', 'date_nanos', 'date_range' => is_int($value) || DateBound::accepts(
-                    $value, $property->toRaw()[$property->name]['format'] ?? 'strict_date_optional_time||epoch_millis', query: true,
-                ),
+                'date', 'date_nanos', 'date_range' => is_int($value) || DateBound::accepts($value, $dateFormat, query: true),
                 default => true,
             };
 
