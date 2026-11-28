@@ -167,7 +167,7 @@ $response->facet('author');
 
 ### Price fields
 
-A `price` field returns the lowest price, the highest price, and a histogram. Each histogram key is the lower bound of a bucket:
+A `price` field returns the lowest price, the highest price, and a histogram. Each histogram key is the lower bound of a bucket. A histogram holds at most 100,000 buckets; a wider range throws an `InvalidArgumentException` that asks for a larger interval:
 
 ```php
 $props->price();

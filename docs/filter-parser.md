@@ -49,6 +49,8 @@ status:active
 
 Single and double quotes are interchangeable. A value without spaces or special characters needs no quotes.
 
+A `keyword()` field compares without case: `status:ACTIVE` matches `active`. `category()`, `tags()`, `title()`, `name()`, and `caseSensitiveKeyword()` fields compare the exact stored value: `category:'sports'` does not match `Sports`.
+
 ### Numbers
 
 ```
@@ -123,7 +125,7 @@ created_at>="2023-05-01"
 
 The operators are `>`, `<`, `>=`, and `<=`.
 
-> **Note:** On a date field, quote the date. An unquoted integer is epoch milliseconds, so `created_at>=2024` matches every date after 1970, and `created_at>="2024"` matches from the year 2024.
+> **Note:** On a date field, quote the date. An unquoted integer is epoch milliseconds. The parser rejects an unquoted four-digit integer such as `created_at>=2024`, because it reads as a year. Write `created_at>="2024"` for the year 2024.
 
 ### Inclusive range
 
@@ -143,7 +145,7 @@ NOT category:"sports"
 active:true AND NOT stock:0
 ```
 
-`AND`, `OR`, and `NOT` are case-insensitive. `AND` binds tighter than `OR`, so `a OR b AND c` means `a OR (b AND c)`. Use parentheses to group clauses:
+`AND`, `OR`, and `NOT` are case-insensitive. `AND` binds tighter than `OR`, so `a OR b AND c` means `a OR (b AND c)`. An operator stands between two clauses, with a space, a quote, or a bracket on each side. Inside an unquoted value it is text: `path:usr/and/bin` filters on `usr/and/bin`. Use parentheses to group clauses:
 
 ```
 active:true AND (category:"action" OR category:"horror") AND stock>0
@@ -179,7 +181,7 @@ $parser->parse('contact.active:true AND contact.name:"Alice"');
 
 ## Nested field filtering
 
-For a `nested()` property, put the conditions in curly braces. All conditions inside the braces must match the same item of the list:
+For a `nested()` property, put the conditions in curly braces. All conditions inside the braces must match the same item of the list. On an index that has no such nested field, the clause matches no documents and reports no error:
 
 ```
 contact:{ active:true }
@@ -300,7 +302,7 @@ $sigmie->newSearch('products')
     ->filters('nonexistent:"x"', throwOnError: true);   // throws ParseException
 ```
 
-A collected error still changes the results. If a broader or empty result set is unsafe, pass `throwOnError: true`, or treat a non-empty `errors` array as a failed request.
+A collected error still changes the results. The clause matches nothing, also under `NOT`, so an error never widens the result. After `OR`, the other side still matches. If an empty or partial result set is unsafe, pass `throwOnError: true`, or treat a non-empty `errors` array as a failed request.
 
 The [Laravel AI tools](laravel-ai.md#errors) always parse with `throwOnError: true`, so an agent sees the error instead of an empty result.
 

@@ -26,7 +26,7 @@ $results = $sigmie->newSearch('fairy-tales')
     ->get();
 ```
 
-Sigmie reads the properties to decide how to query each field.
+Sigmie reads the properties to decide how to query each field. A query string over 1,000 characters sends no prefix clause to keyword fields, and above 32,766 bytes no exact clause, because Elasticsearch rejects both.
 
 ## Weight several query strings
 
@@ -124,7 +124,7 @@ $response = $sigmie->newSearch('products')
 $response->json('errors');   // [['message' => 'Field nonexistent does not exist.', ...]]
 ```
 
-The replaced clause changes the result. After `AND`, it returns no hits. After `NOT`, it removes no hits, so the search returns more than the filter allows. To throw a `ParseException` instead, pass `throwOnError: true`:
+The replaced clause changes the result. After `AND`, it returns no hits. Under `NOT`, it also matches nothing, so an error never returns more than the filter allows. To throw a `ParseException` instead, pass `throwOnError: true`:
 
 ```php
 ->filters('nonexistent:"x"', throwOnError: true)     // throws ParseException
@@ -186,7 +186,9 @@ $response = $sigmie->newSearch('fairy-tales')
 $response->json('hits.0.highlight.name');   // fragments with each match in <mark>
 ```
 
-`prefix` and `suffix` have no default. Each highlighted field returns up to three fragments of 150 characters.
+`prefix` and `suffix` have no default. Each highlighted field returns up to three fragments of 150 characters. Sigmie highlights the first 1,000,000 characters of a field.
+
+A fragment is HTML. Sigmie escapes the stored text in it, so `<b>` in a document arrives as `&lt;b&gt;`, and only your prefix and suffix are markup. An `html()` field keeps its markup. When you highlight one, the other highlighted fields keep their stored text too, because Elasticsearch has one encoder per request.
 
 ## Weight fields
 
@@ -320,6 +322,8 @@ $result = $sigmie->newSearch("$germanIndex,$englishIndex")
     ->queryString('door tür')
     ->get();
 ```
+
+A nested filter, a distance filter, or a distance sort skips an index that does not have the field. It reports no error.
 
 ## Search nested fields
 

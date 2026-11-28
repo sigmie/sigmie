@@ -221,7 +221,7 @@ In `metric_populations`, `value_count` below `document_count` means some documen
 
 ### Distribution
 
-`distribution()` counts documents in fixed-width ranges of a numeric field.
+`distribution()` counts documents in fixed-width ranges of a numeric field. It returns at most 100,000 buckets; a wider range throws an `InvalidArgumentException` that asks for a larger interval.
 
 ```php
 $orders->analytics('created_at')
