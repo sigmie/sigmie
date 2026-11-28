@@ -241,6 +241,25 @@ class FilterParserTest extends TestCase
     }
 
     /** @withoutCluster */
+    public function test_a_collected_error_under_not_matches_nothing(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('status');
+
+        foreach (['NOT nope:x', 'NOT (status:b OR nope:x)', 'NOT NOT nope:x', 'status:b AND NOT nope:x'] as $filter) {
+            $parser = new FilterParser($properties, throwOnError: false);
+            $query = json_encode($parser->parse($filter)->toRaw());
+
+            $this->assertNotSame([], $parser->errors(), $filter);
+            $this->assertStringContainsString('match_none', $query, $filter);
+            $this->assertStringNotContainsString('must_not', $query, $filter);
+        }
+
+        $negated = json_encode((new FilterParser($properties))->parse('NOT status:b')->toRaw());
+        $this->assertStringContainsString('must_not', $negated);
+    }
+
+    /** @withoutCluster */
     public function test_a_comma_or_second_colon_outside_a_list_does_not_join_two_words(): void
     {
         $properties = new NewProperties;

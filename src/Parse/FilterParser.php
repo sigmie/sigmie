@@ -304,9 +304,12 @@ class FilterParser extends Parser
         $boolean = new Boolean;
 
         foreach ($tokens as $index => $token) {
+            $errors = count($this->errors);
             $query = $this->parseFactor($token['expr'], $token['op'] === 'AND NOT' ? $depth + 1 : $depth);
 
             match (true) {
+                // As under NOT, an error under AND NOT matches nothing.
+                $token['op'] === 'AND NOT' && count($this->errors) > $errors => $boolean->must()->query(new MatchNone),
                 $index === 0, $token['op'] === 'AND' => $boolean->must()->query($query),
                 $token['op'] === 'AND NOT' => $query instanceof MatchAll
                     ? $boolean->must()->query($query)
@@ -328,7 +331,14 @@ class FilterParser extends Parser
 
         // A leading NOT (case-insensitive) followed by whitespace or a group.
         if (preg_match('/^not(?=[\s(])(?!\s*:)/i', $expr)) {
+            $errors = count($this->errors);
             $query = $this->parseFactor(substr($expr, 3), $depth + 1);
+
+            // A collected error leaves a clause that matches nothing. Negated, it would match
+            // every document, so an error under NOT matches nothing: an error never widens the result.
+            if (count($this->errors) > $errors) {
+                return new MatchNone;
+            }
 
             if ($query instanceof MatchAll) {
                 return $query;
