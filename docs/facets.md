@@ -76,6 +76,8 @@ Sigmie groups the clauses by field. It joins the clauses of one field with the f
 
 When `color` is conjunctive, the first group is `(color:'red' AND color:'blue')`.
 
+A negated clause always excludes its value, so it joins with `AND` on a disjunctive field too: `color:'red' color:'blue' NOT color:'green'` becomes `((color:'red' OR color:'blue') AND NOT color:'green')`.
+
 The facet filter string does not accept `AND`, `OR`, `AND NOT`, or parentheses. If it contains one, Sigmie drops the whole facet filter string and records the error, or throws when `$throwOnError` is `true`.
 
 ### How facet filters apply

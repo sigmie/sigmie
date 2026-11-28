@@ -123,6 +123,8 @@ created_at>="2023-05-01"
 
 The operators are `>`, `<`, `>=`, and `<=`.
 
+> **Note:** On a date field, quote the date. An unquoted integer is epoch milliseconds, so `created_at>=2024` matches every date after 1970, and `created_at>="2024"` matches from the year 2024.
+
 ### Inclusive range
 
 ```

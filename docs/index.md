@@ -67,7 +67,7 @@ $sigmie->newIndex('articles')
     ->create();
 ```
 
-> **Warning:** `language()` starts a new builder. It keeps the shards and replicas, but drops properties, filters, and `config()` values set before it. Call those after `language()`.
+`language()` returns the language builder. It keeps the properties, filters, tokenizer, `config()` values, metadata, shards, and replicas set before it.
 
 [Languages](language.md) lists the English, German, and Greek builders.
 
@@ -120,7 +120,7 @@ Searches keep working through every step. Writes to `movies` fail from the write
 
 Elasticsearch copies each stored document and applies the new mapping. If a document still contains an omitted field such as `genre`, dynamic mapping can add it back. If a value such as `"unknown"` cannot fit a new integer field, the update fails and the original alias stays live.
 
-Use a rebuild to remove fields from documents, regenerate embeddings, or replace an index whose stored `_source` excludes fields. The Elasticsearch copy skips the destination's default ingest pipeline. Elasticsearch still runs any final ingest pipeline.
+Use a rebuild to remove fields from documents, regenerate embeddings, or replace an index whose stored `_source` excludes fields. The Elasticsearch copy skips the destination's default and final ingest pipelines. Sigmie restores the final pipeline before the alias moves.
 
 ## Rebuild an index
 
@@ -151,7 +151,7 @@ movies (alias) ──► movies_20260201   (one _aliases request)
                    movies_20260101   deleted
 ```
 
-Both update and rebuild refuse to retire an index that also serves another alias. If no alias exists yet, `rebuild()` creates it. The same call works for the first build and for every refresh after it.
+Both update and rebuild refuse to retire an index that also serves another alias. If no alias exists yet, `rebuild()` creates it. The same call works for the first build and for every refresh after it. If the name belongs to a plain index instead, such as one Elasticsearch created on the first write to `collect()`, `rebuild()` and `startRebuild()` throw `Sigmie\Index\Alias\AliasAlreadyExists` before they create anything.
 
 If the callback throws, Sigmie deletes the new index, leaves the alias where it was, and throws the exception again.
 

@@ -130,7 +130,7 @@ The replaced clause changes the result. After `AND`, it returns no hits. After `
 ->filters('nonexistent:"x"', throwOnError: true)     // throws ParseException
 ```
 
-[`facets()`](facets.md) takes the same flag for its filter string. Syntax errors, such as a missing operator or an unclosed parenthesis, throw in both modes. See [Filter Parser](filter-parser.md#errors) for the full list.
+In `filters()`, syntax errors, such as a missing operator or an unclosed parenthesis, throw in both modes. See [Filter Parser](filter-parser.md#errors) for the full list. [`facets()`](facets.md) takes the same flag for its filter string, which accepts no operators or parentheses. A facet filter string that contains one is dropped and recorded under `errors` unless `throwOnError` is `true`.
 
 ## Sort
 
@@ -163,6 +163,8 @@ Terms with 3 or more characters accept one typo. Terms with 6 or more characters
 ```php
 ->typoTolerance(oneTypoChars: 4, twoTypoChars: 8)
 ```
+
+A two-typo limit below the one-typo limit rises to it: with `oneTypoChars: 7` and `twoTypoChars: 6`, terms with 7 or more characters accept two typos and shorter terms none.
 
 > **Note:** `typoTolerance()` only sets the limits. Fields that are not in `typoTolerantAttributes()` always match exactly.
 
@@ -681,7 +683,7 @@ foreach ($generator as $hit) {
 }
 ```
 
-Each `Hit` has `_id`, `_source`, and `_score`.
+Each `Hit` has `_id`, `_source`, and `_score`. `_score` is `null` unless the iteration sorts on `_score`.
 
 > **Note:** `each()` and `lazy()` ignore `from()`, `size()`, `page()`, and `highlighting()`.
 
@@ -706,7 +708,7 @@ A point in time needs a sort that uniquely orders the documents. Elasticsearch u
 
 | Builder | Where the sort comes from |
 |---------|---------------------------|
-| `newSearch()` | The `sort()` string. A sort on `_score` or `_doc` alone becomes the tiebreaker only. |
+| `newSearch()` | The `sort()` string. Without `sort()`, the tiebreaker alone orders the hits. |
 | `newQuery()` | `sortString()` or `sort()`. Without a sort, hits arrive in a stable but unranked order. |
 | `raw()` | The top-level `sort` key of the body. |
 

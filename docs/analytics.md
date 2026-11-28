@@ -29,6 +29,8 @@ $dashboard = $orders->analytics('created_at')
 
 `$sigmie->analytics($indexName, $dateField)` starts the same builder without an index class. Call `properties()` on it so that filters are typed and text fields group on their `.keyword` sub-field.
 
+> **Note:** Widgets group and measure top-level fields. A field inside a nested field throws an `InvalidArgumentException`, because a top-level aggregation sees no nested value. Filters on nested fields work.
+
 ## Metrics
 
 Widgets that measure something take a `Metric`:
@@ -66,7 +68,7 @@ $orders->analytics('created_at')
 
 ### KPI delta
 
-`kpiDelta()` compares the window with the previous window of equal length. [Calendar periods](#named-ranges) compare with the previous calendar period. `change_pct` is `null` when the previous value is `0` or missing.
+`kpiDelta()` compares the window with the previous window of equal length. [Calendar periods](#named-ranges) compare with the previous calendar period. `change_pct` is `null` when the previous value is `0` or missing. Its sign follows the direction of the change, so a rise from `-100` to `-50` is `50.0`.
 
 ```php
 $orders->analytics('created_at')
@@ -303,7 +305,7 @@ $orders->analytics('created_at')
 | Argument | Default  | Effect                                                              |
 | -------- | -------- | ------------------------------------------------------------------- |
 | `fields` | `[]`     | Source fields to return. An empty array returns the whole document. |
-| `limit`  | `10`     | Number of rows.                                                     |
+| `limit`  | `10`     | Number of rows, at most `100` (`index.max_inner_result_window`).    |
 | `sort`   | `null`   | A `"field:direction"` string. The direction defaults to `desc`.     |
 | `except` | `[]`     | Source fields to remove, even when `fields` lists their parent.     |
 
@@ -457,7 +459,7 @@ Periods: `Today`, `Yesterday`, `ThisWeek`, `LastWeek`, `ThisMonth`, `LastMonth`,
 
 With a week, month, quarter, or year period, `kpiDelta()` compares with the previous calendar period: `ThisMonth` compares with last month. Other periods compare with the previous window of equal length.
 
-> **Note:** `range()` resolves the period when you call it. Set the timezone first.
+> **Note:** A widget reads the window, the timezone, and the properties when you add it. Call `from()`, `to()`, `range()`, `timezone()`, and `properties()` before the widget methods. A `timezone()` call after `range()` resolves the period again.
 
 ## Timezone
 

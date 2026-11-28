@@ -132,7 +132,7 @@ The agent passes `fields`, a comma-separated list of source fields. Dotted paths
 {"query": "solar", "fields": "title,author,sections.text"}
 ```
 
-Override `toolFields()` to set the fields the tools return when the agent passes `fields: null`. An empty list, the default, returns every field:
+Override `toolFields()` to set the fields the tools return when the agent passes `fields: null`. An empty list, the default, returns every source field. The stored embedding vectors never reach the agent:
 
 ```php
 class ArticleIndex extends SigmieIndex
@@ -299,7 +299,7 @@ Available fields:
 - brand [keyword] (sortable, facetable): brand:'value' brand:['a','b'] brand:val*
 - price [number] (sortable, facetable): price>n price<=n price:min..max
 - in_stock [boolean] (sortable): in_stock:true in_stock:false
-- created_at [date] (sortable): created_at>'2024-01-01' created_at<'2024-12-31'
+- created_at [date] (sortable, facetable): created_at>'2024-01-01' created_at<'2024-12-31'
 
 Filter operators: AND, OR, AND NOT
 Negation: NOT field:'value'
@@ -386,7 +386,7 @@ filters: color:'red'    (no "color" field)
 result: {"error": "Field color does not exist. Check the field names and the filter/sort syntax in this tool's description, then try again."}
 ```
 
-`discover_filter_values` applies the same rule to its `field` and `filters`.
+`discover_filter_values` applies the same rule to its `field` and `filters`. The `analytics` tool applies it to every field it groups or measures by, so a misspelt `field` returns an error instead of `0`.
 
 Only the agent-facing `handle()` returns errors as JSON. The `result()` methods return arrays and throw, so your own code keeps normal exception handling:
 

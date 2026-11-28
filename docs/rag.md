@@ -71,7 +71,7 @@ rerank(
 ): array;
 ```
 
-- To send more than one field to the reranker, list them: `rerank('reranker', ['title', 'content'])`. Sigmie sends each hit's fields as a YAML snippet.
+- To send more than one field to the reranker, list them: `rerank('reranker', ['title', 'content'])`. Sigmie sends each hit's fields as a YAML snippet. An empty list sends the whole source.
 - To rerank against a different text than the search query, pass `$query`: `rerank('reranker', ['content'], 'return policy')`. By default it uses the search's query string.
 - To change how many hits come back, pass `topK`. By default it uses the search's `size`, or 10 when the size is 0.
 
