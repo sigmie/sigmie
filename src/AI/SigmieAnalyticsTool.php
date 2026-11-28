@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\AI;
 
 use DateTimeInterface;
+use DateTimeZone;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use InvalidArgumentException;
 use Laravel\Ai\Contracts\Tool;
@@ -14,6 +15,8 @@ use Sigmie\Analytics\AnalyticsRequest;
 use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Analytics\Enums\Period;
 use Sigmie\Analytics\WindowBound;
+use Sigmie\Mappings\Contracts\FieldContainer;
+use Sigmie\Parse\ParseException;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
 use Sigmie\Query\Search;
 use Sigmie\SigmieIndex;
@@ -259,17 +262,22 @@ class SigmieAnalyticsTool implements Tool
         $widget = trim((string) ($request['widget'] ?? ''));
 
         $this->refusePrivateArguments($request);
+        $this->refuseUnaggregatableFields($request);
 
         $dateField = $this->dateField((string) ($request['date_field'] ?? ''));
 
+        $offset = $request['timezone_offset'] ?? null;
+        // A date without a time is midnight of that day in the requested timezone.
+        $zone = new DateTimeZone($offset === null ? 'UTC' : ($offset < 0 ? '-' : '+').gmdate('H:i', abs($offset) * 60));
+
         $analytics = $this->index->analytics(
             $dateField,
-            $this->date($request['from'] ?? null),
-            $this->date($request['to'] ?? null),
+            $this->date($request['from'] ?? null, $zone),
+            $this->date($request['to'] ?? null, $zone),
         );
 
-        if (($offset = $request['timezone_offset'] ?? null) !== null && $offset !== '') {
-            $analytics->timezoneOffset((int) $offset);
+        if ($offset !== null) {
+            $analytics->timezone($zone->getName());
         }
 
         if (($range = trim((string) ($request['range'] ?? ''))) !== '') {
@@ -325,7 +333,7 @@ class SigmieAnalyticsTool implements Tool
             'grouped_metrics' => $analytics->groupedMetrics('result', $groupBy(), $this->metricSpecs($request), $this->optional($request, 'sort_metric') ?? 'count', $limit, $this->rankingDirection($request), minCount: $request['min_count'] ?? null, bucketAliases: $this->bucketAliases($request), aliasesOnly: (bool) ($request['bucket_aliases_only'] ?? false)),
             'percentiles' => $analytics->percentiles('result', $this->required($request, 'field'), $this->percents($request)),
             'stats' => $analytics->stats('result', $this->required($request, 'field')),
-            'table' => $analytics->table('result', $this->csvList($request, 'fields'), $limit, $this->optional($request, 'sort'), except: $this->index->exceptFromTools()),
+            'table' => $analytics->table('result', $this->csvList($request, 'fields'), $limit, $this->optional($request, 'sort'), except: $this->withheldSourceFields()),
             'funnel' => $analytics->funnel('result', $this->steps($request)),
             'heatmap' => $analytics->heatmap('result', $this->required($request, 'row_field'), $this->required($request, 'col_field'), $this->metricOrCount($request), $field, $limit, $limit),
             'retention' => $analytics->retention('result', $this->required($request, 'cohort_field'), $this->required($request, 'id_field'), $interval()),
@@ -523,12 +531,47 @@ class SigmieAnalyticsTool implements Tool
     protected function refusePrivateArguments(Request $request): void
     {
         $this->refusePrivateFields(
-            ...array_map(fn (string $key): ?string => $this->optional($request, $key), ['date_field', 'field', 'bucket_field', 'group_by', 'row_field', 'col_field', 'cohort_field', 'id_field']),
-            ...$this->csvList($request, 'group_by_fields'),
+            $this->optional($request, 'date_field'),
+            ...$this->aggregatedFields($request),
             ...($request['widget'] === 'table' ? $this->expressionFields($request['sort'] ?? null) : []),
             ...$this->expressionFields($request['hit_sort'] ?? null),
-            ...($this->optional($request, 'metrics') !== null ? array_column($this->metricSpecs($request), 'field') : []),
         );
+    }
+
+    /**
+     * Elasticsearch aggregates an unmapped field or an object as empty, so either would read as 0.
+     *
+     * @throws ParseException
+     */
+    protected function refuseUnaggregatableFields(Request $request): void
+    {
+        $properties = $this->index->properties()->get();
+
+        foreach ($this->aggregatedFields($request) as $field) {
+            if ($field === null) {
+                continue;
+            }
+
+            $type = $properties->get($field) ?? throw new ParseException(sprintf('Field %s does not exist.', $field));
+
+            if ($type instanceof FieldContainer) {
+                throw new ParseException(sprintf('Field %s is an object; use one of its sub-fields.', $field));
+            }
+        }
+    }
+
+    /**
+     * The fields a widget buckets or measures by, excluding `date_field`.
+     *
+     * @return list<?string>
+     */
+    protected function aggregatedFields(Request $request): array
+    {
+        return [
+            ...array_map(fn (string $key): ?string => $this->optional($request, $key), ['field', 'bucket_field', 'group_by', 'row_field', 'col_field', 'cohort_field', 'id_field']),
+            ...$this->csvList($request, 'group_by_fields'),
+            ...($this->optional($request, 'metrics') !== null ? array_column($this->metricSpecs($request), 'field') : []),
+        ];
     }
 
     protected function configureHits(Analytics $analytics, Request $request): void
@@ -539,7 +582,7 @@ class SigmieAnalyticsTool implements Tool
             $search
                 ->size($limit)
                 ->trackTotalHits(true)
-                ->except($this->index->exceptFromTools());
+                ->except($this->withheldSourceFields());
 
             $fields = $this->csvList($request, 'hit_fields');
             if ($fields !== []) {
@@ -566,11 +609,11 @@ class SigmieAnalyticsTool implements Tool
         return $value !== '' ? $value : null;
     }
 
-    protected function date(mixed $value): ?DateTimeInterface
+    protected function date(mixed $value, DateTimeZone $zone): ?DateTimeInterface
     {
         $value = trim((string) ($value ?? ''));
 
-        return $value === '' ? null : WindowBound::fromIso($value);
+        return $value === '' ? null : WindowBound::fromIso($value, $zone);
     }
 
     protected function required(Request $request, string $key): string

@@ -92,8 +92,9 @@ class NewRerank
         $documents = [];
 
         foreach ($hits as $hit) {
-            $source = is_array($hit) ? ($hit['_source'] ?? []) : $hit->_source;
-            $filteredData = select_source_fields((array) $source, $fields);
+            $source = (array) (is_array($hit) ? ($hit['_source'] ?? []) : $hit->_source);
+            // No selection sends the whole source, like NewContextComposer.
+            $filteredData = $fields === [] ? $source : select_source_fields($source, $fields);
 
             $data = $filteredData !== [] && array_is_list($filteredData) ? (object) $filteredData : $filteredData;
             $documents[] = Yaml::dump($data, inline: 1, flags: Yaml::DUMP_OBJECT_AS_MAP);

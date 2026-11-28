@@ -24,7 +24,7 @@ trait HasDateFacets
 
     public function isFacetable(): bool
     {
-        return true;
+        return $this->hasDocValues();
     }
 
     public function facets(array $aggregation): ?array

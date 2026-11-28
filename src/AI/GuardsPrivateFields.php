@@ -66,6 +66,16 @@ trait GuardsPrivateFields
     }
 
     /**
+     * Source fields no tool returns: the private fields and the stored embedding vectors.
+     *
+     * @return list<string>
+     */
+    protected function withheldSourceFields(): array
+    {
+        return [...$this->index->exceptFromTools(), '_embeddings'];
+    }
+
+    /**
      * One description line naming the private fields, or '' when the index has none.
      */
     protected function privateFieldsNote(): string

@@ -6,8 +6,6 @@ namespace Sigmie\Mappings\Types;
 
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\Contracts\Analyze;
-use Sigmie\Query\Queries\Term\Prefix;
-use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
 
 class Email extends Text implements Analyze
@@ -31,8 +29,8 @@ class Email extends Text implements Analyze
 
         return $this->queryStrings($queryString, fn (string $queryString): array => [
             new Match_($this->name(), $queryString, analyzer: $this->searchAnalyzer()),
-            new Prefix($this->name(), $this->lowercaseTerm($queryString)),
-            ...($keyword === null ? [] : [new Term($keyword, $queryString)]),
+            ...$this->prefixQueries($this->name(), $this->lowercaseTerm($queryString)),
+            ...($keyword === null ? [] : $this->termQueries($keyword, $queryString)),
         ]);
     }
 }

@@ -464,8 +464,8 @@ class SearchCorrectnessTest extends TestCase
         $sort = $parser->parse('order[51,13]:km:asc unit[51,13]:m:desc');
         $point = ['lat' => 51.0, 'lon' => 13.0];
 
-        $this->assertSame(['order' => $point, 'unit' => 'km'], $sort[0]['_geo_distance']);
-        $this->assertSame(['unit' => $point, 'order' => 'desc'], $sort[1]['_geo_distance']);
+        $this->assertSame(['order' => $point, 'unit' => 'km', 'ignore_unmapped' => true], $sort[0]['_geo_distance']);
+        $this->assertSame(['unit' => $point, 'order' => 'desc', 'ignore_unmapped' => true], $sort[1]['_geo_distance']);
         $colliding = $parser->parse('order[51,13]:km:desc unit[51,13]:km:asc');
         $this->assertSame('desc', $colliding[0]['_script']['order']);
         $this->assertSame(1000, $colliding[1]['_script']['script']['params']['meters']);
@@ -787,6 +787,56 @@ class SearchCorrectnessTest extends TestCase
         $this->assertStringContainsString('"dell"', json_encode($search->makeSearch()->toRaw()['knn'][0]['filter']));
         $this->assertStringNotContainsString('"dell"', json_encode($search->makeFacetSearch()->toRaw()['knn'][0]['filter']));
         $this->assertStringContainsString('"dell"', json_encode($search->makeSearch()->toRaw()['knn'][0]['filter']));
+    }
+
+    public function test_changing_a_cloned_search_leaves_the_original_request_unchanged(): void
+    {
+        $props = new NewProperties;
+        $props->title('title');
+        $props->keyword('brand');
+        $props->number('price');
+        $props->nested('reviews', function (NewProperties $reviews): void {
+            $reviews->keyword('tag');
+        });
+        $search = $this->search($props)->queryString('shoe')->filters("reviews:{ tag:'a' }")->innerHits('reviews')->size(5);
+        $before = json_encode($search->toMultiSearch());
+
+        $clone = (clone $search)->queryString('boot')->innerHits('reviews', 3)->except(['title'])->uniqueBy('brand')
+            ->from(40)->size(99)->aggregate(fn (Aggs $aggs): Max => $aggs->max('top', 'price'));
+        $changed = json_encode($clone->toMultiSearch());
+
+        $this->assertSame($before, json_encode($search->toMultiSearch()));
+        $this->assertStringContainsString('"boot"', $changed);
+        $this->assertStringContainsString('"from":40,"size":99', $changed);
+        $this->assertStringContainsString('"collapse":{"field":"brand"', $changed);
+        $this->assertStringContainsString('"name":"reviews#1","size":3', $changed);
+    }
+
+    public function test_the_facet_search_keeps_the_inner_hit_names_of_the_main_search(): void
+    {
+        $props = new NewProperties;
+        $props->text('title')->semantic('e', dimensions: 128);
+        $props->nested('reviews', function (NewProperties $reviews): void {
+            $reviews->keyword('tag');
+        });
+        $search = $this->search($props)->semantic()
+            ->queryString('shoe', dimension: 128, vector: array_fill(0, 128, 0.1))
+            ->filters("reviews:{ tag:'a' }")
+            ->innerHits('reviews')
+            ->facets('reviews.tag', "reviews.tag:'a'");
+
+        $body = $search->toMultiSearch();
+        preg_match_all('/"name":"(reviews#\d+)"/', json_encode($body[1]), $names);
+        $innerHits = array_fill_keys(array_unique($names[1]), ['hits' => ['total' => ['value' => 0], 'hits' => []]]);
+
+        $hit = $search->formatResponses(
+            ['hits' => ['total' => ['value' => 1], 'hits' => [['_id' => '1', '_source' => [], 'inner_hits' => $innerHits]]]],
+            ['aggregations' => []],
+        )->json('hits.0');
+
+        $this->assertCount(4, $body);
+        $this->assertNotSame([], $innerHits);
+        $this->assertArrayNotHasKey('inner_hits', $hit);
     }
 
     public function test_semantic_template_neighbors_cover_runtime_pages(): void
@@ -3580,6 +3630,13 @@ class SearchCorrectnessTest extends TestCase
 
         $emptyOptions = $query->sort(['1' => new stdClass]);
         $this->assertSame('[{"1":{}}]', json_encode($emptyOptions->toMultiSearch()[1]['sort']));
+    }
+
+    public function test_a_keyed_sort_followed_by_a_bare_field_stays_two_clauses(): void
+    {
+        $query = (new NewQuery($this->connection(), 'products'))->sort(['price' => 'desc', '_score']);
+
+        $this->assertSame('[{"price":"desc"},"_score"]', json_encode($query->toMultiSearch()[1]['sort']));
     }
 
     /**

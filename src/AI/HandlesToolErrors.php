@@ -24,6 +24,8 @@ trait HandlesToolErrors
     {
         try {
             return $work();
+        } catch (MalformedBaseFilter $malformedBaseFilter) {
+            throw $malformedBaseFilter;
         } catch (Throwable $throwable) {
             return json_encode(
                 ['error' => $this->toolErrorMessage($throwable)],
@@ -49,7 +51,8 @@ trait HandlesToolErrors
             $surfaced = is_array($cluster) ? ($cluster['root_cause'][0]['reason'] ?? $cluster['reason'] ?? null) : $cluster;
 
             if (is_string($surfaced) && $surfaced !== '') {
-                $reason = $surfaced;
+                // A parse error quotes the request body, which holds the base filter.
+                $reason = (string) preg_replace('/\s*at \[Source: .*\z/s', '', $surfaced);
             } elseif ($e instanceof ElasticsearchException) {
                 $reason = 'Elasticsearch could not complete the search.';
             }

@@ -127,7 +127,6 @@ class SemanticTest extends TestCase
 
     public function test_exact_vector_search_applies_the_semantic_score_multiplier(): void
     {
-        $this->forOpensearch(fn () => $this->markTestSkipped('Elasticsearch exact vector score'));
         $props = new NewProperties;
         $props->text('title')->semantic(api: 'test-embeddings', accuracy: 7, dimensions: 2);
         $vector = $props->get()->get('title')->vectorFields()->first()->name;

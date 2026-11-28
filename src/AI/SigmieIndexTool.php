@@ -117,7 +117,7 @@ class SigmieIndexTool implements Tool
         $search = $this->index->newSearch()
             ->queryString((string) ($request['query'] ?? ''))
             ->retrieve($this->outputFields($request['fields'] ?? null))
-            ->except($this->index->exceptFromTools())
+            ->except($this->withheldSourceFields())
             ->page(
                 $request->integer('page', 1),
                 $request->integer('per_page', 10),
@@ -144,7 +144,8 @@ class SigmieIndexTool implements Tool
         $response = $search->get();
 
         $hits = array_map(function (array $hit): array {
-            $source = $hit['_source'] ?? [];
+            // An empty source arrives as an object so it encodes as {}.
+            $source = (array) ($hit['_source'] ?? []);
             unset($source['_id'], $source['_matches']);
 
             $row = merge_named(['_id' => $hit['_id']], $source);

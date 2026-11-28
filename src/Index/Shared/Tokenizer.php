@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Index\Shared;
 
+use Exception;
 use Sigmie\Index\Analysis\Tokenizers\NonLetter;
 use Sigmie\Index\Analysis\Tokenizers\Noop;
 use Sigmie\Index\Analysis\Tokenizers\PathHierarchy;
@@ -23,6 +24,11 @@ trait Tokenizer
 
     public function tokenizer(TokenizerInterface $tokenizer): static
     {
+        $existing = $this->analysis()->tokenizers()[$tokenizer->name()] ?? null;
+        if ($existing !== null && $existing !== $this->pipeline()->tokenizer() && $existing->toRaw() !== $tokenizer->toRaw()) {
+            throw new Exception(sprintf('Tokenizer name `%s` already exists.', $tokenizer->name()));
+        }
+
         $this->pipeline()->setTokenizer($tokenizer);
 
         return $this;

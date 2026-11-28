@@ -7,6 +7,7 @@ namespace Sigmie\Search;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Document\Document;
+use Sigmie\Document\Hit;
 use Sigmie\Enums\RecommendationStrategy;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
@@ -176,7 +177,7 @@ class NewRecommendations
             ->size($size)
             ->filters($this->filters)
             ->filterQuery($exclusion)
-            ->retrieveEmbeddingsField()
+            ->retrieveEmbeddingsField($this->mmrEnabled)
             ->noResultsOnEmptySearch()
             ->disableKeywordSearch();
 
@@ -247,7 +248,12 @@ class NewRecommendations
             // Final fusion: fuse all per-field reranked lists with field weights
             $finalRrf = new RRF($this->rrfRankConstant, $this->topK);
 
-            return $finalRrf->fuse($perFieldResults, $fieldWeights);
+            // MMR reads the stored vectors. The caller never asked for them.
+            return array_map(function (Hit $hit): Hit {
+                unset($hit->_source['_embeddings']);
+
+                return $hit;
+            }, $finalRrf->fuse($perFieldResults, $fieldWeights));
         }
 
         // No MMR: each seed list adds 1 / (k + rank).

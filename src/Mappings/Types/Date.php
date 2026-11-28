@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Mappings\Types;
 
+use Sigmie\Mappings\DateBound;
 use Sigmie\Mappings\Traits\HasDateFacets;
 use Sigmie\Mappings\Traits\HasDateFormats;
 
@@ -27,6 +28,13 @@ class Date extends Type
         $accepted = $this->acceptsEngineDateFormat($value);
         if ($accepted !== null) {
             return $accepted ? [true, ''] : [false, sprintf('The field %s does not match its configured date formats', $key)];
+        }
+
+        // A date mapped outside Sigmie carries no Sigmie type. It takes every value its formats accept.
+        if ($this->storedMapping !== null && ! isset($this->storedMapping['meta']['type'])) {
+            return DateBound::accepts($value, implode('||', $this->formats))
+                ? [true, '']
+                : [false, sprintf('The field %s does not match its configured date formats', $key)];
         }
 
         if (! is_string($value) || str_contains($value, "\0")) {

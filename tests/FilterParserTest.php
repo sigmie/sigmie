@@ -7,12 +7,14 @@ namespace Sigmie\Tests;
 use ReflectionMethod;
 use RuntimeException;
 use Sigmie\Document\Document;
+use Sigmie\Index\NewIndex;
 use Sigmie\Mappings\Field;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Mappings\Types\Nested;
+use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Object_;
 use Sigmie\Parse\FilterParser;
 use Sigmie\Parse\ParseException;
@@ -40,6 +42,64 @@ class FilterParserTest extends TestCase
             }
         } finally {
             $index->delete();
+        }
+    }
+
+    public function test_a_field_elasticsearch_cannot_search_rejects_scalar_filters(): void
+    {
+        $index = uniqid('.unsearchable-filter-');
+        $fields = ['blob' => ['type' => 'binary'], 'score' => ['type' => 'rank_feature'], 'rule' => ['type' => 'percolator']];
+        $filters = ['blob:eA==', 'score:1', 'rule:x', "blob>='a'"];
+        // OpenSearch has no histogram, shape or point field.
+        $this->forElasticsearch(function () use (&$fields, &$filters): void {
+            $fields += ['latency' => ['type' => 'histogram'], 'outline' => ['type' => 'shape'], 'spot' => ['type' => 'point']];
+            $filters[] = 'latency:1';
+            $filters[] = 'outline:1';
+            $filters[] = 'spot:[1]';
+        });
+        (new NewIndex($this->elasticsearchConnection))->indexAPICall($index, 'PUT', ['mappings' => ['properties' => $fields]]);
+
+        try {
+            $properties = $this->sigmie->index($index)->mappings->properties();
+            $search = $this->sigmie->newSearch($index)->properties($properties)->queryString('');
+
+            foreach ($filters as $filter) {
+                $errors = (clone $search)->filters($filter)->get()->json('errors');
+                $this->assertStringContainsString('does not support scalar filters', $errors[0]['message'], $filter);
+            }
+        } finally {
+            $this->sigmie->deleteIfExists($index);
+        }
+    }
+
+    public function test_a_field_without_index_or_doc_values_is_not_filterable(): void
+    {
+        $index = uniqid('.stored-only-filter-');
+        $storedOnly = ['index' => false, 'doc_values' => false];
+        (new NewIndex($this->elasticsearchConnection))->indexAPICall($index, 'PUT', ['mappings' => ['properties' => [
+            'code' => ['type' => 'keyword', 'index' => false],
+            'sku' => ['type' => 'keyword', ...$storedOnly],
+            'stock' => ['type' => 'integer', ...$storedOnly],
+            'created' => ['type' => 'date', ...$storedOnly],
+            'active' => ['type' => 'boolean', ...$storedOnly],
+            'host' => ['type' => 'ip', ...$storedOnly],
+        ]]]);
+
+        try {
+            $this->sigmie->collect($index, refresh: true)->merge([
+                new Document(['code' => 'a1', 'sku' => 'a1', 'stock' => 1, 'created' => '2024-01-01', 'active' => true, 'host' => '10.0.0.1'], 'a1'),
+            ]);
+            $properties = $this->sigmie->index($index)->mappings->properties();
+            $search = $this->sigmie->newSearch($index)->properties($properties)->queryString('');
+
+            $this->assertSame(['a1'], array_column((clone $search)->filters("code:'a1'")->get()->hits(), '_id'));
+
+            foreach (["sku:'a1'", 'stock:1', 'created:"2024-01-01"', 'active:true', 'host:"10.0.0.1"', "sku:'a*'"] as $filter) {
+                $errors = (clone $search)->filters($filter)->get()->json('errors');
+                $this->assertStringContainsString('is not filterable', $errors[0]['message'], $filter);
+            }
+        } finally {
+            $this->sigmie->deleteIfExists($index);
         }
     }
 
@@ -108,6 +168,158 @@ class FilterParserTest extends TestCase
 
         $range = $parser->parse('created_at:-315619200000..2208988800000')->toRaw();
         $this->assertSame(2208988800000, $range['bool']['must'][0]['range']['created_at']['lte']);
+    }
+
+    /** @withoutCluster */
+    public function test_date_equality_and_lists_keep_unquoted_epoch_milliseconds_numeric(): void
+    {
+        $properties = new NewProperties;
+        $properties->datetime('created_at');
+
+        $parser = new FilterParser($properties);
+
+        $term = $parser->parse('created_at:1700000000000')->toRaw();
+        $this->assertSame(1700000000000, $term['bool']['must'][0]['term']['created_at']['value']);
+
+        $list = $parser->parse('created_at:[1700000000000,1700000000001]')->toRaw();
+        $this->assertSame([1700000000000, 1700000000001], $list['bool']['must'][0]['terms']['created_at']);
+    }
+
+    /** @withoutCluster */
+    public function test_an_unquoted_value_ending_in_an_equals_sign_keeps_the_next_operator(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('token');
+        $properties->integer('stock');
+
+        $parser = new FilterParser($properties);
+
+        $or = $parser->parse('token:YWJj= OR token:ZGVm')->toRaw();
+        $this->assertSame('YWJj=', $or['bool']['should'][0]['bool']['must'][0]['term']['token']['value']);
+        $this->assertSame('ZGVm', $or['bool']['should'][1]['bool']['must'][0]['term']['token']['value']);
+
+        $and = $parser->parse('token:YWJj== AND stock:1')->toRaw();
+        $this->assertSame('YWJj==', $and['bool']['must'][0]['term']['token']['value']);
+        $this->assertCount(2, $and['bool']['must']);
+    }
+
+    /** @withoutCluster */
+    public function test_a_comma_or_second_colon_outside_a_list_does_not_join_two_words(): void
+    {
+        $properties = new NewProperties;
+        $properties->name('name');
+        $properties->keyword('status');
+        $properties->keyword('color');
+        $properties->nested('items', function (NewProperties $item): void {
+            $item->keyword('color');
+            $item->integer('qty');
+        });
+
+        $rejected = [];
+        foreach (['name:Smith, John', 'status:open, color:red', 'status:open :red', 'items:{ color:red, qty:1 }'] as $filter) {
+            try {
+                (new FilterParser($properties))->parse($filter);
+            } catch (ParseException) {
+                $rejected[] = $filter;
+            }
+        }
+
+        $this->assertSame(['name:Smith, John', 'status:open, color:red', 'status:open :red', 'items:{ color:red, qty:1 }'], $rejected);
+
+        $spaced = (new FilterParser($properties))
+            ->parse('status:[ open , closed ] AND color : red AND items:{ color : [ red , blue ] }')
+            ->toRaw()['bool']['must'];
+
+        $this->assertSame(['open', 'closed'], $spaced[0]['terms']['status']);
+        $this->assertSame('red', $spaced[1]['term']['color']['value']);
+        $this->assertSame(['red', 'blue'], $spaced[2]['nested']['query']['bool']['must'][0]['terms']['items.color']);
+    }
+
+    /** @withoutCluster */
+    public function test_spaces_around_a_range_operator_are_ignored_like_spaces_around_the_colon(): void
+    {
+        $properties = new NewProperties;
+        $properties->number('stock')->integer();
+        $properties->nested('items', fn (NewProperties $item): Number => $item->number('qty')->integer());
+
+        $parser = new FilterParser($properties);
+
+        foreach (['stock > 5' => 'stock>5', 'stock >= 5 AND items:{ qty < 2 }' => 'stock>=5 AND items:{qty<2}'] as $spaced => $compact) {
+            $this->assertSame($parser->parse($compact)->toRaw(), $parser->parse($spaced)->toRaw(), $spaced);
+        }
+    }
+
+    /** @withoutCluster */
+    public function test_a_large_quoted_list_keeps_every_value(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('sku');
+        $properties->keyword('status');
+
+        $list = '['.implode(',', array_map(fn (int $number): string => '"id-'.$number.'"', range(1, 30000))).']';
+
+        $parser = new FilterParser($properties);
+
+        $terms = $parser->parse('sku:'.$list)->toRaw();
+        $this->assertCount(30000, $terms['bool']['must'][0]['terms']['sku']);
+
+        $ids = $parser->parse('_id:'.$list)->toRaw();
+        $this->assertCount(30000, $ids['bool']['must'][0]['ids']['values']);
+
+        $spaced = $parser->parse("status:'open' AND\nsku:".$list)->toRaw();
+        $this->assertCount(30000, $spaced['bool']['must'][1]['terms']['sku']);
+    }
+
+    public function test_a_list_longer_than_the_terms_limit_still_filters(): void
+    {
+        $name = uniqid('.terms-limit-');
+        $properties = new NewProperties;
+        $properties->keyword('sku');
+        $this->sigmie->newIndex($name)->properties($properties)->create();
+        $this->sigmie->collect($name, refresh: true)->merge([
+            new Document(['sku' => 'id-65537'], _id: 'last'),
+            new Document(['sku' => 'other'], _id: 'other'),
+        ]);
+        $list = '['.implode(',', array_map(fn (int $number): string => "'id-".$number."'", range(1, 65537))).']';
+
+        $hits = $this->sigmie->newSearch($name)->properties($properties)->filters('sku:'.$list)->get()->hits();
+
+        $this->assertSame(['last'], array_column($hits, '_id'));
+    }
+
+    /** @withoutCluster */
+    public function test_a_large_nested_clause_parses(): void
+    {
+        $properties = new NewProperties;
+        $properties->nested('variants', function (NewProperties $variant): void {
+            $variant->keyword('sku');
+        });
+        $skus = array_map(fn (int $number): string => 's'.$number, range(1, 3000));
+
+        $query = (new FilterParser($properties))->parse('variants:{ sku:['.implode(',', $skus).'] }')->toRaw();
+
+        $this->assertSame($skus, $query['bool']['must'][0]['nested']['query']['bool']['must'][0]['terms']['variants.sku']);
+    }
+
+    /** @withoutCluster */
+    public function test_small_numeric_types_validate_their_operands(): void
+    {
+        $properties = new NewProperties;
+        foreach (['qty' => 'short', 'level' => 'byte', 'score' => 'half_float', 'views' => 'unsigned_long'] as $name => $type) {
+            $properties->type(new Field($name, $type));
+        }
+
+        foreach (['qty:many', 'level>=low', 'score:[1,x]', 'views:1..max'] as $filter) {
+            $parser = new FilterParser($properties, false);
+            $parser->parse($filter);
+
+            $this->assertNotSame([], $parser->errors(), $filter);
+        }
+
+        $valid = new FilterParser($properties, false);
+        $valid->parse('qty:5 AND level>=1 AND score:[1,2.5] AND views:1..9');
+
+        $this->assertSame([], $valid->errors());
     }
 
     /** @withoutCluster */

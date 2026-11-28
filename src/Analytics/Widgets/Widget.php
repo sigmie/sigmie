@@ -195,12 +195,16 @@ abstract class Widget implements ToRaw
         return is_float($value) || is_bool($value) ? json_encode($value, JSON_THROW_ON_ERROR) : (string) $value;
     }
 
+    /**
+     * Only boolean and date terms carry a key_as_string. A date key is otherwise epoch milliseconds.
+     */
     protected static function termsKey(array $bucket): mixed
     {
         return match ($bucket['key_as_string'] ?? null) {
             'false' => false,
             'true' => true,
-            default => $bucket['key'],
+            null => $bucket['key'],
+            default => $bucket['key_as_string'],
         };
     }
 

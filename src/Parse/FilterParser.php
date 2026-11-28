@@ -102,7 +102,7 @@ class FilterParser extends Parser
     // lookahead below is reliable.
     protected function normalizeWhitespace(string $query): string
     {
-        $query = preg_replace('/\s+(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)/u', ' ', $query) ?? $query;
+        $query = preg_replace('/(?:"[^"]*"|\'[^\']*\')(*SKIP)(*F)|\s+/u', ' ', $query) ?? $query;
 
         return trim($query);
     }
@@ -199,9 +199,12 @@ class FilterParser extends Parser
             $before = $position > 0 ? $query[$position - 1] : ' ';
             $after = $position + $length < strlen($query) ? $query[$position + $length] : ' ';
 
-            // In `or:OR` both words belong to the clause, even with space before the colon.
-            $valuePrefix = $before === ' ' && $position >= 2 ? $query[$position - 2] : $before;
-            if (str_contains(':<>=', $valuePrefix)) {
+            // In `or:OR` and `label: OR` the word is the value of the clause.
+            if (str_contains(':<>=', $before)) {
+                continue;
+            }
+
+            if ($before === ' ' && $this->followsFieldOperator($query, $position - 1, $isWord)) {
                 continue;
             }
 
@@ -215,6 +218,40 @@ class FilterParser extends Parser
         }
 
         return null;
+    }
+
+    // True when the text up to $index ends in a field and its operator, as in `label: ` or
+    // `price>= `. A value that only ends in such a character, like base64 `YWJj= `, does not.
+    //
+    //   label: OR       field `label` at the clause start, then `:`   -> true
+    //   token:YWJj= OR  `=` without `<` or `>` before it              -> false
+    //   x:a>= OR        `a` follows `:`, so it is no clause start     -> false
+    private function followsFieldOperator(string $query, int $index, callable $isWord): bool
+    {
+        $skipSpaces = function () use ($query, &$index): void {
+            while ($index >= 0 && $query[$index] === ' ') {
+                $index--;
+            }
+        };
+
+        $skipSpaces();
+        if ($index >= 1 && $query[$index] === '=' && str_contains('<>', $query[$index - 1])) {
+            $index--;
+        }
+
+        if ($index < 0 || ! str_contains(':<>', $query[$index])) {
+            return false;
+        }
+
+        $index--;
+        $skipSpaces();
+
+        $fieldEnd = $index;
+        while ($index >= 0 && $isWord($query[$index])) {
+            $index--;
+        }
+
+        return $index < $fieldEnd && ($index < 0 || str_contains(' ({', $query[$index]));
     }
 
     // Parse a full expression honouring operator precedence: OR has the lowest
@@ -365,22 +402,64 @@ class FilterParser extends Parser
     // expression such as a missing operator between two filters.
     protected function primaryString(string $expr): string
     {
-        // Remove spaces around structural characters, but never inside a quoted
-        // value (so name:'Smith, John' keeps its space). For brackets only the
-        // *inside* spaces are removed (after [ and before ]) so a missing
-        // operator after a list still errors.
+        // Remove spaces around the structure of this clause, but never inside a quoted
+        // value (so name:'Smith, John' keeps its space):
+        //
+        //   status : [ open , closed ]   ->  status:[open,closed]
+        //   stock >= 5                   ->  stock>=5
+        //   items : { color : red }      ->  items:{color : red}   (its own parser trims the body)
+        //   status:open, color:red       ->  unchanged, so the missing operator still errors
+        //
+        // Only the operator after the field and the commas of a list are structure. For brackets
+        // only the inside spaces go (after [ and before ]), so a missing operator after a list
+        // still errors.
+        $braces = 0;
+        $brackets = 0;
+        $fieldOperator = false;
         $expr = preg_replace_callback(
-            '/(["\'])[^"\']*\1|\s*([{}:,])\s*|(\[)\s*|\s*(\])/',
-            function (array $m): string {
+            '/(["\'])[^"\']*\1|(\s*)([{}:,\[\]]|[<>]=?)(\s*)/',
+            function (array $m) use (&$braces, &$brackets, &$fieldOperator): string {
                 if (($m[1] ?? '') !== '') {
                     return $m[0];
                 }
 
-                return match (true) {
-                    ($m[2] ?? '') !== '' => $m[2],
-                    ($m[3] ?? '') !== '' => '[',
-                    default => ']',
-                };
+                [, , $before, $char, $after] = $m;
+
+                if ($char === '{') {
+                    return $braces++ === 0 ? '{' : $m[0];
+                }
+
+                if ($char === '}') {
+                    return --$braces === 0 ? '}' : $m[0];
+                }
+
+                if ($braces > 0) {
+                    return $m[0];
+                }
+
+                if ($char === '[') {
+                    $brackets++;
+
+                    return $before.'[';
+                }
+
+                if ($char === ']') {
+                    $brackets--;
+
+                    return ']'.$after;
+                }
+
+                if ($char === ',') {
+                    return $brackets > 0 ? ',' : $m[0];
+                }
+
+                if ($fieldOperator) {
+                    return $m[0];
+                }
+
+                $fieldOperator = true;
+
+                return $char;
             },
             $expr
         );
@@ -391,7 +470,8 @@ class FilterParser extends Parser
                 // Replace anything inside single/double quotes or {...} blocks
                 // with underscores before checking for stray whitespace or a second group.
                 preg_replace_callback(
-                    '/"[^"]*"|\'[^\']*\'|(\{(?:"[^"]*"|\'[^\']*\'|[^{}\'"]|(?1))*\})/',
+                    // Possessive runs keep a long nested clause inside the PCRE stack.
+                    '/"[^"]*"|\'[^\']*\'|(\{(?:"[^"]*"|\'[^\']*\'|[^{}\'"]++|(?1))*+\})/',
                     fn ($m): string => str_repeat('_', strlen($m[0])),
                     $expr
                 )
@@ -485,9 +565,10 @@ class FilterParser extends Parser
             && $this->hasUnescapedWildcard($filter);
     }
 
-    private function listValues(string $list): ?array
+    private function listValues(string $list, ?string $field = null): ?array
     {
-        $items = preg_split('/,(?=(?:[^"\']*["\'][^"\']*["\'])*[^"\']*$)/', substr($list, 1, -1));
+        // Skipping quoted items keeps the split linear. A quote-parity lookahead fails on long lists.
+        $items = preg_split('/(?:"[^"]*"|\'[^\']*\')(*SKIP)(*F)|,/', substr($list, 1, -1));
         $values = [];
         foreach ($items as $item) {
             $item = trim($item, ' ');
@@ -501,7 +582,7 @@ class FilterParser extends Parser
                 return null;
             }
 
-            $values[] = $this->unmaskQuotedValue(trim($item, '\'"'));
+            $values[] = $field === null ? $this->unmaskQuotedValue(trim($item, '\'"')) : $this->rangeValue($field, $item);
         }
 
         return $values;
@@ -615,6 +696,19 @@ class FilterParser extends Parser
         $primary = str_starts_with($expression, '(') && $this->isWholeGroup($expression)
             ? trim(substr($expression, 1, -1))
             : $expression;
+
+        // A facet group such as `(items.color:red AND NOT items.color:blue)` holds conjuncts of
+        // different scopes. Scoped as one, the negation would lift the item selection to the root.
+        $tokens = $this->splitTopLevel($primary);
+        if (count($tokens) > 1 && ! in_array('OR', array_column($tokens, 'op'), true)) {
+            $conjuncts = [];
+            foreach ($tokens as $token) {
+                $inner = $token['op'] === 'AND NOT' ? 'NOT '.$token['expr'] : $token['expr'];
+                array_push($conjuncts, ...$this->nestedFacetConjuncts($inner, $path, $depth + 1));
+            }
+
+            return $conjuncts;
+        }
 
         if (! preg_match('/\A('.self::FIELD_PATH.')\s*:\s*\{(.*)\}\z/su', $primary, $matches)
             || count($this->splitTopLevel($primary)) !== 1) {
@@ -832,7 +926,10 @@ class FilterParser extends Parser
 
         $property = $this->properties->get($field);
         $type = $property->type();
-        if (in_array($type, ['object', 'nested', 'dense_vector', 'knn_vector', 'geo_point', 'geo_shape'], true)) {
+        if (in_array($type, [
+            'object', 'nested', 'dense_vector', 'knn_vector', 'geo_point', 'geo_shape', 'shape', 'point',
+            'binary', 'rank_feature', 'histogram', 'percolator',
+        ], true)) {
             $this->handleError(sprintf('Field %s of type %s does not support scalar filters.', $field, $type));
 
             return null;
@@ -847,7 +944,8 @@ class FilterParser extends Parser
             $valid = match ($type) {
                 'boolean' => in_array($value, ['true', 'false'], true),
                 'float' => Number::fitsMapping($range ? 'double' : 'float', $value),
-                'integer', 'long', 'double', 'scaled_float' => Number::fitsMapping($type, $value),
+                'integer', 'long', 'double', 'scaled_float', 'short', 'byte', 'half_float', 'unsigned_long',
+                'token_count' => Number::fitsMapping($type, $value),
                 'integer_range', 'long_range', 'float_range', 'double_range' => Number::fitsMapping(substr($type, 0, -6), $value)
                     && (! in_array($type, ['integer_range', 'long_range'], true) || $this->isIntegralOperand($value)),
                 'ip', 'ip_range' => $this->validIpOperand($value, $type === 'ip' && ! $range),
@@ -999,7 +1097,7 @@ class FilterParser extends Parser
     public function handleIn(string $terms): ?Query
     {
         [$field, $value] = explode(':', $terms, 2);
-        $values = $this->listValues($value);
+        $values = $this->listValues($value, $field);
         if ($values === null) {
             return new MatchNone;
         }
@@ -1035,12 +1133,8 @@ class FilterParser extends Parser
     {
         [$field, $value] = explode(':', $term, 2);
 
-        // Remove quotes from value
-        $value = trim($value, "'");
-        // Remove quotes from value
-        $value = trim($value, '"');
-        // Restore any quote characters that lived inside the value
-        $value = $this->unmaskQuotedValue($value);
+        // An unquoted epoch on a date field stays numeric, like in a range.
+        $value = $this->rangeValue($field, $value);
 
         $realFieldName = $this->valueFieldName($field, [$value]);
 

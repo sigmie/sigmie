@@ -7,6 +7,7 @@ namespace Sigmie\Tests;
 use ReflectionProperty;
 use Sigmie\Document\Document;
 use Sigmie\Mappings\NewProperties;
+use Sigmie\Search\NewRecommendations;
 use Sigmie\Testing\TestCase;
 
 class RecommendationsTest extends TestCase
@@ -30,6 +31,26 @@ class RecommendationsTest extends TestCase
             $expected = $recommend->hits();
             $this->assertCount(1, $expected);
             $this->assertSame($expected[0]->_score, $recommend->field('summary', 10)->hits()[0]->_score);
+        } finally {
+            $index->delete();
+        }
+    }
+
+    public function test_recommendations_return_the_source_without_stored_vectors(): void
+    {
+        $name = uniqid('.recommend_vectors_');
+        $props = new NewProperties;
+        $props->text('title')->semantic(api: 'test-embeddings', dimensions: 128);
+        $index = $this->sigmie->newIndex($name)->properties($props)->create();
+        try {
+            $this->sigmie->collect($name, refresh: true)->properties($props)->merge([
+                new Document(['title' => 'Notebook'], _id: 'seed'),
+                new Document(['title' => 'Notebook refill'], _id: 'refill'),
+            ]);
+            $recommend = fn (): NewRecommendations => $this->sigmie->newRecommend($name)->properties($props)->seedIds(['seed'])->field('title');
+
+            $this->assertSame([['title' => 'Notebook refill']], array_column($recommend()->hits(), '_source'));
+            $this->assertSame([['title' => 'Notebook refill']], array_column($recommend()->mmr()->hits(), '_source'));
         } finally {
             $index->delete();
         }

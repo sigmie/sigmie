@@ -80,7 +80,8 @@ class OpenSearchNestedVector extends TypesNested implements Type
                 new FunctionScore(
                     query: new Exists($field),
                     source: $source,
-                    boostMode: 'replace',
+                    // OpenSearch drops outer boosts in replace mode. The exists query scores the boost.
+                    boostMode: 'multiply',
                     params: [
                         'query_vector' => array_values($vector),
                         'field' => $field,

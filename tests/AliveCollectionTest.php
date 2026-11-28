@@ -1118,4 +1118,45 @@ class AliveCollectionTest extends TestCase
 
         $this->assertFalse($collection->has('recent'));
     }
+
+    public function test_filtered_nested_records_are_written_as_a_list(): void
+    {
+        $name = uniqid();
+        $properties = new NewProperties;
+        $properties->nested('items', function (NewProperties $item): void {
+            $item->keyword('sku');
+            $item->date('day');
+        });
+        $this->sigmie->newIndex($name)->properties($properties)->create();
+        $collection = $this->sigmie->collect($name, true)->properties($properties);
+
+        $items = array_filter(
+            [['sku' => 'gone'], ['sku' => 'kept', 'day' => new DateTime('2024-02-03')], ['sku' => 'gone']],
+            fn (array $item): bool => $item['sku'] !== 'gone',
+        );
+        $collection->add(new Document(['items' => $items], 'order'));
+
+        $this->assertSame([['sku' => 'kept', 'day' => '2024-02-03']], $collection->get('order')['items']);
+        $this->assertSame(1, $this->sigmie->newQuery($name)->properties($properties)->parse('items:{sku:"kept"}')->get()->total());
+    }
+
+    public function test_backed_enum_values_are_written_like_their_json_value(): void
+    {
+        $name = uniqid();
+        $properties = new NewProperties;
+        $properties->text('title');
+        $properties->keyword('genre');
+        $properties->combo('search', ['title', 'genre']);
+        $this->sigmie->newIndex($name)->properties($properties)->create();
+        $collection = $this->sigmie->collect($name, true)->properties($properties);
+
+        $collection->add(new Document(['title' => 'Heat', 'genre' => MovieGenre::Crime], 'heat'));
+
+        $this->assertSame(['title' => 'Heat', 'genre' => 'crime', 'search' => 'Heat crime'], $collection->get('heat')->_source);
+    }
+}
+
+enum MovieGenre: string
+{
+    case Crime = 'crime';
 }

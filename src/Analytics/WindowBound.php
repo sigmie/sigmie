@@ -13,9 +13,10 @@ final class WindowBound extends DateTimeImmutable
 {
     private int $nanosecondsWithinMicrosecond = 0;
 
-    public static function fromIso(string $value): DateTimeImmutable
+    /** $zone places a date without an offset. */
+    public static function fromIso(string $value, ?DateTimeZone $zone = null): DateTimeImmutable
     {
-        $date = new DateTimeImmutable($value, new DateTimeZone('UTC'));
+        $date = new DateTimeImmutable($value, $zone ?? new DateTimeZone('UTC'));
         preg_match('/\.\d{6}(\d{1,3})(?=Z|[+-])/', $value, $fraction);
         $remainder = (int) str_pad($fraction[1] ?? '', 3, '0');
 

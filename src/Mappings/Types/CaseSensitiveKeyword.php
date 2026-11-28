@@ -6,8 +6,6 @@ namespace Sigmie\Mappings\Types;
 
 use Sigmie\Mappings\Traits\HasFacets;
 use Sigmie\Query\Aggs;
-use Sigmie\Query\Queries\Term\Prefix;
-use Sigmie\Query\Queries\Term\Term;
 
 class CaseSensitiveKeyword extends Type
 {
@@ -17,7 +15,7 @@ class CaseSensitiveKeyword extends Type
 
     public function queries(array|string $queryString): array
     {
-        return $this->queryStrings($queryString, fn (string $queryString): array => [new Term($this->name(), $queryString), new Prefix($this->name(), $queryString)]);
+        return $this->queryStrings($queryString, fn (string $queryString): array => [...$this->termQueries($this->name(), $queryString), ...$this->prefixQueries($this->name(), $queryString)]);
     }
 
     public function aggregation(Aggs $aggs, string $params): void
@@ -34,7 +32,7 @@ class CaseSensitiveKeyword extends Type
 
     public function isFacetable(): bool
     {
-        return true;
+        return $this->hasDocValues();
     }
 
     public function validate(string $key, mixed $value): array

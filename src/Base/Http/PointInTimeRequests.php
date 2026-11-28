@@ -30,20 +30,13 @@ class PointInTimeRequests
                 'allow_partial_pit_creation' => 'false',
             ]);
 
-            return $this->call(new SearchRequest(
-                'POST',
-                $uri,
-                [],
-            ));
+            return $this->call(new SearchRequest('POST', $uri));
         }
 
         $uri = new Uri($prefix.'/_pit');
 
-        return $this->call(new SearchRequest(
-            'POST',
-            $uri->withQuery('keep_alive='.rawurlencode($keepAlive)),
-            [],
-        ));
+        // Elasticsearch 7 rejects an open request that has a body.
+        return $this->call(new SearchRequest('POST', $uri->withQuery('keep_alive='.rawurlencode($keepAlive))));
     }
 
     public function close(string $pitId): ElasticsearchResponse

@@ -18,6 +18,7 @@ use Sigmie\SigmieIndex;
  */
 class SigmieSampleDocumentsTool implements Tool
 {
+    use GuardsPrivateFields;
     use HandlesToolErrors;
     use NamesIndexTools;
     use ScopesToBaseFilters;
@@ -67,7 +68,7 @@ class SigmieSampleDocumentsTool implements Tool
         // random_score query with the scope as its inner query.
         $collection = $this->index->collect()
             ->only($this->outputFields($request['fields'] ?? null))
-            ->except($this->index->exceptFromTools());
+            ->except($this->withheldSourceFields());
 
         $this->applyBaseFilters($collection);
 

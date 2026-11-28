@@ -39,11 +39,14 @@ class Price extends Type
             throw new ParseException('Price histogram interval must be a positive number.');
         }
 
+        // Empty buckets count towards search.max_buckets, so one outlier price can fail the
+        // search. Elasticsearch returns the filled buckets and facets() adds the empty ones.
         $aggs->histogram(
             $this->name().'_histogram',
             $this->name(),
-            interval: $interval + 0
-        );
+            interval: $interval + 0,
+            minDocCount: 1,
+        )->meta(['interval' => $interval + 0]);
 
         $aggs->min($this->name().'_min', $this->name());
         $aggs->max($this->name().'_max', $this->name());
@@ -52,14 +55,23 @@ class Price extends Type
     public function facets(array $aggregation): ?array
     {
         $originalBuckets = $aggregation[$this->name().'_histogram']['buckets'] ?? [];
+        $interval = $aggregation[$this->name().'_histogram']['meta']['interval'] ?? null;
 
         $min = $aggregation[$this->name().'_min']['value'] ?? null;
         $max = $aggregation[$this->name().'_max']['value'] ?? null;
 
         $histogram = [];
+        $next = null;
         foreach ($originalBuckets as $bucket) {
             $bound = $bucket['key'];
+            $step = $interval === null ? null : (int) round($bound / $interval);
+            // Elasticsearch keys an empty bucket as its step times the interval, in doubles.
+            for (; $next !== null && $next < $step; $next++) {
+                $histogram[json_encode((float) ($next * $interval), JSON_THROW_ON_ERROR)] = 0;
+            }
+
             $histogram[is_float($bound) ? json_encode($bound, JSON_THROW_ON_ERROR) : $bound] = $bucket['doc_count'];
+            $next = $step === null ? null : $step + 1;
         }
 
         // Keys 0, 1, 2… are a PHP list. json_encode would drop those lower bounds.
@@ -76,7 +88,7 @@ class Price extends Type
 
     public function isFacetable(): bool
     {
-        return true;
+        return $this->hasDocValues();
     }
 
     public function validate(string $key, mixed $value): array

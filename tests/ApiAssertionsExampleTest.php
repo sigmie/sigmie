@@ -550,7 +550,7 @@ class ApiAssertionsExampleTest extends TestCase
             'assertAnalyzerNotExists' => ['custom'],
             'assertFilterNotExists' => ['stops'],
             'assertTokenizerNotExists' => ['words'],
-            'assertCharFilterNotExists' => [$emptyName, 'strip'],
+            'assertCharFilterNotExists' => ['strip'],
         ] as $method => $arguments) {
             $before = Assert::getCount();
             $empty->$method(...$arguments);

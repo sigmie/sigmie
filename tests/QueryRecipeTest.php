@@ -123,6 +123,49 @@ class QueryRecipeTest extends TestCase
         }
     }
 
+    public function test_grouping_needs_a_field_elasticsearch_can_aggregate(): void
+    {
+        $props = new NewProperties;
+        $props->date('date');
+        $props->category('city');
+        $props->text('description');
+        $props->nested('items', function (NewProperties $items): void {
+            $items->keyword('sku');
+        });
+        $index = $this->eventsIndex($props);
+        $grouped = fn (string $field): QueryRecipe => QueryRecipe::fromArray($this->definition('events', [
+            'widget' => 'breakdown', 'date_field' => 'date', 'group_by' => $field, 'metric' => 'count',
+        ]));
+
+        $this->assertInstanceOf(QueryRecipe::class, $grouped('city')->validateAgainst($index));
+        $this->assertInvalid(fn (): QueryRecipe => $grouped('description')->validateAgainst($index), 'group_by field [description] has incompatible type');
+        $this->assertInvalid(fn (): QueryRecipe => $grouped('items.sku')->validateAgainst($index), '[items.sku] must be outside nested documents');
+    }
+
+    public function test_a_boolean_field_accepts_an_equality_filter_template(): void
+    {
+        $props = new NewProperties;
+        $props->date('date');
+        $props->bool('active');
+
+        $definition = $this->definition('events', [
+            'widget' => 'kpi', 'date_field' => 'date', 'metric' => 'count',
+        ], [['name' => 'active', 'type' => 'string']]);
+        $definition['filter_templates'] = [['field' => 'active', 'operator' => 'equals', 'slot' => 'active']];
+        $recipe = QueryRecipe::fromArray($definition)->validateAgainst($this->eventsIndex($props));
+
+        $filter = $recipe->bind(['active' => 'true'])->toArray()['filters'];
+        $raw = (new FilterParser($props))->parse($filter)->toRaw();
+
+        $this->assertSame('true', $raw['bool']['must'][0]['term']['active']['value']);
+
+        $definition['filter_templates'][0]['operator'] = 'gt';
+        $this->assertInvalid(
+            fn (): QueryRecipe => QueryRecipe::fromArray($definition)->validateAgainst($this->eventsIndex($props)),
+            'does not match its field type or operator',
+        );
+    }
+
     protected function setUp(): void
     {
         if ($this->runsWithoutCluster()) {

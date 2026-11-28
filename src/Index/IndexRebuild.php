@@ -68,7 +68,7 @@ class IndexRebuild
 
     public function collect(): AliveCollection
     {
-        return (new AliveCollection(self::pendingAlias($this->name), $this->elasticsearchConnection, requireAlias: true))
+        return (new AliveCollection(self::pendingAlias($this->name), $this->elasticsearchConnection, requireAlias: true, hookIndexName: $this->alias))
             ->apis($this->apis)
             ->hooks($this->hooks);
     }
@@ -125,8 +125,10 @@ class IndexRebuild
 
         $retired = $alreadyPromoted ? ($this->startedOn ?? []) : $current;
         $this->deleteRetiredIndices($retired, $this->name, retry: $alreadyPromoted);
+        $promoted = $this->promotedIndex($this->alias, $this->name);
+        $this->restoreMetadataBlocks($this->name, $this->deferredBlocks);
 
-        return $this->promotedIndex($this->alias, $this->name);
+        return $promoted;
     }
 
     public function abort(): void

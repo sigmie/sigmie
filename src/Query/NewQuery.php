@@ -42,6 +42,8 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
 
     protected array $sort = [];
 
+    protected ?Query $postFilter = null;
+
     protected string $index;
 
     protected string $searchName = '';
@@ -144,17 +146,23 @@ class NewQuery implements LazyIterableQuery, MultiSearchable, Queries
             ->index($this->index)
             ->query($query);
 
+        if ($this->postFilter instanceof Query) {
+            $search->postFilter($this->postFilter);
+        }
+
         return $this->search = $search;
     }
 
     public function postFilter(Query $postFilter): Search
     {
+        $this->postFilter = $postFilter;
+
         return $this->search = (clone $this->search)->postFilter($postFilter);
     }
 
     public function postFilterString(string $filterString): Search
     {
-        return $this->search = (clone $this->search)->postFilterString($filterString);
+        return $this->postFilter((new FilterParser($this->properties))->parse($filterString));
     }
 
     public function matchNone(float $boost = 1): Search

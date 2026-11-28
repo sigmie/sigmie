@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Sigmie\Semantic;
 
+use BackedEnum;
 use DateTimeInterface;
 use Exception;
 use InvalidArgumentException;
+use JsonSerializable;
 use Sigmie\Document\Document;
 use Sigmie\Enums\SearchEngineType;
 use Sigmie\Enums\VectorStrategy;
@@ -429,6 +431,30 @@ class DocumentProcessor
         return $documents;
     }
 
+    /**
+     * Replace enums and JsonSerializable objects with the values json_encode() writes,
+     * so validation, combos and embeddings read what Elasticsearch stores.
+     * PHP dates stay objects: each date field formats them.
+     */
+    public function serializeObjects(Document $document): Document
+    {
+        $document->_source = $this->jsonValue($document->_source);
+
+        return $document;
+    }
+
+    private function jsonValue(mixed $value): mixed
+    {
+        return match (true) {
+            $value instanceof DateTimeInterface => $value,
+            $value instanceof BackedEnum => $value->value,
+            $value instanceof JsonSerializable => $this->jsonValue($value->jsonSerialize()),
+            $value instanceof stdClass => (object) array_map($this->jsonValue(...), (array) $value),
+            is_array($value) => array_map($this->jsonValue(...), $value),
+            default => $value,
+        };
+    }
+
     public function formatDateTimeFields(Document $document): Document
     {
         $source = $document->_source;
@@ -530,7 +556,8 @@ class DocumentProcessor
         }
 
         $values = [];
-        if (! $documentRoot && is_array($node) && array_is_list($node) && ! $properties?->isSourceObject($node)) {
+        $isList = is_array($node) && ($properties instanceof Properties ? ! $properties->isSourceObject($node) : array_is_list($node));
+        if (! $documentRoot && $isList) {
             foreach ($node as $item) {
                 array_push($values, ...$this->sourceValues($item, $path, $properties, documentRoot: true));
             }

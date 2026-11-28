@@ -6,6 +6,7 @@ namespace Sigmie\Tests;
 
 use ReflectionMethod;
 use Sigmie\Document\Document;
+use Sigmie\Index\NewIndex;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Types\Keyword;
 use Sigmie\Parse\FacetParser;
@@ -36,6 +37,33 @@ class FacetParserTest extends TestCase
             $this->assertSame(['green'], array_column($response->hits(), '_id'));
             $this->assertEquals(['green' => 1, 'red' => 1], $response->facet('color'));
             $this->assertSame('description', $response->json('errors.0.field'));
+        } finally {
+            $this->sigmie->deleteIfExists($index);
+        }
+    }
+
+    public function test_a_field_mapped_without_doc_values_is_not_facetable(): void
+    {
+        $index = uniqid('.facet-doc-values-');
+        (new NewIndex($this->elasticsearchConnection))->indexAPICall($index, 'PUT', ['mappings' => ['properties' => [
+            'color' => ['type' => 'keyword'],
+            'sku' => ['type' => 'keyword', 'doc_values' => false],
+            'stock' => ['type' => 'integer', 'doc_values' => false],
+            'published' => ['type' => 'date', 'doc_values' => false],
+            'label' => ['type' => 'text', 'fields' => ['raw' => ['type' => 'keyword', 'doc_values' => false]]],
+        ]]]);
+
+        try {
+            $this->sigmie->collect($index, refresh: true)->merge([
+                new Document(['color' => 'red', 'sku' => 'a1', 'stock' => 3, 'published' => '2024-01-01', 'label' => 'Red'], 'red'),
+            ]);
+            $properties = $this->sigmie->index($index)->mappings->properties();
+
+            $response = $this->sigmie->newSearch($index)->properties($properties)
+                ->facets('color sku stock published label')->get();
+
+            $this->assertEquals(['red' => 1], $response->facet('color'));
+            $this->assertSame(['sku', 'stock', 'published', 'label'], array_column($response->json('errors'), 'field'));
         } finally {
             $this->sigmie->deleteIfExists($index);
         }
@@ -179,6 +207,22 @@ class FacetParserTest extends TestCase
     }
 
     /** @test @withoutCluster */
+    public function negated_selections_narrow_a_disjunctive_facet(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('brand')->facetDisjunctive();
+
+        $parser = new FacetParser($properties);
+
+        $this->assertSame("(NOT brand:'nike' AND NOT brand:'puma')", $parser->parseFilterString("NOT brand:'nike' NOT brand:'puma'"));
+        $this->assertSame(
+            "((brand:'asics' OR brand:'hoka') AND NOT brand:'nike')",
+            $parser->parseFilterString("brand:'asics' NOT brand:'nike' brand:'hoka'"),
+        );
+        $this->assertSame("(brand:'asics' OR brand:'hoka')", $parser->parseFilterString("brand:'asics' brand:'hoka'"));
+    }
+
+    /** @test @withoutCluster */
     public function quoted_parentheses_after_an_escaped_quote_are_facet_values(): void
     {
         $properties = new NewProperties;
@@ -214,6 +258,27 @@ class FacetParserTest extends TestCase
             "(color:'red') AND (author:'A : B')",
             (new FacetParser($properties))->parseFilterString("color : 'red' author: 'A : B'")
         );
+    }
+
+    public function test_spaces_around_a_range_operator_in_a_facet_filter_are_ignored(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('color');
+        $properties->number('stock')->integer();
+
+        $index = uniqid('spaced-range-');
+        $this->sigmie->newIndex($index)->properties($properties)->create();
+        $this->sigmie->collect($index, true)->merge([
+            new Document(['color' => 'red', 'stock' => 2], 'red'),
+            new Document(['color' => 'blue', 'stock' => 9], 'blue'),
+        ]);
+
+        $response = $this->sigmie->newSearch($index)->properties($properties)->queryString('')
+            ->facets('color', "stock > 5 color : 'blue'")->get();
+
+        $this->assertSame(['blue'], array_column($response->json('hits'), '_id'));
+        $this->assertSame(['blue' => 1], $response->facet('color'));
+        $this->assertSame([], $response->json('errors'));
     }
 
     /** @test @withoutCluster */

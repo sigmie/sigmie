@@ -634,7 +634,7 @@ class AliveCollectionCorrectnessTest extends TestCase
         $api = new FakeEmbeddingsApi($this->createStub(EmbeddingsApi::class), 10);
         $source = ['suggest' => [
             (object) ['input' => ['Star Trek', 'Star Wars'], 'weight' => 10, 'contexts' => ['genre' => ['Sci-Fi']]],
-            ['input' => 'Stargate', 'weight' => 5],
+            ['input' => 'Stargate', 'weight' => 5, 'contexts' => ['genre' => ['Sci-Fi']]],
         ]];
 
         $collection->properties($properties)->apis(['e' => $api])->add(new Document($source));

@@ -13,6 +13,7 @@ use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Uri;
 use Http\Adapter\Guzzle7\Client as AsyncClient;
+use InvalidArgumentException;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Client\NetworkExceptionInterface;
 use Psr\Http\Message\RequestInterface;
@@ -83,7 +84,7 @@ class Sigmie
 
     public function api(string $name): EmbeddingsApi|RerankApi
     {
-        return $this->apis[$name];
+        return $this->apis[$name] ?? throw new InvalidArgumentException(sprintf("API '%s' is not registered.", $name));
     }
 
     public function hasApi(string $name): bool
@@ -312,7 +313,7 @@ class Sigmie
         SearchEngineType $engine = SearchEngineType::Elasticsearch,
         array $config = []
     ): static {
-        $hosts = is_string($hosts) ? array_map('trim', explode(',', $hosts)) : $hosts;
+        $hosts = is_string($hosts) ? array_values(array_filter(array_map('trim', explode(',', $hosts)), 'strlen')) : $hosts;
 
         return new static(self::connection($hosts, $engine, $config));
     }

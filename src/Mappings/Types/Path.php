@@ -6,8 +6,6 @@ namespace Sigmie\Mappings\Types;
 
 use Sigmie\Index\NewAnalyzer;
 use Sigmie\Mappings\Contracts\Analyze;
-use Sigmie\Query\Queries\Term\Prefix;
-use Sigmie\Query\Queries\Text\Match_;
 
 class Path extends Text implements Analyze
 {
@@ -25,9 +23,11 @@ class Path extends Text implements Analyze
 
     public function queries(array|string $queryString): array
     {
+        // The whole path is the deepest path_hierarchy token. A match query on all tokens
+        // ORs them on Elasticsearch 8, where Lucene 9 stacks them at one position.
         return $this->queryStrings($queryString, fn (string $queryString): array => [
-            new Prefix($this->name(), $this->lowercaseTerm($queryString)),
-            new Match_($this->name(), $queryString, analyzer: $this->searchAnalyzer(), operator: 'and'),
+            ...$this->prefixQueries($this->name(), $this->lowercaseTerm($queryString)),
+            ...$this->termQueries($this->name(), $this->lowercaseTerm($queryString)),
         ]);
     }
 }

@@ -24,7 +24,7 @@ class FacetParser extends Parser
         }
 
         $quoted = '(?:'.self::QUOTED_VALUE.')(*SKIP)(*F)';
-        $filters = $this->filterClauses(preg_replace('~'.$quoted.'|\s*:\s*~su', ':', $filterString) ?? $filterString);
+        $filters = $this->filterClauses(preg_replace('~'.$quoted.'|\s*(:|[<>]=?)\s*~su', '$1', $filterString) ?? $filterString);
         foreach ($filters as $filter) {
             if (in_array(strtoupper($filter), ['AND', 'OR'], true)) {
                 $this->handleError(sprintf("Facet filter string cannot contain logical operators (AND, OR, AND NOT): '%s'", $filterString));
@@ -89,10 +89,22 @@ class FacetParser extends Parser
 
             // Searchable and non-facetable fields are neither conjunctive nor disjunctive.
             // Group them once anyway, or the next field repeats the previous group.
-            $facetFilter = implode(
-                $type?->isFacetable() && $type->isFacetDisjunctive() ? ' OR ' : ' AND ',
+            $disjunctive = $type?->isFacetable() && $type->isFacetDisjunctive();
+
+            // A negated selection excludes its value, so it narrows a disjunctive facet too.
+            $negated = array_filter(
                 $fieldFilters,
+                fn (string $filter): bool => preg_match('/^(?:NOT\s+)+/i', $filter, $nots) === 1
+                    && substr_count(strtoupper($nots[0]), 'NOT') % 2 === 1,
             );
+            $selected = array_diff_key($fieldFilters, $negated);
+
+            $facetFilter = match (true) {
+                ! $disjunctive => implode(' AND ', $fieldFilters),
+                $negated === [] => implode(' OR ', $selected),
+                $selected === [] => implode(' AND ', $negated),
+                default => implode(' AND ', ['('.implode(' OR ', $selected).')', ...$negated]),
+            };
 
             $res[] = sprintf('(%s)', $facetFilter);
         }

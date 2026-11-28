@@ -14,6 +14,8 @@ class SortParser extends Parser
     {
         $this->errors = [];
 
+        // Spaces inside the brackets of a geo sort belong to its coordinates, as in a geo filter.
+        $string = preg_replace_callback('/\[[^\[\]]*\]/u', fn (array $m): string => preg_replace('/\s+/u', '', $m[0]), $string) ?? $string;
         $sorts = preg_split('/\s+/u', trim($string), flags: PREG_SPLIT_NO_EMPTY);
 
         if ($sorts === false) {
@@ -132,7 +134,7 @@ class SortParser extends Parser
                 // An object under "nested" is parsed as nested-sort options.
                 $geoSort = [
                     $field => $field === 'nested' ? [$longitude, $latitude] : ['lat' => $latitude, 'lon' => $longitude],
-                ] + ['order' => $order, 'unit' => $unit];
+                ] + ['order' => $order, 'unit' => $unit, 'ignore_unmapped' => true];
 
                 if (($nestedPath = $fieldType->nestedPath()) !== null) {
                     $geoSort['nested'] = ['path' => $nestedPath];

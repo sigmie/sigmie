@@ -618,6 +618,24 @@ class QueryTest extends TestCase
     /**
      * @test
      */
+    public function a_post_filter_set_before_the_query_is_sent(): void
+    {
+        $blueprint = new NewProperties;
+        $blueprint->keyword('status');
+
+        $query = $this->sigmie->newQuery('products');
+        $query->postFilter(new Term('category', 'books'));
+
+        $parsed = $this->sigmie->newQuery('products')->properties($blueprint);
+        $parsed->postFilterString("status:'published'");
+
+        $this->assertSame('books', $query->matchAll()->toRaw()['post_filter']['term']['category']['value']);
+        $this->assertSame('published', $parsed->match('title', 'guide')->toRaw()['post_filter']['bool']['must'][0]['term']['status']['value']);
+    }
+
+    /**
+     * @test
+     */
     public function match_phrase_query_returns_exact_phrase_elasticsearch_hit(): void
     {
         $indexName = uniqid();

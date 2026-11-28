@@ -651,7 +651,7 @@ class QueryAddressedTest extends TestCase
         $hits->resolve($props->get());
 
         $this->assertSame(
-            '{"nested":{"path":"reviews","score_mode":"avg","query":{"match_all":{"boost":1}},"boost":1}}',
+            '{"nested":{"path":"reviews","score_mode":"avg","query":{"match_all":{"boost":1}},"boost":1,"ignore_unmapped":true}}',
             json_encode((new Nested('reviews', new MatchAll, innerHits: $hits))->toRaw())
         );
 

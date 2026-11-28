@@ -69,6 +69,30 @@ class FacetsTest extends TestCase
         $this->assertSame(['book' => 1], $response->facet('orders.items.sku'));
     }
 
+    /** @test */
+    public function a_negated_selection_keeps_the_item_selection_of_a_sibling_nested_facet(): void
+    {
+        $name = uniqid('negated_sibling_facet_');
+        $blueprint = new NewProperties;
+        $blueprint->nested('items', function (NewProperties $items): void {
+            $items->keyword('color');
+            $items->number('qty')->integer();
+        });
+        $this->sigmie->newIndex($name)->properties($blueprint)->create();
+        $this->sigmie->collect($name, refresh: true)->merge([
+            new Document(['items' => [['color' => 'red', 'qty' => 1], ['color' => 'green', 'qty' => 10]]], 'a'),
+            new Document(['items' => [['color' => 'red', 'qty' => 100], ['color' => 'blue', 'qty' => 1000]]], 'b'),
+        ]);
+
+        $response = $this->sigmie->newSearch($name)
+            ->properties($blueprint)
+            ->facets('items.qty', 'items.color:red NOT items.color:blue')
+            ->get();
+
+        $this->assertSame(['a'], array_column($response->json('hits'), '_id'));
+        $this->assertEquals(['count' => 1, 'min' => 1, 'max' => 1, 'avg' => 1, 'sum' => 1], $response->facet('items.qty'));
+    }
+
     use Explain;
     use Index;
     use Search;
@@ -192,6 +216,25 @@ class FacetsTest extends TestCase
         ];
 
         $this->assertEquals($expectedHistogram, $facets['histogram']);
+    }
+
+    public function test_a_price_histogram_wider_than_the_bucket_limit_keeps_every_bucket(): void
+    {
+        $indexName = uniqid();
+        $blueprint = new NewProperties;
+        $blueprint->price();
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['price' => 12.5]),
+            new Document(['price' => 700000]),
+        ]);
+
+        $histogram = (array) $this->sigmie->newSearch($indexName)->properties($blueprint())
+            ->facets('price:10')->get()->facet('price')['histogram'];
+
+        $this->assertCount(70000, $histogram);
+        $this->assertEquals([10 => 1, 20 => 0], array_slice($histogram, 0, 2, true));
+        $this->assertEquals([699990 => 0, 700000 => 1], array_slice($histogram, -2, 2, true));
     }
 
     /**

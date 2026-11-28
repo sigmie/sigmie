@@ -457,7 +457,7 @@ class Analytics implements MultiSearchable
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addFiltered(new Retention($as, $this->dateField, $from, $to, $this->dateFormat, $cohortField, $this->aggregatableField($idField), $interval, $this->timeZone), $filter);
+        return $this->addFiltered(new Retention($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($cohortField), $this->aggregatableField($idField), $interval, $this->timeZone), $filter);
     }
 
     /**
@@ -468,7 +468,7 @@ class Analytics implements MultiSearchable
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addMeasured(new Geo($as, $this->dateField, $from, $to, $this->dateFormat, $field, $precision, $size, $metric, $this->metricField($metric, $metricField)), $metric, $metricField, $filter);
+        return $this->addMeasured(new Geo($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($field), $precision, $size, $metric, $this->metricField($metric, $metricField)), $metric, $metricField, $filter);
     }
 
     /**
@@ -745,7 +745,10 @@ class Analytics implements MultiSearchable
      */
     protected function metricField(Metric $metric, string $field): string
     {
-        return $this->countedText($metric, $field) === null ? $this->aggregatableField($field) : '';
+        // Resolved first, so a nested field is rejected even when the count only tests that it exists.
+        $aggregatable = $this->aggregatableField($field);
+
+        return $this->countedText($metric, $field) === null ? $aggregatable : '';
     }
 
     /**
@@ -820,6 +823,11 @@ class Analytics implements MultiSearchable
         $this->resolvedProperties ??= $this->properties->get();
 
         $type = $this->resolvedProperties->get($field);
+
+        // A top-level aggregation sees no value of a nested document, so it would report 0.
+        if ($type?->nestedPath() !== null) {
+            throw new InvalidArgumentException(sprintf('Analytics field [%s] is inside nested documents.', $field));
+        }
 
         if ($type instanceof Text) {
             return $type->keywordName() ?? $field;

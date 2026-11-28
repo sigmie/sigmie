@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sigmie\AI;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use Sigmie\Mappings\Types\Boolean;
 use Sigmie\Mappings\Types\CaseSensitiveKeyword;
 use Sigmie\Mappings\Types\Date;
@@ -289,11 +291,8 @@ trait DescribesIndexFields
             return false;
         }
 
-        return match (true) {
-            $field instanceof Text => $field->isSortable(),
-            $field instanceof Nested, $field instanceof Range => false,
-            default => true,
-        };
+        // A geo point sorts by distance: field[lat,lon]:km:asc.
+        return $field instanceof GeoPoint || $field->sortableName() !== null;
     }
 
     private function fieldFacetable(Type $field): bool
@@ -309,6 +308,10 @@ trait DescribesIndexFields
             return 'query only';
         }
 
+        if (! $field instanceof Text && $field->filterableName() === null) {
+            return '';
+        }
+
         return match (true) {
             $field instanceof Id => sprintf('%s:42 %s:[1,2] %s>10', $name, $name, $name),
             $field instanceof Keyword,
@@ -318,7 +321,13 @@ trait DescribesIndexFields
             $field instanceof FlatObject => sprintf("%s:'value'", $name),
             $field instanceof Boolean => sprintf('%s:true %s:false', $name, $name),
             $field instanceof Date,
-            $field instanceof DateTime,
+            $field instanceof DateTime => sprintf(
+                "%s>'%s' %s<'%s'",
+                $name,
+                $field->formatForWrite(new DateTimeImmutable('2024-01-01', new DateTimeZone('UTC')), 'Y-m-d'),
+                $name,
+                $field->formatForWrite(new DateTimeImmutable('2024-12-31', new DateTimeZone('UTC')), 'Y-m-d'),
+            ),
             $field->type() === 'date_nanos' => sprintf("%s>'2024-01-01' %s<'2024-12-31'", $name, $name),
             $field instanceof GeoPoint => $name.':10km[lat,lon]',
             $field instanceof Range => match ($field->type()) {

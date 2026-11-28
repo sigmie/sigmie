@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace Sigmie\Tests;
 
 use Exception;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Response;
 use Http\Promise\Promise;
+use InvalidArgumentException;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchRequest;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
@@ -253,5 +258,31 @@ class SigmieTest extends TestCase
         });
 
         $this->assertFalse($disconnected->isConnected());
+    }
+
+    /**
+     * @test
+     */
+    public function an_unregistered_api_name_names_the_missing_api(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("API 'voyage' is not registered.");
+
+        $this->sigmie->api('voyage');
+    }
+
+    /**
+     * @test
+     */
+    public function a_trailing_comma_in_the_hosts_string_adds_no_host(): void
+    {
+        $requests = [];
+        $handler = HandlerStack::create(new MockHandler([new Response(200, ['Content-Type' => 'application/json'], '{}')]));
+        $handler->push(Middleware::history($requests));
+
+        $sigmie = Sigmie::create('http://search.test:9200, ', config: ['handler' => $handler]);
+
+        $this->assertTrue($sigmie->isConnected());
+        $this->assertSame('search.test', $requests[0]['request']->getUri()->getHost());
     }
 }
