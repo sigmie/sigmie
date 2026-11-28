@@ -57,6 +57,52 @@ class AnalyticsTest extends TestCase
         $this->assertSame(1, $rows[0]['count']);
     }
 
+    public function test_a_date_grouping_reports_dates_as_keys(): void
+    {
+        $index = $this->indexWith(function (NewProperties $props): void {
+            $props->datetime('created_at');
+            $props->date('day');
+        }, [
+            new Document(['created_at' => '2024-01-01T03:00:00Z', 'day' => '2024-01-02']),
+            new Document(['created_at' => '2024-01-01T04:00:00Z', 'day' => '2024-01-02']),
+            new Document(['created_at' => '2024-01-01T05:00:00Z', 'day' => '2024-01-01']),
+        ]);
+
+        $result = $index->analytics('created_at', $this->date('2024-01-01'), $this->date('2024-01-02'))
+            ->breakdown('breakdown', 'day', Metric::Count)
+            ->heatmap('heatmap', 'day', 'day')
+            ->groupedTrend('grouped_trend', Metric::Count, '', 'day')
+            ->get();
+
+        $this->assertSame(['2024-01-02T00:00:00.000Z', '2024-01-01T00:00:00.000Z'], array_column($result['breakdown']['rows'], 'key'));
+        $this->assertSame(['2024-01-02T00:00:00.000Z', '2024-01-01T00:00:00.000Z'], array_column($result['heatmap']['rows'], 'key'));
+        $this->assertSame(['2024-01-02T00:00:00.000Z'], array_column($result['heatmap']['rows'][0]['cells'], 'key'));
+        $this->assertSame(['2024-01-02T00:00:00.000Z', '2024-01-01T00:00:00.000Z'], array_column($result['grouped_trend']['groups'], 'group'));
+    }
+
+    public function test_a_date_only_timeline_counts_local_days_west_of_utc(): void
+    {
+        $index = $this->indexWith(function (NewProperties $props): void {
+            $props->date('day');
+            $props->number('amount');
+        }, [
+            new Document(['day' => '2023-12-31', 'amount' => 1]),
+            new Document(['day' => '2024-01-01', 'amount' => 10]),
+            new Document(['day' => '2024-01-31', 'amount' => 100]),
+            new Document(['day' => '2024-02-01', 'amount' => 1000]),
+        ]);
+        $zone = new DateTimeZone('America/New_York');
+
+        $result = $index->analytics('day', new DateTimeImmutable('2024-01-01', $zone), new DateTimeImmutable('2024-02-01', $zone))
+            ->timezone('America/New_York')
+            ->kpiDelta('revenue', Metric::Sum, 'amount')
+            ->trend('daily', Metric::Sum, 'amount', CalendarInterval::Day, minDocCount: 1)
+            ->get();
+
+        $this->assertEquals(['value' => 110, 'previous' => 1], array_intersect_key($result['revenue'], ['value' => 0, 'previous' => 0]));
+        $this->assertEquals(['2024-01-01T00:00:00.000Z' => 10, '2024-01-31T00:00:00.000Z' => 100], array_column($result['daily']['series'], 'value', 'label'));
+    }
+
     public function test_offset_conversion_preserves_nanosecond_window(): void
     {
         $index = $this->indexWith(fn (NewProperties $props): NewProperties => $props->add(new Field('time', 'date_nanos')), [
@@ -1129,6 +1175,26 @@ class AnalyticsTest extends TestCase
         $this->assertEquals(1, $buckets[200]);
     }
 
+    public function test_a_distribution_wider_than_the_bucket_limit_keeps_every_bucket(): void
+    {
+        $name = uniqid();
+        $props = new NewProperties;
+        $props->date('created_at');
+        $props->number('amount');
+        $this->sigmie->newIndex($name)->properties($props)->create();
+        $this->sigmie->collect($name, refresh: true)->merge([
+            new Document(['created_at' => '2024-01-01', 'amount' => 15]),
+            new Document(['created_at' => '2024-01-01', 'amount' => 700000]),
+        ]);
+
+        $buckets = $this->sigmie->analytics($name, 'created_at', $this->date('2024-01-01'), $this->date('2024-01-02'))
+            ->distribution('amounts', 'amount', 10)->get()['amounts']['buckets'];
+
+        $this->assertCount(70_000, $buckets);
+        $this->assertEquals([['label' => 10, 'count' => 1], ['label' => 20, 'count' => 0]], array_slice($buckets, 0, 2));
+        $this->assertEquals(['label' => 700000, 'count' => 1], $buckets[69_999]);
+    }
+
     /**
      * @test
      */
@@ -1542,6 +1608,53 @@ class AnalyticsTest extends TestCase
 
         $this->assertEquals('product', $cardinality['field']);
         $this->assertEquals(40000, $cardinality['precision_threshold']);
+    }
+
+    /**
+     * @test
+     */
+    public function retention_asks_for_an_accurate_distinct_count(): void
+    {
+        $widget = new Retention('retention', 'created_at', $this->date('2024-01-01'), $this->date('2024-01-04'), 'Y-m-d', 'signup_at', 'user', CalendarInterval::Day);
+
+        $cohort = $widget->toRaw()['retention']['aggs']['cohorts']['aggs'];
+
+        $this->assertEquals(40000, $cohort['size']['cardinality']['precision_threshold']);
+        $this->assertEquals(40000, $cohort['periods']['aggs']['users']['cardinality']['precision_threshold']);
+    }
+
+    /**
+     * @test
+     */
+    public function a_field_inside_nested_documents_is_rejected(): void
+    {
+        $props = new NewProperties;
+        $props->date('created_at');
+        $props->nested('items', function (NewProperties $items): void {
+            $items->keyword('sku');
+            $items->number('qty');
+            $items->text('note');
+            $items->date('shipped_at');
+            $items->geoPoint('warehouse');
+        });
+        $analytics = fn (): Analytics => $this->sigmie->analytics('orders', 'created_at')->properties($props);
+
+        $rejected = 0;
+        foreach ([
+            fn (): Analytics => $analytics()->breakdown('skus', 'items.sku', Metric::Count),
+            fn (): Analytics => $analytics()->kpi('qty', Metric::Sum, 'items.qty'),
+            fn (): Analytics => $analytics()->kpi('notes', Metric::Count, 'items.note'),
+            fn (): Analytics => $analytics()->retention('cohorts', 'items.shipped_at', 'items.sku'),
+            fn (): Analytics => $analytics()->geo('map', 'items.warehouse'),
+        ] as $nested) {
+            try {
+                $nested();
+            } catch (InvalidArgumentException) {
+                $rejected++;
+            }
+        }
+
+        $this->assertSame(5, $rejected);
     }
 
     private function createTimedIndex(array $docs): SigmieIndex
@@ -2987,7 +3100,7 @@ class AnalyticsTest extends TestCase
     private function pinnedAnalytics(string $zone, Period $period, DateTimeImmutable $now): Analytics
     {
         $properties = new NewProperties;
-        $properties->date('created_at');
+        $properties->datetime('created_at');
         $properties->number('amount');
 
         $analytics = new class(new NewQuery($this->disconnectedConnection(), 'sales'), $properties, 'created_at') extends Analytics
@@ -3510,6 +3623,21 @@ class AnalyticsTest extends TestCase
         $this->assertSame(-200.0, $result['delta']['change_pct']);
     }
 
+    public function test_a_rise_from_a_negative_previous_value_is_a_positive_change(): void
+    {
+        $analytics = (new Analytics(new NewQuery($this->disconnectedConnection(), 'sales'), new NewProperties, 'date'))
+            ->kpiDelta('profit', Metric::Sum, 'value');
+        $change = fn (float $previous, float $current): float => $analytics->formatResponse(['aggregations' => ['profit' => [
+            'current' => ['metric' => ['value' => $current]],
+            'previous' => ['metric' => ['value' => $previous]],
+        ]]])['profit']['change_pct'];
+
+        $this->assertSame(50.0, $change(-100.0, -50.0));
+        $this->assertSame(200.0, $change(-100.0, 100.0));
+        $this->assertSame(-50.0, $change(-100.0, -150.0));
+        $this->assertSame(-50.0, $change(100.0, 50.0));
+    }
+
     private function runsWithoutCluster(): bool
     {
         return in_array($this->getName(false), [
@@ -3535,6 +3663,7 @@ class AnalyticsTest extends TestCase
             'test_decimal_bucket_labels_keep_the_term_precision',
             'test_decimal_bucket_aliases_target_the_exact_term',
             'test_extreme_opposite_metrics_have_a_finite_percentage_change',
+            'test_a_rise_from_a_negative_previous_value_is_a_positive_change',
             'test_table_and_hits_keep_numeric_source_field_names',
             'test_histogram_metric_does_not_request_empty_numeric_buckets',
             'test_histogram_metric_keeps_occupied_buckets_with_no_metric_value',

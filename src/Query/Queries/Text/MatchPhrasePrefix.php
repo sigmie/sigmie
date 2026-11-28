@@ -6,6 +6,10 @@ namespace Sigmie\Query\Queries\Text;
 
 use function Sigmie\Functions\keyed;
 
+/**
+ * Elasticsearch expands the last word to the first 50 indexed words with that prefix only, so a
+ * field that must match every word with a typed prefix pairs it with a MatchBoolPrefix.
+ */
 class MatchPhrasePrefix extends MatchQuery
 {
     public function __construct(

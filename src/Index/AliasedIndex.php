@@ -25,7 +25,7 @@ class AliasedIndex extends Index
     use IndexAPI;
     use Reindex;
 
-    /** @var array{alias: string, destination: string, sourceDeleted: bool}|null */
+    /** @var array{alias: string, destination: string, blocks: list<string>, sourceDeleted: bool}|null */
     private ?array $pendingCutover = null;
 
     public function __construct(
@@ -78,7 +78,7 @@ class AliasedIndex extends Index
             return $this->finishUpdate(retry: true);
         }
 
-        [$update, $requestedReplicas, $requestedRefresh, $deferredBlocks, $sourceWasWriteBlocked] = $this->preparedUpdate($newUpdate);
+        [$update, $requestedReplicas, $requestedRefresh, $deferredBlocks, $sourceWasWriteBlocked, $batchSize] = $this->preparedUpdate($newUpdate);
         $index = $update->make();
         $newAlias = $update->getAlias();
         $this->claimUpdate($index);
@@ -87,7 +87,7 @@ class AliasedIndex extends Index
             $finalPipeline = $this->suspendFinalPipeline($index->name);
             $this->blockWrites($this->updateSourceAlias($index->name));
             $this->refreshIndex($this->name);
-            $result = $this->reindexAPICall($this->name, $index->name, pipeline: '_none');
+            $result = $this->reindexAPICall($this->name, $index->name, pipeline: '_none', batchSize: $batchSize);
             $this->assertReindexSucceeded($result->json());
 
             $this->restoreReindexSettings($index->name, $requestedReplicas, $requestedRefresh, $deferredBlocks, $finalPipeline);
@@ -97,14 +97,14 @@ class AliasedIndex extends Index
             $this->rollbackWriteBlock($throwable, $sourceWasWriteBlocked, $index->name);
         }
 
-        $this->pendingCutover = ['alias' => $newAlias, 'destination' => $index->name, 'sourceDeleted' => false];
+        $this->pendingCutover = ['alias' => $newAlias, 'destination' => $index->name, 'blocks' => $deferredBlocks, 'sourceDeleted' => false];
 
         return $this->finishUpdate(retry: false);
     }
 
     private function finishUpdate(bool $retry): AliasedIndex
     {
-        ['alias' => $alias, 'destination' => $destination] = $this->pendingCutover;
+        ['alias' => $alias, 'destination' => $destination, 'blocks' => $blocks] = $this->pendingCutover;
 
         if (! $this->pendingCutover['sourceDeleted']) {
             $this->deleteRetiredIndices([$this->name], $destination, $retry);
@@ -112,6 +112,7 @@ class AliasedIndex extends Index
         }
 
         $updated = $this->promotedIndex($alias, $destination);
+        $this->restoreMetadataBlocks($destination, $blocks);
         $this->pendingCutover = null;
 
         return $updated;
@@ -119,7 +120,7 @@ class AliasedIndex extends Index
 
     public function asyncUpdate(callable $newUpdate): IndexUpdateTask
     {
-        [$update, $requestedReplicas, $requestedRefresh, $deferredBlocks, $sourceWasWriteBlocked] = $this->preparedUpdate($newUpdate);
+        [$update, $requestedReplicas, $requestedRefresh, $deferredBlocks, $sourceWasWriteBlocked, $batchSize] = $this->preparedUpdate($newUpdate);
         $index = $update->make();
         $this->claimUpdate($index);
 
@@ -140,6 +141,7 @@ class AliasedIndex extends Index
                 sourceWasWriteBlocked: $sourceWasWriteBlocked,
                 finalPipeline: $finalPipeline,
                 ownsUpdateLock: true,
+                batchSize: $batchSize,
             );
         } catch (Throwable $throwable) {
             $this->rollbackWriteBlock($throwable, $sourceWasWriteBlocked, $index->name);
@@ -176,7 +178,7 @@ class AliasedIndex extends Index
      * created index and is restored after reindex. An omitted value becomes
      * 1s, or 5s when the connection is serverless.
      *
-     * @return array{0: UpdateIndex, 1: ?int, 2: ?string, 3: list<string>, 4: bool}
+     * @return array{0: UpdateIndex, 1: ?int, 2: ?string, 3: list<string>, 4: bool, 5: int}
      */
     private function preparedUpdate(callable $newUpdate): array
     {
@@ -186,6 +188,8 @@ class AliasedIndex extends Index
             [true, 'true'],
             true,
         );
+        // A scroll batch larger than the source's max_result_window is rejected.
+        $batchSize = min(1000, (int) (response_value($sources[$this->name] ?? [], 'settings.index.max_result_window') ?? 1000));
         $update = new UpdateIndex($this->elasticsearchConnection);
         $update->alias($this->alias);
         $update = $newUpdate($update);
@@ -203,7 +207,7 @@ class AliasedIndex extends Index
 
         $build->useBulkReplicas();
 
-        return [$build, $requestedReplicas, $requestedRefresh, $build->deferAccessBlocks(), $sourceWasWriteBlocked];
+        return [$build, $requestedReplicas, $requestedRefresh, $build->deferAccessBlocks(), $sourceWasWriteBlocked, $batchSize];
     }
 
     private function suspendFinalPipeline(string $destination): ?string

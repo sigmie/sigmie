@@ -7,6 +7,7 @@ namespace Sigmie\AI;
 use Sigmie\Analytics\Analytics;
 use Sigmie\Document\AliveCollection;
 use Sigmie\Parse\FilterParser;
+use Sigmie\Parse\ParseException;
 use Sigmie\Search\NewSearch;
 
 /**
@@ -26,6 +27,12 @@ trait ScopesToBaseFilters
             return;
         }
 
-        $builder->filterQuery((new FilterParser($this->index->properties()))->parse($this->baseFilters));
+        try {
+            $scope = (new FilterParser($this->index->properties()))->parse($this->baseFilters);
+        } catch (ParseException $parseException) {
+            throw new MalformedBaseFilter($parseException->getMessage(), previous: $parseException);
+        }
+
+        $builder->filterQuery($scope);
     }
 }

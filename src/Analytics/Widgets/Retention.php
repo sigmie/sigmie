@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Analytics\Widgets;
 
 use DateTimeInterface;
+use Sigmie\Analytics\Enums\Metric;
 use Sigmie\Query\Aggregations\Enums\CalendarInterval;
-use Sigmie\Query\Aggregations\Metrics\Cardinality;
 use Sigmie\Query\Aggs;
 use Sigmie\Shared\Collection;
 
@@ -29,6 +29,7 @@ class Retention extends Widget
         protected string $cohortField,
         protected string $idField,
         protected CalendarInterval|string $interval,
+        protected ?string $cohortTimeZone = null,
         protected ?string $timeZone = null,
     ) {
         parent::__construct($name, $dateField, $from, $to, $dateFormat);
@@ -37,11 +38,13 @@ class Retention extends Widget
     public function toRaw(): array
     {
         return $this->scoped($this->name, $this->from, $this->to, function (Aggs $aggs): void {
-            $aggs->dateHistogram('cohorts', $this->cohortField, $this->interval, minDocCount: 1, timeZone: $this->timeZone)
+            $aggs->dateHistogram('cohorts', $this->cohortField, $this->interval, minDocCount: 1, timeZone: $this->cohortTimeZone)
                 ->aggregate(function (Aggs $sub): void {
-                    $sub->cardinality('size', $this->idField);
+                    Metric::Unique->apply($sub, 'size', $this->idField);
                     $this->windowHistogram($sub, 'periods', $this->interval, $this->timeZone)
-                        ->aggregate(fn (Aggs $m): Cardinality => $m->cardinality('users', $this->idField));
+                        ->aggregate(function (Aggs $periods): void {
+                            Metric::Unique->apply($periods, 'users', $this->idField);
+                        });
                 });
         })->toRaw();
     }

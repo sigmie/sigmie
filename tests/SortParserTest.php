@@ -6,6 +6,7 @@ namespace Sigmie\Tests;
 
 use RuntimeException;
 use Sigmie\Document\Document;
+use Sigmie\Index\Analysis\DefaultAnalyzer;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Parse\FilterParser;
@@ -15,14 +16,58 @@ use Sigmie\Testing\TestCase;
 
 class SortParserTest extends TestCase
 {
+    public function test_a_distance_sort_puts_a_target_index_without_that_geo_field_last(): void
+    {
+        $located = new NewProperties;
+        $located->title('name');
+        $located->geoPoint('location');
+
+        $plain = new NewProperties;
+        $plain->title('name');
+
+        $stores = uniqid('stores_');
+        $webshops = uniqid('webshops_');
+        $this->sigmie->newIndex($stores)->properties($located)->create();
+        $this->sigmie->newIndex($webshops)->properties($plain)->create();
+        $this->sigmie->collect($stores, refresh: true)->properties($located)->merge([
+            new Document(['name' => 'New York', 'location' => ['lat' => 40.71, 'lon' => -74.0]], _id: 'new-york'),
+            new Document(['name' => 'Berlin', 'location' => ['lat' => 52.52, 'lon' => 13.40]], _id: 'berlin'),
+        ]);
+        $this->sigmie->collect($webshops, refresh: true)->properties($plain)->merge([
+            new Document(['name' => 'Online'], _id: 'online'),
+        ]);
+
+        $hits = $this->sigmie->newSearch(sprintf('%s,%s', $stores, $webshops))->properties($located)
+            ->queryString('')->sort('location[52.52,13.40]:km:asc')->hits();
+
+        $this->assertSame(['berlin', 'new-york', 'online'], array_column($hits, '_id'));
+    }
+
     public function test_geo_sort_accepts_a_decimal_point_without_fractional_digits(): void
     {
         $properties = new NewProperties;
         $properties->geoPoint('location');
 
         $this->assertSame(
-            [['_geo_distance' => ['location' => ['lat' => 0.0, 'lon' => -0.0], 'order' => 'asc', 'unit' => 'km']]],
+            [['_geo_distance' => ['location' => ['lat' => 0.0, 'lon' => -0.0], 'order' => 'asc', 'unit' => 'km', 'ignore_unmapped' => true]]],
             (new SortParser($properties))->parse('location[0.,-0.E0]:km:asc')
+        );
+    }
+
+    public function test_geo_sort_accepts_spaces_inside_its_coordinates(): void
+    {
+        $properties = new NewProperties;
+        $properties->geoPoint('location');
+        $properties->number('price');
+
+        $parser = new SortParser($properties);
+
+        $this->assertSame(
+            [
+                ['_geo_distance' => ['location' => ['lat' => 40.71, 'lon' => -74.0], 'order' => 'asc', 'unit' => 'km', 'ignore_unmapped' => true]],
+                ['price' => 'desc'],
+            ],
+            $parser->parse('location[ 40.71, -74.00 ]:km:asc price:desc')
         );
     }
 
@@ -55,7 +100,7 @@ class SortParserTest extends TestCase
         $properties->geoPoint('store-location');
 
         $this->assertSame(
-            [['_geo_distance' => ['store-location' => ['lat' => 1.0, 'lon' => -2.0], 'order' => 'asc', 'unit' => 'km']]],
+            [['_geo_distance' => ['store-location' => ['lat' => 1.0, 'lon' => -2.0], 'order' => 'asc', 'unit' => 'km', 'ignore_unmapped' => true]]],
             (new SortParser($properties))->parse('store-location[1,-2]:km:asc')
         );
     }
@@ -114,6 +159,24 @@ class SortParserTest extends TestCase
 
         $this->assertSame([['created_at' => 'asc']], $parser->parse('location:asc availability:asc created_at:asc'));
         $this->assertSame(['location', 'availability'], array_column($parser->errors(), 'field'));
+    }
+
+    public function test_a_restored_field_elasticsearch_cannot_sort_on_is_not_sortable(): void
+    {
+        $props = Properties::create([
+            'area' => ['type' => 'geo_shape'],
+            'body' => ['type' => 'match_only_text'],
+            'blob' => ['type' => 'binary'],
+            'sku' => ['type' => 'keyword', 'doc_values' => false],
+            'stock' => ['type' => 'integer', 'doc_values' => false],
+            'address' => ['type' => 'ip', 'doc_values' => false],
+            'origin' => ['type' => 'ip'],
+        ], new DefaultAnalyzer, [], Properties::ROOT_NAME);
+
+        $parser = new SortParser($props, throwOnError: false);
+
+        $this->assertSame([['origin' => 'asc']], $parser->parse('area:asc body:asc blob:asc sku:asc stock:asc address:asc origin:asc'));
+        $this->assertSame(['area', 'body', 'blob', 'sku', 'stock', 'address'], array_column($parser->errors(), 'field'));
     }
 
     /**

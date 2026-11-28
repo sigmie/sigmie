@@ -7,6 +7,8 @@ namespace Sigmie\Mappings\Types;
 use Closure;
 use ReflectionClass;
 use Sigmie\Mappings\Contracts\Type as TypeInterface;
+use Sigmie\Query\Queries\Term\Prefix;
+use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Search\Contracts\TextQueries;
 use Sigmie\Shared\Contracts\Name;
 use Sigmie\Shared\Contracts\ToRaw;
@@ -98,6 +100,29 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
         }
 
         return $queries;
+    }
+
+    /**
+     * Elasticsearch rejects the whole search when a prefix is longer than index.max_regex_length
+     * (default 1000 UTF-16 units). No stored keyword realistically starts with such a prefix, so
+     * a longer input sends no prefix clause. An index with a raised limit loses nothing real.
+     *
+     * @return list<Prefix>
+     */
+    protected function prefixQueries(string $field, string $prefix): array
+    {
+        return strlen(mb_convert_encoding($prefix, 'UTF-16LE', 'UTF-8')) > 2000 ? [] : [new Prefix($field, $prefix)];
+    }
+
+    /**
+     * Elasticsearch rejects the whole search when a term is longer than Lucene indexes (32,766
+     * UTF-8 bytes). No stored term can equal it, so a longer input sends no term clause.
+     *
+     * @return list<Term>
+     */
+    protected function termQueries(string $field, string $term): array
+    {
+        return strlen($term) > 32766 ? [] : [new Term($field, $term)];
     }
 
     protected function lowercaseTerm(string $term): string
@@ -231,11 +256,31 @@ abstract class Type implements Name, TextQueries, ToRaw, TypeInterface
 
     public function filterableName(): ?string
     {
+        // Without an index Elasticsearch searches the doc values. A field with neither is stored only.
+        if (! $this->isSearchIndexed() && ! $this->hasDocValues()) {
+            return null;
+        }
+
         return $this->fullPath();
+    }
+
+    protected function isSearchIndexed(): bool
+    {
+        return ($this->storedMapping['index'] ?? true) !== false;
+    }
+
+    // Elasticsearch sorts and aggregates on doc values.
+    public function hasDocValues(): bool
+    {
+        return ($this->storedMapping['doc_values'] ?? true) !== false;
     }
 
     public function sortableName(): ?string
     {
+        if (! $this->hasDocValues()) {
+            return null;
+        }
+
         return match ($this->type()) {
             'object', 'nested', 'dense_vector', 'knn_vector' => null,
             default => $this->fullPath(),

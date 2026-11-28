@@ -25,6 +25,8 @@ class Nested extends Query
                 'score_mode' => $this->scoreMode,
                 'query' => $this->query->toRaw(),
                 'boost' => $this->boost,
+                // A search over several indices can reach one without this path.
+                'ignore_unmapped' => true,
             ],
         ];
 

@@ -1716,6 +1716,48 @@ class HttpAddressedTest extends TestCase
     /**
      * @test
      */
+    public function opening_a_point_in_time_sends_no_body(): void
+    {
+        foreach ([new Elasticsearch, new Opensearch] as $engine) {
+            $connection = new class($engine) implements ElasticsearchConnection
+            {
+                public array $bodies = [];
+
+                public function __construct(public SearchEngine $engine) {}
+
+                public function __invoke(ElasticsearchRequest $request): ElasticsearchResponse
+                {
+                    $this->bodies[] = (string) $request->getBody();
+
+                    return $request->response(new PsrResponse(200, [], '{}'));
+                }
+
+                public function promise(ElasticsearchRequest $request): Promise
+                {
+                    throw new RuntimeException('no cluster');
+                }
+
+                public function driver(): SearchEngine
+                {
+                    return $this->engine;
+                }
+
+                public function isServerless(): bool
+                {
+                    return false;
+                }
+            };
+
+            (new PointInTimeRequests($connection))->open('movies', '1m');
+
+            // Elasticsearch 7 rejects an open request that has a body.
+            $this->assertSame([''], $connection->bodies);
+        }
+    }
+
+    /**
+     * @test
+     */
     public function an_empty_pit_index_stays_on_the_cluster_host(): void
     {
         $base = new Uri('https://localhost:9200');

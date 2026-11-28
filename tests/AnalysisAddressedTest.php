@@ -344,6 +344,24 @@ class AnalysisAddressedTest extends TestCase
         $fieldAnalysis->registerFieldComponents($indexAnalysis);
     }
 
+    public function test_two_field_analyzers_cannot_share_a_tokenizer_name_with_different_settings(): void
+    {
+        $fields = function (string $second): NewProperties {
+            $props = new NewProperties;
+            $props->text('csv')->withNewAnalyzer(fn (NewAnalyzer $analyzer): NewAnalyzer => $analyzer->tokenizeOnPattern(',', name: 'splitter'));
+            $props->text('ssv')->withNewAnalyzer(fn (NewAnalyzer $analyzer): NewAnalyzer => $analyzer->tokenizeOnPattern($second, name: 'splitter'));
+
+            return $props;
+        };
+
+        $shared = $this->indexBuilder()->properties($fields(','))->make()->settings->toRaw();
+        $this->assertSame(',', $shared['analysis']['tokenizer']['splitter']['pattern']);
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Tokenizer name `splitter` already exists.');
+        $this->indexBuilder()->properties($fields(';'))->make();
+    }
+
     public function test_analyzer_assertions_read_scalar_component_lists(): void
     {
         $index = new Assert('articles', ['settings' => ['index' => ['analysis' => [
@@ -1013,7 +1031,7 @@ class AnalysisAddressedTest extends TestCase
         $assert->assertFilterNotExists('synonym_filter');
         $assert->assertTokenizerNotExists('missing_tokenizer');
         $assert->assertAnalyzerNotExists('missing_analyzer');
-        $assert->assertCharFilterNotExists('orders', 'missing_char_filter');
+        $assert->assertCharFilterNotExists('missing_char_filter');
         $this->assertTrue(true);
     }
 
@@ -1595,6 +1613,18 @@ class AnalysisAddressedTest extends TestCase
             }
 
             $this->assertEqualsCanonicalizing(['car', 'auto'], $index->analyze('car', 'default_with_synonyms'));
+        } finally {
+            $index->delete();
+        }
+    }
+
+    public function test_field_search_synonyms_without_an_index_list_define_the_analyzer(): void
+    {
+        $props = new NewProperties;
+        $props->text('title')->searchSynonyms();
+        $index = $this->indexBuilder()->properties($props)->create();
+        try {
+            $this->assertSame(['car'], $index->analyze('car', 'default_with_synonyms'));
         } finally {
             $index->delete();
         }

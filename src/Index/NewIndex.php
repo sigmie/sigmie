@@ -31,6 +31,7 @@ use Sigmie\Languages\English\Filter\Stemmer;
 use Sigmie\Languages\English\Filter\Stopwords;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\Text;
 use Sigmie\Shared\UsesApis;
 use Throwable;
 
@@ -47,6 +48,16 @@ class NewIndex
     use Shards;
     use Tokenizer;
     use UsesApis;
+
+    /** Blocks that stop the copy into a new index, so they apply after it. */
+    public const ACCESS_BLOCKS = ['blocks.read', 'blocks.write', 'blocks.read_only_allow_delete', ...self::METADATA_BLOCKS];
+
+    /** Elasticsearch also rejects alias changes under these, so they apply after the alias moves. */
+    public const METADATA_BLOCKS = ['blocks.read_only', 'blocks.metadata'];
+
+    private static string $lastClockReading = '';
+
+    private static string $lastNameTime = '';
 
     protected string $language = 'no_lang';
 
@@ -138,7 +149,7 @@ class NewIndex
         }
 
         unset($this->config[$key], $this->config['index.'.$key]);
-        $this->config[in_array($key, ['refresh_interval', 'analysis', 'blocks.read', 'blocks.write', 'write.wait_for_active_shards'], true) ? $key : $name] = $value;
+        $this->config[in_array($key, ['refresh_interval', 'analysis', ...self::ACCESS_BLOCKS, 'write.wait_for_active_shards'], true) ? $key : $name] = $value;
 
         return $this;
     }
@@ -219,6 +230,10 @@ class NewIndex
         $requestedReplicas = $this->usesServerlessSettings() ? null : $replicas;
         $refresh = (string) ($this->config['refresh_interval'] ?? ($this->elasticsearchConnection->isServerless() ? '5s' : '1s'));
         $sources = $this->aliasSources($this->alias);
+        if ($sources === [] && $this->indexExists($this->alias)) {
+            throw AliasAlreadyExists::forAlias($this->alias);
+        }
+
         $targets = array_map('strval', array_keys($sources));
         $routing = $sources[array_key_first($sources)]['aliases'][$this->alias]['index_routing'] ?? null;
         $pendingSettings = ['is_hidden' => true];
@@ -395,7 +410,12 @@ class NewIndex
             configs: merge_named($engineSettings, $this->config)
         );
 
-        if ($this->searchSynonyms !== null) {
+        // A field can ask for the synonym analyzer while the index has no synonym list.
+        $fieldSearchSynonyms = $mappings->properties()->fieldsOfType(Text::class)
+            ->filter(fn (Text $field): bool => $field->searchAnalyzer() === 'default_with_synonyms')
+            ->isNotEmpty();
+
+        if ($this->searchSynonyms !== null || $fieldSearchSynonyms) {
             $effectiveDefault = $settings->analysis()->defaultAnalyzer();
             if (! $effectiveDefault instanceof CustomAnalyzer) {
                 throw new InvalidArgumentException('Search synonyms require a custom default analyzer.');
@@ -421,7 +441,7 @@ class NewIndex
     public function deferAccessBlocks(): array
     {
         $blocks = [];
-        foreach (['blocks.read', 'blocks.write'] as $block) {
+        foreach (self::ACCESS_BLOCKS as $block) {
             if (in_array($this->config[$block] ?? false, [true, 'true'], true)) {
                 $this->config($block, false);
                 $blocks[] = $block;
@@ -448,7 +468,17 @@ class NewIndex
 
     protected function createIndexName(): string
     {
-        $timestamp = Carbon::now('UTC')->format('YmdHisu');
+        $reading = Carbon::now('UTC')->format('YmdHisu');
+        $timestamp = $reading;
+
+        // A frozen test clock, or two names in one microsecond, repeat the last
+        // reading. Without a later name, update() and rebuild() reuse the live index.
+        if (strcmp($reading, self::$lastClockReading) >= 0 && strcmp($reading, self::$lastNameTime) <= 0) {
+            $timestamp = Carbon::createFromFormat('YmdHisu', self::$lastNameTime, 'UTC')->addMicrosecond()->format('YmdHisu');
+        }
+
+        self::$lastClockReading = $reading;
+        self::$lastNameTime = $timestamp;
 
         return sprintf('%s_%s', self::physicalNamePrefix($this->alias), $timestamp);
     }

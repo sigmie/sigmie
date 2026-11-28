@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sigmie\Search;
 
-use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\PropertiesFieldNotFound;
 use Sigmie\Mappings\Types\Boolean as BooleanField;
 use Sigmie\Mappings\Types\NestedVector;
@@ -155,7 +154,6 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
             if (! $semanticFields->isEmpty()) {
                 $vectorBool = new Boolean;
                 $driver = $this->elasticsearchConnection->driver();
-                $isOpenSearch = $driver->engine() === SearchEngineType::OpenSearch;
 
                 foreach ($semanticFields as $field) {
                     $tag = '_embeddings_'.strtr($field->fullPath(), ['%' => '%25', '.' => '%2E']);
@@ -173,18 +171,9 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
                             implode(',', array_map(fn (QueryClause $query): string => json_encode($query->boost($boost)->toRaw()), $queries)),
                         );
 
-                        if ($isOpenSearch) {
-                            // Accessing a list position beyond its bounds throws on OpenSearch.
-                            $flag = '_sigmie_embedding_dimensions.'.$tag.'.'.$vector->dims;
-                            $vectorQueries .= '{{#'.$flag.'}}'.$json.',{{/'.$flag.'}}';
-
-                            continue;
-                        }
-
-                        // Test the first and last required list positions without iterating the vector.
-                        $last = $tag.'.'.($vector->dims - 1);
-                        $next = $tag.'.'.$vector->dims;
-                        $vectorQueries .= '{{#'.$last.'}}{{^'.$next.'}}'.$json.',{{/'.$next.'}}{{/'.$last.'}}';
+                        // Accessing a list position beyond its bounds throws on OpenSearch and Elasticsearch 8.
+                        $flag = '_sigmie_embedding_dimensions.'.$tag.'.'.$vector->dims;
+                        $vectorQueries .= '{{#'.$flag.'}}'.$json.',{{/'.$flag.'}}';
                     }
 
                     $textQueries = $this->fieldQueries($field, self::TEXT_INPUT);
@@ -193,9 +182,8 @@ class NewTemplate extends AbstractSearchBuilder implements SearchTemplateBuilder
                         $tag,
                     );
 
-                    $listCheck = $tag.($isOpenSearch ? '.size' : '.0');
                     $querySources[$placeholder] = '['.$vectorQueries
-                        .($text === '' ? '' : '{{^'.$listCheck.'}}{{#'.$tag.'}}'.$text.',{{/'.$tag.'}}{{/'.$listCheck.'}}')
+                        .($text === '' ? '' : '{{^'.$tag.'.size}}{{#'.$tag.'}}'.$text.',{{/'.$tag.'}}{{/'.$tag.'.size}}')
                         .json_encode((new MatchNone)->toRaw()).']';
 
                     $clause = new Boolean;

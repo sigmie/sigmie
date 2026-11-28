@@ -18,13 +18,13 @@ trait HasDateFacets
 
     public function aggregation(Aggs $aggs, string $param): void
     {
-        $aggs->filter($this->name().'_present', new Exists($this->name()));
+        $this->countDocuments($aggs->filter($this->name().'_present', new Exists($this->name())));
         $aggs->stats($this->name(), $this->name())->format($this->formats[array_key_first($this->formats)]);
     }
 
     public function isFacetable(): bool
     {
-        return true;
+        return $this->hasDocValues();
     }
 
     public function facets(array $aggregation): ?array
@@ -32,7 +32,7 @@ trait HasDateFacets
         $stats = $aggregation[$this->name()] ?? [];
 
         return [
-            'count' => $aggregation[$this->name().'_present']['doc_count'] ?? 0,
+            'count' => $this->documentCount($aggregation[$this->name().'_present'] ?? []),
             'min' => $stats['min_as_string'] ?? null,
             'max' => $stats['max_as_string'] ?? null,
         ];

@@ -29,6 +29,14 @@ class ImageSearchCorrectnessTest extends TestCase
         );
     }
 
+    public function test_an_image_url_with_non_ascii_characters_is_a_url(): void
+    {
+        $this->assertTrue(ImageHelper::isUrl('https://example.com/bilder/größe.jpg'));
+        $this->assertTrue(ImageHelper::isUrl('https://bücher.de/cover.jpg'));
+        $this->assertFalse(ImageHelper::isUrl('größe.jpg'));
+        $this->assertFalse(ImageHelper::isUrl('ein Bild von Bäumen'));
+    }
+
     public function test_wrapped_base64_becomes_an_unwrapped_image_uri(): void
     {
         $gif = 'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -114,6 +122,67 @@ class ImageSearchCorrectnessTest extends TestCase
         $this->assertSame(224, imagesx($resized));
         $this->assertSame(1, imagesy($resized));
         imagedestroy($resized);
+    }
+
+    /**
+     * @test
+     *
+     * @requires extension openssl
+     */
+    public function an_image_host_with_an_untrusted_certificate_is_refused(): void
+    {
+        $key = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+        $request = openssl_csr_new(['commonName' => '127.0.0.1'], $key, ['digest_alg' => 'sha256']);
+        openssl_x509_export(openssl_csr_sign($request, null, $key, 1, ['digest_alg' => 'sha256']), $certificate);
+        openssl_pkey_export($key, $privateKey);
+        file_put_contents($pem = tempnam(sys_get_temp_dir(), 'sigmie-tls'), $certificate.$privateKey);
+
+        // A TLS server with a self-signed certificate that answers one request with a 1x1 GIF.
+        $server = <<<'PHP_WRAP'
+$context = stream_context_create(['ssl' => ['local_cert' => $argv[1]]]);
+$server = stream_socket_server('tls://127.0.0.1:0', $code, $error, STREAM_SERVER_BIND | STREAM_SERVER_LISTEN, $context);
+echo stream_socket_get_name($server, false), PHP_EOL;
+if ($client = @stream_socket_accept($server, 10)) {
+    fread($client, 8192);
+    $gif = base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
+    fwrite($client, "HTTP/1.1 200 OK\r\nContent-Type: image/gif\r\nContent-Length: ".strlen($gif)."\r\nConnection: close\r\n\r\n".$gif);
+}
+PHP_WRAP;
+        $process = proc_open([PHP_BINARY, '-r', $server, '--', $pem], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+        $address = trim((string) fgets($pipes[1]));
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Failed to fetch image from URL');
+
+        try {
+            ImageHelper::fetchImageContent('https://'.$address.'/pixel.gif');
+        } finally {
+            proc_terminate($process);
+            unlink($pem);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function resize_puts_transparent_pixels_on_white(): void
+    {
+        foreach ([400, 100] as $side) {
+            $image = imagecreatetruecolor($side, $side);
+            imagealphablending($image, false);
+            imagesavealpha($image, true);
+            imagefilledrectangle($image, 0, 0, $side - 1, $side - 1, imagecolorallocatealpha($image, 0, 0, 0, 127));
+            ob_start();
+            imagepng($image);
+            $png = ob_get_clean();
+            imagedestroy($image);
+
+            $resized = imagecreatefromstring(ImageHelper::resizeImage($png));
+            $pixel = imagecolorsforindex($resized, imagecolorat($resized, 10, 10));
+            imagedestroy($resized);
+
+            $this->assertGreaterThan(245, min($pixel['red'], $pixel['green'], $pixel['blue']), $side.'px transparent PNG');
+        }
     }
 
     /**

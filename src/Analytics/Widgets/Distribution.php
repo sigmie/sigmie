@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Analytics\Widgets;
 
 use DateTimeInterface;
+use Sigmie\Query\Aggregations\Bucket\Histogram;
 use Sigmie\Query\Aggs;
-use Sigmie\Shared\Collection;
 
 /**
  * A histogram of a numeric field — the distribution chart ("order-size spread",
@@ -29,22 +29,24 @@ class Distribution extends Widget
     public function toRaw(): array
     {
         return $this->scoped($this->name, $this->from, $this->to, function (Aggs $aggs): void {
-            $aggs->histogram('buckets', $this->field, $this->interval);
+            // Empty buckets count towards search.max_buckets, so one outlier can fail the
+            // request. Elasticsearch returns the filled buckets and extract() adds the empty ones.
+            $aggs->histogram('buckets', $this->field, $this->interval, minDocCount: 1);
         })->toRaw();
     }
 
     public function extract(array $aggregations): array
     {
-        $buckets = new Collection($aggregations[$this->name]['buckets']['buckets'] ?? []);
+        $buckets = [];
+        foreach (Histogram::dense($aggregations[$this->name]['buckets']['buckets'] ?? [], $this->interval) as [$label, $bucket]) {
+            $buckets[] = ['label' => $label, 'count' => $bucket['doc_count'] ?? 0];
+        }
 
         return [
             'type' => 'distribution',
             'field' => $this->field,
             'interval' => $this->interval,
-            'buckets' => $buckets->map(fn (array $bucket): array => [
-                'label' => $bucket['key'],
-                'count' => $bucket['doc_count'] ?? 0,
-            ])->toArray(),
+            'buckets' => $buckets,
         ];
     }
 }

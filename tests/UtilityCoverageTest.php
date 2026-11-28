@@ -891,6 +891,7 @@ class UtilityCoverageTest extends TestCase
             'fuzziness' => 'AUTO',
             'prefix_length' => 2,
             'min_length' => 4,
+            'unicode_aware' => true,
         ], $suggest->toRaw()['title_completion']['completion']['fuzzy']);
         $this->assertSame([
             'match_bool_prefix' => [
@@ -989,7 +990,7 @@ class UtilityCoverageTest extends TestCase
         $caseSensitive->aggregation($aggs, '10,asc');
         $price->aggregation($aggs, '5');
 
-        $this->assertCount(1, $address->queries('street'));
+        $this->assertCount(2, $address->queries('street'));
         $this->assertSame(['example' => 2], $caseSensitive->facets([
             'code' => [
                 'buckets' => [
@@ -1005,7 +1006,7 @@ class UtilityCoverageTest extends TestCase
         $this->assertSame([false, 'The field photo contains an invalid image source: missing. Must be a URL, base64 string, or existing file path.'], $image->validate('photo', ['missing']));
         $this->assertCount(2, $path->queries('/docs/search'));
         $this->assertSame([], $price->queries('19.99'));
-        $this->assertCount(2, $tags->queries('#search'));
+        $this->assertCount(3, $tags->queries('#search'));
 
         $this->assertSame('UTC', (new AutoDateHistogram('by_date', 'created_at', 10, MinimumInterval::Day, 'UTC'))->toRaw()['by_date']['auto_date_histogram']['time_zone']);
         $this->assertSame(5, (new GeoHashGrid('grid', 'location', size: 5))->toRaw()['grid']['geohash_grid']['size']);
@@ -1454,7 +1455,7 @@ class UtilityCoverageTest extends TestCase
         $name = new NameField('name');
 
         $this->assertSame(['name', 'name.name_text'], $name->names());
-        $this->assertCount(3, $name->queries('Nico'));
+        $this->assertCount(4, $name->queries('Nico'));
     }
 
     /**

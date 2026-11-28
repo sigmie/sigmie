@@ -32,6 +32,7 @@ use Sigmie\Analytics\Widgets\UnionBreakdown;
 use Sigmie\Analytics\Widgets\Widget;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
+use Sigmie\Mappings\Types\Date;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Mappings\Types\Type;
 use Sigmie\Parse\FilterParser;
@@ -184,7 +185,8 @@ class Analytics implements MultiSearchable
 
     public function hitsQuery(string $hitFilters): Query
     {
-        $window = Widget::windowQuery($this->dateField, $this->from, $this->to, $this->dateFormat, $this->timelineUsesMilliseconds());
+        [$from, $to] = $this->resolveWindow(null);
+        $window = Widget::windowQuery($this->dateField, $from, $to, $this->dateFormat, $this->timelineUsesMilliseconds());
 
         if ($hitFilters === '') {
             return $window;
@@ -261,21 +263,21 @@ class Analytics implements MultiSearchable
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addMeasured(new Trend($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone, $minDocCount), $metric, $field, $filter);
+        return $this->addMeasured(new Trend($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->bucketTimeZone($this->dateField), $minDocCount), $metric, $field, $filter);
     }
 
     public function cumulative(string $as, Metric $metric, string $field = '', CalendarInterval|string $interval = CalendarInterval::Day, Query|string|null $filter = null, Period|array|null $window = null): static
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addMeasured(new Cumulative($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->timeZone), $metric, $field, $filter);
+        return $this->addMeasured(new Cumulative($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $interval, $this->bucketTimeZone($this->dateField)), $metric, $field, $filter);
     }
 
     public function groupedTrend(string $as, Metric $metric, string $field, string $groupBy, CalendarInterval|string $interval = CalendarInterval::Day, int $limit = 5, Query|string|null $filter = null, Period|array|null $window = null): static
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addMeasured(new GroupedTrend($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $this->aggregatableField($groupBy), $interval, $limit, $this->timeZone), $metric, $field, $filter);
+        return $this->addMeasured(new GroupedTrend($as, $this->dateField, $from, $to, $this->dateFormat, $metric, $this->metricField($metric, $field), $this->aggregatableField($groupBy), $interval, $limit, $this->bucketTimeZone($this->dateField)), $metric, $field, $filter);
     }
 
     public function breakdown(string $as, string $groupBy, Metric $metric, string $field = '', int $limit = 10, string $direction = 'desc', Query|string|null $filter = null, Period|array|null $window = null, array $bucketAliases = []): static
@@ -457,7 +459,7 @@ class Analytics implements MultiSearchable
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addFiltered(new Retention($as, $this->dateField, $from, $to, $this->dateFormat, $cohortField, $this->aggregatableField($idField), $interval, $this->timeZone), $filter);
+        return $this->addFiltered(new Retention($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($cohortField), $this->aggregatableField($idField), $interval, $this->bucketTimeZone($cohortField), $this->bucketTimeZone($this->dateField)), $filter);
     }
 
     /**
@@ -468,7 +470,7 @@ class Analytics implements MultiSearchable
     {
         [$from, $to] = $this->resolveWindow($window);
 
-        return $this->addMeasured(new Geo($as, $this->dateField, $from, $to, $this->dateFormat, $field, $precision, $size, $metric, $this->metricField($metric, $metricField)), $metric, $metricField, $filter);
+        return $this->addMeasured(new Geo($as, $this->dateField, $from, $to, $this->dateFormat, $this->aggregatableField($field), $precision, $size, $metric, $this->metricField($metric, $metricField)), $metric, $metricField, $filter);
     }
 
     /**
@@ -685,18 +687,45 @@ class Analytics implements MultiSearchable
      */
     protected function resolveWindow(Period|array|null $window): array
     {
-        if ($window === null) {
-            return [$this->from, $this->to];
+        [$from, $to] = match (true) {
+            $window === null => [$this->from, $this->to],
+            $window instanceof Period => $window->resolve(new DateTimeImmutable('now', new DateTimeZone($this->timeZone ?? 'UTC'))),
+            default => [WindowBound::copy($window[0]), WindowBound::copy($window[1])],
+        };
+
+        return [$this->onTimeline($from), $this->onTimeline($to)];
+    }
+
+    /**
+     * A day on a date-only timeline is UTC midnight. The bound moves by its offset, so a day
+     * falls in the window when its local midnight does.
+     */
+    private function onTimeline(DateTimeImmutable $time): DateTimeImmutable
+    {
+        if (! $this->holdsCalendarDays($this->dateField)) {
+            return $time;
         }
 
-        if ($window instanceof Period) {
-            return $window->resolve(new DateTimeImmutable('now', new DateTimeZone($this->timeZone ?? 'UTC')));
-        }
+        $offset = (new DateTimeZone($this->timeZone ?? 'UTC'))->getOffset($time);
+        $local = $time->setTimezone(new DateTimeZone('UTC'))->modify(sprintf('%+d seconds', $offset));
 
-        return [
-            WindowBound::copy($window[0]),
-            WindowBound::copy($window[1]),
-        ];
+        return WindowBound::withRemainder($local, WindowBound::remainder($time));
+    }
+
+    /**
+     * A calendar day buckets in UTC, where the engine stores it.
+     */
+    private function bucketTimeZone(string $field): ?string
+    {
+        return $this->holdsCalendarDays($field) ? null : $this->timeZone;
+    }
+
+    private function holdsCalendarDays(string $field): bool
+    {
+        $this->resolvedProperties ??= $this->properties->get();
+        $type = $this->resolvedProperties->get($field);
+
+        return $type instanceof Date && $type->holdsCalendarDays();
     }
 
     /**
@@ -745,7 +774,10 @@ class Analytics implements MultiSearchable
      */
     protected function metricField(Metric $metric, string $field): string
     {
-        return $this->countedText($metric, $field) === null ? $this->aggregatableField($field) : '';
+        // Resolved first, so a nested field is rejected even when the count only tests that it exists.
+        $aggregatable = $this->aggregatableField($field);
+
+        return $this->countedText($metric, $field) === null ? $aggregatable : '';
     }
 
     /**
@@ -820,6 +852,11 @@ class Analytics implements MultiSearchable
         $this->resolvedProperties ??= $this->properties->get();
 
         $type = $this->resolvedProperties->get($field);
+
+        // A top-level aggregation sees no value of a nested document, so it would report 0.
+        if ($type?->nestedPath() !== null) {
+            throw new InvalidArgumentException(sprintf('Analytics field [%s] is inside nested documents.', $field));
+        }
 
         if ($type instanceof Text) {
             return $type->keywordName() ?? $field;

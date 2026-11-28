@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sigmie\Mappings;
 
 use Sigmie\Mappings\Types\FlatObject;
+use Sigmie\Mappings\Types\Number;
 use Sigmie\Mappings\Types\Type;
 use stdClass;
 
@@ -23,6 +24,34 @@ class Field extends Type
         $this->meta((array) ($options['meta'] ?? []));
     }
 
+    /**
+     * Elasticsearch 9.1 rejects a direct sort on these types and on a field without doc values.
+     * An unknown type stays sortable, so a plugin type is not locked out.
+     */
+    public function sortableName(): ?string
+    {
+        $unsortable = [
+            'geo_shape', 'shape', 'point', 'binary', 'match_only_text', 'completion', 'search_as_you_type',
+            'percolator', 'rank_feature', 'rank_features', 'sparse_vector', 'histogram',
+        ];
+
+        if (in_array($this->type, $unsortable, true)) {
+            return null;
+        }
+
+        return parent::sortableName();
+    }
+
+    public function hasDocValues(): bool
+    {
+        return ($this->options['doc_values'] ?? true) !== false;
+    }
+
+    protected function isSearchIndexed(): bool
+    {
+        return ($this->options['index'] ?? true) !== false;
+    }
+
     public function validate(string $key, mixed $value): array
     {
         if ($this->type === 'ip' && packed_ip_address($value) === null
@@ -32,6 +61,17 @@ class Field extends Type
 
         if ($this->type === 'geo_shape' && ! ($this->options['ignore_malformed'] ?? false) && ! $this->hasGeometry($value)) {
             return [false, sprintf('The field %s must contain a GeoJSON or WKT geometry', $key)];
+        }
+
+        if (in_array($this->type, ['short', 'byte', 'half_float', 'unsigned_long'], true)
+            && ! (($this->options['ignore_malformed'] ?? false) && is_scalar($value))
+            && ! Number::fitsMapping($this->type, $value, (bool) ($this->options['coerce'] ?? true))) {
+            return [false, sprintf('The field %s mapped as %s must be a number', $key, $this->type)];
+        }
+
+        if ($this->type === 'date_nanos' && ! (($this->options['ignore_malformed'] ?? false) && is_scalar($value))
+            && ! DateBound::accepts($value, $this->options['format'] ?? 'strict_date_optional_time_nanos||epoch_millis')) {
+            return [false, sprintf('The field %s does not match its configured date formats', $key)];
         }
 
         if ($this->type === 'flattened' && ! FlatObject::acceptsFlattenedValue($value, $this->options)) {

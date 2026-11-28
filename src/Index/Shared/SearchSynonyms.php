@@ -37,7 +37,7 @@ trait SearchSynonyms
             $name = 'search_synonyms_'.$suffix;
         }
 
-        $graph = new SynonymGraph($name, $this->searchSynonyms);
+        $graph = new SynonymGraph($name, $this->searchSynonyms ?? []);
 
         // Lowercase and folding run before the synonym list, so a rule
         // written in lowercase matches the token.

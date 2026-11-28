@@ -30,10 +30,11 @@ class IndexUpdateTask
         private readonly bool $sourceWasWriteBlocked = false,
         private readonly ?string $finalPipeline = null,
         private readonly bool $ownsUpdateLock = false,
+        int $batchSize = 1000,
     ) {
         $this->setElasticsearchConnection($elasticsearchConnection);
 
-        $task ??= $this->reindexAPICall($source, $dest, waitForCompletion: false, pipeline: '_none')->json('task');
+        $task ??= $this->reindexAPICall($source, $dest, waitForCompletion: false, pipeline: '_none', batchSize: $batchSize)->json('task');
 
         if (! is_string($task) || $task === '') {
             throw new RuntimeException('Reindex did not return a task ID.');
@@ -183,8 +184,10 @@ class IndexUpdateTask
         }
 
         $this->deleteRetiredIndices([$this->source], $this->dest, retry: $alreadyPromoted);
+        $promoted = $this->promotedIndex($this->newAlias, $this->dest);
+        $this->restoreMetadataBlocks($this->dest, $this->deferredBlocks);
 
-        return $this->promotedIndex($this->newAlias, $this->dest);
+        return $promoted;
     }
 
     public function waitAndFinish(
@@ -214,6 +217,7 @@ class IndexUpdateTask
                 }
 
                 $this->deleteRetiredIndices([$this->source], $this->dest, retry: true);
+                $this->restoreMetadataBlocks($this->dest, $this->deferredBlocks);
 
                 return;
             }

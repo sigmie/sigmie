@@ -2996,7 +2996,7 @@ class MappingsTest extends TestCase
         $this->assertCount(1, $boolean->queries('published'));
         $this->assertSame([false, 'The field published mapped as boolean must be a boolean'], $boolean->validate('published', 'true'));
         $this->assertTrue($category->isAutocompletable());
-        $this->assertCount(3, $category->queries('docs'));
+        $this->assertCount(4, $category->queries('docs'));
         $this->assertSame(['title', 'body'], $combo->sourceFields());
         $this->assertSame([], $combo->queries('anything'));
         $this->assertFalse($combo->isFacetable());
@@ -3097,7 +3097,7 @@ class MappingsTest extends TestCase
         $assert->assertIndexHasNotPipeline();
         $assert->assertAnalyzerHasNotFilter('default', 'missing_filter');
         $assert->assertAnalyzerNotExists('missing_analyzer');
-        $assert->assertCharFilterNotExists($actualName, 'missing_char_filter');
+        $assert->assertCharFilterNotExists('missing_char_filter');
         $assert->assertFilterNotExists('missing_filter');
         $assert->assertTokenizerNotExists('missing_tokenizer');
 

@@ -23,10 +23,12 @@ class GeoDistance extends Query
         $clause = [
             'distance' => $this->distance,
             'boost' => $this->boost,
+            // A search over several indices can reach one without this field.
+            'ignore_unmapped' => true,
         ];
 
-        // Dotted coordinates leave the scalar distance and boost keys available.
-        if ($this->field === 'distance' || $this->field === 'boost') {
+        // Dotted coordinates leave the scalar option keys available.
+        if (array_key_exists($this->field, $clause)) {
             $clause[$this->field.'.lat'] = $this->latitude;
             $clause[$this->field.'.lon'] = $this->longitude;
         } else {

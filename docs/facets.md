@@ -76,6 +76,8 @@ Sigmie groups the clauses by field. It joins the clauses of one field with the f
 
 When `color` is conjunctive, the first group is `(color:'red' AND color:'blue')`.
 
+A negated clause always excludes its value, so it joins with `AND` on a disjunctive field too: `color:'red' color:'blue' NOT color:'green'` becomes `((color:'red' OR color:'blue') AND NOT color:'green')`.
+
 The facet filter string does not accept `AND`, `OR`, `AND NOT`, or parentheses. If it contains one, Sigmie drops the whole facet filter string and records the error, or throws when `$throwOnError` is `true`.
 
 ### How facet filters apply
@@ -165,7 +167,7 @@ $response->facet('author');
 
 ### Price fields
 
-A `price` field returns the lowest price, the highest price, and a histogram. Each histogram key is the lower bound of a bucket:
+A `price` field returns the lowest price, the highest price, and a histogram. Each histogram key is the lower bound of a bucket. A histogram holds at most 100,000 buckets; a wider range throws an `InvalidArgumentException` that asks for a larger interval:
 
 ```php
 $props->price();
@@ -264,6 +266,8 @@ $response->facet('attributes.color');
 $response->facet('attributes.price');
 // ['min' => 20, 'max' => 180, 'histogram' => [0 => 4, 50 => 9, 100 => 6, 150 => 2]]
 ```
+
+A count is a number of documents, not nested items: a product with three red variants adds 1 to `red`, to its price bucket, and to a date `count`. The statistics of a `number` facet (`count`, `avg`, `sum`) still cover every nested value.
 
 Nesting can go deeper, for example `product.variants.size`.
 

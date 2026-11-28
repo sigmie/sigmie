@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use InvalidArgumentException;
 use Sigmie\Base\APIs\Explain;
 use Sigmie\Base\APIs\Index;
 use Sigmie\Base\APIs\Search;
@@ -67,6 +68,61 @@ class FacetsTest extends TestCase
             ->get();
 
         $this->assertSame(['book' => 1], $response->facet('orders.items.sku'));
+    }
+
+    /** @test */
+    public function a_negated_selection_keeps_the_item_selection_of_a_sibling_nested_facet(): void
+    {
+        $name = uniqid('negated_sibling_facet_');
+        $blueprint = new NewProperties;
+        $blueprint->nested('items', function (NewProperties $items): void {
+            $items->keyword('color');
+            $items->number('qty')->integer();
+        });
+        $this->sigmie->newIndex($name)->properties($blueprint)->create();
+        $this->sigmie->collect($name, refresh: true)->merge([
+            new Document(['items' => [['color' => 'red', 'qty' => 1], ['color' => 'green', 'qty' => 10]]], 'a'),
+            new Document(['items' => [['color' => 'red', 'qty' => 100], ['color' => 'blue', 'qty' => 1000]]], 'b'),
+        ]);
+
+        $response = $this->sigmie->newSearch($name)
+            ->properties($blueprint)
+            ->facets('items.qty', 'items.color:red NOT items.color:blue')
+            ->get();
+
+        $this->assertSame(['a'], array_column($response->json('hits'), '_id'));
+        $this->assertEquals(['count' => 1, 'min' => 1, 'max' => 1, 'avg' => 1, 'sum' => 1], $response->facet('items.qty'));
+    }
+
+    /** @test */
+    public function a_nested_facet_counts_documents_not_items(): void
+    {
+        $name = uniqid('nested_facet_documents_');
+        $blueprint = new NewProperties;
+        $blueprint->nested('variants', function (NewProperties $variants): void {
+            $variants->keyword('color');
+            $variants->price();
+            $variants->date('released');
+        });
+        $this->sigmie->newIndex($name)->properties($blueprint)->create();
+        $this->sigmie->collect($name, refresh: true)->merge([
+            new Document(['variants' => [
+                ['color' => 'red', 'price' => 10, 'released' => '2024-01-01'],
+                ['color' => 'red', 'price' => 11, 'released' => '2024-01-02'],
+                ['color' => 'red', 'price' => 12, 'released' => '2024-01-03'],
+            ]]),
+            new Document(['variants' => [['color' => 'blue', 'price' => 20, 'released' => '2024-02-01']]]),
+            new Document(['variants' => [['color' => 'blue', 'price' => 21]]]),
+        ]);
+
+        $response = $this->sigmie->newSearch($name)
+            ->properties($blueprint)
+            ->facets('variants.color variants.price:10 variants.released')
+            ->get();
+
+        $this->assertSame(['blue' => 2, 'red' => 1], $response->facet('variants.color'));
+        $this->assertEquals([10 => 1, 20 => 2], $response->facet('variants.price')['histogram']);
+        $this->assertSame(2, $response->facet('variants.released')['count']);
     }
 
     use Explain;
@@ -192,6 +248,41 @@ class FacetsTest extends TestCase
         ];
 
         $this->assertEquals($expectedHistogram, $facets['histogram']);
+    }
+
+    public function test_a_price_histogram_above_the_fill_limit_asks_for_a_larger_interval(): void
+    {
+        $blueprint = new NewProperties;
+        $blueprint->price();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('spans 1,000,000,000 buckets, above the limit of 100,000. Use a larger interval.');
+
+        $blueprint->get()->get('price')->facets([
+            'price_histogram' => [
+                'buckets' => [['key' => 10.0, 'doc_count' => 1], ['key' => 1.0E10, 'doc_count' => 1]],
+                'meta' => ['interval' => 10],
+            ],
+        ]);
+    }
+
+    public function test_a_price_histogram_wider_than_the_bucket_limit_keeps_every_bucket(): void
+    {
+        $indexName = uniqid();
+        $blueprint = new NewProperties;
+        $blueprint->price();
+        $this->sigmie->newIndex($indexName)->properties($blueprint)->create();
+        $this->sigmie->collect($indexName, refresh: true)->merge([
+            new Document(['price' => 12.5]),
+            new Document(['price' => 700000]),
+        ]);
+
+        $histogram = (array) $this->sigmie->newSearch($indexName)->properties($blueprint())
+            ->facets('price:10')->get()->facet('price')['histogram'];
+
+        $this->assertCount(70000, $histogram);
+        $this->assertEquals([10 => 1, 20 => 0], array_slice($histogram, 0, 2, true));
+        $this->assertEquals([699990 => 0, 700000 => 1], array_slice($histogram, -2, 2, true));
     }
 
     /**

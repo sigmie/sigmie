@@ -26,7 +26,7 @@ $results = $sigmie->newSearch('fairy-tales')
     ->get();
 ```
 
-Sigmie reads the properties to decide how to query each field.
+Sigmie reads the properties to decide how to query each field. A query string over 1,000 characters sends no prefix clause to keyword fields, and above 32,766 bytes no exact clause, because Elasticsearch rejects both.
 
 ## Weight several query strings
 
@@ -124,13 +124,13 @@ $response = $sigmie->newSearch('products')
 $response->json('errors');   // [['message' => 'Field nonexistent does not exist.', ...]]
 ```
 
-The replaced clause changes the result. After `AND`, it returns no hits. After `NOT`, it removes no hits, so the search returns more than the filter allows. To throw a `ParseException` instead, pass `throwOnError: true`:
+The replaced clause changes the result. After `AND`, it returns no hits. Under `NOT`, it also matches nothing, so an error never returns more than the filter allows. To throw a `ParseException` instead, pass `throwOnError: true`:
 
 ```php
 ->filters('nonexistent:"x"', throwOnError: true)     // throws ParseException
 ```
 
-[`facets()`](facets.md) takes the same flag for its filter string. Syntax errors, such as a missing operator or an unclosed parenthesis, throw in both modes. See [Filter Parser](filter-parser.md#errors) for the full list.
+In `filters()`, syntax errors, such as a missing operator or an unclosed parenthesis, throw in both modes. See [Filter Parser](filter-parser.md#errors) for the full list. [`facets()`](facets.md) takes the same flag for its filter string, which accepts no operators or parentheses. A facet filter string that contains one is dropped and recorded under `errors` unless `throwOnError` is `true`.
 
 ## Sort
 
@@ -164,6 +164,8 @@ Terms with 3 or more characters accept one typo. Terms with 6 or more characters
 ->typoTolerance(oneTypoChars: 4, twoTypoChars: 8)
 ```
 
+A two-typo limit below the one-typo limit rises to it: with `oneTypoChars: 7` and `twoTypoChars: 6`, terms with 7 or more characters accept two typos and shorter terms none.
+
 > **Note:** `typoTolerance()` only sets the limits. Fields that are not in `typoTolerantAttributes()` always match exactly.
 
 ## Highlight matches
@@ -184,7 +186,9 @@ $response = $sigmie->newSearch('fairy-tales')
 $response->json('hits.0.highlight.name');   // fragments with each match in <mark>
 ```
 
-`prefix` and `suffix` have no default. Each highlighted field returns up to three fragments of 150 characters.
+`prefix` and `suffix` have no default. Each highlighted field returns up to three fragments of 150 characters. Sigmie highlights the first 1,000,000 characters of a field.
+
+A fragment is HTML. Sigmie escapes the stored text in it, so `<b>` in a document arrives as `&lt;b&gt;`, and only your prefix and suffix are markup. An `html()` field keeps its markup. When you highlight one, the other highlighted fields keep their stored text too, because Elasticsearch has one encoder per request.
 
 ## Weight fields
 
@@ -318,6 +322,8 @@ $result = $sigmie->newSearch("$germanIndex,$englishIndex")
     ->queryString('door tür')
     ->get();
 ```
+
+A nested filter, a distance filter, or a distance sort skips an index that does not have the field. It reports no error.
 
 ## Search nested fields
 
@@ -681,7 +687,7 @@ foreach ($generator as $hit) {
 }
 ```
 
-Each `Hit` has `_id`, `_source`, and `_score`.
+Each `Hit` has `_id`, `_source`, and `_score`. `_score` is `null` unless the iteration sorts on `_score`.
 
 > **Note:** `each()` and `lazy()` ignore `from()`, `size()`, `page()`, and `highlighting()`.
 
@@ -706,7 +712,7 @@ A point in time needs a sort that uniquely orders the documents. Elasticsearch u
 
 | Builder | Where the sort comes from |
 |---------|---------------------------|
-| `newSearch()` | The `sort()` string. A sort on `_score` or `_doc` alone becomes the tiebreaker only. |
+| `newSearch()` | The `sort()` string. Without `sort()`, the tiebreaker alone orders the hits. |
 | `newQuery()` | `sortString()` or `sort()`. Without a sort, hits arrive in a stable but unranked order. |
 | `raw()` | The top-level `sort` key of the body. |
 

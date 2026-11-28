@@ -1079,6 +1079,29 @@ class SigmieAnalyticsToolTest extends TestCase
         $this->assertEquals(1, $result['value']);
     }
 
+    public function test_date_only_bounds_are_local_days_in_the_requested_timezone(): void
+    {
+        $index = $this->createSalesIndex();
+        $index->merge([
+            new Document(['precise_at' => '2023-12-31T20:00:00Z', 'amount' => 4]),
+            new Document(['precise_at' => '2024-01-31T20:00:00Z', 'amount' => 2]),
+        ], refresh: true);
+
+        $result = (new SigmieAnalyticsTool($index))->result(new Request([
+            'widget' => 'trend',
+            'date_field' => 'precise_at',
+            'metric' => 'sum',
+            'field' => 'amount',
+            'interval' => 'month',
+            'from' => '2024-01-01',
+            'to' => '2024-02-01',
+            'timezone_offset' => 540,
+        ]));
+
+        // 2023-12-31T20:00Z is January 1 in Tokyo, 2024-01-31T20:00Z is February 1.
+        $this->assertEquals([['label' => '2024-01-01T00:00:00.000+09:00', 'value' => 4]], $result['series']);
+    }
+
     /**
      * @test
      */
@@ -1165,6 +1188,18 @@ class SigmieAnalyticsToolTest extends TestCase
                     'bucket_aliases' => '[{"label":"Combined"}]',
                 ],
                 'needs a non-empty label and values array',
+            ],
+            'kpi on a misspelt field' => [
+                ['widget' => 'kpi', 'metric' => 'sum', 'field' => 'amout'],
+                'Field amout does not exist.',
+            ],
+            'breakdown by an object' => [
+                ['widget' => 'breakdown', 'metric' => 'count', 'group_by' => 'meta'],
+                'Field meta is an object; use one of its sub-fields.',
+            ],
+            'breakdown limit beyond the integer range' => [
+                ['widget' => 'breakdown', 'group_by' => 'product', 'metric' => 'count', 'limit' => 1e300],
+                'Analytics argument [limit] must be an integer.',
             ],
             'grouped metrics missing metrics' => [
                 ['widget' => 'grouped_metrics', 'group_by' => 'product'],

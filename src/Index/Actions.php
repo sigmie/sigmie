@@ -199,7 +199,7 @@ trait Actions
             return [];
         }
 
-        $path = implode(',', $indices).'?filter_path=*.aliases,*.mappings._source,*.settings.index.blocks.write';
+        $path = implode(',', $indices).'?filter_path=*.aliases,*.mappings._source,*.settings.index.blocks.write,*.settings.index.max_result_window';
         $sources = $this->indexAPICall($path, 'GET')->json();
         foreach ($indices as $index) {
             $aliases = $sources[$index]['aliases'] ?? [];
@@ -274,7 +274,7 @@ trait Actions
         $serverless = $this->elasticsearchConnection->isServerless();
         $settings = ['refresh_interval' => $refresh ?? ($serverless ? '5s' : '1s')];
 
-        foreach (array_intersect(['blocks.read', 'blocks.write'], $deferredBlocks) as $block) {
+        foreach (array_diff($deferredBlocks, NewIndex::METADATA_BLOCKS) as $block) {
             $settings[$block] = true;
         }
 
@@ -290,6 +290,15 @@ trait Actions
 
         if ($response->json('acknowledged') !== true) {
             throw new RuntimeException(sprintf("Destination settings for '%s' were not acknowledged.", $index));
+        }
+    }
+
+    protected function restoreMetadataBlocks(string $index, array $deferredBlocks): void
+    {
+        $blocks = array_intersect(NewIndex::METADATA_BLOCKS, $deferredBlocks);
+        if ($blocks !== []) {
+            // Only the index. spelling may change a block the index already has.
+            $this->indexAPICall($index.'/_settings', 'PUT', ['index' => array_fill_keys($blocks, true)]);
         }
     }
 

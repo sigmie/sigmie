@@ -158,7 +158,8 @@ class Properties extends Type implements ArrayAccess, FieldContainer
 
     public function isSourceObject(array $value): bool
     {
-        if (! array_is_list($value)) {
+        // Integer keys only: a list, or a filtered list such as array_filter() output.
+        if (array_filter(array_keys($value), is_string(...)) !== []) {
             return true;
         }
 
@@ -176,7 +177,7 @@ class Properties extends Type implements ArrayAccess, FieldContainer
 
     public function isSourceObjectList(array $value): bool
     {
-        if (! array_is_list($value)) {
+        if (array_filter(array_keys($value), is_string(...)) !== []) {
             return false;
         }
 
@@ -237,12 +238,12 @@ class Properties extends Type implements ArrayAccess, FieldContainer
                 continue;
             }
 
-            $source[$name] = array_map(
+            $source[$name] = array_values(array_map(
                 fn (mixed $item): mixed => is_array($item) || $item instanceof stdClass
                     ? $properties->sourceObject((array) $item)
                     : $item,
                 $value,
-            );
+            ));
         }
 
         return array_is_list($source) ? (object) $source : $source;
@@ -511,11 +512,15 @@ class Properties extends Type implements ArrayAccess, FieldContainer
 
     public function fieldNames(bool $withParent = false): array
     {
-        $collection = new Collection($this->fields);
+        // A restored mapping holds the stored vectors as an object. A blueprint has none, so the
+        // vectors stay out of every field list, the source a search returns included.
+        $collection = (new Collection($this->fields))
+            ->filter(fn (ContractsType $type): bool => $type->fullPath() !== '_embeddings');
 
         return $collection->map(function (ContractsType $type) use ($withParent) {
 
-            if ($type instanceof FieldContainer) {
+            // An object without mapped children (enabled: false, or dynamic: false) still holds source data.
+            if ($type instanceof FieldContainer && $type->getProperties()->hasFields()) {
                 return [
                     ...$withParent ? [$type->fullPath()] : [],
                     ...$type->getProperties()->fieldNames($withParent),

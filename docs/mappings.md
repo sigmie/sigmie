@@ -35,20 +35,20 @@ High-level types bundle a mapping with the queries that suit one kind of data.
 
 | Method | Default name | Mapping | Queries | Accepts |
 |--------|--------------|---------|---------|---------|
-| `title()` | `title` | `text`, word tokens, lowercase. Sub-fields `.keyword`, `.sortable`. | `match_phrase_prefix`, `match` | string |
-| `name()` | `name` | `text`, 4 to 5 character n-grams, index prefixes. Sub-fields `.keyword`, `.sortable`, and `.{name}_text` for prefixes. | `match` on n-grams, `match_phrase_prefix` and `match_bool_prefix` on `.{name}_text` | string |
-| `category()` | `category` | `text`. Sub-fields `.keyword`, `.sortable`. | `match`, `term` on `.keyword`, `match_phrase_prefix` | string |
-| `tags()` | `tags` | `text`, `#` removed, word tokens, lowercase. Sub-field `.keyword`. | `match`, `match_phrase_prefix` | string |
+| `title()` | `title` | `text`, word tokens, lowercase. Sub-fields `.keyword`, `.sortable`. | `match_phrase_prefix`, `match_bool_prefix`, `match` | string |
+| `name()` | `name` | `text`, 4 to 5 character n-grams, index prefixes. Sub-fields `.keyword`, `.sortable`, and `.{name}_text` for prefixes. | `match` on n-grams, `match_phrase_prefix`, `match_bool_prefix` and `match` on `.{name}_text` | string |
+| `category()` | `category` | `text`. Sub-fields `.keyword`, `.sortable`. | `match`, `term` on `.keyword`, `match_phrase_prefix`, `match_bool_prefix` | string |
+| `tags()` | `tags` | `text`, `#` removed, word tokens, lowercase. Sub-field `.keyword`. | `match`, `match_phrase_prefix`, `match_bool_prefix` | string |
 | `price()` | `price` | `scaled_float`, scaling factor 100. | none | number |
 | `longText()` | none | `text`, no sub-fields. | `match` | string |
 | `shortText()` | none | Same as `longText()`. | `match` | string |
 | `html()` | none | `text`, HTML tags stripped, word tokens, trimmed, lowercase, repeated tokens removed. | `match` | string |
-| `searchableNumber()` | none | `text`, every non-digit removed. Sub-fields `.keyword`, `.sortable`. | `match`, `match_phrase_prefix` | string |
+| `searchableNumber()` | none | `text`, every non-digit removed. Sub-fields `.keyword`, `.sortable`. | `match`, `match_phrase_prefix`, `match_bool_prefix` | string |
 | `id()` | none | `keyword`, case-sensitive. Sub-field `.sortable` (64-bit integer). | `term`, `prefix` | integer |
 | `email()` | `email` | `text`, split on `@` and `.`, lowercase, index prefixes. Sub-fields `.keyword`, `.sortable`. | `match`, `prefix`, `term` on `.keyword` | string |
-| `address()` | `address` | `text`, word tokens, lowercase, index prefixes. Sub-fields `.keyword`, `.sortable`. | `match_bool_prefix` | string |
+| `address()` | `address` | `text`, word tokens, lowercase, index prefixes. Sub-fields `.keyword`, `.sortable`. | `match_bool_prefix`, `match` | string |
 | `caseSensitiveKeyword()` | none | `keyword`, no lowercase normalizer. | `term`, `prefix` | string |
-| `path()` | none | `text`, one token per level (`/a`, `/a/b`, `/a/b/c`), lowercase, index prefixes. Sub-field `.keyword`. | `prefix`, `match` | string |
+| `path()` | none | `text`, one token per level (`/a`, `/a/b`, `/a/b/c`), lowercase, index prefixes. Sub-field `.keyword`. | `prefix`, `term` | string |
 | `boost()` | `boost` | `float`. | none | number |
 
 ```php
@@ -114,7 +114,7 @@ $props->text('description')->unstructuredText();        // text mapping, the def
 
 `keyword()` works only on a `text` mapping. On a `search_as_you_type` or `completion` field it throws an exception. `makeSortable()` returns nothing, so call it last.
 
-A `searchAsYouType()` field runs a `bool_prefix` multi-match query over the field and its `._2gram` and `._3gram` sub-fields. A `completion()` field feeds [completion suggestions](search.md#suggest-completions).
+A `searchAsYouType()` field runs a `bool_prefix` multi-match query over the field and its `._2gram` and `._3gram` sub-fields, and a `match` query on the field. Elasticsearch never applies typo tolerance to the last word of a `bool_prefix` query, so the `match` query catches a typo there. A `completion()` field feeds [completion suggestions](search.md#suggest-completions).
 
 ### Number modifiers
 
@@ -158,7 +158,7 @@ To add an Elasticsearch date pattern to the mapping, call `format()`. It returns
 $props->date('created_at')->format('MM/dd/yyyy');
 ```
 
-> **Note:** `format()` changes only the mapping. A collection with properties still checks values against the formats in the table above.
+> **Note:** A collection with properties also accepts values in the added format. It checks `MM/dd/yyyy`, `dd/MM/yyyy`, `yyyy/MM/dd`, `yyyy-MM-dd`, `epoch_millis`, and `epoch_second`, and leaves other patterns to Elasticsearch.
 
 ## Object and nested types
 

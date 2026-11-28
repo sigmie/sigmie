@@ -11,7 +11,6 @@ use Sigmie\Base\APIs\Search as SearchAPI;
 use Sigmie\Base\APIs\Template as TemplateAPI;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\ElasticsearchException;
-use Sigmie\Enums\SearchEngineType;
 
 use function Sigmie\Functions\fold_text;
 use function Sigmie\Functions\lowercase_term;
@@ -71,7 +70,6 @@ class ExistingScript
             $params['facets'] = (object) $params['facets'];
         }
 
-        $isOpenSearch = $this->elasticsearchConnection->driver()->engine() === SearchEngineType::OpenSearch;
         $dimensions = [];
         $lowercase = [];
         foreach ($params as $name => $value) {
@@ -81,7 +79,7 @@ class ExistingScript
                 $lowercase[$name] = lowercase_term($params[$name]);
             }
 
-            if ($isOpenSearch && $isEmbedding && is_array($value) && array_is_list($value)) {
+            if ($isEmbedding && is_array($value) && array_is_list($value)) {
                 $dimensions[$name] = (object) [count($value) => true];
             }
         }

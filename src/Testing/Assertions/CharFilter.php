@@ -30,7 +30,7 @@ trait CharFilter
         );
     }
 
-    public function assertCharFilterNotExists(string $index, string $charFilter): void
+    public function assertCharFilterNotExists(string $charFilter): void
     {
         $this->assertArrayNotHasKey(
             $charFilter,

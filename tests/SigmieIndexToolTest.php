@@ -252,7 +252,7 @@ class SigmieIndexToolTest extends TestCase
             $field => ['_nested' => ['_nested' => [
                 $field => [$field => [
                     'sum_other_doc_count' => 2,
-                    'buckets' => [['key' => 'book', 'doc_count' => 3]],
+                    'buckets' => [['key' => 'book', 'doc_count' => 5, '_documents' => ['doc_count' => 3]]],
                 ]],
             ]]],
         ]);
@@ -439,7 +439,7 @@ class SigmieIndexToolTest extends TestCase
         ]));
 
         $this->assertSame(1, $result['total']);
-        $this->assertEquals(['analysis' => 4, 'conclusion' => 1, 'summary' => 1], $result['facets']['sections.type']);
+        $this->assertEquals(['analysis' => 1, 'conclusion' => 1, 'summary' => 1], $result['facets']['sections.type']);
     }
 
     /**
@@ -2207,6 +2207,141 @@ class SigmieIndexToolTest extends TestCase
 
     /**
      * @test
+     */
+    public function a_search_whose_fields_leave_no_source_returns_the_ids(): void
+    {
+        [$search] = $this->createPrivateContactsIndex()->tools();
+
+        $result = $search->result(new Request(['query' => '', 'fields' => 'secret', 'sort' => 'title:asc']));
+
+        $this->assertSame([['_id' => 'customer-2'], ['_id' => 'customer-1']], $result['hits']);
+    }
+
+    /**
+     * @test
+     */
+    public function documents_with_numeric_ids_are_retrieved_by_integer_ids(): void
+    {
+        $index = $this->createProductIndex();
+        $index->merge([
+            new Document(['name' => 'iPhone', 'brand' => 'Apple'], '7'),
+            new Document(['name' => 'Galaxy', 'brand' => 'Samsung'], '8'),
+        ], refresh: true);
+
+        $documents = json_decode((new SigmieGetDocumentsTool($index))->handle(new Request(['ids' => [8, '7']])), true);
+
+        $this->assertSame(['8', '7'], array_column($documents, '_id'));
+    }
+
+    /**
+     * @test
+     */
+    public function a_page_whose_offset_overflows_is_a_readable_error(): void
+    {
+        [$search] = $this->createPrivateContactsIndex()->tools();
+
+        $output = json_decode($search->handle(new Request(['query' => '', 'page' => PHP_INT_MAX, 'per_page' => 10])), true);
+
+        $this->assertStringStartsWith(sprintf('Page %d of 10 results is out of range.', PHP_INT_MAX), $output['error'] ?? '');
+    }
+
+    /**
+     * @test
+     */
+    public function a_request_elasticsearch_cannot_parse_does_not_echo_the_base_filter(): void
+    {
+        [$search] = $this->createPrivateContactsIndex()->tools("secret:'SECRET-VALUE'");
+
+        $output = $search->handle(new Request(['query' => '', 'page' => 2147483647, 'per_page' => 100]));
+
+        $this->assertStringContainsString('out of range of int', json_decode($output, true)['error'] ?? '');
+        $this->assertStringNotContainsString('SECRET-VALUE', $output);
+    }
+
+    /**
+     * @test
+     */
+    public function a_malformed_base_filter_throws_instead_of_reaching_the_agent(): void
+    {
+        $index = $this->createProductIndex();
+        $scope = "brand:'Apple' AND (";
+
+        $calls = [
+            [new SigmieIndexTool($index, baseFilters: $scope), ['query' => '']],
+            [new SigmieFilterValuesTool($index, baseFilters: $scope), ['field' => 'brand']],
+            [new SigmieSampleDocumentsTool($index, baseFilters: $scope), ['limit' => 1]],
+            [new SigmieGetDocumentsTool($index, baseFilters: $scope), ['ids' => ['1']]],
+            [new SigmieAnalyticsTool($index, baseFilters: $scope), ['widget' => 'kpi', 'metric' => 'count', 'date_field' => 'created_at', 'from' => '2024-01-01', 'to' => '2024-02-01']],
+        ];
+
+        $thrown = 0;
+        foreach ($calls as [$tool, $arguments]) {
+            try {
+                $tool->handle(new Request($arguments));
+            } catch (ParseException) {
+                $thrown++;
+            }
+        }
+
+        $this->assertSame(5, $thrown);
+    }
+
+    /**
+     * @test
+     */
+    public function tools_never_return_stored_vectors(): void
+    {
+        $index = new class($this->sigmie) extends SigmieIndex
+        {
+            use AsTool;
+
+            protected string $indexName;
+
+            public function __construct(Sigmie $sigmie)
+            {
+                parent::__construct($sigmie);
+
+                $this->indexName = uniqid();
+            }
+
+            public function name(): string
+            {
+                return $this->indexName;
+            }
+
+            public function properties(): NewProperties
+            {
+                $props = new NewProperties;
+                $props->text('title')->semantic(api: 'test-embeddings', accuracy: 1, dimensions: 384);
+                $props->date('created_at');
+
+                return $props;
+            }
+        };
+
+        $index->create();
+        $index->merge([new Document(['title' => 'Red running shoes', 'created_at' => '2024-01-02'], 'shoes')], refresh: true);
+
+        [$search, , $sample, $get, , $analytics] = $index->tools();
+        $window = ['date_field' => 'created_at', 'from' => '2024-01-01', 'to' => '2024-01-04'];
+
+        $outputs = [
+            $search->handle(new Request(['query' => '', 'fields' => null])),
+            $search->handle(new Request(['query' => '', 'fields' => 'title,_embeddings'])),
+            $sample->handle(new Request(['limit' => 5])),
+            $get->handle(new Request(['ids' => ['shoes']])),
+            $analytics->handle(new Request(['widget' => 'table', ...$window])),
+            $analytics->handle(new Request(['widget' => 'kpi', 'metric' => 'count', 'include_hits' => 1, ...$window])),
+        ];
+
+        foreach ($outputs as $output) {
+            $this->assertStringContainsString('Red running shoes', $output);
+            $this->assertStringNotContainsString('_embeddings', $output);
+        }
+    }
+
+    /**
+     * @test
      *
      * @dataProvider listingsOfFieldsExceptedFromTools
      */
@@ -3001,6 +3136,66 @@ class SigmieIndexToolTest extends TestCase
 
         $this->assertSame(['total' => 0, 'hits' => []], $result);
         $this->assertSame('', self::$sentSort);
+    }
+
+    public function test_a_restored_field_without_doc_values_is_not_described_as_sortable(): void
+    {
+        $this->indexAPICall('products', 'PUT', ['mappings' => ['properties' => [
+            'brand' => ['type' => 'keyword'],
+            'sku' => ['type' => 'keyword', 'doc_values' => false],
+            'stock' => ['type' => 'integer', 'doc_values' => false],
+        ]]]);
+
+        $props = new NewProperties;
+        foreach ($this->sigmie->index('products')->mappings->properties()->toArray() as $field) {
+            $props->type($field);
+        }
+
+        $fields = (new SigmieIndexSchemaTool($this->schemaIndex($props)))->result(new Request)['fields'];
+
+        $this->assertSame(['brand' => true, 'sku' => false, 'stock' => false], array_column($fields, 'sortable', 'name'));
+    }
+
+    public function test_a_restored_field_without_index_or_doc_values_is_not_described_as_filterable(): void
+    {
+        $storedOnly = ['index' => false, 'doc_values' => false];
+        $this->indexAPICall('products', 'PUT', ['mappings' => ['properties' => [
+            'brand' => ['type' => 'keyword'],
+            'sku' => ['type' => 'keyword', ...$storedOnly],
+            'stock' => ['type' => 'integer', ...$storedOnly],
+            'active' => ['type' => 'boolean', ...$storedOnly],
+        ]]]);
+
+        $props = new NewProperties;
+        foreach ($this->sigmie->index('products')->mappings->properties()->toArray() as $field) {
+            $props->type($field);
+        }
+
+        $fields = (new SigmieIndexSchemaTool($this->schemaIndex($props)))->result(new Request)['fields'];
+
+        $this->assertSame(['active' => false, 'brand' => true, 'sku' => false, 'stock' => false], array_column($fields, 'filterable', 'name'));
+    }
+
+    public function test_a_restored_date_filter_example_uses_the_field_format(): void
+    {
+        $this->indexAPICall('products', 'PUT', ['mappings' => ['properties' => [
+            'created' => ['type' => 'date'],
+            'shipped' => ['type' => 'date', 'format' => 'dd/MM/yyyy'],
+            'paid' => ['type' => 'date', 'format' => 'epoch_second'],
+        ]]]);
+
+        $props = new NewProperties;
+        foreach ($this->sigmie->index('products')->mappings->properties()->toArray() as $field) {
+            $props->type($field);
+        }
+
+        $fields = (new SigmieIndexSchemaTool($this->schemaIndex($props)))->result(new Request)['fields'];
+
+        $this->assertSame([
+            'created' => "created>'2024-01-01' created<'2024-12-31'",
+            'paid' => "paid>'1704067200' paid<'1735603200'",
+            'shipped' => "shipped>'01/01/2024' shipped<'31/12/2024'",
+        ], array_column($fields, 'filter', 'name'));
     }
 
     /**

@@ -54,6 +54,7 @@ class ImageHelper
 
         // Calculate new dimensions maintaining aspect ratio
         try {
+            [$newWidth, $newHeight] = [$width, $height];
             if ($width > $maxDimension || $height > $maxDimension) {
                 // A 1px side scaled by (int) becomes 0. GD rejects a 0 dimension.
                 if ($width > $height) {
@@ -63,23 +64,15 @@ class ImageHelper
                     $newHeight = $maxDimension;
                     $newWidth = max(1, (int) ($width * ($maxDimension / $height)));
                 }
-
-                // Create new image with new dimensions
-                $resized = imagecreatetruecolor($newWidth, $newHeight);
-
-                // Preserve transparency for PNG/GIF images
-                imagealphablending($resized, false);
-                imagesavealpha($resized, true);
-                $transparent = imagecolorallocatealpha($resized, 255, 255, 255, 127);
-                imagefilledrectangle($resized, 0, 0, $newWidth, $newHeight, $transparent);
-
-                // Resize the image
-                imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-
-                $imageContent = self::jpegBytes($resized);
-            } else {
-                $imageContent = self::jpegBytes($image);
             }
+
+            // JPEG has no alpha channel. Blend transparent PNG/GIF pixels onto white,
+            // or their hidden color (often black) becomes the background.
+            $resized = imagecreatetruecolor($newWidth, $newHeight);
+            imagefilledrectangle($resized, 0, 0, $newWidth, $newHeight, imagecolorallocate($resized, 255, 255, 255));
+            imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+            $imageContent = self::jpegBytes($resized);
         } finally {
             if (isset($resized) && $resized instanceof GdImage) {
                 imagedestroy($resized);
@@ -120,7 +113,8 @@ class ImageHelper
      */
     public static function isUrl(string $source): bool
     {
-        return filter_var($source, FILTER_VALIDATE_URL) !== false;
+        // FILTER_VALIDATE_URL accepts ASCII only. A non-ASCII character is valid wherever a letter is.
+        return filter_var(preg_replace('/[^\x00-\x7F]+/', 'x', $source), FILTER_VALIDATE_URL) !== false;
     }
 
     /**
@@ -214,10 +208,6 @@ class ImageHelper
             'http' => [
                 'timeout' => 30,
                 'user_agent' => 'Sigmie/1.0',
-            ],
-            'ssl' => [
-                'verify_peer' => false,
-                'verify_peer_name' => false,
             ],
         ]);
 

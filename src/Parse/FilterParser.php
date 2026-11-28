@@ -102,7 +102,7 @@ class FilterParser extends Parser
     // lookahead below is reliable.
     protected function normalizeWhitespace(string $query): string
     {
-        $query = preg_replace('/\s+(?=(?:[^\'"]*[\'"][^\'"]*[\'"])*[^\'"]*$)/u', ' ', $query) ?? $query;
+        $query = preg_replace('/(?:"[^"]*"|\'[^\']*\')(*SKIP)(*F)|\s+/u', ' ', $query) ?? $query;
 
         return trim($query);
     }
@@ -157,7 +157,7 @@ class FilterParser extends Parser
             if ($closing === [] && $i > 0 && str_contains(')]}\'"', $query[$i - 1])
                 && ! (str_contains('"\'', $query[$i - 1]) && preg_match('/\G\.\.(?:[+-]?(?:\d|\.\d)|[a-fA-F0-9]{0,4}:)/', $query, offset: $i))
                 && preg_match('/\G\s*'.self::FIELD_PATH.'\s*[:<>]/u', $query, offset: $i)) {
-                throw new ParseException(sprintf("Missing operator before '%s'.", substr($query, $i)));
+                throw new ParseException(sprintf("Missing operator before '%s'.", $this->shown(substr($query, $i))));
             }
 
             if (str_contains('([{', $char)) {
@@ -167,7 +167,7 @@ class FilterParser extends Parser
                     '{' => '}',
                 };
             } elseif (str_contains(')]}', $char) && array_pop($closing) !== $char) {
-                throw new ParseException(sprintf("Invalid filter: unbalanced delimiters in '%s'.", $query));
+                throw new ParseException(sprintf("Invalid filter: unbalanced delimiters in '%s'.", $this->shown($query)));
             }
 
             $buffer .= $char;
@@ -175,7 +175,7 @@ class FilterParser extends Parser
         }
 
         if ($closing !== [] || $inQuote) {
-            throw new ParseException(sprintf("Invalid filter: unbalanced delimiters in '%s'.", $query));
+            throw new ParseException(sprintf("Invalid filter: unbalanced delimiters in '%s'.", $this->shown($query)));
         }
 
         $tokens[] = ['op' => $currentOp, 'expr' => trim($buffer)];
@@ -199,9 +199,12 @@ class FilterParser extends Parser
             $before = $position > 0 ? $query[$position - 1] : ' ';
             $after = $position + $length < strlen($query) ? $query[$position + $length] : ' ';
 
-            // In `or:OR` both words belong to the clause, even with space before the colon.
-            $valuePrefix = $before === ' ' && $position >= 2 ? $query[$position - 2] : $before;
-            if (str_contains(':<>=', $valuePrefix)) {
+            // In `or:OR` and `label: OR` the word is the value of the clause.
+            if (str_contains(':<>=', $before)) {
+                continue;
+            }
+
+            if ($before === ' ' && $this->followsFieldOperator($query, $position - 1, $isWord)) {
                 continue;
             }
 
@@ -209,12 +212,48 @@ class FilterParser extends Parser
                 continue;
             }
 
-            if (! $isWord($before) && ! $isWord($after)) {
+            // An operator stands between two clauses: after a space or a closing quote or bracket,
+            // and before a space or an opening parenthesis. In `path:usr/and/bin` it is the value.
+            if (str_contains(' )]}\'"', $before) && str_contains(' (', $after)) {
                 return $operator;
             }
         }
 
         return null;
+    }
+
+    // True when the text up to $index ends in a field and its operator, as in `label: ` or
+    // `price>= `. A value that only ends in such a character, like base64 `YWJj= `, does not.
+    //
+    //   label: OR       field `label` at the clause start, then `:`   -> true
+    //   token:YWJj= OR  `=` without `<` or `>` before it              -> false
+    //   x:a>= OR        `a` follows `:`, so it is no clause start     -> false
+    private function followsFieldOperator(string $query, int $index, callable $isWord): bool
+    {
+        $skipSpaces = function () use ($query, &$index): void {
+            while ($index >= 0 && $query[$index] === ' ') {
+                $index--;
+            }
+        };
+
+        $skipSpaces();
+        if ($index >= 1 && $query[$index] === '=' && str_contains('<>', $query[$index - 1])) {
+            $index--;
+        }
+
+        if ($index < 0 || ! str_contains(':<>', $query[$index])) {
+            return false;
+        }
+
+        $index--;
+        $skipSpaces();
+
+        $fieldEnd = $index;
+        while ($index >= 0 && $isWord($query[$index])) {
+            $index--;
+        }
+
+        return $index < $fieldEnd && ($index < 0 || str_contains(' ({', $query[$index]));
     }
 
     // Parse a full expression honouring operator precedence: OR has the lowest
@@ -265,9 +304,12 @@ class FilterParser extends Parser
         $boolean = new Boolean;
 
         foreach ($tokens as $index => $token) {
+            $errors = count($this->errors);
             $query = $this->parseFactor($token['expr'], $token['op'] === 'AND NOT' ? $depth + 1 : $depth);
 
             match (true) {
+                // As under NOT, an error under AND NOT matches nothing.
+                $token['op'] === 'AND NOT' && count($this->errors) > $errors => $boolean->must()->query(new MatchNone),
                 $index === 0, $token['op'] === 'AND' => $boolean->must()->query($query),
                 $token['op'] === 'AND NOT' => $query instanceof MatchAll
                     ? $boolean->must()->query($query)
@@ -289,7 +331,14 @@ class FilterParser extends Parser
 
         // A leading NOT (case-insensitive) followed by whitespace or a group.
         if (preg_match('/^not(?=[\s(])(?!\s*:)/i', $expr)) {
+            $errors = count($this->errors);
             $query = $this->parseFactor(substr($expr, 3), $depth + 1);
+
+            // A collected error leaves a clause that matches nothing. Negated, it would match
+            // every document, so an error under NOT matches nothing: an error never widens the result.
+            if (count($this->errors) > $errors) {
+                return new MatchNone;
+            }
 
             if ($query instanceof MatchAll) {
                 return $query;
@@ -365,22 +414,64 @@ class FilterParser extends Parser
     // expression such as a missing operator between two filters.
     protected function primaryString(string $expr): string
     {
-        // Remove spaces around structural characters, but never inside a quoted
-        // value (so name:'Smith, John' keeps its space). For brackets only the
-        // *inside* spaces are removed (after [ and before ]) so a missing
-        // operator after a list still errors.
+        // Remove spaces around the structure of this clause, but never inside a quoted
+        // value (so name:'Smith, John' keeps its space):
+        //
+        //   status : [ open , closed ]   ->  status:[open,closed]
+        //   stock >= 5                   ->  stock>=5
+        //   items : { color : red }      ->  items:{color : red}   (its own parser trims the body)
+        //   status:open, color:red       ->  unchanged, so the missing operator still errors
+        //
+        // Only the operator after the field and the commas of a list are structure. For brackets
+        // only the inside spaces go (after [ and before ]), so a missing operator after a list
+        // still errors.
+        $braces = 0;
+        $brackets = 0;
+        $fieldOperator = false;
         $expr = preg_replace_callback(
-            '/(["\'])[^"\']*\1|\s*([{}:,])\s*|(\[)\s*|\s*(\])/',
-            function (array $m): string {
+            '/(["\'])[^"\']*\1|(\s*)([{}:,\[\]]|[<>]=?)(\s*)/',
+            function (array $m) use (&$braces, &$brackets, &$fieldOperator): string {
                 if (($m[1] ?? '') !== '') {
                     return $m[0];
                 }
 
-                return match (true) {
-                    ($m[2] ?? '') !== '' => $m[2],
-                    ($m[3] ?? '') !== '' => '[',
-                    default => ']',
-                };
+                [, , $before, $char, $after] = $m;
+
+                if ($char === '{') {
+                    return $braces++ === 0 ? '{' : $m[0];
+                }
+
+                if ($char === '}') {
+                    return --$braces === 0 ? '}' : $m[0];
+                }
+
+                if ($braces > 0) {
+                    return $m[0];
+                }
+
+                if ($char === '[') {
+                    $brackets++;
+
+                    return $before.'[';
+                }
+
+                if ($char === ']') {
+                    $brackets--;
+
+                    return ']'.$after;
+                }
+
+                if ($char === ',') {
+                    return $brackets > 0 ? ',' : $m[0];
+                }
+
+                if ($fieldOperator) {
+                    return $m[0];
+                }
+
+                $fieldOperator = true;
+
+                return $char;
             },
             $expr
         );
@@ -391,13 +482,14 @@ class FilterParser extends Parser
                 // Replace anything inside single/double quotes or {...} blocks
                 // with underscores before checking for stray whitespace or a second group.
                 preg_replace_callback(
-                    '/"[^"]*"|\'[^\']*\'|(\{(?:"[^"]*"|\'[^\']*\'|[^{}\'"]|(?1))*\})/',
+                    // Possessive runs keep a long nested clause inside the PCRE stack.
+                    '/"[^"]*"|\'[^\']*\'|(\{(?:"[^"]*"|\'[^\']*\'|[^{}\'"]++|(?1))*+\})/',
                     fn ($m): string => str_repeat('_', strlen($m[0])),
                     $expr
                 )
             )
         ) {
-            throw new ParseException(sprintf("Invalid filter string: '%s'", $expr));
+            throw new ParseException(sprintf("Invalid filter string: '%s'", $this->shown($expr)));
         }
 
         return $expr;
@@ -455,6 +547,18 @@ class FilterParser extends Parser
         ]);
     }
 
+    // Filter text for an error message, with the quotes the caller wrote in place of their
+    // placeholders. An escaped quote shows without its backslash, because the mask drops it.
+    private function shown(string $masked): string
+    {
+        return strtr($masked, [
+            "\x01\x01" => "\x01",
+            self::ESC_SINGLE => "'",
+            self::ESC_DOUBLE => '"',
+            self::ESC_BACKSLASH => '\\',
+        ]);
+    }
+
     protected function hasUnescapedWildcard(string $filter): bool
     {
         [, $value] = array_pad(explode(':', $filter, 2), 2, '');
@@ -485,9 +589,10 @@ class FilterParser extends Parser
             && $this->hasUnescapedWildcard($filter);
     }
 
-    private function listValues(string $list): ?array
+    private function listValues(string $list, ?string $field = null): ?array
     {
-        $items = preg_split('/,(?=(?:[^"\']*["\'][^"\']*["\'])*[^"\']*$)/', substr($list, 1, -1));
+        // Skipping quoted items keeps the split linear. A quote-parity lookahead fails on long lists.
+        $items = preg_split('/(?:"[^"]*"|\'[^\']*\')(*SKIP)(*F)|,/', substr($list, 1, -1));
         $values = [];
         foreach ($items as $item) {
             $item = trim($item, ' ');
@@ -496,12 +601,12 @@ class FilterParser extends Parser
             }
 
             if (! preg_match('/\A'.self::OPERAND.'\z/s', $item)) {
-                $this->handleError(sprintf("Invalid list item '%s'.", $item));
+                $this->handleError(sprintf("Invalid list item '%s'.", $this->shown($item)));
 
                 return null;
             }
 
-            $values[] = $this->unmaskQuotedValue(trim($item, '\'"'));
+            $values[] = $field === null ? $this->unmaskQuotedValue(trim($item, '\'"')) : $this->rangeValue($field, $item);
         }
 
         return $values;
@@ -615,6 +720,19 @@ class FilterParser extends Parser
         $primary = str_starts_with($expression, '(') && $this->isWholeGroup($expression)
             ? trim(substr($expression, 1, -1))
             : $expression;
+
+        // A facet group such as `(items.color:red AND NOT items.color:blue)` holds conjuncts of
+        // different scopes. Scoped as one, the negation would lift the item selection to the root.
+        $tokens = $this->splitTopLevel($primary);
+        if (count($tokens) > 1 && ! in_array('OR', array_column($tokens, 'op'), true)) {
+            $conjuncts = [];
+            foreach ($tokens as $token) {
+                $inner = $token['op'] === 'AND NOT' ? 'NOT '.$token['expr'] : $token['expr'];
+                array_push($conjuncts, ...$this->nestedFacetConjuncts($inner, $path, $depth + 1));
+            }
+
+            return $conjuncts;
+        }
 
         if (! preg_match('/\A('.self::FIELD_PATH.')\s*:\s*\{(.*)\}\z/su', $primary, $matches)
             || count($this->splitTopLevel($primary)) !== 1) {
@@ -732,7 +850,7 @@ class FilterParser extends Parser
             return $query;
         }
 
-        $this->handleError(sprintf("Filter string '%s' couldn't be parsed.", $string));
+        $this->handleError(sprintf("Filter string '%s' couldn't be parsed.", $this->shown($string)));
 
         return new MatchNone;
     }
@@ -832,7 +950,10 @@ class FilterParser extends Parser
 
         $property = $this->properties->get($field);
         $type = $property->type();
-        if (in_array($type, ['object', 'nested', 'dense_vector', 'knn_vector', 'geo_point', 'geo_shape'], true)) {
+        if (in_array($type, [
+            'object', 'nested', 'dense_vector', 'knn_vector', 'geo_point', 'geo_shape', 'shape', 'point',
+            'binary', 'rank_feature', 'histogram', 'percolator',
+        ], true)) {
             $this->handleError(sprintf('Field %s of type %s does not support scalar filters.', $field, $type));
 
             return null;
@@ -843,17 +964,31 @@ class FilterParser extends Parser
             $name = $property->sortableName();
         }
 
+        $dateFormat = $this->isDateField($field)
+            ? $property->toRaw()[$property->name]['format'] ?? 'strict_date_optional_time||epoch_millis'
+            : null;
+
         foreach ($values as $value) {
+            // The engine reads an unquoted integer as epoch milliseconds, whatever the format. Four
+            // digits read as a year, and as milliseconds they fall in the first ten seconds of 1970.
+            if ($dateFormat !== null && is_int($value) && $value >= 1000 && $value <= 9999) {
+                $this->handleError(sprintf(
+                    "Ambiguous date filter value '%d' for field %s. Quote it for the year (\"%d\"), or use epoch milliseconds.",
+                    $value, $field, $value,
+                ));
+
+                return null;
+            }
+
             $valid = match ($type) {
                 'boolean' => in_array($value, ['true', 'false'], true),
                 'float' => Number::fitsMapping($range ? 'double' : 'float', $value),
-                'integer', 'long', 'double', 'scaled_float' => Number::fitsMapping($type, $value),
+                'integer', 'long', 'double', 'scaled_float', 'short', 'byte', 'half_float', 'unsigned_long',
+                'token_count' => Number::fitsMapping($type, $value),
                 'integer_range', 'long_range', 'float_range', 'double_range' => Number::fitsMapping(substr($type, 0, -6), $value)
                     && (! in_array($type, ['integer_range', 'long_range'], true) || $this->isIntegralOperand($value)),
                 'ip', 'ip_range' => $this->validIpOperand($value, $type === 'ip' && ! $range),
-                'date', 'date_nanos', 'date_range' => is_int($value) || DateBound::accepts(
-                    $value, $property->toRaw()[$property->name]['format'] ?? 'strict_date_optional_time||epoch_millis', query: true,
-                ),
+                'date', 'date_nanos', 'date_range' => is_int($value) || DateBound::accepts($value, $dateFormat, query: true),
                 default => true,
             };
 
@@ -889,7 +1024,7 @@ class FilterParser extends Parser
     public function handleBetween(string $range): ?Query
     {
         [$field, $min, $max] = $this->betweenParts($range)
-            ?? throw new ParseException(sprintf("Invalid inclusive range '%s'.", $range));
+            ?? throw new ParseException(sprintf("Invalid inclusive range '%s'.", $this->shown($range)));
 
         $min = $this->rangeValue($field, $min);
         $max = $this->rangeValue($field, $max);
@@ -999,7 +1134,7 @@ class FilterParser extends Parser
     public function handleIn(string $terms): ?Query
     {
         [$field, $value] = explode(':', $terms, 2);
-        $values = $this->listValues($value);
+        $values = $this->listValues($value, $field);
         if ($values === null) {
             return new MatchNone;
         }
@@ -1035,12 +1170,8 @@ class FilterParser extends Parser
     {
         [$field, $value] = explode(':', $term, 2);
 
-        // Remove quotes from value
-        $value = trim($value, "'");
-        // Remove quotes from value
-        $value = trim($value, '"');
-        // Restore any quote characters that lived inside the value
-        $value = $this->unmaskQuotedValue($value);
+        // An unquoted epoch on a date field stays numeric, like in a range.
+        $value = $this->rangeValue($field, $value);
 
         $realFieldName = $this->valueFieldName($field, [$value]);
 

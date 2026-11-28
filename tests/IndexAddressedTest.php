@@ -508,7 +508,8 @@ class IndexAddressedTest extends TestCase
 
         $builder->startRebuild();
 
-        $body = json_decode((string) $requests[1]->getBody(), true, flags: JSON_THROW_ON_ERROR);
+        $create = array_values(array_filter($requests, fn (ElasticsearchRequest $request): bool => $request->getMethod() === 'PUT'))[0];
+        $body = json_decode((string) $create->getBody(), true, flags: JSON_THROW_ON_ERROR);
         $this->assertSame('30s', $body['mappings']['_meta'][IndexRebuild::META_REFRESH]);
         $this->assertSame('-1', $body['settings']['refresh_interval']);
         $this->assertArrayHasKey('index.gc_deletes', $body['settings']);

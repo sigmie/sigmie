@@ -70,6 +70,8 @@ class Completion extends Suggester
                 'fuzziness' => 'AUTO',
                 'prefix_length' => $this->fuzzyPrefixLenght,
                 'min_length' => $this->fuzzyMinLength,
+                // Without it Elasticsearch counts lengths and edits in UTF-8 bytes.
+                'unicode_aware' => true,
             ];
         }
 

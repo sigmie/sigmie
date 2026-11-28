@@ -89,10 +89,14 @@ class Name extends Text implements Analyze
                 return [$match];
             }
 
+            // The n-gram analyzer stacks its grams, so Elasticsearch drops the fuzziness of $match,
+            // and it never fuzzes the last term of a bool_prefix query. The plain match on the
+            // whole words carries the typo tolerance.
             return [
                 $match,
                 new MatchPhrasePrefix($names[1], $queryString, analyzer: $this->prefixAnalyzer),
                 new MatchBoolPrefix($names[1], $queryString, analyzer: $this->prefixAnalyzer),
+                new Match_($names[1], $queryString, analyzer: $this->prefixAnalyzer),
             ];
         });
     }
@@ -113,7 +117,7 @@ class Name extends Text implements Analyze
         }
 
         $subfields = (array) ($configs['fields'] ?? []);
-        $prefix = $subfields[$field->prefixFieldName()] ?? [];
+        $prefix = (array) ($subfields[$field->prefixFieldName()] ?? []);
         $field->prefixAnalyzer = $prefix['search_analyzer'] ?? $prefix['analyzer'] ?? 'default';
 
         return $field;

@@ -380,6 +380,17 @@ class QueryAddressedTest extends TestCase
     /**
      * @test
      */
+    public function a_match_query_sends_its_operator(): void
+    {
+        $this->assertSame(
+            '{"match":{"title":{"query":"red shoes","boost":1,"operator":"and"}}}',
+            json_encode((new Match_('title', 'red shoes', operator: 'and'))->toRaw())
+        );
+    }
+
+    /**
+     * @test
+     */
     public function an_added_raw_aggregation_named_zero_stays_an_object(): void
     {
         $aggs = json_encode($this->search()->addRaw('aggs', [
@@ -651,7 +662,7 @@ class QueryAddressedTest extends TestCase
         $hits->resolve($props->get());
 
         $this->assertSame(
-            '{"nested":{"path":"reviews","score_mode":"avg","query":{"match_all":{"boost":1}},"boost":1}}',
+            '{"nested":{"path":"reviews","score_mode":"avg","query":{"match_all":{"boost":1}},"boost":1,"ignore_unmapped":true}}',
             json_encode((new Nested('reviews', new MatchAll, innerHits: $hits))->toRaw())
         );
 

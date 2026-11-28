@@ -6,6 +6,7 @@ namespace Sigmie\Mappings\Types;
 
 use Sigmie\Mappings\Traits\HasFacets;
 use Sigmie\Parse\ParseException;
+use Sigmie\Query\Aggregations\Bucket\Histogram;
 use Sigmie\Query\Aggs;
 
 class Price extends Type
@@ -39,11 +40,15 @@ class Price extends Type
             throw new ParseException('Price histogram interval must be a positive number.');
         }
 
-        $aggs->histogram(
+        // Empty buckets count towards search.max_buckets, so one outlier price can fail the
+        // search. Elasticsearch returns the filled buckets and facets() adds the empty ones.
+        $histogram = $aggs->histogram(
             $this->name().'_histogram',
             $this->name(),
-            interval: $interval + 0
-        );
+            interval: $interval + 0,
+            minDocCount: 1,
+        )->meta(['interval' => $interval + 0]);
+        $this->countDocuments($histogram);
 
         $aggs->min($this->name().'_min', $this->name());
         $aggs->max($this->name().'_max', $this->name());
@@ -52,14 +57,14 @@ class Price extends Type
     public function facets(array $aggregation): ?array
     {
         $originalBuckets = $aggregation[$this->name().'_histogram']['buckets'] ?? [];
+        $interval = $aggregation[$this->name().'_histogram']['meta']['interval'] ?? null;
 
         $min = $aggregation[$this->name().'_min']['value'] ?? null;
         $max = $aggregation[$this->name().'_max']['value'] ?? null;
 
         $histogram = [];
-        foreach ($originalBuckets as $bucket) {
-            $bound = $bucket['key'];
-            $histogram[is_float($bound) ? json_encode($bound, JSON_THROW_ON_ERROR) : $bound] = $bucket['doc_count'];
+        foreach (Histogram::dense($originalBuckets, $interval) as [$bound, $bucket]) {
+            $histogram[is_float($bound) ? json_encode($bound, JSON_THROW_ON_ERROR) : $bound] = $bucket === null ? 0 : $this->documentCount($bucket);
         }
 
         // Keys 0, 1, 2… are a PHP list. json_encode would drop those lower bounds.
@@ -76,7 +81,7 @@ class Price extends Type
 
     public function isFacetable(): bool
     {
-        return true;
+        return $this->hasDocValues();
     }
 
     public function validate(string $key, mixed $value): array

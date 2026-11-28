@@ -182,6 +182,20 @@ class QueryRecipe
             }
         }
 
+        $aggregated = [
+            ...array_map(
+                fn (string $key): string => trim((string) ($template[$key] ?? '')),
+                ['field', 'bucket_field', 'group_by', 'row_field', 'col_field', 'id_field', 'cohort_field'],
+            ),
+            ...csv_fields((string) ($template['group_by_fields'] ?? '')),
+        ];
+
+        foreach ($aggregated as $field) {
+            if ($mapping->get($field)?->nestedPath() !== null) {
+                throw new InvalidArgumentException(sprintf('Query recipe field [%s] must be outside nested documents.', $field));
+            }
+        }
+
         $widget = (string) ($template['widget'] ?? '');
         $metric = (string) ($template['metric'] ?? '');
         $field = (string) ($template['field'] ?? '');
@@ -798,7 +812,7 @@ class QueryRecipe
         $valid = match ($fieldType) {
             'number' => in_array($slotType, ['integer', 'number'], true),
             'date' => $slotType === 'date',
-            'keyword', 'text' => $slotType === 'string' && in_array($operator, ['equals', 'not_equals'], true),
+            'keyword', 'text', 'full_text', 'boolean' => $slotType === 'string' && in_array($operator, ['equals', 'not_equals'], true),
             default => false,
         };
 
@@ -903,7 +917,8 @@ class QueryRecipe
             $field instanceof Keyword, $field instanceof CaseSensitiveKeyword => 'keyword',
             $field instanceof Boolean => 'boolean',
             $field instanceof GeoPoint => 'geo',
-            $field instanceof Text => 'text',
+            // Text without a keyword sub-field has no doc values, so it cannot be grouped or counted distinct.
+            $field instanceof Text => $field->keywordName() === null ? 'full_text' : 'text',
             default => 'other',
         };
     }

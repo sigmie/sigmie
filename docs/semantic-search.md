@@ -81,7 +81,7 @@ $props->text('description')->semantic(api: 'embeddings', dimensions: 1536);
 $sigmie->newIndex('articles')->properties($props)->create();
 ```
 
-OpenAI's `text-embedding-3-small` returns 1536 dimensions. Infinity's `bge-small-en-v1.5` returns 384. `dimensions` defaults to 256. `semantic()` accepts 128, 256, 384, 512, 1024, 1536, 2048, or 3072 and throws for any other value. For another size, set it with `dimensions()` in [`newSemantic()`](#fine-tune-the-vector-field).
+OpenAI's `text-embedding-3-small` returns 1536 dimensions. Infinity's `bge-small-en-v1.5` returns 384. `dimensions` defaults to 256. `semantic()` accepts any positive size and throws for 0 or less.
 
 ## Index documents
 
@@ -104,14 +104,14 @@ $sigmie->collect('articles', refresh: true)
     ]);
 ```
 
-`merge()` sends the texts of many documents in batched requests, not one request per document. Sigmie groups texts that share the same API, dimensions, and input type (text or image), then splits each group into chunks of `min(100, maxBatchSize())` texts:
+`merge()` sends the texts of many documents in batched requests, not one request per document. Sigmie groups texts that share the same API, dimensions, and input type (text or image), then splits each group into chunks of `min(100, maxBatchSize())` texts. With the two fields above, each document adds two texts to one group:
 
 ```php
-$articles->merge($thirtyDocs);     // 1 request of 30
-$articles->merge($twoHundredDocs); // 2 requests: 100 + 100
+$articles->merge($thirtyDocs);     // 1 request of 60 texts
+$articles->merge($twoHundredDocs); // 4 requests of 100 texts
 ```
 
-The provider limits are 2048 for OpenAI and Jina, 512 for Infinity, 128 for Voyage, and 96 for Cohere.
+The provider limits are 2048 for OpenAI, Jina, and Infinity, 1000 for Voyage, 512 for Infinity CLIP, and 96 for Cohere.
 
 > **Warning:** If one chunk fails, the whole `merge()` fails. Sigmie does not retry or write part of the batch. Keep each `merge()` call to a size your provider serves reliably.
 
@@ -279,7 +279,7 @@ new Document([
 ]);
 ```
 
-Sigmie skips a field only when the document has a vector for every vector field of that field. It embeds the other fields as usual. To list the vector field names of a field:
+Sigmie skips a field only when the document has a vector for every vector field of that field. It embeds the other fields as usual. Sigmie stores a supplied vector as given and does not normalize it, so a `dot_product` field needs unit-length vectors. To list the vector field names of a field:
 
 ```php
 $props->get()->get('title')->vectorFields()

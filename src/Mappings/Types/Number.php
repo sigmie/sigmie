@@ -75,7 +75,7 @@ class Number extends Type
 
     public function isFacetable(): bool
     {
-        return true;
+        return $this->hasDocValues();
     }
 
     public function facets(array $aggregation): ?array
@@ -104,10 +104,27 @@ class Number extends Type
 
         return match ($type) {
             'integer' => $value >= -2147483648 && $value <= 2147483647,
+            'short' => $value >= -32768 && $value <= 32767,
+            'byte' => $value >= -128 && $value <= 127,
             'float' => is_finite(unpack('f', pack('f', (float) $value))[1]),
+            // Values from 65520 round to infinity in a half float.
+            'half_float' => abs((float) $value) < 65520,
             'long' => self::fitsLong($value),
+            'unsigned_long' => self::fitsUnsignedLong($value),
             default => true,
         };
+    }
+
+    private static function fitsUnsignedLong(int|float|string $value): bool
+    {
+        if (is_float($value)) {
+            return $value >= 0 && floor($value) === $value && $value <= 2.0 ** 64;
+        }
+
+        $digits = ltrim((string) $value, '0');
+
+        return preg_match('/\A\d+\z/', (string) $value) === 1
+            && (strlen($digits) < 20 || (strlen($digits) === 20 && strcmp($digits, '18446744073709551615') <= 0));
     }
 
     private static function fitsLong(int|float|string $value): bool

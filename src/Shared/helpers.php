@@ -247,7 +247,8 @@ namespace Sigmie\Functions {
         }
 
         if (is_float($value)) {
-            return is_finite($value) && (float) (int) $value === $value ? (int) $value : null;
+            // Casting a float outside the int range warns, and Laravel throws on warnings.
+            return $value >= PHP_INT_MIN && $value < PHP_INT_MAX && (float) (int) $value === $value ? (int) $value : null;
         }
 
         if (! is_string($value) || preg_match('/^-?(0|[1-9]\d*)$/D', $value = trim($value)) !== 1) {
@@ -307,14 +308,14 @@ namespace Sigmie\Functions {
     }
 
     /**
-     * A field named "0" is stored as key 0, so the value is a PHP list.
-     * The list is those fields when every key names one of $fields.
+     * A field named "0" or "3" is stored as an integer key, so the value looks like a PHP list.
+     * The integer-keyed array is those fields when every key names one of $fields.
      *
      * @param  array<int, Type>  $fields
      */
     function declared_list(array $value, array $fields): bool
     {
-        if ($value === [] || ! array_is_list($value)) {
+        if ($value === [] || array_filter(array_keys($value), is_string(...)) !== []) {
             return false;
         }
 
@@ -546,10 +547,22 @@ namespace Sigmie\Functions {
                 || ((is_array($value) || $value instanceof stdClass)
                     && array_diff(array_keys((array) $value), $optionKeys) === []);
 
-            // Integer keys may be sparse list offsets or actual field names.
-            $keyedByField = array_filter(array_keys($sort), is_string(...)) !== []
-                || count(array_filter($sort, $isSortOption)) === count($sort);
-            $sort = $keyedByField ? [$sort] : array_values($sort);
+            // An integer key is a list offset, unless its value is the options of a field with that name.
+            // Neighbouring fields stay in one clause, and a list item between them starts the next.
+            $clauses = [];
+            $fields = [];
+            foreach ($sort as $key => $value) {
+                if (! is_int($key) || $isSortOption($value)) {
+                    $fields[$key] = $value;
+
+                    continue;
+                }
+
+                $clauses = [...$clauses, ...($fields === [] ? [] : [$fields]), $value];
+                $fields = [];
+            }
+
+            $sort = [...$clauses, ...($fields === [] ? [] : [$fields])];
         }
 
         foreach ($sort as $position => $clause) {

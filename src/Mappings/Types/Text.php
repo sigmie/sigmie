@@ -440,7 +440,12 @@ class Text extends Type implements FromRaw
                 }
 
                 // Each shingle field adds its own shingle filter to the mapped search analyzer.
-                return [new MultiMatch($fields, $queryString, type: 'bool_prefix')];
+                // Elasticsearch never fuzzes the last term of bool_prefix, so the plain match
+                // carries the typo tolerance of the last word.
+                return [
+                    new MultiMatch($fields, $queryString, type: 'bool_prefix'),
+                    new Match_($this->name(), $queryString),
+                ];
             }
 
             return [new Match_($this->name(), $queryString, analyzer: $this->searchAnalyzer())];
@@ -463,14 +468,12 @@ class Text extends Type implements FromRaw
 
     public function isFacetable(): bool
     {
-        return $this->isFilterable();
+        return $this->isFilterable() && ($this->keywordField()?->hasDocValues() ?? true);
     }
 
     public function facets(array $aggregation): ?array
     {
-        $originalBuckets = $aggregation[$this->name()]['buckets'] ?? [];
-
-        return array_column($originalBuckets, 'doc_count', 'key');
+        return $this->termFacets($aggregation);
     }
 
     public function notAllowedFilters(): array
@@ -481,10 +484,18 @@ class Text extends Type implements FromRaw
     public function validate(string $key, mixed $value): array
     {
         if ($this->type === 'completion') {
+            // Elasticsearch requires contexts on each suggestion unless a context reads them from a document path.
+            $mapped = $this->restoredType === 'completion' ? ($this->mappingOptions['contexts'] ?? []) : [];
+            $needsContexts = $mapped !== [] && array_column($mapped, 'path') === [];
+
             $inputs = is_array($value) && array_is_list($value) ? $value : [$value];
             foreach ($inputs as $input) {
                 if (! $this->validCompletionInput($input)) {
                     return [false, sprintf('The field %s must contain completion strings or objects', $key)];
+                }
+
+                if ($needsContexts && (array) (((array) $input)['contexts'] ?? []) === []) {
+                    return [false, sprintf('The field %s needs contexts on every suggestion', $key)];
                 }
             }
 

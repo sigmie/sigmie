@@ -44,13 +44,18 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
 
     protected bool $populateEmbeddings = true;
 
+    /** The index name hooks receive. A rebuild writes through a hidden alias, and its hooks get the alias being rebuilt. */
+    protected string $hookIndexName;
+
     public function __construct(
         protected string $name,
         ElasticsearchConnection $connection,
         protected string $refresh = 'false',
         bool $requireAlias = false,
+        ?string $hookIndexName = null,
     ) {
         $this->setElasticsearchConnection($connection);
+        $this->hookIndexName = $hookIndexName ?? $name;
 
         $this->requireAlias = $requireAlias;
         $this->properties = new Properties;
@@ -182,7 +187,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         $activeHooks = $this->activeHooks();
 
         foreach ($activeHooks as $hook) {
-            $hook->beforeBatch($this->name, $this->sigmie(), $this->properties, $this->apis);
+            $hook->beforeBatch($this->hookIndexName, $this->sigmie(), $this->properties, $this->apis);
         }
 
         $document = $this->processDocument($document, $activeHooks);
@@ -190,7 +195,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         $this->writeDocument($this->name, $document, $this->refresh, $replace, $this->properties);
 
         foreach ($activeHooks as $hook) {
-            $hook->afterBatch([$document], $this->name, $this->sigmie(), $this->properties, $this->apis);
+            $hook->afterBatch([$document], $this->hookIndexName, $this->sigmie(), $this->properties, $this->apis);
         }
 
         return $document;
@@ -205,7 +210,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         $activeHooks = $this->activeHooks();
 
         foreach ($activeHooks as $hook) {
-            $hook->beforeBatch($this->name, $this->sigmie(), $this->properties, $this->apis);
+            $hook->beforeBatch($this->hookIndexName, $this->sigmie(), $this->properties, $this->apis);
         }
 
         $processor = new DocumentProcessor($this->properties, $this->elasticsearchConnection->driver()->engine());
@@ -214,7 +219,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         $needsCurrent = [];
         $documents = array_values($documents);
         foreach ($documents as $position => $document) {
-            $processor->validateFields($processor->formatDateTimeFields($document));
+            $processor->validateFields($processor->formatDateTimeFields($processor->serializeObjects($document)));
             if (isset($document->_id) && $processor->patchNeedsCurrentSource($document, $this->populateEmbeddings)) {
                 $needsCurrent[$position] = $document->_id;
             }
@@ -241,7 +246,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         array_push($written, ...$this->mergeBatch($batch, $needsCurrent, $processor, $activeHooks));
 
         foreach ($activeHooks as $hook) {
-            $hook->afterBatch($written, $this->name, $this->sigmie(), $this->properties, $this->apis);
+            $hook->afterBatch($written, $this->hookIndexName, $this->sigmie(), $this->properties, $this->apis);
         }
 
         return $this;
@@ -286,7 +291,7 @@ class AliveCollection implements ArrayAccess, Countable, DocumentCollection
         $processor = new DocumentProcessor($this->properties, $this->elasticsearchConnection->driver()->engine());
         $processor->apis($this->apis);
 
-        $document = $processor->formatDateTimeFields($document);
+        $document = $processor->formatDateTimeFields($processor->serializeObjects($document));
         $document = $processor->validateFields($document);
         $document = $processor->populateComboFields($document);
 

@@ -53,6 +53,17 @@ class RerankerTest extends TestCase
         $this->assertSame(['rows.0: first | second | '], $provider->documents);
     }
 
+    public function test_a_rerank_without_selected_fields_sends_the_whole_source(): void
+    {
+        $source = ['title' => 'Search guide', 'pages' => 12];
+        $api = $this->createMock(RerankApi::class);
+        $api->expects($this->once())->method('rerank')
+            ->with($this->callback(fn (array $documents): bool => Yaml::parse($documents[0]) === $source), 'guide', 1)
+            ->willReturn([['index' => 0, 'score' => 0.9]]);
+
+        (new NewRerank($api))->query('guide')->rerank([['_id' => 'one', '_source' => $source]]);
+    }
+
     public function test_top_k_is_limited_to_the_number_of_hits_sent(): void
     {
         $api = $this->createMock(RerankApi::class);

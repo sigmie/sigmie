@@ -479,6 +479,19 @@ class MappingsAddressedTest extends TestCase
         $this->assertFalse($field->validate('suggest', ['input' => 'Mars', 'contexts' => ['other' => 'science']])[0]);
     }
 
+    public function test_a_context_completion_without_a_path_requires_contexts(): void
+    {
+        $field = Text::fromRaw(['suggest' => ['type' => 'completion', 'contexts' => [['name' => 'genre', 'type' => 'category']]]]);
+
+        $this->assertTrue($field->validate('suggest', ['input' => 'Mars', 'contexts' => ['genre' => 'science']])[0]);
+        $this->assertFalse($field->validate('suggest', 'Mars')[0]);
+        $this->assertFalse($field->validate('suggest', ['input' => 'Mars'])[0]);
+        $this->assertFalse($field->validate('suggest', ['input' => 'Mars', 'contexts' => []])[0]);
+
+        $fromPath = Text::fromRaw(['suggest' => ['type' => 'completion', 'contexts' => [['name' => 'genre', 'type' => 'category', 'path' => 'genre']]]]);
+        $this->assertTrue($fromPath->validate('suggest', 'Mars')[0]);
+    }
+
     public function test_vector_documents_validate_the_whole_mapped_vector(): void
     {
         $props = new NewProperties;
@@ -2043,7 +2056,6 @@ class MappingsAddressedTest extends TestCase
     {
         $props = new NewProperties;
         $props->html('content');
-        $props->path('file_path');
         $props->longText('synopsis')->withNewAnalyzer(function (NewAnalyzer $analyzer): void {
             $analyzer->tokenizeOnWhitespaces()->lowercase();
         });
@@ -2056,13 +2068,11 @@ class MappingsAddressedTest extends TestCase
         $built = $props->get(new Analysis);
 
         $content = $built->get('content')->queries('hello')[0]->toRaw();
-        $path = $built->get('file_path')->queries('hello')[1]->toRaw();
         $synopsis = $built->get('synopsis')->queries('hello')[0]->toRaw();
         $blurb = $built->get('blurb')->queries('hello')[0]->toRaw();
         $lookup = $built->get('lookup')->queries('hello')[0]->toRaw();
 
         $this->assertSame('content_field_analyzer', $content['match']['content']['analyzer']);
-        $this->assertSame('file_path_field_analyzer', $path['match']['file_path']['analyzer']);
         $this->assertSame('synopsis_field_analyzer', $synopsis['match']['synopsis']['analyzer']);
         $this->assertSame('blurb_field_analyzer', $blurb['match']['blurb']['analyzer']);
         $this->assertArrayNotHasKey('analyzer', $lookup['multi_match']);
@@ -2364,7 +2374,7 @@ class MappingsAddressedTest extends TestCase
 
         $this->assertInstanceOf(SearchableNumber::class, $phone);
         $this->assertSame(
-            ['Match_', 'MatchPhrasePrefix'],
+            ['Match_', 'MatchPhrasePrefix', 'MatchBoolPrefix'],
             array_map(static fn (object $query): string => (new ReflectionClass($query))->getShortName(), $phone->queries('4412')),
         );
         $this->assertSame($raw['phone'], json_decode(json_encode($phone->toRaw()), true)['phone']);
@@ -2387,6 +2397,22 @@ class MappingsAddressedTest extends TestCase
 
         $this->assertSame([['director.sortable' => 'asc']], $parser->parse('director:asc'));
         $this->assertSame([], $parser->errors());
+    }
+
+    /**
+     * @test
+     */
+    public function a_name_mapping_decoded_as_objects_is_restored(): void
+    {
+        $props = new NewProperties;
+        $props->name('director');
+
+        $raw = json_decode(json_encode($props->get()->toRaw()));
+
+        $restored = Properties::create($raw, new DefaultAnalyzer, [], Properties::ROOT_NAME);
+
+        $this->assertInstanceOf(Name::class, $restored['director']);
+        $this->assertSame([['director.sortable' => 'asc']], (new SortParser($restored, false))->parse('director:asc'));
     }
 
     /**
@@ -2630,6 +2656,58 @@ class MappingsAddressedTest extends TestCase
         $props = Properties::create(['day' => ['type' => 'date']], new DefaultAnalyzer, [], Properties::ROOT_NAME);
 
         $this->assertSame('strict_date_optional_time||epoch_millis', $props['day']->toRaw()['day']['format']);
+    }
+
+    public function test_a_date_mapped_outside_sigmie_accepts_what_elasticsearch_stores(): void
+    {
+        $foreign = Properties::create(['created_at' => ['type' => 'date']], new DefaultAnalyzer, [], Properties::ROOT_NAME);
+
+        $this->assertSame([true, ''], $foreign['created_at']->validate('created_at', '2024-01-01T10:00:00Z'));
+        $this->assertSame([true, ''], $foreign['created_at']->validate('created_at', '2024-01-01'));
+        $this->assertFalse($foreign['created_at']->validate('created_at', 'yesterday')[0]);
+
+        $blueprint = new NewProperties;
+        $blueprint->date('day');
+
+        $own = Properties::create($blueprint->get()->toRaw(), new DefaultAnalyzer, [], Properties::ROOT_NAME);
+
+        $this->assertFalse($own['day']->validate('day', '2024-01-01T10:00:00Z')[0]);
+    }
+
+    public function test_a_restored_small_numeric_field_accepts_what_elasticsearch_stores(): void
+    {
+        $props = Properties::create([
+            'qty' => ['type' => 'short'],
+            'level' => ['type' => 'byte'],
+            'score' => ['type' => 'half_float'],
+            'views' => ['type' => 'unsigned_long'],
+        ], new DefaultAnalyzer, [], Properties::ROOT_NAME);
+
+        $cases = [
+            'qty' => [[32767, true], ['5', true], [32768, false], ['many', false]],
+            'level' => [[127, true], [128, false], [-129, false]],
+            'score' => [[65504, true], [-65520, false], ['x', false]],
+            'views' => [[0, true], ['18446744073709551615', true], [-1, false], ['18446744073709551616', false], [1.5, false], ['x', false]],
+        ];
+
+        foreach ($cases as $field => $values) {
+            foreach ($values as [$value, $stored]) {
+                $this->assertSame($stored, $props[$field]->validate($field, $value)[0], $field.' '.json_encode($value));
+            }
+        }
+    }
+
+    public function test_a_restored_date_nanos_field_accepts_what_elasticsearch_stores(): void
+    {
+        $props = Properties::create(['logged_at' => ['type' => 'date_nanos']], new DefaultAnalyzer, [], Properties::ROOT_NAME);
+
+        foreach (['2024-01-01T00:00:00.123456789Z', '2024-01-01', 1704067200000] as $stored) {
+            $this->assertSame([true, ''], $props['logged_at']->validate('logged_at', $stored));
+        }
+
+        foreach (['yesterday', '2024-13-01', true] as $rejected) {
+            $this->assertFalse($props['logged_at']->validate('logged_at', $rejected)[0], json_encode($rejected));
+        }
     }
 
     public function test_fractional_scaling_factor_survives_restoration(): void

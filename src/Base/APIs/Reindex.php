@@ -18,10 +18,13 @@ trait Reindex
         string $dest,
         bool $waitForCompletion = true,
         ?string $pipeline = null,
+        int $batchSize = 1000,
     ): ElasticsearchResponse {
         $body = [
-            'source' => ['index' => $source],
-            'dest' => ['index' => $dest],
+            'source' => ['index' => $source, 'size' => $batchSize],
+            // External keeps each source _version. The internal default restarts at 1,
+            // so a client writing external versions could overwrite with older data.
+            'dest' => ['index' => $dest, 'version_type' => 'external'],
         ];
 
         if ($pipeline !== null) {

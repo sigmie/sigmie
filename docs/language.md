@@ -1,6 +1,6 @@
 ---
 title: Languages
-short_description: Sigmie reference for the English, German, and Greek index builders, with their Elasticsearch stemmers, stopword lists, lowercase filters, and normalizer.
+short_description: Sigmie reference for the English, German, and Greek index builders: Elasticsearch stemmers, stopword lists, lowercase filters, and German umlaut folding.
 keywords: [languages, multilingual, greek, german, english, stemming, stopwords]
 category: Text Analysis
 order: 5
@@ -9,7 +9,7 @@ related_pages: [analysis, token-filters, tokenizers]
 
 # Languages
 
-Sigmie has index builders for English, German, and Greek. Each builder adds token filters for its language: stemmers, a stopword list, and a lowercase filter. The German builder also has a normalizer.
+Sigmie has index builders for English, German, and Greek. Each builder adds token filters for its language: stemmers, a stopword list, and a lowercase filter. The German builder also has a normalization filter.
 
 `language()` takes a language instance and returns that language's builder. The builder has every method of the index builder, plus the language filter methods:
 
@@ -25,7 +25,7 @@ $sigmie->newIndex('articles')
     ->create();
 ```
 
-> **Warning:** Call `language()` directly after `newIndex()`. The language builder copies the alias, shard and replica counts, serverless mode, registered APIs, and collection hooks. It drops properties, token filters, char filters, and the tokenizer that you set before `language()`.
+The language builder keeps everything set before `language()`: the alias, properties, token filters, char filters, tokenizer, `config()` values, metadata, shard and replica counts, serverless mode, registered APIs, and collection hooks.
 
 The language filters are token filters on the index `default` analyzer. They run in the order you add them, together with any generic [token filters](token-filters.md). Add the lowercase filter before the stopwords and the stemmer, because both compare lowercase words.
 
@@ -133,7 +133,7 @@ $props->text('description_de')
     });
 ```
 
-Each filter class lives in `Sigmie\Languages\<Language>\Filter` and takes its name as the only constructor argument. Pass a name to each instance. A class without one uses its default name, and a second filter with that name in the same index throws an `Exception`.
+Each filter class lives in `Sigmie\Languages\<Language>\Filter` and takes its name as the only constructor argument. A class without one uses its default name. Filters that share a name must have the same settings, otherwise Sigmie throws an `Exception`.
 
 ## See also
 

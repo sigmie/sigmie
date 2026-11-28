@@ -21,6 +21,7 @@ use Sigmie\SigmieIndex;
  */
 class SigmieGetDocumentsTool implements Tool
 {
+    use GuardsPrivateFields;
     use HandlesToolErrors;
     use NamesIndexTools;
     use ScopesToBaseFilters;
@@ -64,8 +65,9 @@ class SigmieGetDocumentsTool implements Tool
      */
     public function result(Request $request): array
     {
+        // A JSON number is an id too: "_id": "7" often comes back as 7.
         $ids = array_slice(array_values(array_filter(
-            (array) ($request['ids'] ?? []),
+            array_map(fn ($id): mixed => is_int($id) ? (string) $id : $id, (array) ($request['ids'] ?? [])),
             fn ($id): bool => is_string($id) && $id !== '',
         )), 0, 100);
 
@@ -73,7 +75,7 @@ class SigmieGetDocumentsTool implements Tool
             ->queryString('')
             ->filterQuery(new IDs($ids))
             ->retrieve($this->outputFields($request['fields'] ?? null))
-            ->except($this->index->exceptFromTools())
+            ->except($this->withheldSourceFields())
             ->size(count($ids));
 
         $this->applyBaseFilters($search);

@@ -58,8 +58,10 @@ class KpiDelta extends Widget
 
         $change = null;
         if ($previous !== null && $previous != 0.0 && $current !== null) {
+            // The sign follows the direction of the change, so -100 to -50 is +50%.
+            $base = abs($previous);
             $difference = $current - $previous;
-            $ratio = is_finite($difference) ? $difference / $previous : $current / $previous - 1;
+            $ratio = is_finite($difference) ? $difference / $base : $current / $base - $previous / $base;
             $percentage = $ratio * 100;
             $change = is_finite($percentage) ? round($percentage, 2) : null;
         }

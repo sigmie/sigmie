@@ -9,6 +9,7 @@ use Sigmie\Enums\SearchEngineType;
 use Sigmie\Mappings\NewProperties;
 use Sigmie\Mappings\Properties;
 use Sigmie\Mappings\Properties as MappingsProperties;
+use Sigmie\Mappings\Types\HTML;
 use Sigmie\Mappings\Types\Text;
 use Sigmie\Query\Aggs as FacetAggs;
 use Sigmie\Query\Contracts\Aggs;
@@ -246,13 +247,14 @@ abstract class AbstractSearchBuilder implements SearchBuilder
     protected function highlightOptions(): array
     {
         $fields = [];
+        $markup = false;
+        $elasticsearch = $this->elasticsearchConnection->driver()->engine() === SearchEngineType::Elasticsearch;
         // Elasticsearch's plain highlighter can fail while rewriting a kNN query.
-        $type = $this->semanticSearch && $this->elasticsearchConnection->driver()->engine() === SearchEngineType::Elasticsearch
-            ? 'unified'
-            : 'plain';
+        $type = $this->semanticSearch && $elasticsearch ? 'unified' : 'plain';
 
         foreach ($this->highlight as $fieldName) {
             $field = $this->properties->get($fieldName);
+            $markup = $markup || $field instanceof HTML;
             $prefixField = $field instanceof Text ? $field->indexedPrefixName() : null;
             $names = $field?->names() ?? [$fieldName];
 
@@ -277,6 +279,14 @@ abstract class AbstractSearchBuilder implements SearchBuilder
         return [
             'require_field_match' => false,
             'no_match_size' => 100,
+            // A fragment is HTML: the prefix and suffix wrap each match. The stored text around
+            // them is escaped, or markup in a document would run in the page that shows it. An
+            // html() field stores markup, and the engine has one encoder for a whole request.
+            'encoder' => $markup ? 'default' : 'html',
+            // Without it one field longer than index.highlight.max_analyzed_offset fails the whole
+            // search. Both engines reject a value above the index setting, so this is its default:
+            // an index that raised the setting still highlights only the first million characters.
+            ($elasticsearch ? 'max_analyzed_offset' : 'max_analyzer_offset') => 1_000_000,
             'fields' => object_map($fields),
         ];
     }
@@ -300,7 +310,8 @@ abstract class AbstractSearchBuilder implements SearchBuilder
     protected function weightedFieldQuery(QueryClause $clause, string $field, float $weight): QueryClause
     {
         if ($clause instanceof FuzzyQuery && in_array($field, $this->typoTolerantAttributes, true)) {
-            $clause = (clone $clause)->fuzziness(sprintf('AUTO:%d,%d', $this->minCharsForOneTypo, $this->minCharsForTwoTypo));
+            // Elasticsearch rejects a two-typo limit below the one-typo limit. A word needs both limits for two typos.
+            $clause = (clone $clause)->fuzziness(sprintf('AUTO:%d,%d', $this->minCharsForOneTypo, max($this->minCharsForOneTypo, $this->minCharsForTwoTypo)));
         }
 
         if ($weight === 1.0) {

@@ -7,6 +7,7 @@ namespace Sigmie\Search;
 use Closure;
 use Generator;
 use Http\Promise\Promise;
+use InvalidArgumentException;
 use Sigmie\AI\Contracts\EmbeddingsApi;
 use Sigmie\Base\Contracts\ElasticsearchConnection;
 use Sigmie\Base\Contracts\ElasticsearchResponse;
@@ -84,13 +85,13 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
     protected ResponseFormater $formatter;
 
-    public readonly SearchContext $searchContext;
+    public SearchContext $searchContext;
 
-    public readonly FilterParser $filterParser;
+    public FilterParser $filterParser;
 
-    public readonly FacetParser $facetParser;
+    public FacetParser $facetParser;
 
-    public readonly SortParser $sortParser;
+    public SortParser $sortParser;
 
     protected array $vectorPools = [];
 
@@ -113,9 +114,29 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         $this->aggregations = new Aggs;
     }
 
+    /**
+     * A clone owns its state. The parsed filters name their nested matches in the inner hits
+     * registry of the search they were parsed for, so the clone parses its strings again.
+     */
+    public function __clone(): void
+    {
+        $this->searchContext = clone $this->searchContext;
+        $this->filterParser = (clone $this->filterParser)->innerHits($this->searchContext->innerHits);
+        $this->facetParser = clone $this->facetParser;
+        $this->sortParser = clone $this->sortParser;
+        $this->aggregations = clone $this->aggregations;
+
+        $this->parseStrings();
+    }
+
     public function page(int $page, int $perPage = 20): static
     {
-        return $this->from(($page - 1) * $perPage)->size($perPage);
+        $from = ($page - 1) * $perPage;
+
+        // PHP turns an int overflow into a float.
+        return is_int($from)
+            ? $this->from($from)->size($perPage)
+            : throw new InvalidArgumentException(sprintf('Page %d of %d results is out of range.', $page, $perPage));
     }
 
     public function retrieveEmbeddingsField(bool $retrieve = true): static
@@ -215,6 +236,13 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         $this->facetParser->properties($properties);
         $this->sortParser->properties($properties);
 
+        $this->parseStrings();
+
+        return $this;
+    }
+
+    private function parseStrings(): void
+    {
         if ($this->searchContext->filterString !== '') {
             $this->globalFilters = $this->filterParser->parse($this->searchContext->filterString);
         }
@@ -226,8 +254,6 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         if ($this->searchContext->facetString !== '' || $this->facetFilterInput !== '') {
             $this->facets($this->searchContext->facetString, $this->facetFilterInput, $this->throwOnFacetError);
         }
-
-        return $this;
     }
 
     public function filters(string $filters, bool $throwOnError = false): static
@@ -371,6 +397,29 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         return array_values($fields);
     }
 
+    /**
+     * A search without properties sends no `_source` filter, because Elasticsearch rejects any
+     * `_source` filter on an index whose mapping disables `_source`. Its hits drop the stored
+     * vectors after the response instead.
+     */
+    private function hidesStoredVectors(): bool
+    {
+        return $this->retrievableFields() === [] && ! $this->retrieveEmbeddingsField;
+    }
+
+    private function withoutStoredVectors(array $hit): array
+    {
+        unset($hit['_source']['_embeddings']);
+
+        foreach ($hit['inner_hits'] ?? [] as $name => $group) {
+            foreach ($group['hits']['hits'] ?? [] as $index => $member) {
+                $hit['inner_hits'][$name]['hits']['hits'][$index] = $this->withoutStoredVectors($member);
+            }
+        }
+
+        return $hit;
+    }
+
     protected function handleSize(Search $search)
     {
         $search->size($this->searchContext->size);
@@ -405,7 +454,19 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
             return null;
         }
 
-        return CollapsedSort::fromSort($this->searchContext->collapseField, $this->sort);
+        return CollapsedSort::fromSort($this->collapseField(), $this->sort);
+    }
+
+    /**
+     * Elasticsearch collapses on doc values. A text field collapses on the sub-field that sort()
+     * uses, because search_after with collapse needs the sort and the collapse on one field.
+     */
+    private function collapseField(): ?string
+    {
+        $field = $this->searchContext->collapseField;
+        $type = $field === null ? null : $this->properties->get($field);
+
+        return $type?->sortableName() ?? $type?->filterableName() ?? $field;
     }
 
     protected function handleKnn(Search $search)
@@ -463,7 +524,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
             return;
         }
 
-        $collapse = ['field' => $this->searchContext->collapseField];
+        $collapse = ['field' => $this->collapseField()];
 
         if ($this->collapseTop > 0) {
             $collapse['inner_hits'] = [
@@ -904,6 +965,10 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
         search_hits($searchResponse);
         search_hits($facetsResponse);
 
+        if ($this->hidesStoredVectors() && isset($searchResponse['hits']['hits'])) {
+            $searchResponse['hits']['hits'] = array_map($this->withoutStoredVectors(...), $searchResponse['hits']['hits']);
+        }
+
         if (($collapsedSort = $this->openSearchCollapsedSort()) instanceof CollapsedSort && isset($searchResponse['hits']['hits'])) {
             foreach ($searchResponse['hits']['hits'] as &$hit) {
                 // Numeric missing values use a sort sentinel that can also be a real value.
@@ -1059,6 +1124,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
 
         $body = $this->buildSearch($this->pitIterationChunkSize)->toRaw();
         $innerHits = clone $this->searchContext->innerHits;
+        $hidesStoredVectors = $this->hidesStoredVectors();
 
         $hasCollapse = array_key_exists('collapse', $body);
         $sort = $body['sort'] ?? [];
@@ -1087,7 +1153,7 @@ class NewSearch extends AbstractSearchBuilder implements LazyIterableQuery, Mult
             function (string $id) use ($pit): void {
                 $pit->close($id);
             },
-            fn (array $data): Hit => Hit::fromRaw($innerHits->formatRawHit($data)),
+            fn (array $data): Hit => Hit::fromRaw($innerHits->formatRawHit($hidesStoredVectors ? $this->withoutStoredVectors($data) : $data)),
         );
     }
 

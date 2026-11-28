@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sigmie\Tests;
 
+use Carbon\Carbon;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Http\Promise\FulfilledPromise;
 use Http\Promise\Promise;
@@ -15,7 +16,9 @@ use Sigmie\Base\Contracts\SearchEngine;
 use Sigmie\Base\Drivers\Elasticsearch;
 use Sigmie\Base\ElasticsearchException;
 use Sigmie\Document\AliveCollection;
+use Sigmie\Document\Contracts\CollectionHook;
 use Sigmie\Document\Document;
+use Sigmie\Index\Alias\AliasAlreadyExists;
 use Sigmie\Index\AliasedIndex;
 use Sigmie\Index\Analysis\Tokenizers\Whitespace;
 use Sigmie\Index\IndexRebuild;
@@ -32,6 +35,30 @@ use stdClass;
 
 class IndexUpdateTest extends TestCase
 {
+    public function test_update_and_rebuild_get_a_new_index_while_the_clock_is_frozen(): void
+    {
+        $alias = uniqid('frozen_');
+        $props = new NewProperties;
+        $props->title('name');
+
+        Carbon::setTestNow('2026-01-01 10:00:00');
+        try {
+            $created = $this->sigmie->newIndex($alias)->properties($props)->create();
+            $this->sigmie->collect($alias, refresh: true)->properties($props)->merge([new Document(['name' => 'Lamp'], _id: 'lamp')]);
+
+            $updated = $created->update(fn (NewIndex $index): NewIndex => $index->properties($props));
+            $rebuilt = $this->sigmie->newIndex($alias)->properties($props)
+                ->rebuild(fn (AliveCollection $documents): AliveCollection => $documents->properties($props)->merge([new Document(['name' => 'Chair'], _id: 'chair')]));
+        } finally {
+            Carbon::setTestNow();
+        }
+
+        $this->assertNotSame($created->name, $updated->name);
+        $this->assertNotSame($updated->name, $rebuilt->name);
+        $this->assertSame(['chair'], array_keys($this->sigmie->collect($alias)->toArray()));
+        $this->assertSame([$rebuilt->name], array_map(fn ($index): string => $index->name, $this->sigmie->indices($alias.'_*')));
+    }
+
     public function test_an_unfinished_update_exclusively_owns_the_source_write_block(): void
     {
         $alias = '.sigmie-test-'.bin2hex(random_bytes(8));
@@ -266,7 +293,7 @@ class IndexUpdateTest extends TestCase
     public function test_lifecycle_rebuild_reports_the_fill_error_if_abort_fails(): void
     {
         $connection = $this->offlineConnection(fn ($method, $path): PsrResponse|array => match (sprintf('%s %s', $method, $path)) {
-            'HEAD /_alias/movies' => new PsrResponse(404),
+            'HEAD /_alias/movies', 'HEAD /movies' => new PsrResponse(404),
             'POST /_aliases' => throw new ElasticsearchException(['type' => 'cluster_block_exception', 'reason' => 'abort blocked'], 403),
             default => ['acknowledged' => true],
         });
@@ -422,6 +449,37 @@ class IndexUpdateTest extends TestCase
             $this->assertSame('true', $this->sigmie->index($alias)->get('settings.index.blocks.write'));
         } finally {
             $this->sigmie->index($alias)?->delete();
+        }
+    }
+
+    /** @dataProvider writeBlockedBuilds */
+    public function test_read_only_block_applies_after_the_alias_moves(string $operation): void
+    {
+        $alias = uniqid('.audit6-read-only-');
+        $source = $this->sigmie->newIndex($alias)->replicas(0)->create();
+        $this->indexAPICall($alias.'/_doc/1', 'PUT', ['title' => 'Film']);
+        $configure = fn (NewIndex $builder): NewIndex => $builder->replicas(0)->config('index.blocks.read_only', true);
+
+        try {
+            if ($operation === 'rebuild') {
+                $configure($this->sigmie->newIndex($alias))
+                    ->rebuild(fn (AliveCollection $collection): AliveCollection => $collection->merge([new Document(['title' => 'Film'], _id: '1')]));
+            } elseif ($operation === 'async') {
+                $task = $source->asyncUpdate($configure);
+                IndexUpdateTask::unpack($this->elasticsearchConnection, $task->pack())->waitAndFinish();
+            } else {
+                $source->update($configure);
+            }
+
+            $this->assertSame(1, $this->sigmie->collect($alias)->count());
+            $index = $this->sigmie->index($alias);
+            $this->assertSame('true', $index->get('settings.index.blocks.read_only'));
+            $this->assertSame([$index->name], array_keys($this->indexAPICall(NewIndex::physicalNamePrefix($alias).'_*?expand_wildcards=all', 'GET')->json()));
+        } finally {
+            foreach (array_keys($this->indexAPICall(NewIndex::physicalNamePrefix($alias).'_*?expand_wildcards=all', 'GET')->json()) as $name) {
+                $this->indexAPICall($name.'/_settings', 'PUT', ['index.blocks.read_only' => false]);
+                $this->indexAPICall($name, 'DELETE');
+            }
         }
     }
 
@@ -732,6 +790,33 @@ class IndexUpdateTest extends TestCase
         }
     }
 
+    public function test_update_keeps_external_document_versions(): void
+    {
+        $alias = uniqid('update-versions-');
+        $index = $this->sigmie->newIndex($alias)->replicas(0)->create();
+        $this->indexAPICall($alias.'/_doc/synced?version=50&version_type=external&refresh=true', 'PUT', ['title' => 'Synced']);
+
+        $index = $index->update(fn (Update $update): Update => $update->replicas(0));
+        $this->assertSame(50, $this->indexAPICall($alias.'/_doc/synced', 'GET')->json('_version'));
+
+        $index->asyncUpdate(fn (Update $update): Update => $update->replicas(0))->waitAndFinish();
+        $this->assertSame(50, $this->indexAPICall($alias.'/_doc/synced', 'GET')->json('_version'));
+    }
+
+    public function test_update_copies_an_index_with_a_small_result_window(): void
+    {
+        $alias = uniqid('update-window-');
+        $configure = fn (NewIndex $builder): NewIndex => $builder->replicas(0)->config('max_result_window', 500);
+        $index = $configure($this->sigmie->newIndex($alias))->create();
+        $this->sigmie->collect($alias, refresh: true)->add(new Document(['title' => 'Kept'], 'kept'));
+
+        $index = $index->update($configure);
+        $this->assertSame(1, $this->sigmie->collect($alias)->count());
+
+        $index->asyncUpdate($configure)->waitAndFinish();
+        $this->assertSame(1, $this->sigmie->collect($alias)->count());
+    }
+
     public function test_audit_index_update_does_not_promote_a_copy_with_routing_collisions(): void
     {
         $alias = uniqid('audit-index-base-routing-');
@@ -768,8 +853,8 @@ class IndexUpdateTest extends TestCase
                     }
                 });
                 $this->fail('Two routed documents with the same ID cannot share a destination shard.');
-            } catch (RuntimeException $exception) {
-                $this->assertSame('Reindex did not complete successfully.', $exception->getMessage());
+            } catch (ElasticsearchException $exception) {
+                $this->assertSame('version_conflict_engine_exception', $exception->json('type'));
                 $this->assertSame($source->name, $this->sigmie->index($alias)->name);
                 $this->assertSame(2, $this->sigmie->collect($alias)->count());
             }
@@ -1613,7 +1698,7 @@ class IndexUpdateTest extends TestCase
         $refresh = null;
         $name = null;
         $created = [];
-        $connection = $this->offlineConnection(function ($method, $path, $body) use (&$refresh, &$name, &$created): array {
+        $connection = $this->offlineConnection(function ($method, $path, $body) use (&$refresh, &$name, &$created): array|PsrResponse {
             if ($method === 'PUT' && isset($body['mappings'])) {
                 $name = ltrim($path, '/');
                 $created = $body;
@@ -1625,6 +1710,7 @@ class IndexUpdateTest extends TestCase
 
             return match (true) {
                 $path === '/_alias/movies' => [],
+                $method === 'HEAD' && $path === '/movies' => new PsrResponse(404),
                 $path === '/movies_*', str_ends_with($path, '/_mapping') => [$name => $created],
                 $path === '/movies' => [$name => [
                     'aliases' => ['movies' => []],
@@ -2520,6 +2606,27 @@ class IndexUpdateTest extends TestCase
     /**
      * @test
      */
+    public function rebuild_hooks_get_the_name_of_the_index_being_rebuilt(): void
+    {
+        $alias = uniqid();
+        $hook = $this->createMock(CollectionHook::class);
+        $hook->method('shouldRun')->willReturn(true);
+        $hook->method('processBatch')->willReturnArgument(0);
+        $hook->expects($this->exactly(2))->method('beforeBatch')->with($alias);
+        $hook->expects($this->exactly(2))->method('afterBatch')->with($this->anything(), $alias);
+        $this->sigmie->addCollectionHook($hook);
+
+        $this->sigmie->newIndex($alias)->rebuild(function (AliveCollection $docs): void {
+            $docs->merge([new Document(['name' => 'Cinderella'])]);
+            $docs->add(new Document(['name' => 'Aurora']));
+        });
+
+        $this->assertCount(2, $this->sigmie->collect($alias, refresh: true));
+    }
+
+    /**
+     * @test
+     */
     public function rebuild_creates_alias_on_first_build(): void
     {
         $alias = uniqid();
@@ -2529,6 +2636,25 @@ class IndexUpdateTest extends TestCase
 
         $this->assertInstanceOf(AliasedIndex::class, $index);
         $this->assertCount(1, $this->sigmie->collect($alias));
+    }
+
+    public function test_rebuild_refuses_a_name_taken_by_an_index_a_write_created(): void
+    {
+        $name = uniqid();
+        $this->sigmie->collect($name, refresh: true)->add(new Document(['name' => 'Cinderella']));
+        $filled = false;
+
+        try {
+            $this->sigmie->newIndex($name)->rebuild(function (AliveCollection $docs) use (&$filled): void {
+                $filled = true;
+                $docs->add(new Document(['name' => 'Snow White']));
+            });
+            $this->fail('The alias name belongs to a concrete index.');
+        } catch (AliasAlreadyExists) {
+            $this->assertFalse($filled);
+            $this->assertNull($this->sigmie->index($name.'_*'));
+            $this->assertCount(1, $this->sigmie->collect($name));
+        }
     }
 
     /**

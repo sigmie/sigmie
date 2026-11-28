@@ -48,7 +48,13 @@ final class CollapsedSort
             $seek = $this->missingFirst ? $exists : ['match_none' => (object) []];
         } else {
             $operator = $this->order === 'desc' ? 'lt' : 'gt';
-            $seek = ['range' => keyed($this->field, [($includeTie ? $operator.'e' : $operator) => $after])];
+            // Elasticsearch 8 sorts a missing integer as a long boundary and rejects that
+            // boundary in an integer range. Nothing sorts past it, so only a tie can remain.
+            $seek = match (true) {
+                $after !== ($this->order === 'desc' ? PHP_INT_MIN : PHP_INT_MAX) => ['range' => keyed($this->field, [($includeTie ? $operator.'e' : $operator) => $after])],
+                $includeTie => ['term' => keyed($this->field, $after)],
+                default => ['match_none' => (object) []],
+            };
             if ($passedMissing) {
                 $seek = ['bool' => ['filter' => [$seek, $exists]]];
             } elseif (! $this->missingFirst || ($passedMissing === false && is_int($after))) {

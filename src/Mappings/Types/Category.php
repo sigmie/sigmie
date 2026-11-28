@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sigmie\Mappings\Types;
 
 use Sigmie\Index\NewAnalyzer;
-use Sigmie\Query\Queries\Term\Term;
 use Sigmie\Query\Queries\Text\Match_;
+use Sigmie\Query\Queries\Text\MatchBoolPrefix;
 use Sigmie\Query\Queries\Text\MatchPhrasePrefix;
 
 class Category extends Text
@@ -34,8 +34,9 @@ class Category extends Text
 
         return $this->queryStrings($queryString, fn (string $queryString): array => [
             new Match_($this->name(), $queryString, analyzer: $this->searchAnalyzer()),
-            ...($keyword === null ? [] : [new Term($keyword, $queryString)]),
+            ...($keyword === null ? [] : $this->termQueries($keyword, $queryString)),
             new MatchPhrasePrefix($this->name(), $queryString, analyzer: $this->searchAnalyzer()),
+            new MatchBoolPrefix($this->name(), $queryString, analyzer: $this->searchAnalyzer()),
         ]);
     }
 }
