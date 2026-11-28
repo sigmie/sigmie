@@ -204,6 +204,28 @@ class FilterParserTest extends TestCase
     }
 
     /** @withoutCluster */
+    public function test_an_operator_word_inside_an_unquoted_value_belongs_to_the_value(): void
+    {
+        $properties = new NewProperties;
+        $properties->keyword('path');
+        $properties->keyword('label');
+        $properties->keyword('status');
+
+        $parser = new FilterParser($properties);
+
+        $path = $parser->parse('path:usr/and/bin')->toRaw();
+        $this->assertSame('usr/and/bin', $path['bool']['must'][0]['term']['path']['value']);
+
+        foreach (['(label:a)AND(status:b)' => '(label:a) AND (status:b)', 'label:"a"OR status:b' => 'label:"a" OR status:b'] as $compact => $spaced) {
+            $this->assertSame($parser->parse($spaced)->toRaw(), $parser->parse($compact)->toRaw(), $compact);
+        }
+
+        // `a/or` holds no operator, so two clauses follow each other without one.
+        $this->expectException(ParseException::class);
+        $parser->parse('label:a/or status:b');
+    }
+
+    /** @withoutCluster */
     public function test_a_comma_or_second_colon_outside_a_list_does_not_join_two_words(): void
     {
         $properties = new NewProperties;

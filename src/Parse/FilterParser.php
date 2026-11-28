@@ -212,7 +212,9 @@ class FilterParser extends Parser
                 continue;
             }
 
-            if (! $isWord($before) && ! $isWord($after)) {
+            // An operator stands between two clauses: after a space or a closing quote or bracket,
+            // and before a space or an opening parenthesis. In `path:usr/and/bin` it is the value.
+            if (str_contains(' )]}\'"', $before) && str_contains(' (', $after)) {
                 return $operator;
             }
         }
